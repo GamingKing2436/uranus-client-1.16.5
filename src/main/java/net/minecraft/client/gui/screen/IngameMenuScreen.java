@@ -2,6 +2,7 @@ package net.minecraft.client.gui.screen;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.gui.advancements.AdvancementsScreen;
+import net.minecraft.client.gui.widget.Logo;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.realms.RealmsBridgeScreen;
 import net.minecraft.util.SharedConstants;
@@ -29,7 +30,16 @@ public class IngameMenuScreen extends Screen {
    private void addButtons() {
       int i = -16;
       int j = 98;
-      this.addButton(new Button(this.width / 2 - 102, this.height / 4 + 24 + -16, 204, 20, new TranslationTextComponent("menu.returnToGame"), (p_213070_1_) -> {
+      this.addButton(new Logo(this.width / 2 - 32, this.height / 4 + -40 , 64, 64, new TranslationTextComponent(""), (p_213071_1_) -> {
+         this.minecraft.displayGuiScreen(new ConfirmOpenLinkScreen((p_213064_1_) -> {
+            if (p_213064_1_) {
+               Util.getOSType().openURI("https://www.google.com/");
+            }
+
+            this.minecraft.displayGuiScreen(this);
+         }, "https://www.google.com/", true));
+      }));
+      this.addButton(new Button(this.width / 2 - 102, this.height / 4 + 24 , 204, 20, new TranslationTextComponent("menu.returnToGame"), (p_213070_1_) -> {
          this.minecraft.displayGuiScreen((Screen)null);
          this.minecraft.mouseHelper.grabMouse();
       }));

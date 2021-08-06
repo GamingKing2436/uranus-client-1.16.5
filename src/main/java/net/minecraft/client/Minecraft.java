@@ -345,7 +345,7 @@ public class Minecraft extends RecursiveEventLoop<Runnable> implements ISnooperI
    private volatile boolean running = true;
    @Nullable
    private CrashReport crashReporter;
-   private static int debugFPS;
+   public static int debugFPS;
    public String debug = "";
    public boolean debugWireframe;
    public boolean debugChunkPath;

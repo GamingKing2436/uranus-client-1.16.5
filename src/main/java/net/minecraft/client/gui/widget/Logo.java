@@ -3,6 +3,7 @@ package net.minecraft.client.gui.widget;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -17,6 +18,7 @@ public class Logo extends AbstractButton {
    };
    protected final Logo.IPressable onPress;
    protected final Logo.ITooltip onTooltip;
+   public static final ResourceLocation LOGO_LOCATION = new ResourceLocation("textures/gui/logo.png");
 
    public Logo(int p_i232255_1_, int p_i232255_2_, int p_i232255_3_, int p_i232255_4_, ITextComponent p_i232255_5_, Logo.IPressable p_i232255_6_) {
       this(p_i232255_1_, p_i232255_2_, p_i232255_3_, p_i232255_4_, p_i232255_5_, p_i232255_6_, NO_TOOLTIP);
@@ -41,14 +43,14 @@ public class Logo extends AbstractButton {
    }
    public void renderButtonsuper(MatrixStack p_230431_1_, int p_230431_2_, int p_230431_3_, float p_230431_4_) {
       Minecraft minecraft = Minecraft.getInstance();
-      FontRenderer fontrenderer = minecraft.font;
-      minecraft.getTextureManager().bind(WIDGETS_LOCATION);
-      RenderSystem.color4f(0.96F, 0.58F, 0.13F, this.alpha);
+      FontRenderer fontrenderer = minecraft.fontRenderer;
+      minecraft.getTextureManager().bindTexture(LOGO_LOCATION);
+      RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
       //int i = this.getYImage(this.isHovered());
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
-      this.blit(p_230431_1_, this.x, this.y, 40, 106, this.width, this.height);
+      this.blit(p_230431_1_, this.x, this.y, 0, 0, this.width, this.height);
       //this.blit(p_230431_1_, this.x + this.width / 2, this.y, 40, 106, this.width / 2, this.height);
       this.renderBg(p_230431_1_, minecraft, p_230431_2_, p_230431_3_);
       int j = this.active ? 16777215 : 10526880;

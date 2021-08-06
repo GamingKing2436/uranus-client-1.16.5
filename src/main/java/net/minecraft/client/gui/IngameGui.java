@@ -1,5 +1,7 @@
 package net.minecraft.client.gui;
 
+import net.minecraft.client.gui.widget.KeyStrokeDisplay;
+
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -168,6 +170,26 @@ public class IngameGui extends AbstractGui {
          this.spectatorGui.func_238528_a_(matrixStack, partialTicks);
       } else if (!this.mc.gameSettings.hideGUI) {
          this.renderHotbar(partialTicks, matrixStack);
+      }
+      int keysize = 20;
+      int x = 0;
+      int y = 0;
+      KeyStrokeDisplay[] test = new KeyStrokeDisplay[] {
+      new KeyStrokeDisplay(x + keysize*2 + 3+5, y + 1, keysize, keysize, new TranslationTextComponent("W"), 87, 0xFFFFFF),
+      new KeyStrokeDisplay(x + keysize + 2+5, y + keysize + 2, keysize, keysize, new TranslationTextComponent("A"), 65, 0xffffff),
+      new KeyStrokeDisplay(x + keysize*2 + 3+5, y + keysize + 2, keysize, keysize, new TranslationTextComponent("S"), 83, 0xffffff),
+      new KeyStrokeDisplay(x + keysize*3 + 4+5, y + keysize + 2, keysize, keysize, new TranslationTextComponent("D"), 68, 0xffffff),
+
+      new KeyStrokeDisplay(x + 1, y + keysize + 2, keysize+5, keysize, new TranslationTextComponent("Shift"), 340, 0x00FFFF),
+      new KeyStrokeDisplay(x + 1, y + keysize*2 + 3, keysize, keysize, new TranslationTextComponent("Ctrl"), 341, 0xF69420),
+      new KeyStrokeDisplay(x + keysize + 2, y + keysize*2 + 3, keysize*3 + 2+5, keysize, new TranslationTextComponent("----------"), 32, 0xffffff),
+
+      new KeyStrokeDisplay(x + keysize + 2+5, y + 1, keysize, keysize, new TranslationTextComponent("L"), 0, 0xFF0000),
+      new KeyStrokeDisplay(x + keysize*3 + 4+5, y + 1, keysize, keysize, new TranslationTextComponent("R"), 1, 0x00FF00),
+      };
+      drawString(matrixStack, fontrenderer, new TranslationTextComponent(String.format("%d FPS", Minecraft.debugFPS)), 0, 0, 0xFFFFFF);
+      for (int i = 0; i < test.length; i++) {
+         test[i].render(matrixStack);
       }
 
       if (!this.mc.gameSettings.hideGUI) {
