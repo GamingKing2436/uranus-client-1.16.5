@@ -5,9 +5,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IMutableSearchTree<T> extends ISearchTree<T> {
-   void add(T p_217872_1_);
+   void func_217872_a(T element);
 
    void clear();
 
-   void refresh();
+   void recalculate();
 }

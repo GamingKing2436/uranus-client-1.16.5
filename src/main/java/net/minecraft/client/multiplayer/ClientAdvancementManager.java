@@ -21,39 +21,39 @@ import org.apache.logging.log4j.Logger;
 @OnlyIn(Dist.CLIENT)
 public class ClientAdvancementManager {
    private static final Logger LOGGER = LogManager.getLogger();
-   private final Minecraft minecraft;
-   private final AdvancementList advancements = new AdvancementList();
-   private final Map<Advancement, AdvancementProgress> progress = Maps.newHashMap();
+   private final Minecraft mc;
+   private final AdvancementList advancementList = new AdvancementList();
+   private final Map<Advancement, AdvancementProgress> advancementToProgress = Maps.newHashMap();
    @Nullable
    private ClientAdvancementManager.IListener listener;
    @Nullable
    private Advancement selectedTab;
 
    public ClientAdvancementManager(Minecraft p_i47380_1_) {
-      this.minecraft = p_i47380_1_;
+      this.mc = p_i47380_1_;
    }
 
-   public void update(SAdvancementInfoPacket p_192799_1_) {
-      if (p_192799_1_.shouldReset()) {
-         this.advancements.clear();
-         this.progress.clear();
+   public void read(SAdvancementInfoPacket packetIn) {
+      if (packetIn.isFirstSync()) {
+         this.advancementList.clear();
+         this.advancementToProgress.clear();
       }
 
-      this.advancements.remove(p_192799_1_.getRemoved());
-      this.advancements.add(p_192799_1_.getAdded());
+      this.advancementList.removeAll(packetIn.getAdvancementsToRemove());
+      this.advancementList.loadAdvancements(packetIn.getAdvancementsToAdd());
 
-      for(Entry<ResourceLocation, AdvancementProgress> entry : p_192799_1_.getProgress().entrySet()) {
-         Advancement advancement = this.advancements.get(entry.getKey());
+      for(Entry<ResourceLocation, AdvancementProgress> entry : packetIn.getProgressUpdates().entrySet()) {
+         Advancement advancement = this.advancementList.getAdvancement(entry.getKey());
          if (advancement != null) {
             AdvancementProgress advancementprogress = entry.getValue();
             advancementprogress.update(advancement.getCriteria(), advancement.getRequirements());
-            this.progress.put(advancement, advancementprogress);
+            this.advancementToProgress.put(advancement, advancementprogress);
             if (this.listener != null) {
                this.listener.onUpdateAdvancementProgress(advancement, advancementprogress);
             }
 
-            if (!p_192799_1_.shouldReset() && advancementprogress.isDone() && advancement.getDisplay() != null && advancement.getDisplay().shouldShowToast()) {
-               this.minecraft.getToasts().addToast(new AdvancementToast(advancement));
+            if (!packetIn.isFirstSync() && advancementprogress.isDone() && advancement.getDisplay() != null && advancement.getDisplay().shouldShowToast()) {
+               this.mc.getToastGui().add(new AdvancementToast(advancement));
             }
          } else {
             LOGGER.warn("Server informed client about progress for unknown advancement {}", entry.getKey());
@@ -62,42 +62,42 @@ public class ClientAdvancementManager {
 
    }
 
-   public AdvancementList getAdvancements() {
-      return this.advancements;
+   public AdvancementList getAdvancementList() {
+      return this.advancementList;
    }
 
-   public void setSelectedTab(@Nullable Advancement p_194230_1_, boolean p_194230_2_) {
-      ClientPlayNetHandler clientplaynethandler = this.minecraft.getConnection();
-      if (clientplaynethandler != null && p_194230_1_ != null && p_194230_2_) {
-         clientplaynethandler.send(CSeenAdvancementsPacket.openedTab(p_194230_1_));
+   public void setSelectedTab(@Nullable Advancement advancementIn, boolean tellServer) {
+      ClientPlayNetHandler clientplaynethandler = this.mc.getConnection();
+      if (clientplaynethandler != null && advancementIn != null && tellServer) {
+         clientplaynethandler.sendPacket(CSeenAdvancementsPacket.openedTab(advancementIn));
       }
 
-      if (this.selectedTab != p_194230_1_) {
-         this.selectedTab = p_194230_1_;
+      if (this.selectedTab != advancementIn) {
+         this.selectedTab = advancementIn;
          if (this.listener != null) {
-            this.listener.onSelectedTabChanged(p_194230_1_);
+            this.listener.setSelectedTab(advancementIn);
          }
       }
 
    }
 
-   public void setListener(@Nullable ClientAdvancementManager.IListener p_192798_1_) {
-      this.listener = p_192798_1_;
-      this.advancements.setListener(p_192798_1_);
-      if (p_192798_1_ != null) {
-         for(Entry<Advancement, AdvancementProgress> entry : this.progress.entrySet()) {
-            p_192798_1_.onUpdateAdvancementProgress(entry.getKey(), entry.getValue());
+   public void setListener(@Nullable ClientAdvancementManager.IListener listenerIn) {
+      this.listener = listenerIn;
+      this.advancementList.setListener(listenerIn);
+      if (listenerIn != null) {
+         for(Entry<Advancement, AdvancementProgress> entry : this.advancementToProgress.entrySet()) {
+            listenerIn.onUpdateAdvancementProgress(entry.getKey(), entry.getValue());
          }
 
-         p_192798_1_.onSelectedTabChanged(this.selectedTab);
+         listenerIn.setSelectedTab(this.selectedTab);
       }
 
    }
 
    @OnlyIn(Dist.CLIENT)
    public interface IListener extends AdvancementList.IListener {
-      void onUpdateAdvancementProgress(Advancement p_191933_1_, AdvancementProgress p_191933_2_);
+      void onUpdateAdvancementProgress(Advancement advancementIn, AdvancementProgress progress);
 
-      void onSelectedTabChanged(@Nullable Advancement p_193982_1_);
+      void setSelectedTab(@Nullable Advancement advancementIn);
    }
 }

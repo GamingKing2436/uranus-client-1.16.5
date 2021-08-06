@@ -14,16 +14,16 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BlockPartFace {
-   public final Direction cullForDirection;
+   public final Direction cullFace;
    public final int tintIndex;
    public final String texture;
-   public final BlockFaceUV uv;
+   public final BlockFaceUV blockFaceUV;
 
-   public BlockPartFace(@Nullable Direction p_i46230_1_, int p_i46230_2_, String p_i46230_3_, BlockFaceUV p_i46230_4_) {
-      this.cullForDirection = p_i46230_1_;
-      this.tintIndex = p_i46230_2_;
-      this.texture = p_i46230_3_;
-      this.uv = p_i46230_4_;
+   public BlockPartFace(@Nullable Direction cullFaceIn, int tintIndexIn, String textureIn, BlockFaceUV blockFaceUVIn) {
+      this.cullFace = cullFaceIn;
+      this.tintIndex = tintIndexIn;
+      this.texture = textureIn;
+      this.blockFaceUV = blockFaceUVIn;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -33,24 +33,24 @@ public class BlockPartFace {
 
       public BlockPartFace deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
          JsonObject jsonobject = p_deserialize_1_.getAsJsonObject();
-         Direction direction = this.getCullFacing(jsonobject);
-         int i = this.getTintIndex(jsonobject);
-         String s = this.getTexture(jsonobject);
+         Direction direction = this.parseCullFace(jsonobject);
+         int i = this.parseTintIndex(jsonobject);
+         String s = this.parseTexture(jsonobject);
          BlockFaceUV blockfaceuv = p_deserialize_3_.deserialize(jsonobject, BlockFaceUV.class);
          return new BlockPartFace(direction, i, s, blockfaceuv);
       }
 
-      protected int getTintIndex(JsonObject p_178337_1_) {
-         return JSONUtils.getAsInt(p_178337_1_, "tintindex", -1);
+      protected int parseTintIndex(JsonObject object) {
+         return JSONUtils.getInt(object, "tintindex", -1);
       }
 
-      private String getTexture(JsonObject p_178340_1_) {
-         return JSONUtils.getAsString(p_178340_1_, "texture");
+      private String parseTexture(JsonObject object) {
+         return JSONUtils.getString(object, "texture");
       }
 
       @Nullable
-      private Direction getCullFacing(JsonObject p_178339_1_) {
-         String s = JSONUtils.getAsString(p_178339_1_, "cullface", "");
+      private Direction parseCullFace(JsonObject object) {
+         String s = JSONUtils.getString(object, "cullface", "");
          return Direction.byName(s);
       }
    }

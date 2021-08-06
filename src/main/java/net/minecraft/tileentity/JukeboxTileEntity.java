@@ -12,21 +12,21 @@ public class JukeboxTileEntity extends TileEntity implements IClearable {
       super(TileEntityType.JUKEBOX);
    }
 
-   public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
-      super.load(p_230337_1_, p_230337_2_);
-      if (p_230337_2_.contains("RecordItem", 10)) {
-         this.setRecord(ItemStack.of(p_230337_2_.getCompound("RecordItem")));
+   public void read(BlockState state, CompoundNBT nbt) {
+      super.read(state, nbt);
+      if (nbt.contains("RecordItem", 10)) {
+         this.setRecord(ItemStack.read(nbt.getCompound("RecordItem")));
       }
 
    }
 
-   public CompoundNBT save(CompoundNBT p_189515_1_) {
-      super.save(p_189515_1_);
+   public CompoundNBT write(CompoundNBT compound) {
+      super.write(compound);
       if (!this.getRecord().isEmpty()) {
-         p_189515_1_.put("RecordItem", this.getRecord().save(new CompoundNBT()));
+         compound.put("RecordItem", this.getRecord().write(new CompoundNBT()));
       }
 
-      return p_189515_1_;
+      return compound;
    }
 
    public ItemStack getRecord() {
@@ -35,10 +35,10 @@ public class JukeboxTileEntity extends TileEntity implements IClearable {
 
    public void setRecord(ItemStack p_195535_1_) {
       this.record = p_195535_1_;
-      this.setChanged();
+      this.markDirty();
    }
 
-   public void clearContent() {
+   public void clear() {
       this.setRecord(ItemStack.EMPTY);
    }
 }

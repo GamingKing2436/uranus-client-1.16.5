@@ -12,12 +12,12 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class HorseSaddle extends NamedEntityFix {
-   public HorseSaddle(Schema p_i49665_1_, boolean p_i49665_2_) {
-      super(p_i49665_1_, p_i49665_2_, "EntityHorseSaddleFix", TypeReferences.ENTITY, "EntityHorse");
+   public HorseSaddle(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "EntityHorseSaddleFix", TypeReferences.ENTITY, "EntityHorse");
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
       Type<?> type = this.getInputSchema().getTypeRaw(TypeReferences.ITEM_STACK);
       OpticFinder<?> opticfinder1 = DSL.fieldFinder("SaddleItem", type);
       Optional<? extends Typed<?>> optional = p_207419_1_.getOptionalTyped(opticfinder1);

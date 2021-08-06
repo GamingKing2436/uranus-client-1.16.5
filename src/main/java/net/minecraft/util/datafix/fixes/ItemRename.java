@@ -14,13 +14,13 @@ import net.minecraft.util.datafix.TypeReferences;
 public abstract class ItemRename extends DataFix {
    private final String name;
 
-   public ItemRename(Schema p_i49641_1_, String p_i49641_2_) {
-      super(p_i49641_1_, false);
-      this.name = p_i49641_2_;
+   public ItemRename(Schema outputSchema, String name) {
+      super(outputSchema, false);
+      this.name = name;
    }
 
    public TypeRewriteRule makeRule() {
-      Type<Pair<String, String>> type = DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString());
+      Type<Pair<String, String>> type = DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_());
       if (!Objects.equals(this.getInputSchema().getType(TypeReferences.ITEM_NAME), type)) {
          throw new IllegalStateException("item name type is not what was expected.");
       } else {

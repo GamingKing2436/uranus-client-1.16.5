@@ -9,7 +9,7 @@ public class UpdateActivityTask extends Task<LivingEntity> {
       super(ImmutableMap.of());
    }
 
-   protected void start(ServerWorld p_212831_1_, LivingEntity p_212831_2_, long p_212831_3_) {
-      p_212831_2_.getBrain().updateActivityFromSchedule(p_212831_1_.getDayTime(), p_212831_1_.getGameTime());
+   protected void startExecuting(ServerWorld worldIn, LivingEntity entityIn, long gameTimeIn) {
+      entityIn.getBrain().updateActivity(worldIn.getDayTime(), worldIn.getGameTime());
    }
 }

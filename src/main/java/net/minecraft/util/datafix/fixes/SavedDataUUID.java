@@ -11,14 +11,14 @@ public class SavedDataUUID extends AbstractUUIDFix {
    }
 
    protected TypeRewriteRule makeRule() {
-      return this.fixTypeEverywhereTyped("SavedDataUUIDFix", this.getInputSchema().getType(this.typeReference), (p_233386_0_) -> {
+      return this.fixTypeEverywhereTyped("SavedDataUUIDFix", this.getInputSchema().getType(this.reference), (p_233386_0_) -> {
          return p_233386_0_.updateTyped(p_233386_0_.getType().findField("data"), (p_233387_0_) -> {
             return p_233387_0_.update(DSL.remainderFinder(), (p_233388_0_) -> {
                return p_233388_0_.update("Raids", (p_233389_0_) -> {
                   return p_233389_0_.createList(p_233389_0_.asStream().map((p_233390_0_) -> {
                      return p_233390_0_.update("HeroesOfTheVillage", (p_233391_0_) -> {
                         return p_233391_0_.createList(p_233391_0_.asStream().map((p_233392_0_) -> {
-                           return createUUIDFromLongs(p_233392_0_, "UUIDMost", "UUIDLeast").orElseGet(() -> {
+                           return func_233065_d_(p_233392_0_, "UUIDMost", "UUIDLeast").orElseGet(() -> {
                               LOGGER.warn("HeroesOfTheVillage contained invalid UUIDs.");
                               return p_233392_0_;
                            });

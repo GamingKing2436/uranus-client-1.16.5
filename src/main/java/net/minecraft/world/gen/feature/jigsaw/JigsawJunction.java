@@ -12,12 +12,12 @@ public class JigsawJunction {
    private final int deltaY;
    private final JigsawPattern.PlacementBehaviour destProjection;
 
-   public JigsawJunction(int p_i51408_1_, int p_i51408_2_, int p_i51408_3_, int p_i51408_4_, JigsawPattern.PlacementBehaviour p_i51408_5_) {
-      this.sourceX = p_i51408_1_;
-      this.sourceGroundY = p_i51408_2_;
-      this.sourceZ = p_i51408_3_;
-      this.deltaY = p_i51408_4_;
-      this.destProjection = p_i51408_5_;
+   public JigsawJunction(int sourceX, int sourceGroundY, int sourceZ, int deltaY, JigsawPattern.PlacementBehaviour destProjection) {
+      this.sourceX = sourceX;
+      this.sourceGroundY = sourceGroundY;
+      this.sourceZ = sourceZ;
+      this.deltaY = deltaY;
+      this.destProjection = destProjection;
    }
 
    public int getSourceX() {
@@ -32,14 +32,14 @@ public class JigsawJunction {
       return this.sourceZ;
    }
 
-   public <T> Dynamic<T> serialize(DynamicOps<T> p_236820_1_) {
+   public <T> Dynamic<T> func_236820_a_(DynamicOps<T> p_236820_1_) {
       Builder<T, T> builder = ImmutableMap.builder();
       builder.put(p_236820_1_.createString("source_x"), p_236820_1_.createInt(this.sourceX)).put(p_236820_1_.createString("source_ground_y"), p_236820_1_.createInt(this.sourceGroundY)).put(p_236820_1_.createString("source_z"), p_236820_1_.createInt(this.sourceZ)).put(p_236820_1_.createString("delta_y"), p_236820_1_.createInt(this.deltaY)).put(p_236820_1_.createString("dest_proj"), p_236820_1_.createString(this.destProjection.getName()));
       return new Dynamic<>(p_236820_1_, p_236820_1_.createMap(builder.build()));
    }
 
-   public static <T> JigsawJunction deserialize(Dynamic<T> p_236819_0_) {
-      return new JigsawJunction(p_236819_0_.get("source_x").asInt(0), p_236819_0_.get("source_ground_y").asInt(0), p_236819_0_.get("source_z").asInt(0), p_236819_0_.get("delta_y").asInt(0), JigsawPattern.PlacementBehaviour.byName(p_236819_0_.get("dest_proj").asString("")));
+   public static <T> JigsawJunction func_236819_a_(Dynamic<T> p_236819_0_) {
+      return new JigsawJunction(p_236819_0_.get("source_x").asInt(0), p_236819_0_.get("source_ground_y").asInt(0), p_236819_0_.get("source_z").asInt(0), p_236819_0_.get("delta_y").asInt(0), JigsawPattern.PlacementBehaviour.getBehaviour(p_236819_0_.get("dest_proj").asString("")));
    }
 
    public boolean equals(Object p_equals_1_) {

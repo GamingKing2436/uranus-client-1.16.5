@@ -25,112 +25,112 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SignTileEntity extends TileEntity {
-   private final ITextComponent[] messages = new ITextComponent[]{StringTextComponent.EMPTY, StringTextComponent.EMPTY, StringTextComponent.EMPTY, StringTextComponent.EMPTY};
+   private final ITextComponent[] signText = new ITextComponent[]{StringTextComponent.EMPTY, StringTextComponent.EMPTY, StringTextComponent.EMPTY, StringTextComponent.EMPTY};
    private boolean isEditable = true;
-   private PlayerEntity playerWhoMayEdit;
-   private final IReorderingProcessor[] renderMessages = new IReorderingProcessor[4];
-   private DyeColor color = DyeColor.BLACK;
+   private PlayerEntity player;
+   private final IReorderingProcessor[] renderText = new IReorderingProcessor[4];
+   private DyeColor textColor = DyeColor.BLACK;
 
    public SignTileEntity() {
       super(TileEntityType.SIGN);
    }
 
-   public CompoundNBT save(CompoundNBT p_189515_1_) {
-      super.save(p_189515_1_);
+   public CompoundNBT write(CompoundNBT compound) {
+      super.write(compound);
 
       for(int i = 0; i < 4; ++i) {
-         String s = ITextComponent.Serializer.toJson(this.messages[i]);
-         p_189515_1_.putString("Text" + (i + 1), s);
+         String s = ITextComponent.Serializer.toJson(this.signText[i]);
+         compound.putString("Text" + (i + 1), s);
       }
 
-      p_189515_1_.putString("Color", this.color.getName());
-      return p_189515_1_;
+      compound.putString("Color", this.textColor.getTranslationKey());
+      return compound;
    }
 
-   public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
+   public void read(BlockState state, CompoundNBT nbt) {
       this.isEditable = false;
-      super.load(p_230337_1_, p_230337_2_);
-      this.color = DyeColor.byName(p_230337_2_.getString("Color"), DyeColor.BLACK);
+      super.read(state, nbt);
+      this.textColor = DyeColor.byTranslationKey(nbt.getString("Color"), DyeColor.BLACK);
 
       for(int i = 0; i < 4; ++i) {
-         String s = p_230337_2_.getString("Text" + (i + 1));
-         ITextComponent itextcomponent = ITextComponent.Serializer.fromJson(s.isEmpty() ? "\"\"" : s);
-         if (this.level instanceof ServerWorld) {
+         String s = nbt.getString("Text" + (i + 1));
+         ITextComponent itextcomponent = ITextComponent.Serializer.getComponentFromJson(s.isEmpty() ? "\"\"" : s);
+         if (this.world instanceof ServerWorld) {
             try {
-               this.messages[i] = TextComponentUtils.updateForEntity(this.createCommandSourceStack((ServerPlayerEntity)null), itextcomponent, (Entity)null, 0);
+               this.signText[i] = TextComponentUtils.func_240645_a_(this.getCommandSource((ServerPlayerEntity)null), itextcomponent, (Entity)null, 0);
             } catch (CommandSyntaxException commandsyntaxexception) {
-               this.messages[i] = itextcomponent;
+               this.signText[i] = itextcomponent;
             }
          } else {
-            this.messages[i] = itextcomponent;
+            this.signText[i] = itextcomponent;
          }
 
-         this.renderMessages[i] = null;
+         this.renderText[i] = null;
       }
 
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ITextComponent getMessage(int p_212366_1_) {
-      return this.messages[p_212366_1_];
+   public ITextComponent getText(int line) {
+      return this.signText[line];
    }
 
-   public void setMessage(int p_212365_1_, ITextComponent p_212365_2_) {
-      this.messages[p_212365_1_] = p_212365_2_;
-      this.renderMessages[p_212365_1_] = null;
+   public void setText(int line, ITextComponent signText) {
+      this.signText[line] = signText;
+      this.renderText[line] = null;
    }
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public IReorderingProcessor getRenderMessage(int p_242686_1_, Function<ITextComponent, IReorderingProcessor> p_242686_2_) {
-      if (this.renderMessages[p_242686_1_] == null && this.messages[p_242686_1_] != null) {
-         this.renderMessages[p_242686_1_] = p_242686_2_.apply(this.messages[p_242686_1_]);
+   public IReorderingProcessor func_242686_a(int p_242686_1_, Function<ITextComponent, IReorderingProcessor> p_242686_2_) {
+      if (this.renderText[p_242686_1_] == null && this.signText[p_242686_1_] != null) {
+         this.renderText[p_242686_1_] = p_242686_2_.apply(this.signText[p_242686_1_]);
       }
 
-      return this.renderMessages[p_242686_1_];
+      return this.renderText[p_242686_1_];
    }
 
    @Nullable
    public SUpdateTileEntityPacket getUpdatePacket() {
-      return new SUpdateTileEntityPacket(this.worldPosition, 9, this.getUpdateTag());
+      return new SUpdateTileEntityPacket(this.pos, 9, this.getUpdateTag());
    }
 
    public CompoundNBT getUpdateTag() {
-      return this.save(new CompoundNBT());
+      return this.write(new CompoundNBT());
    }
 
-   public boolean onlyOpCanSetNbt() {
+   public boolean onlyOpsCanSetNbt() {
       return true;
    }
 
-   public boolean isEditable() {
+   public boolean getIsEditable() {
       return this.isEditable;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void setEditable(boolean p_145913_1_) {
-      this.isEditable = p_145913_1_;
-      if (!p_145913_1_) {
-         this.playerWhoMayEdit = null;
+   public void setEditable(boolean isEditableIn) {
+      this.isEditable = isEditableIn;
+      if (!isEditableIn) {
+         this.player = null;
       }
 
    }
 
-   public void setAllowedPlayerEditor(PlayerEntity p_145912_1_) {
-      this.playerWhoMayEdit = p_145912_1_;
+   public void setPlayer(PlayerEntity playerIn) {
+      this.player = playerIn;
    }
 
-   public PlayerEntity getPlayerWhoMayEdit() {
-      return this.playerWhoMayEdit;
+   public PlayerEntity getPlayer() {
+      return this.player;
    }
 
-   public boolean executeClickCommands(PlayerEntity p_174882_1_) {
-      for(ITextComponent itextcomponent : this.messages) {
+   public boolean executeCommand(PlayerEntity playerIn) {
+      for(ITextComponent itextcomponent : this.signText) {
          Style style = itextcomponent == null ? null : itextcomponent.getStyle();
          if (style != null && style.getClickEvent() != null) {
             ClickEvent clickevent = style.getClickEvent();
             if (clickevent.getAction() == ClickEvent.Action.RUN_COMMAND) {
-               p_174882_1_.getServer().getCommands().performCommand(this.createCommandSourceStack((ServerPlayerEntity)p_174882_1_), clickevent.getValue());
+               playerIn.getServer().getCommandManager().handleCommand(this.getCommandSource((ServerPlayerEntity)playerIn), clickevent.getValue());
             }
          }
       }
@@ -138,21 +138,21 @@ public class SignTileEntity extends TileEntity {
       return true;
    }
 
-   public CommandSource createCommandSourceStack(@Nullable ServerPlayerEntity p_195539_1_) {
-      String s = p_195539_1_ == null ? "Sign" : p_195539_1_.getName().getString();
-      ITextComponent itextcomponent = (ITextComponent)(p_195539_1_ == null ? new StringTextComponent("Sign") : p_195539_1_.getDisplayName());
-      return new CommandSource(ICommandSource.NULL, Vector3d.atCenterOf(this.worldPosition), Vector2f.ZERO, (ServerWorld)this.level, 2, s, itextcomponent, this.level.getServer(), p_195539_1_);
+   public CommandSource getCommandSource(@Nullable ServerPlayerEntity playerIn) {
+      String s = playerIn == null ? "Sign" : playerIn.getName().getString();
+      ITextComponent itextcomponent = (ITextComponent)(playerIn == null ? new StringTextComponent("Sign") : playerIn.getDisplayName());
+      return new CommandSource(ICommandSource.DUMMY, Vector3d.copyCentered(this.pos), Vector2f.ZERO, (ServerWorld)this.world, 2, s, itextcomponent, this.world.getServer(), playerIn);
    }
 
-   public DyeColor getColor() {
-      return this.color;
+   public DyeColor getTextColor() {
+      return this.textColor;
    }
 
-   public boolean setColor(DyeColor p_214068_1_) {
-      if (p_214068_1_ != this.getColor()) {
-         this.color = p_214068_1_;
-         this.setChanged();
-         this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
+   public boolean setTextColor(DyeColor newColor) {
+      if (newColor != this.getTextColor()) {
+         this.textColor = newColor;
+         this.markDirty();
+         this.world.notifyBlockUpdate(this.getPos(), this.getBlockState(), this.getBlockState(), 3);
          return true;
       } else {
          return false;

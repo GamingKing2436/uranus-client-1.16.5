@@ -9,10 +9,10 @@ import net.minecraft.util.text.StringTextComponent;
 
 public class StringNBT implements INBT {
    public static final INBTType<StringNBT> TYPE = new INBTType<StringNBT>() {
-      public StringNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(288L);
-         String s = p_225649_1_.readUTF();
-         p_225649_3_.accountBits((long)(16 * s.length()));
+      public StringNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(288L);
+         String s = input.readUTF();
+         accounter.read((long)(16 * s.length()));
          return StringNBT.valueOf(s);
       }
 
@@ -20,28 +20,28 @@ public class StringNBT implements INBT {
          return "STRING";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_String";
       }
 
-      public boolean isValue() {
+      public boolean isPrimitive() {
          return true;
       }
    };
-   private static final StringNBT EMPTY = new StringNBT("");
+   private static final StringNBT EMPTY_STRING = new StringNBT("");
    private final String data;
 
-   private StringNBT(String p_i1389_1_) {
-      Objects.requireNonNull(p_i1389_1_, "Null string not allowed");
-      this.data = p_i1389_1_;
+   private StringNBT(String data) {
+      Objects.requireNonNull(data, "Null string not allowed");
+      this.data = data;
    }
 
-   public static StringNBT valueOf(String p_229705_0_) {
-      return p_229705_0_.isEmpty() ? EMPTY : new StringNBT(p_229705_0_);
+   public static StringNBT valueOf(String value) {
+      return value.isEmpty() ? EMPTY_STRING : new StringNBT(value);
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      p_74734_1_.writeUTF(this.data);
+   public void write(DataOutput output) throws IOException {
+      output.writeUTF(this.data);
    }
 
    public byte getId() {
@@ -72,23 +72,23 @@ public class StringNBT implements INBT {
       return this.data.hashCode();
    }
 
-   public String getAsString() {
+   public String getString() {
       return this.data;
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
       String s = quoteAndEscape(this.data);
       String s1 = s.substring(0, 1);
-      ITextComponent itextcomponent = (new StringTextComponent(s.substring(1, s.length() - 1))).withStyle(SYNTAX_HIGHLIGHTING_STRING);
-      return (new StringTextComponent(s1)).append(itextcomponent).append(s1);
+      ITextComponent itextcomponent = (new StringTextComponent(s.substring(1, s.length() - 1))).mergeStyle(SYNTAX_HIGHLIGHTING_STRING);
+      return (new StringTextComponent(s1)).append(itextcomponent).appendString(s1);
    }
 
-   public static String quoteAndEscape(String p_197654_0_) {
+   public static String quoteAndEscape(String name) {
       StringBuilder stringbuilder = new StringBuilder(" ");
       char c0 = 0;
 
-      for(int i = 0; i < p_197654_0_.length(); ++i) {
-         char c1 = p_197654_0_.charAt(i);
+      for(int i = 0; i < name.length(); ++i) {
+         char c1 = name.charAt(i);
          if (c1 == '\\') {
             stringbuilder.append('\\');
          } else if (c1 == '"' || c1 == '\'') {

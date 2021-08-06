@@ -8,11 +8,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class AreaEffectCloudRenderer extends EntityRenderer<AreaEffectCloudEntity> {
-   public AreaEffectCloudRenderer(EntityRendererManager p_i46554_1_) {
-      super(p_i46554_1_);
+   public AreaEffectCloudRenderer(EntityRendererManager manager) {
+      super(manager);
    }
 
-   public ResourceLocation getTextureLocation(AreaEffectCloudEntity p_110775_1_) {
-      return AtlasTexture.LOCATION_BLOCKS;
+   public ResourceLocation getEntityTexture(AreaEffectCloudEntity entity) {
+      return AtlasTexture.LOCATION_BLOCKS_TEXTURE;
    }
 }

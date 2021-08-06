@@ -38,20 +38,20 @@ public class CompoundNBT implements INBT {
    private static final Logger LOGGER = LogManager.getLogger();
    private static final Pattern SIMPLE_VALUE = Pattern.compile("[A-Za-z0-9._+-]+");
    public static final INBTType<CompoundNBT> TYPE = new INBTType<CompoundNBT>() {
-      public CompoundNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(384L);
-         if (p_225649_2_ > 512) {
+      public CompoundNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(384L);
+         if (depth > 512) {
             throw new RuntimeException("Tried to read NBT tag with too high complexity, depth > 512");
          } else {
             Map<String, INBT> map = Maps.newHashMap();
 
             byte b0;
-            while((b0 = CompoundNBT.readNamedTagType(p_225649_1_, p_225649_3_)) != 0) {
-               String s = CompoundNBT.readNamedTagName(p_225649_1_, p_225649_3_);
-               p_225649_3_.accountBits((long)(224 + 16 * s.length()));
-               INBT inbt = CompoundNBT.readNamedTagData(NBTTypes.getType(b0), s, p_225649_1_, p_225649_2_ + 1, p_225649_3_);
+            while((b0 = CompoundNBT.readType(input, accounter)) != 0) {
+               String s = CompoundNBT.readKey(input, accounter);
+               accounter.read((long)(224 + 16 * s.length()));
+               INBT inbt = CompoundNBT.loadNBT(NBTTypes.getGetTypeByID(b0), s, input, depth + 1, accounter);
                if (map.put(s, inbt) != null) {
-                  p_225649_3_.accountBits(288L);
+                  accounter.read(288L);
                }
             }
 
@@ -63,31 +63,31 @@ public class CompoundNBT implements INBT {
          return "COMPOUND";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_Compound";
       }
    };
-   private final Map<String, INBT> tags;
+   private final Map<String, INBT> tagMap;
 
-   protected CompoundNBT(Map<String, INBT> p_i226075_1_) {
-      this.tags = p_i226075_1_;
+   protected CompoundNBT(Map<String, INBT> tagMap) {
+      this.tagMap = tagMap;
    }
 
    public CompoundNBT() {
       this(Maps.newHashMap());
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      for(String s : this.tags.keySet()) {
-         INBT inbt = this.tags.get(s);
-         writeNamedTag(s, inbt, p_74734_1_);
+   public void write(DataOutput output) throws IOException {
+      for(String s : this.tagMap.keySet()) {
+         INBT inbt = this.tagMap.get(s);
+         writeEntry(s, inbt, output);
       }
 
-      p_74734_1_.writeByte(0);
+      output.writeByte(0);
    }
 
-   public Set<String> getAllKeys() {
-      return this.tags.keySet();
+   public Set<String> keySet() {
+      return this.tagMap.keySet();
    }
 
    public byte getId() {
@@ -99,108 +99,108 @@ public class CompoundNBT implements INBT {
    }
 
    public int size() {
-      return this.tags.size();
+      return this.tagMap.size();
    }
 
    @Nullable
-   public INBT put(String p_218657_1_, INBT p_218657_2_) {
-      return this.tags.put(p_218657_1_, p_218657_2_);
+   public INBT put(String key, INBT value) {
+      return this.tagMap.put(key, value);
    }
 
-   public void putByte(String p_74774_1_, byte p_74774_2_) {
-      this.tags.put(p_74774_1_, ByteNBT.valueOf(p_74774_2_));
+   public void putByte(String key, byte value) {
+      this.tagMap.put(key, ByteNBT.valueOf(value));
    }
 
-   public void putShort(String p_74777_1_, short p_74777_2_) {
-      this.tags.put(p_74777_1_, ShortNBT.valueOf(p_74777_2_));
+   public void putShort(String key, short value) {
+      this.tagMap.put(key, ShortNBT.valueOf(value));
    }
 
-   public void putInt(String p_74768_1_, int p_74768_2_) {
-      this.tags.put(p_74768_1_, IntNBT.valueOf(p_74768_2_));
+   public void putInt(String key, int value) {
+      this.tagMap.put(key, IntNBT.valueOf(value));
    }
 
-   public void putLong(String p_74772_1_, long p_74772_2_) {
-      this.tags.put(p_74772_1_, LongNBT.valueOf(p_74772_2_));
+   public void putLong(String key, long value) {
+      this.tagMap.put(key, LongNBT.valueOf(value));
    }
 
-   public void putUUID(String p_186854_1_, UUID p_186854_2_) {
-      this.tags.put(p_186854_1_, NBTUtil.createUUID(p_186854_2_));
+   public void putUniqueId(String key, UUID value) {
+      this.tagMap.put(key, NBTUtil.func_240626_a_(value));
    }
 
-   public UUID getUUID(String p_186857_1_) {
-      return NBTUtil.loadUUID(this.get(p_186857_1_));
+   public UUID getUniqueId(String key) {
+      return NBTUtil.readUniqueId(this.get(key));
    }
 
-   public boolean hasUUID(String p_186855_1_) {
-      INBT inbt = this.get(p_186855_1_);
-      return inbt != null && inbt.getType() == IntArrayNBT.TYPE && ((IntArrayNBT)inbt).getAsIntArray().length == 4;
+   public boolean hasUniqueId(String key) {
+      INBT inbt = this.get(key);
+      return inbt != null && inbt.getType() == IntArrayNBT.TYPE && ((IntArrayNBT)inbt).getIntArray().length == 4;
    }
 
-   public void putFloat(String p_74776_1_, float p_74776_2_) {
-      this.tags.put(p_74776_1_, FloatNBT.valueOf(p_74776_2_));
+   public void putFloat(String key, float value) {
+      this.tagMap.put(key, FloatNBT.valueOf(value));
    }
 
-   public void putDouble(String p_74780_1_, double p_74780_2_) {
-      this.tags.put(p_74780_1_, DoubleNBT.valueOf(p_74780_2_));
+   public void putDouble(String key, double value) {
+      this.tagMap.put(key, DoubleNBT.valueOf(value));
    }
 
-   public void putString(String p_74778_1_, String p_74778_2_) {
-      this.tags.put(p_74778_1_, StringNBT.valueOf(p_74778_2_));
+   public void putString(String key, String value) {
+      this.tagMap.put(key, StringNBT.valueOf(value));
    }
 
-   public void putByteArray(String p_74773_1_, byte[] p_74773_2_) {
-      this.tags.put(p_74773_1_, new ByteArrayNBT(p_74773_2_));
+   public void putByteArray(String key, byte[] value) {
+      this.tagMap.put(key, new ByteArrayNBT(value));
    }
 
-   public void putIntArray(String p_74783_1_, int[] p_74783_2_) {
-      this.tags.put(p_74783_1_, new IntArrayNBT(p_74783_2_));
+   public void putIntArray(String key, int[] value) {
+      this.tagMap.put(key, new IntArrayNBT(value));
    }
 
-   public void putIntArray(String p_197646_1_, List<Integer> p_197646_2_) {
-      this.tags.put(p_197646_1_, new IntArrayNBT(p_197646_2_));
+   public void putIntArray(String key, List<Integer> value) {
+      this.tagMap.put(key, new IntArrayNBT(value));
    }
 
-   public void putLongArray(String p_197644_1_, long[] p_197644_2_) {
-      this.tags.put(p_197644_1_, new LongArrayNBT(p_197644_2_));
+   public void putLongArray(String key, long[] value) {
+      this.tagMap.put(key, new LongArrayNBT(value));
    }
 
-   public void putLongArray(String p_202168_1_, List<Long> p_202168_2_) {
-      this.tags.put(p_202168_1_, new LongArrayNBT(p_202168_2_));
+   public void putLongArray(String key, List<Long> value) {
+      this.tagMap.put(key, new LongArrayNBT(value));
    }
 
-   public void putBoolean(String p_74757_1_, boolean p_74757_2_) {
-      this.tags.put(p_74757_1_, ByteNBT.valueOf(p_74757_2_));
+   public void putBoolean(String key, boolean value) {
+      this.tagMap.put(key, ByteNBT.valueOf(value));
    }
 
    @Nullable
-   public INBT get(String p_74781_1_) {
-      return this.tags.get(p_74781_1_);
+   public INBT get(String key) {
+      return this.tagMap.get(key);
    }
 
-   public byte getTagType(String p_150299_1_) {
-      INBT inbt = this.tags.get(p_150299_1_);
+   public byte getTagId(String key) {
+      INBT inbt = this.tagMap.get(key);
       return inbt == null ? 0 : inbt.getId();
    }
 
-   public boolean contains(String p_74764_1_) {
-      return this.tags.containsKey(p_74764_1_);
+   public boolean contains(String key) {
+      return this.tagMap.containsKey(key);
    }
 
-   public boolean contains(String p_150297_1_, int p_150297_2_) {
-      int i = this.getTagType(p_150297_1_);
-      if (i == p_150297_2_) {
+   public boolean contains(String key, int type) {
+      int i = this.getTagId(key);
+      if (i == type) {
          return true;
-      } else if (p_150297_2_ != 99) {
+      } else if (type != 99) {
          return false;
       } else {
          return i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6;
       }
    }
 
-   public byte getByte(String p_74771_1_) {
+   public byte getByte(String key) {
       try {
-         if (this.contains(p_74771_1_, 99)) {
-            return ((NumberNBT)this.tags.get(p_74771_1_)).getAsByte();
+         if (this.contains(key, 99)) {
+            return ((NumberNBT)this.tagMap.get(key)).getByte();
          }
       } catch (ClassCastException classcastexception) {
       }
@@ -208,10 +208,10 @@ public class CompoundNBT implements INBT {
       return 0;
    }
 
-   public short getShort(String p_74765_1_) {
+   public short getShort(String key) {
       try {
-         if (this.contains(p_74765_1_, 99)) {
-            return ((NumberNBT)this.tags.get(p_74765_1_)).getAsShort();
+         if (this.contains(key, 99)) {
+            return ((NumberNBT)this.tagMap.get(key)).getShort();
          }
       } catch (ClassCastException classcastexception) {
       }
@@ -219,10 +219,10 @@ public class CompoundNBT implements INBT {
       return 0;
    }
 
-   public int getInt(String p_74762_1_) {
+   public int getInt(String key) {
       try {
-         if (this.contains(p_74762_1_, 99)) {
-            return ((NumberNBT)this.tags.get(p_74762_1_)).getAsInt();
+         if (this.contains(key, 99)) {
+            return ((NumberNBT)this.tagMap.get(key)).getInt();
          }
       } catch (ClassCastException classcastexception) {
       }
@@ -230,10 +230,10 @@ public class CompoundNBT implements INBT {
       return 0;
    }
 
-   public long getLong(String p_74763_1_) {
+   public long getLong(String key) {
       try {
-         if (this.contains(p_74763_1_, 99)) {
-            return ((NumberNBT)this.tags.get(p_74763_1_)).getAsLong();
+         if (this.contains(key, 99)) {
+            return ((NumberNBT)this.tagMap.get(key)).getLong();
          }
       } catch (ClassCastException classcastexception) {
       }
@@ -241,10 +241,10 @@ public class CompoundNBT implements INBT {
       return 0L;
    }
 
-   public float getFloat(String p_74760_1_) {
+   public float getFloat(String key) {
       try {
-         if (this.contains(p_74760_1_, 99)) {
-            return ((NumberNBT)this.tags.get(p_74760_1_)).getAsFloat();
+         if (this.contains(key, 99)) {
+            return ((NumberNBT)this.tagMap.get(key)).getFloat();
          }
       } catch (ClassCastException classcastexception) {
       }
@@ -252,10 +252,10 @@ public class CompoundNBT implements INBT {
       return 0.0F;
    }
 
-   public double getDouble(String p_74769_1_) {
+   public double getDouble(String key) {
       try {
-         if (this.contains(p_74769_1_, 99)) {
-            return ((NumberNBT)this.tags.get(p_74769_1_)).getAsDouble();
+         if (this.contains(key, 99)) {
+            return ((NumberNBT)this.tagMap.get(key)).getDouble();
          }
       } catch (ClassCastException classcastexception) {
       }
@@ -263,10 +263,10 @@ public class CompoundNBT implements INBT {
       return 0.0D;
    }
 
-   public String getString(String p_74779_1_) {
+   public String getString(String key) {
       try {
-         if (this.contains(p_74779_1_, 8)) {
-            return this.tags.get(p_74779_1_).getAsString();
+         if (this.contains(key, 8)) {
+            return this.tagMap.get(key).getString();
          }
       } catch (ClassCastException classcastexception) {
       }
@@ -274,84 +274,84 @@ public class CompoundNBT implements INBT {
       return "";
    }
 
-   public byte[] getByteArray(String p_74770_1_) {
+   public byte[] getByteArray(String key) {
       try {
-         if (this.contains(p_74770_1_, 7)) {
-            return ((ByteArrayNBT)this.tags.get(p_74770_1_)).getAsByteArray();
+         if (this.contains(key, 7)) {
+            return ((ByteArrayNBT)this.tagMap.get(key)).getByteArray();
          }
       } catch (ClassCastException classcastexception) {
-         throw new ReportedException(this.createReport(p_74770_1_, ByteArrayNBT.TYPE, classcastexception));
+         throw new ReportedException(this.generateCrashReport(key, ByteArrayNBT.TYPE, classcastexception));
       }
 
       return new byte[0];
    }
 
-   public int[] getIntArray(String p_74759_1_) {
+   public int[] getIntArray(String key) {
       try {
-         if (this.contains(p_74759_1_, 11)) {
-            return ((IntArrayNBT)this.tags.get(p_74759_1_)).getAsIntArray();
+         if (this.contains(key, 11)) {
+            return ((IntArrayNBT)this.tagMap.get(key)).getIntArray();
          }
       } catch (ClassCastException classcastexception) {
-         throw new ReportedException(this.createReport(p_74759_1_, IntArrayNBT.TYPE, classcastexception));
+         throw new ReportedException(this.generateCrashReport(key, IntArrayNBT.TYPE, classcastexception));
       }
 
       return new int[0];
    }
 
-   public long[] getLongArray(String p_197645_1_) {
+   public long[] getLongArray(String key) {
       try {
-         if (this.contains(p_197645_1_, 12)) {
-            return ((LongArrayNBT)this.tags.get(p_197645_1_)).getAsLongArray();
+         if (this.contains(key, 12)) {
+            return ((LongArrayNBT)this.tagMap.get(key)).getAsLongArray();
          }
       } catch (ClassCastException classcastexception) {
-         throw new ReportedException(this.createReport(p_197645_1_, LongArrayNBT.TYPE, classcastexception));
+         throw new ReportedException(this.generateCrashReport(key, LongArrayNBT.TYPE, classcastexception));
       }
 
       return new long[0];
    }
 
-   public CompoundNBT getCompound(String p_74775_1_) {
+   public CompoundNBT getCompound(String key) {
       try {
-         if (this.contains(p_74775_1_, 10)) {
-            return (CompoundNBT)this.tags.get(p_74775_1_);
+         if (this.contains(key, 10)) {
+            return (CompoundNBT)this.tagMap.get(key);
          }
       } catch (ClassCastException classcastexception) {
-         throw new ReportedException(this.createReport(p_74775_1_, TYPE, classcastexception));
+         throw new ReportedException(this.generateCrashReport(key, TYPE, classcastexception));
       }
 
       return new CompoundNBT();
    }
 
-   public ListNBT getList(String p_150295_1_, int p_150295_2_) {
+   public ListNBT getList(String key, int type) {
       try {
-         if (this.getTagType(p_150295_1_) == 9) {
-            ListNBT listnbt = (ListNBT)this.tags.get(p_150295_1_);
-            if (!listnbt.isEmpty() && listnbt.getElementType() != p_150295_2_) {
+         if (this.getTagId(key) == 9) {
+            ListNBT listnbt = (ListNBT)this.tagMap.get(key);
+            if (!listnbt.isEmpty() && listnbt.getTagType() != type) {
                return new ListNBT();
             }
 
             return listnbt;
          }
       } catch (ClassCastException classcastexception) {
-         throw new ReportedException(this.createReport(p_150295_1_, ListNBT.TYPE, classcastexception));
+         throw new ReportedException(this.generateCrashReport(key, ListNBT.TYPE, classcastexception));
       }
 
       return new ListNBT();
    }
 
-   public boolean getBoolean(String p_74767_1_) {
-      return this.getByte(p_74767_1_) != 0;
+   public boolean getBoolean(String key) {
+      return this.getByte(key) != 0;
    }
 
-   public void remove(String p_82580_1_) {
-      this.tags.remove(p_82580_1_);
+   public void remove(String key) {
+      this.tagMap.remove(key);
    }
 
    public String toString() {
       StringBuilder stringbuilder = new StringBuilder("{");
-      Collection<String> collection = this.tags.keySet();
+      Collection<String> collection = this.tagMap.keySet();
       if (LOGGER.isDebugEnabled()) {
-         List<String> list = Lists.newArrayList(this.tags.keySet());
+         List<String> list = Lists.newArrayList(this.tagMap.keySet());
          Collections.sort(list);
          collection = list;
       }
@@ -361,29 +361,29 @@ public class CompoundNBT implements INBT {
             stringbuilder.append(',');
          }
 
-         stringbuilder.append(handleEscape(s)).append(':').append(this.tags.get(s));
+         stringbuilder.append(handleEscape(s)).append(':').append(this.tagMap.get(s));
       }
 
       return stringbuilder.append('}').toString();
    }
 
    public boolean isEmpty() {
-      return this.tags.isEmpty();
+      return this.tagMap.isEmpty();
    }
 
-   private CrashReport createReport(String p_229677_1_, INBTType<?> p_229677_2_, ClassCastException p_229677_3_) {
-      CrashReport crashreport = CrashReport.forThrowable(p_229677_3_, "Reading NBT data");
-      CrashReportCategory crashreportcategory = crashreport.addCategory("Corrupt NBT tag", 1);
-      crashreportcategory.setDetail("Tag type found", () -> {
-         return this.tags.get(p_229677_1_).getType().getName();
+   private CrashReport generateCrashReport(String tagName, INBTType<?> type, ClassCastException exception) {
+      CrashReport crashreport = CrashReport.makeCrashReport(exception, "Reading NBT data");
+      CrashReportCategory crashreportcategory = crashreport.makeCategoryDepth("Corrupt NBT tag", 1);
+      crashreportcategory.addDetail("Tag type found", () -> {
+         return this.tagMap.get(tagName).getType().getName();
       });
-      crashreportcategory.setDetail("Tag type expected", p_229677_2_::getName);
-      crashreportcategory.setDetail("Tag name", p_229677_1_);
+      crashreportcategory.addDetail("Tag type expected", type::getName);
+      crashreportcategory.addDetail("Tag name", tagName);
       return crashreport;
    }
 
    public CompoundNBT copy() {
-      Map<String, INBT> map = Maps.newHashMap(Maps.transformValues(this.tags, INBT::copy));
+      Map<String, INBT> map = Maps.newHashMap(Maps.transformValues(this.tagMap, INBT::copy));
       return new CompoundNBT(map);
    }
 
@@ -391,45 +391,45 @@ public class CompoundNBT implements INBT {
       if (this == p_equals_1_) {
          return true;
       } else {
-         return p_equals_1_ instanceof CompoundNBT && Objects.equals(this.tags, ((CompoundNBT)p_equals_1_).tags);
+         return p_equals_1_ instanceof CompoundNBT && Objects.equals(this.tagMap, ((CompoundNBT)p_equals_1_).tagMap);
       }
    }
 
    public int hashCode() {
-      return this.tags.hashCode();
+      return this.tagMap.hashCode();
    }
 
-   private static void writeNamedTag(String p_150298_0_, INBT p_150298_1_, DataOutput p_150298_2_) throws IOException {
-      p_150298_2_.writeByte(p_150298_1_.getId());
-      if (p_150298_1_.getId() != 0) {
-         p_150298_2_.writeUTF(p_150298_0_);
-         p_150298_1_.write(p_150298_2_);
+   private static void writeEntry(String name, INBT data, DataOutput output) throws IOException {
+      output.writeByte(data.getId());
+      if (data.getId() != 0) {
+         output.writeUTF(name);
+         data.write(output);
       }
    }
 
-   private static byte readNamedTagType(DataInput p_152447_0_, NBTSizeTracker p_152447_1_) throws IOException {
-      return p_152447_0_.readByte();
+   private static byte readType(DataInput input, NBTSizeTracker sizeTracker) throws IOException {
+      return input.readByte();
    }
 
-   private static String readNamedTagName(DataInput p_152448_0_, NBTSizeTracker p_152448_1_) throws IOException {
-      return p_152448_0_.readUTF();
+   private static String readKey(DataInput input, NBTSizeTracker sizeTracker) throws IOException {
+      return input.readUTF();
    }
 
-   private static INBT readNamedTagData(INBTType<?> p_229680_0_, String p_229680_1_, DataInput p_229680_2_, int p_229680_3_, NBTSizeTracker p_229680_4_) {
+   private static INBT loadNBT(INBTType<?> type, String name, DataInput input, int depth, NBTSizeTracker accounter) {
       try {
-         return p_229680_0_.load(p_229680_2_, p_229680_3_, p_229680_4_);
+         return type.readNBT(input, depth, accounter);
       } catch (IOException ioexception) {
-         CrashReport crashreport = CrashReport.forThrowable(ioexception, "Loading NBT data");
-         CrashReportCategory crashreportcategory = crashreport.addCategory("NBT Tag");
-         crashreportcategory.setDetail("Tag name", p_229680_1_);
-         crashreportcategory.setDetail("Tag type", p_229680_0_.getName());
+         CrashReport crashreport = CrashReport.makeCrashReport(ioexception, "Loading NBT data");
+         CrashReportCategory crashreportcategory = crashreport.makeCategory("NBT Tag");
+         crashreportcategory.addDetail("Tag name", name);
+         crashreportcategory.addDetail("Tag type", type.getName());
          throw new ReportedException(crashreport);
       }
    }
 
-   public CompoundNBT merge(CompoundNBT p_197643_1_) {
-      for(String s : p_197643_1_.tags.keySet()) {
-         INBT inbt = p_197643_1_.tags.get(s);
+   public CompoundNBT merge(CompoundNBT other) {
+      for(String s : other.tagMap.keySet()) {
+         INBT inbt = other.tagMap.get(s);
          if (inbt.getId() == 10) {
             if (this.contains(s, 10)) {
                CompoundNBT compoundnbt = this.getCompound(s);
@@ -445,56 +445,56 @@ public class CompoundNBT implements INBT {
       return this;
    }
 
-   protected static String handleEscape(String p_193582_0_) {
-      return SIMPLE_VALUE.matcher(p_193582_0_).matches() ? p_193582_0_ : StringNBT.quoteAndEscape(p_193582_0_);
+   protected static String handleEscape(String name) {
+      return SIMPLE_VALUE.matcher(name).matches() ? name : StringNBT.quoteAndEscape(name);
    }
 
-   protected static ITextComponent handleEscapePretty(String p_197642_0_) {
-      if (SIMPLE_VALUE.matcher(p_197642_0_).matches()) {
-         return (new StringTextComponent(p_197642_0_)).withStyle(SYNTAX_HIGHLIGHTING_KEY);
+   protected static ITextComponent getNameComponent(String name) {
+      if (SIMPLE_VALUE.matcher(name).matches()) {
+         return (new StringTextComponent(name)).mergeStyle(SYNTAX_HIGHLIGHTING_KEY);
       } else {
-         String s = StringNBT.quoteAndEscape(p_197642_0_);
+         String s = StringNBT.quoteAndEscape(name);
          String s1 = s.substring(0, 1);
-         ITextComponent itextcomponent = (new StringTextComponent(s.substring(1, s.length() - 1))).withStyle(SYNTAX_HIGHLIGHTING_KEY);
-         return (new StringTextComponent(s1)).append(itextcomponent).append(s1);
+         ITextComponent itextcomponent = (new StringTextComponent(s.substring(1, s.length() - 1))).mergeStyle(SYNTAX_HIGHLIGHTING_KEY);
+         return (new StringTextComponent(s1)).append(itextcomponent).appendString(s1);
       }
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
-      if (this.tags.isEmpty()) {
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
+      if (this.tagMap.isEmpty()) {
          return new StringTextComponent("{}");
       } else {
          IFormattableTextComponent iformattabletextcomponent = new StringTextComponent("{");
-         Collection<String> collection = this.tags.keySet();
+         Collection<String> collection = this.tagMap.keySet();
          if (LOGGER.isDebugEnabled()) {
-            List<String> list = Lists.newArrayList(this.tags.keySet());
+            List<String> list = Lists.newArrayList(this.tagMap.keySet());
             Collections.sort(list);
             collection = list;
          }
 
-         if (!p_199850_1_.isEmpty()) {
-            iformattabletextcomponent.append("\n");
+         if (!indentation.isEmpty()) {
+            iformattabletextcomponent.appendString("\n");
          }
 
          IFormattableTextComponent iformattabletextcomponent1;
          for(Iterator<String> iterator = collection.iterator(); iterator.hasNext(); iformattabletextcomponent.append(iformattabletextcomponent1)) {
             String s = iterator.next();
-            iformattabletextcomponent1 = (new StringTextComponent(Strings.repeat(p_199850_1_, p_199850_2_ + 1))).append(handleEscapePretty(s)).append(String.valueOf(':')).append(" ").append(this.tags.get(s).getPrettyDisplay(p_199850_1_, p_199850_2_ + 1));
+            iformattabletextcomponent1 = (new StringTextComponent(Strings.repeat(indentation, indentDepth + 1))).append(getNameComponent(s)).appendString(String.valueOf(':')).appendString(" ").append(this.tagMap.get(s).toFormattedComponent(indentation, indentDepth + 1));
             if (iterator.hasNext()) {
-               iformattabletextcomponent1.append(String.valueOf(',')).append(p_199850_1_.isEmpty() ? " " : "\n");
+               iformattabletextcomponent1.appendString(String.valueOf(',')).appendString(indentation.isEmpty() ? " " : "\n");
             }
          }
 
-         if (!p_199850_1_.isEmpty()) {
-            iformattabletextcomponent.append("\n").append(Strings.repeat(p_199850_1_, p_199850_2_));
+         if (!indentation.isEmpty()) {
+            iformattabletextcomponent.appendString("\n").appendString(Strings.repeat(indentation, indentDepth));
          }
 
-         iformattabletextcomponent.append("}");
+         iformattabletextcomponent.appendString("}");
          return iformattabletextcomponent;
       }
    }
 
-   protected Map<String, INBT> entries() {
-      return Collections.unmodifiableMap(this.tags);
+   protected Map<String, INBT> getTagMap() {
+      return Collections.unmodifiableMap(this.tagMap);
    }
 }

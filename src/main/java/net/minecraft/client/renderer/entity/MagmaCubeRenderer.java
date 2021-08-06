@@ -11,24 +11,24 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class MagmaCubeRenderer extends MobRenderer<MagmaCubeEntity, MagmaCubeModel<MagmaCubeEntity>> {
-   private static final ResourceLocation MAGMACUBE_LOCATION = new ResourceLocation("textures/entity/slime/magmacube.png");
+   private static final ResourceLocation MAGMA_CUBE_TEXTURES = new ResourceLocation("textures/entity/slime/magmacube.png");
 
-   public MagmaCubeRenderer(EntityRendererManager p_i46159_1_) {
-      super(p_i46159_1_, new MagmaCubeModel<>(), 0.25F);
+   public MagmaCubeRenderer(EntityRendererManager renderManagerIn) {
+      super(renderManagerIn, new MagmaCubeModel<>(), 0.25F);
    }
 
-   protected int getBlockLightLevel(MagmaCubeEntity p_225624_1_, BlockPos p_225624_2_) {
+   protected int getBlockLight(MagmaCubeEntity entityIn, BlockPos partialTicks) {
       return 15;
    }
 
-   public ResourceLocation getTextureLocation(MagmaCubeEntity p_110775_1_) {
-      return MAGMACUBE_LOCATION;
+   public ResourceLocation getEntityTexture(MagmaCubeEntity entity) {
+      return MAGMA_CUBE_TEXTURES;
    }
 
-   protected void scale(MagmaCubeEntity p_225620_1_, MatrixStack p_225620_2_, float p_225620_3_) {
-      int i = p_225620_1_.getSize();
-      float f = MathHelper.lerp(p_225620_3_, p_225620_1_.oSquish, p_225620_1_.squish) / ((float)i * 0.5F + 1.0F);
+   protected void preRenderCallback(MagmaCubeEntity entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+      int i = entitylivingbaseIn.getSlimeSize();
+      float f = MathHelper.lerp(partialTickTime, entitylivingbaseIn.prevSquishFactor, entitylivingbaseIn.squishFactor) / ((float)i * 0.5F + 1.0F);
       float f1 = 1.0F / (f + 1.0F);
-      p_225620_2_.scale(f1 * (float)i, 1.0F / f1 * (float)i, f1 * (float)i);
+      matrixStackIn.scale(f1 * (float)i, 1.0F / f1 * (float)i, f1 * (float)i);
    }
 }

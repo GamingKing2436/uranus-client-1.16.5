@@ -12,27 +12,27 @@ public enum GraphicsFanciness {
    FANCY(1, "options.graphics.fancy"),
    FABULOUS(2, "options.graphics.fabulous");
 
-   private static final GraphicsFanciness[] BY_ID = Arrays.stream(values()).sorted(Comparator.comparingInt(GraphicsFanciness::getId)).toArray((p_238165_0_) -> {
+   private static final GraphicsFanciness[] field_238159_d_ = Arrays.stream(values()).sorted(Comparator.comparingInt(GraphicsFanciness::func_238162_a_)).toArray((p_238165_0_) -> {
       return new GraphicsFanciness[p_238165_0_];
    });
-   private final int id;
-   private final String key;
+   private final int field_238160_e_;
+   private final String field_238161_f_;
 
    private GraphicsFanciness(int p_i232238_3_, String p_i232238_4_) {
-      this.id = p_i232238_3_;
-      this.key = p_i232238_4_;
+      this.field_238160_e_ = p_i232238_3_;
+      this.field_238161_f_ = p_i232238_4_;
    }
 
-   public int getId() {
-      return this.id;
+   public int func_238162_a_() {
+      return this.field_238160_e_;
    }
 
-   public String getKey() {
-      return this.key;
+   public String func_238164_b_() {
+      return this.field_238161_f_;
    }
 
-   public GraphicsFanciness cycleNext() {
-      return byId(this.getId() + 1);
+   public GraphicsFanciness func_238166_c_() {
+      return func_238163_a_(this.func_238162_a_() + 1);
    }
 
    public String toString() {
@@ -48,7 +48,7 @@ public enum GraphicsFanciness {
       }
    }
 
-   public static GraphicsFanciness byId(int p_238163_0_) {
-      return BY_ID[MathHelper.positiveModulo(p_238163_0_, BY_ID.length)];
+   public static GraphicsFanciness func_238163_a_(int p_238163_0_) {
+      return field_238159_d_[MathHelper.normalizeAngle(p_238163_0_, field_238159_d_.length)];
    }
 }

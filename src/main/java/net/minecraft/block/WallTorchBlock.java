@@ -24,45 +24,45 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class WallTorchBlock extends TorchBlock {
-   public static final DirectionProperty FACING = HorizontalBlock.FACING;
-   private static final Map<Direction, VoxelShape> AABBS = Maps.newEnumMap(ImmutableMap.of(Direction.NORTH, Block.box(5.5D, 3.0D, 11.0D, 10.5D, 13.0D, 16.0D), Direction.SOUTH, Block.box(5.5D, 3.0D, 0.0D, 10.5D, 13.0D, 5.0D), Direction.WEST, Block.box(11.0D, 3.0D, 5.5D, 16.0D, 13.0D, 10.5D), Direction.EAST, Block.box(0.0D, 3.0D, 5.5D, 5.0D, 13.0D, 10.5D)));
+   public static final DirectionProperty HORIZONTAL_FACING = HorizontalBlock.HORIZONTAL_FACING;
+   private static final Map<Direction, VoxelShape> SHAPES = Maps.newEnumMap(ImmutableMap.of(Direction.NORTH, Block.makeCuboidShape(5.5D, 3.0D, 11.0D, 10.5D, 13.0D, 16.0D), Direction.SOUTH, Block.makeCuboidShape(5.5D, 3.0D, 0.0D, 10.5D, 13.0D, 5.0D), Direction.WEST, Block.makeCuboidShape(11.0D, 3.0D, 5.5D, 16.0D, 13.0D, 10.5D), Direction.EAST, Block.makeCuboidShape(0.0D, 3.0D, 5.5D, 5.0D, 13.0D, 10.5D)));
 
-   protected WallTorchBlock(AbstractBlock.Properties p_i241193_1_, IParticleData p_i241193_2_) {
-      super(p_i241193_1_, p_i241193_2_);
-      this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+   protected WallTorchBlock(AbstractBlock.Properties properties, IParticleData particleData) {
+      super(properties, particleData);
+      this.setDefaultState(this.stateContainer.getBaseState().with(HORIZONTAL_FACING, Direction.NORTH));
    }
 
-   public String getDescriptionId() {
-      return this.asItem().getDescriptionId();
+   public String getTranslationKey() {
+      return this.asItem().getTranslationKey();
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
-      return getShape(p_220053_1_);
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
+      return getShapeForState(state);
    }
 
-   public static VoxelShape getShape(BlockState p_220289_0_) {
-      return AABBS.get(p_220289_0_.getValue(FACING));
+   public static VoxelShape getShapeForState(BlockState state) {
+      return SHAPES.get(state.get(HORIZONTAL_FACING));
    }
 
-   public boolean canSurvive(BlockState p_196260_1_, IWorldReader p_196260_2_, BlockPos p_196260_3_) {
-      Direction direction = p_196260_1_.getValue(FACING);
-      BlockPos blockpos = p_196260_3_.relative(direction.getOpposite());
-      BlockState blockstate = p_196260_2_.getBlockState(blockpos);
-      return blockstate.isFaceSturdy(p_196260_2_, blockpos, direction);
+   public boolean isValidPosition(BlockState state, IWorldReader worldIn, BlockPos pos) {
+      Direction direction = state.get(HORIZONTAL_FACING);
+      BlockPos blockpos = pos.offset(direction.getOpposite());
+      BlockState blockstate = worldIn.getBlockState(blockpos);
+      return blockstate.isSolidSide(worldIn, blockpos, direction);
    }
 
    @Nullable
-   public BlockState getStateForPlacement(BlockItemUseContext p_196258_1_) {
-      BlockState blockstate = this.defaultBlockState();
-      IWorldReader iworldreader = p_196258_1_.getLevel();
-      BlockPos blockpos = p_196258_1_.getClickedPos();
-      Direction[] adirection = p_196258_1_.getNearestLookingDirections();
+   public BlockState getStateForPlacement(BlockItemUseContext context) {
+      BlockState blockstate = this.getDefaultState();
+      IWorldReader iworldreader = context.getWorld();
+      BlockPos blockpos = context.getPos();
+      Direction[] adirection = context.getNearestLookingDirections();
 
       for(Direction direction : adirection) {
          if (direction.getAxis().isHorizontal()) {
             Direction direction1 = direction.getOpposite();
-            blockstate = blockstate.setValue(FACING, direction1);
-            if (blockstate.canSurvive(iworldreader, blockpos)) {
+            blockstate = blockstate.with(HORIZONTAL_FACING, direction1);
+            if (blockstate.isValidPosition(iworldreader, blockpos)) {
                return blockstate;
             }
          }
@@ -71,32 +71,32 @@ public class WallTorchBlock extends TorchBlock {
       return null;
    }
 
-   public BlockState updateShape(BlockState p_196271_1_, Direction p_196271_2_, BlockState p_196271_3_, IWorld p_196271_4_, BlockPos p_196271_5_, BlockPos p_196271_6_) {
-      return p_196271_2_.getOpposite() == p_196271_1_.getValue(FACING) && !p_196271_1_.canSurvive(p_196271_4_, p_196271_5_) ? Blocks.AIR.defaultBlockState() : p_196271_1_;
+   public BlockState updatePostPlacement(BlockState stateIn, Direction facing, BlockState facingState, IWorld worldIn, BlockPos currentPos, BlockPos facingPos) {
+      return facing.getOpposite() == stateIn.get(HORIZONTAL_FACING) && !stateIn.isValidPosition(worldIn, currentPos) ? Blocks.AIR.getDefaultState() : stateIn;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void animateTick(BlockState p_180655_1_, World p_180655_2_, BlockPos p_180655_3_, Random p_180655_4_) {
-      Direction direction = p_180655_1_.getValue(FACING);
-      double d0 = (double)p_180655_3_.getX() + 0.5D;
-      double d1 = (double)p_180655_3_.getY() + 0.7D;
-      double d2 = (double)p_180655_3_.getZ() + 0.5D;
+   public void animateTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand) {
+      Direction direction = stateIn.get(HORIZONTAL_FACING);
+      double d0 = (double)pos.getX() + 0.5D;
+      double d1 = (double)pos.getY() + 0.7D;
+      double d2 = (double)pos.getZ() + 0.5D;
       double d3 = 0.22D;
       double d4 = 0.27D;
       Direction direction1 = direction.getOpposite();
-      p_180655_2_.addParticle(ParticleTypes.SMOKE, d0 + 0.27D * (double)direction1.getStepX(), d1 + 0.22D, d2 + 0.27D * (double)direction1.getStepZ(), 0.0D, 0.0D, 0.0D);
-      p_180655_2_.addParticle(this.flameParticle, d0 + 0.27D * (double)direction1.getStepX(), d1 + 0.22D, d2 + 0.27D * (double)direction1.getStepZ(), 0.0D, 0.0D, 0.0D);
+      worldIn.addParticle(ParticleTypes.SMOKE, d0 + 0.27D * (double)direction1.getXOffset(), d1 + 0.22D, d2 + 0.27D * (double)direction1.getZOffset(), 0.0D, 0.0D, 0.0D);
+      worldIn.addParticle(this.particleData, d0 + 0.27D * (double)direction1.getXOffset(), d1 + 0.22D, d2 + 0.27D * (double)direction1.getZOffset(), 0.0D, 0.0D, 0.0D);
    }
 
-   public BlockState rotate(BlockState p_185499_1_, Rotation p_185499_2_) {
-      return p_185499_1_.setValue(FACING, p_185499_2_.rotate(p_185499_1_.getValue(FACING)));
+   public BlockState rotate(BlockState state, Rotation rot) {
+      return state.with(HORIZONTAL_FACING, rot.rotate(state.get(HORIZONTAL_FACING)));
    }
 
-   public BlockState mirror(BlockState p_185471_1_, Mirror p_185471_2_) {
-      return p_185471_1_.rotate(p_185471_2_.getRotation(p_185471_1_.getValue(FACING)));
+   public BlockState mirror(BlockState state, Mirror mirrorIn) {
+      return state.rotate(mirrorIn.toRotation(state.get(HORIZONTAL_FACING)));
    }
 
-   protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> p_206840_1_) {
-      p_206840_1_.add(FACING);
+   protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+      builder.add(HORIZONTAL_FACING);
    }
 }

@@ -8,13 +8,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class CowRenderer extends MobRenderer<CowEntity, CowModel<CowEntity>> {
-   private static final ResourceLocation COW_LOCATION = new ResourceLocation("textures/entity/cow/cow.png");
+   private static final ResourceLocation COW_TEXTURES = new ResourceLocation("textures/entity/cow/cow.png");
 
-   public CowRenderer(EntityRendererManager p_i47210_1_) {
-      super(p_i47210_1_, new CowModel<>(), 0.7F);
+   public CowRenderer(EntityRendererManager renderManagerIn) {
+      super(renderManagerIn, new CowModel<>(), 0.7F);
    }
 
-   public ResourceLocation getTextureLocation(CowEntity p_110775_1_) {
-      return COW_LOCATION;
+   public ResourceLocation getEntityTexture(CowEntity entity) {
+      return COW_TEXTURES;
    }
 }

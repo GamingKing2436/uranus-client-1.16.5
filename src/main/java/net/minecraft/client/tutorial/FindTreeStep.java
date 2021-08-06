@@ -27,20 +27,20 @@ public class FindTreeStep implements ITutorialStep {
    private TutorialToast toast;
    private int timeWaiting;
 
-   public FindTreeStep(Tutorial p_i47582_1_) {
-      this.tutorial = p_i47582_1_;
+   public FindTreeStep(Tutorial tutorial) {
+      this.tutorial = tutorial;
    }
 
    public void tick() {
       ++this.timeWaiting;
-      if (this.tutorial.getGameMode() != GameType.SURVIVAL) {
+      if (this.tutorial.getGameType() != GameType.SURVIVAL) {
          this.tutorial.setStep(TutorialSteps.NONE);
       } else {
          if (this.timeWaiting == 1) {
             ClientPlayerEntity clientplayerentity = this.tutorial.getMinecraft().player;
             if (clientplayerentity != null) {
                for(Block block : TREE_BLOCKS) {
-                  if (clientplayerentity.inventory.contains(new ItemStack(block))) {
+                  if (clientplayerentity.inventory.hasItemStack(new ItemStack(block))) {
                      this.tutorial.setStep(TutorialSteps.CRAFT_PLANKS);
                      return;
                   }
@@ -55,13 +55,13 @@ public class FindTreeStep implements ITutorialStep {
 
          if (this.timeWaiting >= 6000 && this.toast == null) {
             this.toast = new TutorialToast(TutorialToast.Icons.TREE, TITLE, DESCRIPTION, false);
-            this.tutorial.getMinecraft().getToasts().addToast(this.toast);
+            this.tutorial.getMinecraft().getToastGui().add(this.toast);
          }
 
       }
    }
 
-   public void clear() {
+   public void onStop() {
       if (this.toast != null) {
          this.toast.hide();
          this.toast = null;
@@ -69,9 +69,9 @@ public class FindTreeStep implements ITutorialStep {
 
    }
 
-   public void onLookAt(ClientWorld p_193246_1_, RayTraceResult p_193246_2_) {
-      if (p_193246_2_.getType() == RayTraceResult.Type.BLOCK) {
-         BlockState blockstate = p_193246_1_.getBlockState(((BlockRayTraceResult)p_193246_2_).getBlockPos());
+   public void onMouseHover(ClientWorld worldIn, RayTraceResult result) {
+      if (result.getType() == RayTraceResult.Type.BLOCK) {
+         BlockState blockstate = worldIn.getBlockState(((BlockRayTraceResult)result).getPos());
          if (TREE_BLOCKS.contains(blockstate.getBlock())) {
             this.tutorial.setStep(TutorialSteps.PUNCH_TREE);
          }
@@ -79,9 +79,9 @@ public class FindTreeStep implements ITutorialStep {
 
    }
 
-   public void onGetItem(ItemStack p_193252_1_) {
+   public void handleSetSlot(ItemStack stack) {
       for(Block block : TREE_BLOCKS) {
-         if (p_193252_1_.getItem() == block.asItem()) {
+         if (stack.getItem() == block.asItem()) {
             this.tutorial.setStep(TutorialSteps.CRAFT_PLANKS);
             return;
          }

@@ -13,55 +13,55 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class OpeningWorldRealmsAction extends LongRunningTask {
-   private final RealmsServer serverData;
-   private final Screen returnScreen;
-   private final boolean join;
-   private final RealmsMainScreen mainScreen;
+   private final RealmsServer field_238128_c_;
+   private final Screen field_238129_d_;
+   private final boolean field_238130_e_;
+   private final RealmsMainScreen field_238131_f_;
 
    public OpeningWorldRealmsAction(RealmsServer p_i232232_1_, Screen p_i232232_2_, RealmsMainScreen p_i232232_3_, boolean p_i232232_4_) {
-      this.serverData = p_i232232_1_;
-      this.returnScreen = p_i232232_2_;
-      this.join = p_i232232_4_;
-      this.mainScreen = p_i232232_3_;
+      this.field_238128_c_ = p_i232232_1_;
+      this.field_238129_d_ = p_i232232_2_;
+      this.field_238130_e_ = p_i232232_4_;
+      this.field_238131_f_ = p_i232232_3_;
    }
 
    public void run() {
-      this.setTitle(new TranslationTextComponent("mco.configure.world.opening"));
-      RealmsClient realmsclient = RealmsClient.create();
+      this.func_224989_b(new TranslationTextComponent("mco.configure.world.opening"));
+      RealmsClient realmsclient = RealmsClient.func_224911_a();
 
       for(int i = 0; i < 25; ++i) {
-         if (this.aborted()) {
+         if (this.func_224988_a()) {
             return;
          }
 
          try {
-            boolean flag = realmsclient.open(this.serverData.id);
+            boolean flag = realmsclient.func_224942_e(this.field_238128_c_.field_230582_a_);
             if (flag) {
-               if (this.returnScreen instanceof RealmsConfigureWorldScreen) {
-                  ((RealmsConfigureWorldScreen)this.returnScreen).stateChanged();
+               if (this.field_238129_d_ instanceof RealmsConfigureWorldScreen) {
+                  ((RealmsConfigureWorldScreen)this.field_238129_d_).func_224398_a();
                }
 
-               this.serverData.state = RealmsServer.Status.OPEN;
-               if (this.join) {
-                  this.mainScreen.play(this.serverData, this.returnScreen);
+               this.field_238128_c_.field_230586_e_ = RealmsServer.Status.OPEN;
+               if (this.field_238130_e_) {
+                  this.field_238131_f_.func_223911_a(this.field_238128_c_, this.field_238129_d_);
                } else {
-                  setScreen(this.returnScreen);
+                  func_238127_a_(this.field_238129_d_);
                }
                break;
             }
          } catch (RetryCallException retrycallexception) {
-            if (this.aborted()) {
+            if (this.func_224988_a()) {
                return;
             }
 
-            pause(retrycallexception.delaySeconds);
+            func_238125_a_(retrycallexception.field_224985_e);
          } catch (Exception exception) {
-            if (this.aborted()) {
+            if (this.func_224988_a()) {
                return;
             }
 
-            LOGGER.error("Failed to open server", (Throwable)exception);
-            this.error("Failed to open the server");
+            field_238124_a_.error("Failed to open server", (Throwable)exception);
+            this.func_237703_a_("Failed to open the server");
          }
       }
 

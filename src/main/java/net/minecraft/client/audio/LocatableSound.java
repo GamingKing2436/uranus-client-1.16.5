@@ -9,38 +9,38 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public abstract class LocatableSound implements ISound {
    protected Sound sound;
-   protected final SoundCategory source;
-   protected final ResourceLocation location;
+   protected final SoundCategory category;
+   protected final ResourceLocation positionedSoundLocation;
    protected float volume = 1.0F;
    protected float pitch = 1.0F;
    protected double x;
    protected double y;
    protected double z;
-   protected boolean looping;
-   protected int delay;
-   protected ISound.AttenuationType attenuation = ISound.AttenuationType.LINEAR;
+   protected boolean repeat;
+   protected int repeatDelay;
+   protected ISound.AttenuationType attenuationType = ISound.AttenuationType.LINEAR;
    protected boolean priority;
-   protected boolean relative;
+   protected boolean global;
 
-   protected LocatableSound(SoundEvent p_i46533_1_, SoundCategory p_i46533_2_) {
-      this(p_i46533_1_.getLocation(), p_i46533_2_);
+   protected LocatableSound(SoundEvent soundIn, SoundCategory categoryIn) {
+      this(soundIn.getName(), categoryIn);
    }
 
-   protected LocatableSound(ResourceLocation p_i46534_1_, SoundCategory p_i46534_2_) {
-      this.location = p_i46534_1_;
-      this.source = p_i46534_2_;
+   protected LocatableSound(ResourceLocation soundId, SoundCategory categoryIn) {
+      this.positionedSoundLocation = soundId;
+      this.category = categoryIn;
    }
 
-   public ResourceLocation getLocation() {
-      return this.location;
+   public ResourceLocation getSoundLocation() {
+      return this.positionedSoundLocation;
    }
 
-   public SoundEventAccessor resolve(SoundHandler p_184366_1_) {
-      SoundEventAccessor soundeventaccessor = p_184366_1_.getSoundEvent(this.location);
+   public SoundEventAccessor createAccessor(SoundHandler handler) {
+      SoundEventAccessor soundeventaccessor = handler.getAccessor(this.positionedSoundLocation);
       if (soundeventaccessor == null) {
-         this.sound = SoundHandler.EMPTY_SOUND;
+         this.sound = SoundHandler.MISSING_SOUND;
       } else {
-         this.sound = soundeventaccessor.getSound();
+         this.sound = soundeventaccessor.cloneEntry();
       }
 
       return soundeventaccessor;
@@ -50,16 +50,16 @@ public abstract class LocatableSound implements ISound {
       return this.sound;
    }
 
-   public SoundCategory getSource() {
-      return this.source;
+   public SoundCategory getCategory() {
+      return this.category;
    }
 
-   public boolean isLooping() {
-      return this.looping;
+   public boolean canRepeat() {
+      return this.repeat;
    }
 
-   public int getDelay() {
-      return this.delay;
+   public int getRepeatDelay() {
+      return this.repeatDelay;
    }
 
    public float getVolume() {
@@ -82,15 +82,15 @@ public abstract class LocatableSound implements ISound {
       return this.z;
    }
 
-   public ISound.AttenuationType getAttenuation() {
-      return this.attenuation;
+   public ISound.AttenuationType getAttenuationType() {
+      return this.attenuationType;
    }
 
-   public boolean isRelative() {
-      return this.relative;
+   public boolean isGlobal() {
+      return this.global;
    }
 
    public String toString() {
-      return "SoundInstance[" + this.location + "]";
+      return "SoundInstance[" + this.positionedSoundLocation + "]";
    }
 }

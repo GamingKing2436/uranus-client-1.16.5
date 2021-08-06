@@ -12,10 +12,10 @@ public class VillagerFollowRange extends NamedEntityFix {
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
-      return p_207419_1_.update(DSL.remainderFinder(), VillagerFollowRange::fixValue);
+      return p_207419_1_.update(DSL.remainderFinder(), VillagerFollowRange::func_233409_a_);
    }
 
-   private static Dynamic<?> fixValue(Dynamic<?> p_233409_0_) {
+   private static Dynamic<?> func_233409_a_(Dynamic<?> p_233409_0_) {
       return p_233409_0_.update("Attributes", (p_233410_1_) -> {
          return p_233409_0_.createList(p_233410_1_.asStream().map((p_233411_0_) -> {
             return p_233411_0_.get("Name").asString("").equals("generic.follow_range") && p_233411_0_.get("Base").asDouble(0.0D) == 16.0D ? p_233411_0_.set("Base", p_233411_0_.createDouble(48.0D)) : p_233411_0_;

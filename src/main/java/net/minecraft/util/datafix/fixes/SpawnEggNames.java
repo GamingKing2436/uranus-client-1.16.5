@@ -16,7 +16,7 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class SpawnEggNames extends DataFix {
-   private static final String[] ID_TO_ENTITY = DataFixUtils.make(new String[256], (p_209278_0_) -> {
+   private static final String[] ENTITY_IDS = DataFixUtils.make(new String[256], (p_209278_0_) -> {
       p_209278_0_[1] = "Item";
       p_209278_0_[2] = "XPOrb";
       p_209278_0_[7] = "ThrownEgg";
@@ -86,14 +86,14 @@ public class SpawnEggNames extends DataFix {
       p_209278_0_[200] = "EnderCrystal";
    });
 
-   public SpawnEggNames(Schema p_i49639_1_, boolean p_i49639_2_) {
-      super(p_i49639_1_, p_i49639_2_);
+   public SpawnEggNames(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
       Schema schema = this.getInputSchema();
       Type<?> type = schema.getType(TypeReferences.ITEM_STACK);
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
       OpticFinder<String> opticfinder1 = DSL.fieldFinder("id", DSL.string());
       OpticFinder<?> opticfinder2 = type.findField("tag");
       OpticFinder<?> opticfinder3 = opticfinder2.type().findField("EntityTag");
@@ -115,7 +115,7 @@ public class SpawnEggNames extends DataFix {
                return p_207481_1_.getOptional(opticfinder1);
             });
             Typed<?> typed = p_206359_6_;
-            String s = ID_TO_ENTITY[short1 & 255];
+            String s = ENTITY_IDS[short1 & 255];
             if (s != null && (!optional4.isPresent() || !Objects.equals(optional4.get(), s))) {
                Typed<?> typed1 = p_206359_6_.getOrCreateTyped(opticfinder2);
                Typed<?> typed2 = typed1.getOrCreateTyped(opticfinder3);

@@ -14,54 +14,54 @@ public enum EntityClassification implements IStringSerializable {
    WATER_AMBIENT("water_ambient", 20, true, false, 64),
    MISC("misc", -1, true, true, 128);
 
-   public static final Codec<EntityClassification> CODEC = IStringSerializable.fromEnum(EntityClassification::values, EntityClassification::byName);
-   private static final Map<String, EntityClassification> BY_NAME = Arrays.stream(values()).collect(Collectors.toMap(EntityClassification::getName, (p_220362_0_) -> {
+   public static final Codec<EntityClassification> CODEC = IStringSerializable.createEnumCodec(EntityClassification::values, EntityClassification::getClassificationByName);
+   private static final Map<String, EntityClassification> VALUES_MAP = Arrays.stream(values()).collect(Collectors.toMap(EntityClassification::getName, (p_220362_0_) -> {
       return p_220362_0_;
    }));
-   private final int max;
-   private final boolean isFriendly;
-   private final boolean isPersistent;
+   private final int maxNumberOfCreature;
+   private final boolean isPeacefulCreature;
+   private final boolean isAnimal;
    private final String name;
-   private final int noDespawnDistance = 32;
-   private final int despawnDistance;
+   private final int randomDespawnDistance = 32;
+   private final int instantDespawnDistance;
 
-   private EntityClassification(String p_i231492_3_, int p_i231492_4_, boolean p_i231492_5_, boolean p_i231492_6_, int p_i231492_7_) {
-      this.name = p_i231492_3_;
-      this.max = p_i231492_4_;
-      this.isFriendly = p_i231492_5_;
-      this.isPersistent = p_i231492_6_;
-      this.despawnDistance = p_i231492_7_;
+   private EntityClassification(String name, int maxNumberOfCreature, boolean isPeacefulCreature, boolean isAnimal, int instantDespawnDistance) {
+      this.name = name;
+      this.maxNumberOfCreature = maxNumberOfCreature;
+      this.isPeacefulCreature = isPeacefulCreature;
+      this.isAnimal = isAnimal;
+      this.instantDespawnDistance = instantDespawnDistance;
    }
 
    public String getName() {
       return this.name;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 
-   public static EntityClassification byName(String p_233670_0_) {
-      return BY_NAME.get(p_233670_0_);
+   public static EntityClassification getClassificationByName(String name) {
+      return VALUES_MAP.get(name);
    }
 
-   public int getMaxInstancesPerChunk() {
-      return this.max;
+   public int getMaxNumberOfCreature() {
+      return this.maxNumberOfCreature;
    }
 
-   public boolean isFriendly() {
-      return this.isFriendly;
+   public boolean getPeacefulCreature() {
+      return this.isPeacefulCreature;
    }
 
-   public boolean isPersistent() {
-      return this.isPersistent;
+   public boolean getAnimal() {
+      return this.isAnimal;
    }
 
-   public int getDespawnDistance() {
-      return this.despawnDistance;
+   public int getInstantDespawnDistance() {
+      return this.instantDespawnDistance;
    }
 
-   public int getNoDespawnDistance() {
+   public int getRandomDespawnDistance() {
       return 32;
    }
 }

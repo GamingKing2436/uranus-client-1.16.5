@@ -11,7 +11,7 @@ import java.util.Map;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class TileEntityId extends DataFix {
-   private static final Map<String, String> ID_MAP = DataFixUtils.make(Maps.newHashMap(), (p_209293_0_) -> {
+   private static final Map<String, String> OLD_TO_NEW_ID_MAP = DataFixUtils.make(Maps.newHashMap(), (p_209293_0_) -> {
       p_209293_0_.put("Airportal", "minecraft:end_portal");
       p_209293_0_.put("Banner", "minecraft:banner");
       p_209293_0_.put("Beacon", "minecraft:beacon");
@@ -37,8 +37,8 @@ public class TileEntityId extends DataFix {
       p_209293_0_.put("Trap", "minecraft:dispenser");
    });
 
-   public TileEntityId(Schema p_i49684_1_, boolean p_i49684_2_) {
-      super(p_i49684_1_, p_i49684_2_);
+   public TileEntityId(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
@@ -49,7 +49,7 @@ public class TileEntityId extends DataFix {
       return TypeRewriteRule.seq(this.convertUnchecked("item stack block entity name hook converter", type, type1), this.fixTypeEverywhere("BlockEntityIdFix", taggedchoicetype, taggedchoicetype1, (p_209700_0_) -> {
          return (p_206301_0_) -> {
             return p_206301_0_.mapFirst((p_206302_0_) -> {
-               return ID_MAP.getOrDefault(p_206302_0_, p_206302_0_);
+               return OLD_TO_NEW_ID_MAP.getOrDefault(p_206302_0_, p_206302_0_);
             });
          };
       }));

@@ -21,38 +21,38 @@ public class MobEffectsPredicate {
    public static final MobEffectsPredicate ANY = new MobEffectsPredicate(Collections.emptyMap());
    private final Map<Effect, MobEffectsPredicate.InstancePredicate> effects;
 
-   public MobEffectsPredicate(Map<Effect, MobEffectsPredicate.InstancePredicate> p_i47538_1_) {
-      this.effects = p_i47538_1_;
+   public MobEffectsPredicate(Map<Effect, MobEffectsPredicate.InstancePredicate> effects) {
+      this.effects = effects;
    }
 
-   public static MobEffectsPredicate effects() {
+   public static MobEffectsPredicate any() {
       return new MobEffectsPredicate(Maps.newLinkedHashMap());
    }
 
-   public MobEffectsPredicate and(Effect p_204015_1_) {
-      this.effects.put(p_204015_1_, new MobEffectsPredicate.InstancePredicate());
+   public MobEffectsPredicate addEffect(Effect effect) {
+      this.effects.put(effect, new MobEffectsPredicate.InstancePredicate());
       return this;
    }
 
-   public boolean matches(Entity p_193469_1_) {
+   public boolean test(Entity entityIn) {
       if (this == ANY) {
          return true;
       } else {
-         return p_193469_1_ instanceof LivingEntity ? this.matches(((LivingEntity)p_193469_1_).getActiveEffectsMap()) : false;
+         return entityIn instanceof LivingEntity ? this.test(((LivingEntity)entityIn).getActivePotionMap()) : false;
       }
    }
 
-   public boolean matches(LivingEntity p_193472_1_) {
-      return this == ANY ? true : this.matches(p_193472_1_.getActiveEffectsMap());
+   public boolean test(LivingEntity entityIn) {
+      return this == ANY ? true : this.test(entityIn.getActivePotionMap());
    }
 
-   public boolean matches(Map<Effect, EffectInstance> p_193470_1_) {
+   public boolean test(Map<Effect, EffectInstance> potions) {
       if (this == ANY) {
          return true;
       } else {
          for(Entry<Effect, MobEffectsPredicate.InstancePredicate> entry : this.effects.entrySet()) {
-            EffectInstance effectinstance = p_193470_1_.get(entry.getKey());
-            if (!entry.getValue().matches(effectinstance)) {
+            EffectInstance effectinstance = potions.get(entry.getKey());
+            if (!entry.getValue().test(effectinstance)) {
                return false;
             }
          }
@@ -61,17 +61,17 @@ public class MobEffectsPredicate {
       }
    }
 
-   public static MobEffectsPredicate fromJson(@Nullable JsonElement p_193471_0_) {
-      if (p_193471_0_ != null && !p_193471_0_.isJsonNull()) {
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(p_193471_0_, "effects");
+   public static MobEffectsPredicate deserialize(@Nullable JsonElement element) {
+      if (element != null && !element.isJsonNull()) {
+         JsonObject jsonobject = JSONUtils.getJsonObject(element, "effects");
          Map<Effect, MobEffectsPredicate.InstancePredicate> map = Maps.newLinkedHashMap();
 
          for(Entry<String, JsonElement> entry : jsonobject.entrySet()) {
             ResourceLocation resourcelocation = new ResourceLocation(entry.getKey());
-            Effect effect = Registry.MOB_EFFECT.getOptional(resourcelocation).orElseThrow(() -> {
+            Effect effect = Registry.EFFECTS.getOptional(resourcelocation).orElseThrow(() -> {
                return new JsonSyntaxException("Unknown effect '" + resourcelocation + "'");
             });
-            MobEffectsPredicate.InstancePredicate mobeffectspredicate$instancepredicate = MobEffectsPredicate.InstancePredicate.fromJson(JSONUtils.convertToJsonObject(entry.getValue(), entry.getKey()));
+            MobEffectsPredicate.InstancePredicate mobeffectspredicate$instancepredicate = MobEffectsPredicate.InstancePredicate.deserialize(JSONUtils.getJsonObject(entry.getValue(), entry.getKey()));
             map.put(effect, mobeffectspredicate$instancepredicate);
          }
 
@@ -81,14 +81,14 @@ public class MobEffectsPredicate {
       }
    }
 
-   public JsonElement serializeToJson() {
+   public JsonElement serialize() {
       if (this == ANY) {
          return JsonNull.INSTANCE;
       } else {
          JsonObject jsonobject = new JsonObject();
 
          for(Entry<Effect, MobEffectsPredicate.InstancePredicate> entry : this.effects.entrySet()) {
-            jsonobject.add(Registry.MOB_EFFECT.getKey(entry.getKey()).toString(), entry.getValue().serializeToJson());
+            jsonobject.add(Registry.EFFECTS.getKey(entry.getKey()).toString(), entry.getValue().serialize());
          }
 
          return jsonobject;
@@ -103,45 +103,45 @@ public class MobEffectsPredicate {
       @Nullable
       private final Boolean visible;
 
-      public InstancePredicate(MinMaxBounds.IntBound p_i49709_1_, MinMaxBounds.IntBound p_i49709_2_, @Nullable Boolean p_i49709_3_, @Nullable Boolean p_i49709_4_) {
-         this.amplifier = p_i49709_1_;
-         this.duration = p_i49709_2_;
-         this.ambient = p_i49709_3_;
-         this.visible = p_i49709_4_;
+      public InstancePredicate(MinMaxBounds.IntBound amplifier, MinMaxBounds.IntBound duration, @Nullable Boolean ambient, @Nullable Boolean visible) {
+         this.amplifier = amplifier;
+         this.duration = duration;
+         this.ambient = ambient;
+         this.visible = visible;
       }
 
       public InstancePredicate() {
-         this(MinMaxBounds.IntBound.ANY, MinMaxBounds.IntBound.ANY, (Boolean)null, (Boolean)null);
+         this(MinMaxBounds.IntBound.UNBOUNDED, MinMaxBounds.IntBound.UNBOUNDED, (Boolean)null, (Boolean)null);
       }
 
-      public boolean matches(@Nullable EffectInstance p_193463_1_) {
-         if (p_193463_1_ == null) {
+      public boolean test(@Nullable EffectInstance effect) {
+         if (effect == null) {
             return false;
-         } else if (!this.amplifier.matches(p_193463_1_.getAmplifier())) {
+         } else if (!this.amplifier.test(effect.getAmplifier())) {
             return false;
-         } else if (!this.duration.matches(p_193463_1_.getDuration())) {
+         } else if (!this.duration.test(effect.getDuration())) {
             return false;
-         } else if (this.ambient != null && this.ambient != p_193463_1_.isAmbient()) {
+         } else if (this.ambient != null && this.ambient != effect.isAmbient()) {
             return false;
          } else {
-            return this.visible == null || this.visible == p_193463_1_.isVisible();
+            return this.visible == null || this.visible == effect.doesShowParticles();
          }
       }
 
-      public JsonElement serializeToJson() {
+      public JsonElement serialize() {
          JsonObject jsonobject = new JsonObject();
-         jsonobject.add("amplifier", this.amplifier.serializeToJson());
-         jsonobject.add("duration", this.duration.serializeToJson());
+         jsonobject.add("amplifier", this.amplifier.serialize());
+         jsonobject.add("duration", this.duration.serialize());
          jsonobject.addProperty("ambient", this.ambient);
          jsonobject.addProperty("visible", this.visible);
          return jsonobject;
       }
 
-      public static MobEffectsPredicate.InstancePredicate fromJson(JsonObject p_193464_0_) {
-         MinMaxBounds.IntBound minmaxbounds$intbound = MinMaxBounds.IntBound.fromJson(p_193464_0_.get("amplifier"));
-         MinMaxBounds.IntBound minmaxbounds$intbound1 = MinMaxBounds.IntBound.fromJson(p_193464_0_.get("duration"));
-         Boolean obool = p_193464_0_.has("ambient") ? JSONUtils.getAsBoolean(p_193464_0_, "ambient") : null;
-         Boolean obool1 = p_193464_0_.has("visible") ? JSONUtils.getAsBoolean(p_193464_0_, "visible") : null;
+      public static MobEffectsPredicate.InstancePredicate deserialize(JsonObject object) {
+         MinMaxBounds.IntBound minmaxbounds$intbound = MinMaxBounds.IntBound.fromJson(object.get("amplifier"));
+         MinMaxBounds.IntBound minmaxbounds$intbound1 = MinMaxBounds.IntBound.fromJson(object.get("duration"));
+         Boolean obool = object.has("ambient") ? JSONUtils.getBoolean(object, "ambient") : null;
+         Boolean obool1 = object.has("visible") ? JSONUtils.getBoolean(object, "visible") : null;
          return new MobEffectsPredicate.InstancePredicate(minmaxbounds$intbound, minmaxbounds$intbound1, obool, obool1);
       }
    }

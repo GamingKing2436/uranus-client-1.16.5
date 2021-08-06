@@ -9,18 +9,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class PolarBearRenderer extends MobRenderer<PolarBearEntity, PolarBearModel<PolarBearEntity>> {
-   private static final ResourceLocation BEAR_LOCATION = new ResourceLocation("textures/entity/bear/polarbear.png");
+   private static final ResourceLocation POLAR_BEAR_TEXTURE = new ResourceLocation("textures/entity/bear/polarbear.png");
 
-   public PolarBearRenderer(EntityRendererManager p_i47197_1_) {
-      super(p_i47197_1_, new PolarBearModel<>(), 0.9F);
+   public PolarBearRenderer(EntityRendererManager renderManagerIn) {
+      super(renderManagerIn, new PolarBearModel<>(), 0.9F);
    }
 
-   public ResourceLocation getTextureLocation(PolarBearEntity p_110775_1_) {
-      return BEAR_LOCATION;
+   public ResourceLocation getEntityTexture(PolarBearEntity entity) {
+      return POLAR_BEAR_TEXTURE;
    }
 
-   protected void scale(PolarBearEntity p_225620_1_, MatrixStack p_225620_2_, float p_225620_3_) {
-      p_225620_2_.scale(1.2F, 1.2F, 1.2F);
-      super.scale(p_225620_1_, p_225620_2_, p_225620_3_);
+   protected void preRenderCallback(PolarBearEntity entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+      matrixStackIn.scale(1.2F, 1.2F, 1.2F);
+      super.preRenderCallback(entitylivingbaseIn, matrixStackIn, partialTickTime);
    }
 }

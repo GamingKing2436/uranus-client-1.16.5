@@ -9,8 +9,8 @@ import net.minecraft.world.ISeedReader;
 import net.minecraft.world.gen.ChunkGenerator;
 
 public class ConfiguredRandomFeatureList {
-   public static final Codec<ConfiguredRandomFeatureList> CODEC = RecordCodecBuilder.create((p_236433_0_) -> {
-      return p_236433_0_.group(ConfiguredFeature.CODEC.fieldOf("feature").forGetter((p_242789_0_) -> {
+   public static final Codec<ConfiguredRandomFeatureList> field_236430_a_ = RecordCodecBuilder.create((p_236433_0_) -> {
+      return p_236433_0_.group(ConfiguredFeature.field_236264_b_.fieldOf("feature").forGetter((p_242789_0_) -> {
          return p_242789_0_.feature;
       }), Codec.floatRange(0.0F, 1.0F).fieldOf("chance").forGetter((p_236432_0_) -> {
          return p_236432_0_.chance;
@@ -30,7 +30,7 @@ public class ConfiguredRandomFeatureList {
       this.chance = p_i241980_2_;
    }
 
-   public boolean place(ISeedReader p_242787_1_, ChunkGenerator p_242787_2_, Random p_242787_3_, BlockPos p_242787_4_) {
-      return this.feature.get().place(p_242787_1_, p_242787_2_, p_242787_3_, p_242787_4_);
+   public boolean func_242787_a(ISeedReader p_242787_1_, ChunkGenerator p_242787_2_, Random p_242787_3_, BlockPos p_242787_4_) {
+      return this.feature.get().generate(p_242787_1_, p_242787_2_, p_242787_3_, p_242787_4_);
    }
 }

@@ -12,13 +12,13 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class BackupList extends ValueObject {
-   private static final Logger LOGGER = LogManager.getLogger();
-   public List<Backup> backups;
+   private static final Logger field_230561_b_ = LogManager.getLogger();
+   public List<Backup> field_230560_a_;
 
-   public static BackupList parse(String p_230753_0_) {
+   public static BackupList func_230753_a_(String p_230753_0_) {
       JsonParser jsonparser = new JsonParser();
       BackupList backuplist = new BackupList();
-      backuplist.backups = Lists.newArrayList();
+      backuplist.field_230560_a_ = Lists.newArrayList();
 
       try {
          JsonElement jsonelement = jsonparser.parse(p_230753_0_).getAsJsonObject().get("backups");
@@ -26,11 +26,11 @@ public class BackupList extends ValueObject {
             Iterator<JsonElement> iterator = jsonelement.getAsJsonArray().iterator();
 
             while(iterator.hasNext()) {
-               backuplist.backups.add(Backup.parse(iterator.next()));
+               backuplist.field_230560_a_.add(Backup.func_230750_a_(iterator.next()));
             }
          }
       } catch (Exception exception) {
-         LOGGER.error("Could not parse BackupList: " + exception.getMessage());
+         field_230561_b_.error("Could not parse BackupList: " + exception.getMessage());
       }
 
       return backuplist;

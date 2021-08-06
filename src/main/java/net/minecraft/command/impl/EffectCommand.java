@@ -19,105 +19,105 @@ import net.minecraft.potion.EffectInstance;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class EffectCommand {
-   private static final SimpleCommandExceptionType ERROR_GIVE_FAILED = new SimpleCommandExceptionType(new TranslationTextComponent("commands.effect.give.failed"));
-   private static final SimpleCommandExceptionType ERROR_CLEAR_EVERYTHING_FAILED = new SimpleCommandExceptionType(new TranslationTextComponent("commands.effect.clear.everything.failed"));
-   private static final SimpleCommandExceptionType ERROR_CLEAR_SPECIFIC_FAILED = new SimpleCommandExceptionType(new TranslationTextComponent("commands.effect.clear.specific.failed"));
+   private static final SimpleCommandExceptionType GIVE_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslationTextComponent("commands.effect.give.failed"));
+   private static final SimpleCommandExceptionType CLEAR_EVERYTHING_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslationTextComponent("commands.effect.clear.everything.failed"));
+   private static final SimpleCommandExceptionType CLEAR_SPECIFIC_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslationTextComponent("commands.effect.clear.specific.failed"));
 
-   public static void register(CommandDispatcher<CommandSource> p_198353_0_) {
-      p_198353_0_.register(Commands.literal("effect").requires((p_198359_0_) -> {
-         return p_198359_0_.hasPermission(2);
+   public static void register(CommandDispatcher<CommandSource> dispatcher) {
+      dispatcher.register(Commands.literal("effect").requires((p_198359_0_) -> {
+         return p_198359_0_.hasPermissionLevel(2);
       }).then(Commands.literal("clear").executes((p_198352_0_) -> {
-         return clearEffects(p_198352_0_.getSource(), ImmutableList.of(p_198352_0_.getSource().getEntityOrException()));
+         return clearAllEffects(p_198352_0_.getSource(), ImmutableList.of(p_198352_0_.getSource().assertIsEntity()));
       }).then(Commands.argument("targets", EntityArgument.entities()).executes((p_198356_0_) -> {
-         return clearEffects(p_198356_0_.getSource(), EntityArgument.getEntities(p_198356_0_, "targets"));
-      }).then(Commands.argument("effect", PotionArgument.effect()).executes((p_198351_0_) -> {
-         return clearEffect(p_198351_0_.getSource(), EntityArgument.getEntities(p_198351_0_, "targets"), PotionArgument.getEffect(p_198351_0_, "effect"));
-      })))).then(Commands.literal("give").then(Commands.argument("targets", EntityArgument.entities()).then(Commands.argument("effect", PotionArgument.effect()).executes((p_198357_0_) -> {
-         return giveEffect(p_198357_0_.getSource(), EntityArgument.getEntities(p_198357_0_, "targets"), PotionArgument.getEffect(p_198357_0_, "effect"), (Integer)null, 0, true);
+         return clearAllEffects(p_198356_0_.getSource(), EntityArgument.getEntities(p_198356_0_, "targets"));
+      }).then(Commands.argument("effect", PotionArgument.mobEffect()).executes((p_198351_0_) -> {
+         return clearEffect(p_198351_0_.getSource(), EntityArgument.getEntities(p_198351_0_, "targets"), PotionArgument.getMobEffect(p_198351_0_, "effect"));
+      })))).then(Commands.literal("give").then(Commands.argument("targets", EntityArgument.entities()).then(Commands.argument("effect", PotionArgument.mobEffect()).executes((p_198357_0_) -> {
+         return addEffect(p_198357_0_.getSource(), EntityArgument.getEntities(p_198357_0_, "targets"), PotionArgument.getMobEffect(p_198357_0_, "effect"), (Integer)null, 0, true);
       }).then(Commands.argument("seconds", IntegerArgumentType.integer(1, 1000000)).executes((p_198350_0_) -> {
-         return giveEffect(p_198350_0_.getSource(), EntityArgument.getEntities(p_198350_0_, "targets"), PotionArgument.getEffect(p_198350_0_, "effect"), IntegerArgumentType.getInteger(p_198350_0_, "seconds"), 0, true);
+         return addEffect(p_198350_0_.getSource(), EntityArgument.getEntities(p_198350_0_, "targets"), PotionArgument.getMobEffect(p_198350_0_, "effect"), IntegerArgumentType.getInteger(p_198350_0_, "seconds"), 0, true);
       }).then(Commands.argument("amplifier", IntegerArgumentType.integer(0, 255)).executes((p_198358_0_) -> {
-         return giveEffect(p_198358_0_.getSource(), EntityArgument.getEntities(p_198358_0_, "targets"), PotionArgument.getEffect(p_198358_0_, "effect"), IntegerArgumentType.getInteger(p_198358_0_, "seconds"), IntegerArgumentType.getInteger(p_198358_0_, "amplifier"), true);
+         return addEffect(p_198358_0_.getSource(), EntityArgument.getEntities(p_198358_0_, "targets"), PotionArgument.getMobEffect(p_198358_0_, "effect"), IntegerArgumentType.getInteger(p_198358_0_, "seconds"), IntegerArgumentType.getInteger(p_198358_0_, "amplifier"), true);
       }).then(Commands.argument("hideParticles", BoolArgumentType.bool()).executes((p_229759_0_) -> {
-         return giveEffect(p_229759_0_.getSource(), EntityArgument.getEntities(p_229759_0_, "targets"), PotionArgument.getEffect(p_229759_0_, "effect"), IntegerArgumentType.getInteger(p_229759_0_, "seconds"), IntegerArgumentType.getInteger(p_229759_0_, "amplifier"), !BoolArgumentType.getBool(p_229759_0_, "hideParticles"));
+         return addEffect(p_229759_0_.getSource(), EntityArgument.getEntities(p_229759_0_, "targets"), PotionArgument.getMobEffect(p_229759_0_, "effect"), IntegerArgumentType.getInteger(p_229759_0_, "seconds"), IntegerArgumentType.getInteger(p_229759_0_, "amplifier"), !BoolArgumentType.getBool(p_229759_0_, "hideParticles"));
       }))))))));
    }
 
-   private static int giveEffect(CommandSource p_198360_0_, Collection<? extends Entity> p_198360_1_, Effect p_198360_2_, @Nullable Integer p_198360_3_, int p_198360_4_, boolean p_198360_5_) throws CommandSyntaxException {
+   private static int addEffect(CommandSource source, Collection<? extends Entity> targets, Effect effect, @Nullable Integer seconds, int amplifier, boolean showParticles) throws CommandSyntaxException {
       int i = 0;
       int j;
-      if (p_198360_3_ != null) {
-         if (p_198360_2_.isInstantenous()) {
-            j = p_198360_3_;
+      if (seconds != null) {
+         if (effect.isInstant()) {
+            j = seconds;
          } else {
-            j = p_198360_3_ * 20;
+            j = seconds * 20;
          }
-      } else if (p_198360_2_.isInstantenous()) {
+      } else if (effect.isInstant()) {
          j = 1;
       } else {
          j = 600;
       }
 
-      for(Entity entity : p_198360_1_) {
+      for(Entity entity : targets) {
          if (entity instanceof LivingEntity) {
-            EffectInstance effectinstance = new EffectInstance(p_198360_2_, j, p_198360_4_, false, p_198360_5_);
-            if (((LivingEntity)entity).addEffect(effectinstance)) {
+            EffectInstance effectinstance = new EffectInstance(effect, j, amplifier, false, showParticles);
+            if (((LivingEntity)entity).addPotionEffect(effectinstance)) {
                ++i;
             }
          }
       }
 
       if (i == 0) {
-         throw ERROR_GIVE_FAILED.create();
+         throw GIVE_FAILED_EXCEPTION.create();
       } else {
-         if (p_198360_1_.size() == 1) {
-            p_198360_0_.sendSuccess(new TranslationTextComponent("commands.effect.give.success.single", p_198360_2_.getDisplayName(), p_198360_1_.iterator().next().getDisplayName(), j / 20), true);
+         if (targets.size() == 1) {
+            source.sendFeedback(new TranslationTextComponent("commands.effect.give.success.single", effect.getDisplayName(), targets.iterator().next().getDisplayName(), j / 20), true);
          } else {
-            p_198360_0_.sendSuccess(new TranslationTextComponent("commands.effect.give.success.multiple", p_198360_2_.getDisplayName(), p_198360_1_.size(), j / 20), true);
+            source.sendFeedback(new TranslationTextComponent("commands.effect.give.success.multiple", effect.getDisplayName(), targets.size(), j / 20), true);
          }
 
          return i;
       }
    }
 
-   private static int clearEffects(CommandSource p_198354_0_, Collection<? extends Entity> p_198354_1_) throws CommandSyntaxException {
+   private static int clearAllEffects(CommandSource source, Collection<? extends Entity> targets) throws CommandSyntaxException {
       int i = 0;
 
-      for(Entity entity : p_198354_1_) {
-         if (entity instanceof LivingEntity && ((LivingEntity)entity).removeAllEffects()) {
+      for(Entity entity : targets) {
+         if (entity instanceof LivingEntity && ((LivingEntity)entity).clearActivePotions()) {
             ++i;
          }
       }
 
       if (i == 0) {
-         throw ERROR_CLEAR_EVERYTHING_FAILED.create();
+         throw CLEAR_EVERYTHING_FAILED_EXCEPTION.create();
       } else {
-         if (p_198354_1_.size() == 1) {
-            p_198354_0_.sendSuccess(new TranslationTextComponent("commands.effect.clear.everything.success.single", p_198354_1_.iterator().next().getDisplayName()), true);
+         if (targets.size() == 1) {
+            source.sendFeedback(new TranslationTextComponent("commands.effect.clear.everything.success.single", targets.iterator().next().getDisplayName()), true);
          } else {
-            p_198354_0_.sendSuccess(new TranslationTextComponent("commands.effect.clear.everything.success.multiple", p_198354_1_.size()), true);
+            source.sendFeedback(new TranslationTextComponent("commands.effect.clear.everything.success.multiple", targets.size()), true);
          }
 
          return i;
       }
    }
 
-   private static int clearEffect(CommandSource p_198355_0_, Collection<? extends Entity> p_198355_1_, Effect p_198355_2_) throws CommandSyntaxException {
+   private static int clearEffect(CommandSource source, Collection<? extends Entity> targets, Effect effect) throws CommandSyntaxException {
       int i = 0;
 
-      for(Entity entity : p_198355_1_) {
-         if (entity instanceof LivingEntity && ((LivingEntity)entity).removeEffect(p_198355_2_)) {
+      for(Entity entity : targets) {
+         if (entity instanceof LivingEntity && ((LivingEntity)entity).removePotionEffect(effect)) {
             ++i;
          }
       }
 
       if (i == 0) {
-         throw ERROR_CLEAR_SPECIFIC_FAILED.create();
+         throw CLEAR_SPECIFIC_FAILED_EXCEPTION.create();
       } else {
-         if (p_198355_1_.size() == 1) {
-            p_198355_0_.sendSuccess(new TranslationTextComponent("commands.effect.clear.specific.success.single", p_198355_2_.getDisplayName(), p_198355_1_.iterator().next().getDisplayName()), true);
+         if (targets.size() == 1) {
+            source.sendFeedback(new TranslationTextComponent("commands.effect.clear.specific.success.single", effect.getDisplayName(), targets.iterator().next().getDisplayName()), true);
          } else {
-            p_198355_0_.sendSuccess(new TranslationTextComponent("commands.effect.clear.specific.success.multiple", p_198355_2_.getDisplayName(), p_198355_1_.size()), true);
+            source.sendFeedback(new TranslationTextComponent("commands.effect.clear.specific.success.multiple", effect.getDisplayName(), targets.size()), true);
          }
 
          return i;

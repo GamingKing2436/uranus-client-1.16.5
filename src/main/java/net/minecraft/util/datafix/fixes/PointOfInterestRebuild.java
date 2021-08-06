@@ -22,13 +22,13 @@ public class PointOfInterestRebuild extends DataFix {
       } else {
          return this.fixTypeEverywhere("POI rebuild", type, (p_226196_0_) -> {
             return (p_226199_0_) -> {
-               return p_226199_0_.mapSecond(PointOfInterestRebuild::cap);
+               return p_226199_0_.mapSecond(PointOfInterestRebuild::func_226195_a_);
             };
          });
       }
    }
 
-   private static <T> Dynamic<T> cap(Dynamic<T> p_226195_0_) {
+   private static <T> Dynamic<T> func_226195_a_(Dynamic<T> p_226195_0_) {
       return p_226195_0_.update("Sections", (p_226198_0_) -> {
          return p_226198_0_.updateMapValues((p_226197_0_) -> {
             return p_226197_0_.mapSecond((p_226200_0_) -> {

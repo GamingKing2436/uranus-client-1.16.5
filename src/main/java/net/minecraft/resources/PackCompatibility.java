@@ -13,22 +13,22 @@ public enum PackCompatibility {
    COMPATIBLE("compatible");
 
    private final ITextComponent description;
-   private final ITextComponent confirmation;
+   private final ITextComponent confirmMessage;
 
-   private PackCompatibility(String p_i47910_3_) {
-      this.description = (new TranslationTextComponent("pack.incompatible." + p_i47910_3_)).withStyle(TextFormatting.GRAY);
-      this.confirmation = new TranslationTextComponent("pack.incompatible.confirm." + p_i47910_3_);
+   private PackCompatibility(String id) {
+      this.description = (new TranslationTextComponent("pack.incompatible." + id)).mergeStyle(TextFormatting.GRAY);
+      this.confirmMessage = new TranslationTextComponent("pack.incompatible.confirm." + id);
    }
 
    public boolean isCompatible() {
       return this == COMPATIBLE;
    }
 
-   public static PackCompatibility forFormat(int p_198969_0_) {
-      if (p_198969_0_ < SharedConstants.getCurrentVersion().getPackVersion()) {
+   public static PackCompatibility getCompatibility(int packVersionIn) {
+      if (packVersionIn < SharedConstants.getVersion().getPackVersion()) {
          return TOO_OLD;
       } else {
-         return p_198969_0_ > SharedConstants.getCurrentVersion().getPackVersion() ? TOO_NEW : COMPATIBLE;
+         return packVersionIn > SharedConstants.getVersion().getPackVersion() ? TOO_NEW : COMPATIBLE;
       }
    }
 
@@ -38,7 +38,7 @@ public enum PackCompatibility {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ITextComponent getConfirmation() {
-      return this.confirmation;
+   public ITextComponent getConfirmMessage() {
+      return this.confirmMessage;
    }
 }

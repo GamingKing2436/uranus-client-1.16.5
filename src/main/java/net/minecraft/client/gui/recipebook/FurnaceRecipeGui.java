@@ -10,13 +10,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class FurnaceRecipeGui extends AbstractRecipeBookGui {
-   private static final ITextComponent FILTER_NAME = new TranslationTextComponent("gui.recipebook.toggleRecipes.smeltable");
+   private static final ITextComponent field_243414_i = new TranslationTextComponent("gui.recipebook.toggleRecipes.smeltable");
 
-   protected ITextComponent getRecipeFilterName() {
-      return FILTER_NAME;
+   protected ITextComponent func_230479_g_() {
+      return field_243414_i;
    }
 
-   protected Set<Item> getFuelItems() {
-      return AbstractFurnaceTileEntity.getFuel().keySet();
+   protected Set<Item> func_212958_h() {
+      return AbstractFurnaceTileEntity.getBurnTimes().keySet();
    }
 }

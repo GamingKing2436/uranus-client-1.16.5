@@ -22,19 +22,19 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class ObjectiveCriteriaArgument implements ArgumentType<ScoreCriteria> {
    private static final Collection<String> EXAMPLES = Arrays.asList("foo", "foo.bar.baz", "minecraft:foo");
-   public static final DynamicCommandExceptionType ERROR_INVALID_VALUE = new DynamicCommandExceptionType((p_208672_0_) -> {
+   public static final DynamicCommandExceptionType OBJECTIVE_INVALID_CRITERIA = new DynamicCommandExceptionType((p_208672_0_) -> {
       return new TranslationTextComponent("argument.criteria.invalid", p_208672_0_);
    });
 
    private ObjectiveCriteriaArgument() {
    }
 
-   public static ObjectiveCriteriaArgument criteria() {
+   public static ObjectiveCriteriaArgument objectiveCriteria() {
       return new ObjectiveCriteriaArgument();
    }
 
-   public static ScoreCriteria getCriteria(CommandContext<CommandSource> p_197161_0_, String p_197161_1_) {
-      return p_197161_0_.getArgument(p_197161_1_, ScoreCriteria.class);
+   public static ScoreCriteria getObjectiveCriteria(CommandContext<CommandSource> context, String name) {
+      return context.getArgument(name, ScoreCriteria.class);
    }
 
    public ScoreCriteria parse(StringReader p_parse_1_) throws CommandSyntaxException {
@@ -45,18 +45,18 @@ public class ObjectiveCriteriaArgument implements ArgumentType<ScoreCriteria> {
       }
 
       String s = p_parse_1_.getString().substring(i, p_parse_1_.getCursor());
-      return ScoreCriteria.byName(s).orElseThrow(() -> {
+      return ScoreCriteria.func_216390_a(s).orElseThrow(() -> {
          p_parse_1_.setCursor(i);
-         return ERROR_INVALID_VALUE.create(s);
+         return OBJECTIVE_INVALID_CRITERIA.create(s);
       });
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
-      List<String> list = Lists.newArrayList(ScoreCriteria.CRITERIA_BY_NAME.keySet());
+      List<String> list = Lists.newArrayList(ScoreCriteria.INSTANCES.keySet());
 
-      for(StatType<?> stattype : Registry.STAT_TYPE) {
+      for(StatType<?> stattype : Registry.STATS) {
          for(Object object : stattype.getRegistry()) {
-            String s = this.getName(stattype, object);
+            String s = this.makeStatName(stattype, object);
             list.add(s);
          }
       }
@@ -64,8 +64,8 @@ public class ObjectiveCriteriaArgument implements ArgumentType<ScoreCriteria> {
       return ISuggestionProvider.suggest(list, p_listSuggestions_2_);
    }
 
-   public <T> String getName(StatType<T> p_199815_1_, Object p_199815_2_) {
-      return Stat.buildName(p_199815_1_, (T)p_199815_2_);
+   public <T> String makeStatName(StatType<T> type, Object value) {
+      return Stat.buildName(type, (T)value);
    }
 
    public Collection<String> getExamples() {

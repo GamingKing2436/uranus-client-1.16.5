@@ -19,29 +19,29 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class Enchantment {
-   private final EquipmentSlotType[] slots;
+   private final EquipmentSlotType[] applicableEquipmentTypes;
    private final Enchantment.Rarity rarity;
-   public final EnchantmentType category;
+   public final EnchantmentType type;
    @Nullable
-   protected String descriptionId;
+   protected String name;
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public static Enchantment byId(int p_185262_0_) {
-      return Registry.ENCHANTMENT.byId(p_185262_0_);
+   public static Enchantment getEnchantmentByID(int id) {
+      return Registry.ENCHANTMENT.getByValue(id);
    }
 
-   protected Enchantment(Enchantment.Rarity p_i46731_1_, EnchantmentType p_i46731_2_, EquipmentSlotType[] p_i46731_3_) {
-      this.rarity = p_i46731_1_;
-      this.category = p_i46731_2_;
-      this.slots = p_i46731_3_;
+   protected Enchantment(Enchantment.Rarity rarityIn, EnchantmentType typeIn, EquipmentSlotType[] slots) {
+      this.rarity = rarityIn;
+      this.type = typeIn;
+      this.applicableEquipmentTypes = slots;
    }
 
-   public Map<EquipmentSlotType, ItemStack> getSlotItems(LivingEntity p_222181_1_) {
+   public Map<EquipmentSlotType, ItemStack> getEntityEquipment(LivingEntity livingEntityIn) {
       Map<EquipmentSlotType, ItemStack> map = Maps.newEnumMap(EquipmentSlotType.class);
 
-      for(EquipmentSlotType equipmentslottype : this.slots) {
-         ItemStack itemstack = p_222181_1_.getItemBySlot(equipmentslottype);
+      for(EquipmentSlotType equipmentslottype : this.applicableEquipmentTypes) {
+         ItemStack itemstack = livingEntityIn.getItemStackFromSlot(equipmentslottype);
          if (!itemstack.isEmpty()) {
             map.put(equipmentslottype, itemstack);
          }
@@ -62,68 +62,68 @@ public abstract class Enchantment {
       return 1;
    }
 
-   public int getMinCost(int p_77321_1_) {
-      return 1 + p_77321_1_ * 10;
+   public int getMinEnchantability(int enchantmentLevel) {
+      return 1 + enchantmentLevel * 10;
    }
 
-   public int getMaxCost(int p_223551_1_) {
-      return this.getMinCost(p_223551_1_) + 5;
+   public int getMaxEnchantability(int enchantmentLevel) {
+      return this.getMinEnchantability(enchantmentLevel) + 5;
    }
 
-   public int getDamageProtection(int p_77318_1_, DamageSource p_77318_2_) {
+   public int calcModifierDamage(int level, DamageSource source) {
       return 0;
    }
 
-   public float getDamageBonus(int p_152376_1_, CreatureAttribute p_152376_2_) {
+   public float calcDamageByCreature(int level, CreatureAttribute creatureType) {
       return 0.0F;
    }
 
-   public final boolean isCompatibleWith(Enchantment p_191560_1_) {
-      return this.checkCompatibility(p_191560_1_) && p_191560_1_.checkCompatibility(this);
+   public final boolean isCompatibleWith(Enchantment enchantmentIn) {
+      return this.canApplyTogether(enchantmentIn) && enchantmentIn.canApplyTogether(this);
    }
 
-   protected boolean checkCompatibility(Enchantment p_77326_1_) {
-      return this != p_77326_1_;
+   protected boolean canApplyTogether(Enchantment ench) {
+      return this != ench;
    }
 
-   protected String getOrCreateDescriptionId() {
-      if (this.descriptionId == null) {
-         this.descriptionId = Util.makeDescriptionId("enchantment", Registry.ENCHANTMENT.getKey(this));
+   protected String getDefaultTranslationKey() {
+      if (this.name == null) {
+         this.name = Util.makeTranslationKey("enchantment", Registry.ENCHANTMENT.getKey(this));
       }
 
-      return this.descriptionId;
+      return this.name;
    }
 
-   public String getDescriptionId() {
-      return this.getOrCreateDescriptionId();
+   public String getName() {
+      return this.getDefaultTranslationKey();
    }
 
-   public ITextComponent getFullname(int p_200305_1_) {
-      IFormattableTextComponent iformattabletextcomponent = new TranslationTextComponent(this.getDescriptionId());
+   public ITextComponent getDisplayName(int level) {
+      IFormattableTextComponent iformattabletextcomponent = new TranslationTextComponent(this.getName());
       if (this.isCurse()) {
-         iformattabletextcomponent.withStyle(TextFormatting.RED);
+         iformattabletextcomponent.mergeStyle(TextFormatting.RED);
       } else {
-         iformattabletextcomponent.withStyle(TextFormatting.GRAY);
+         iformattabletextcomponent.mergeStyle(TextFormatting.GRAY);
       }
 
-      if (p_200305_1_ != 1 || this.getMaxLevel() != 1) {
-         iformattabletextcomponent.append(" ").append(new TranslationTextComponent("enchantment.level." + p_200305_1_));
+      if (level != 1 || this.getMaxLevel() != 1) {
+         iformattabletextcomponent.appendString(" ").append(new TranslationTextComponent("enchantment.level." + level));
       }
 
       return iformattabletextcomponent;
    }
 
-   public boolean canEnchant(ItemStack p_92089_1_) {
-      return this.category.canEnchant(p_92089_1_.getItem());
+   public boolean canApply(ItemStack stack) {
+      return this.type.canEnchantItem(stack.getItem());
    }
 
-   public void doPostAttack(LivingEntity p_151368_1_, Entity p_151368_2_, int p_151368_3_) {
+   public void onEntityDamaged(LivingEntity user, Entity target, int level) {
    }
 
-   public void doPostHurt(LivingEntity p_151367_1_, Entity p_151367_2_, int p_151367_3_) {
+   public void onUserHurt(LivingEntity user, Entity attacker, int level) {
    }
 
-   public boolean isTreasureOnly() {
+   public boolean isTreasureEnchantment() {
       return false;
    }
 
@@ -131,11 +131,11 @@ public abstract class Enchantment {
       return false;
    }
 
-   public boolean isTradeable() {
+   public boolean canVillagerTrade() {
       return true;
    }
 
-   public boolean isDiscoverable() {
+   public boolean canGenerateInLoot() {
       return true;
    }
 
@@ -147,8 +147,8 @@ public abstract class Enchantment {
 
       private final int weight;
 
-      private Rarity(int p_i47026_3_) {
-         this.weight = p_i47026_3_;
+      private Rarity(int rarityWeight) {
+         this.weight = rarityWeight;
       }
 
       public int getWeight() {

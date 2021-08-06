@@ -43,10 +43,10 @@ import net.minecraft.world.IServerWorld;
 import net.minecraft.world.World;
 
 public class SpiderEntity extends MonsterEntity {
-   private static final DataParameter<Byte> DATA_FLAGS_ID = EntityDataManager.defineId(SpiderEntity.class, DataSerializers.BYTE);
+   private static final DataParameter<Byte> CLIMBING = EntityDataManager.createKey(SpiderEntity.class, DataSerializers.BYTE);
 
-   public SpiderEntity(EntityType<? extends SpiderEntity> p_i48550_1_, World p_i48550_2_) {
-      super(p_i48550_1_, p_i48550_2_);
+   public SpiderEntity(EntityType<? extends SpiderEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
    protected void registerGoals() {
@@ -61,145 +61,145 @@ public class SpiderEntity extends MonsterEntity {
       this.targetSelector.addGoal(3, new SpiderEntity.TargetGoal<>(this, IronGolemEntity.class));
    }
 
-   public double getPassengersRidingOffset() {
-      return (double)(this.getBbHeight() * 0.5F);
+   public double getMountedYOffset() {
+      return (double)(this.getHeight() * 0.5F);
    }
 
-   protected PathNavigator createNavigation(World p_175447_1_) {
-      return new ClimberPathNavigator(this, p_175447_1_);
+   protected PathNavigator createNavigator(World worldIn) {
+      return new ClimberPathNavigator(this, worldIn);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_FLAGS_ID, (byte)0);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(CLIMBING, (byte)0);
    }
 
    public void tick() {
       super.tick();
-      if (!this.level.isClientSide) {
-         this.setClimbing(this.horizontalCollision);
+      if (!this.world.isRemote) {
+         this.setBesideClimbableBlock(this.collidedHorizontally);
       }
 
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 16.0D).add(Attributes.MOVEMENT_SPEED, (double)0.3F);
+   public static AttributeModifierMap.MutableAttribute func_234305_eI_() {
+      return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 16.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, (double)0.3F);
    }
 
    protected SoundEvent getAmbientSound() {
-      return SoundEvents.SPIDER_AMBIENT;
+      return SoundEvents.ENTITY_SPIDER_AMBIENT;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.SPIDER_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_SPIDER_HURT;
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.SPIDER_DEATH;
+      return SoundEvents.ENTITY_SPIDER_DEATH;
    }
 
-   protected void playStepSound(BlockPos p_180429_1_, BlockState p_180429_2_) {
-      this.playSound(SoundEvents.SPIDER_STEP, 0.15F, 1.0F);
+   protected void playStepSound(BlockPos pos, BlockState blockIn) {
+      this.playSound(SoundEvents.ENTITY_SPIDER_STEP, 0.15F, 1.0F);
    }
 
-   public boolean onClimbable() {
-      return this.isClimbing();
+   public boolean isOnLadder() {
+      return this.isBesideClimbableBlock();
    }
 
-   public void makeStuckInBlock(BlockState p_213295_1_, Vector3d p_213295_2_) {
-      if (!p_213295_1_.is(Blocks.COBWEB)) {
-         super.makeStuckInBlock(p_213295_1_, p_213295_2_);
+   public void setMotionMultiplier(BlockState state, Vector3d motionMultiplierIn) {
+      if (!state.isIn(Blocks.COBWEB)) {
+         super.setMotionMultiplier(state, motionMultiplierIn);
       }
 
    }
 
-   public CreatureAttribute getMobType() {
+   public CreatureAttribute getCreatureAttribute() {
       return CreatureAttribute.ARTHROPOD;
    }
 
-   public boolean canBeAffected(EffectInstance p_70687_1_) {
-      return p_70687_1_.getEffect() == Effects.POISON ? false : super.canBeAffected(p_70687_1_);
+   public boolean isPotionApplicable(EffectInstance potioneffectIn) {
+      return potioneffectIn.getPotion() == Effects.POISON ? false : super.isPotionApplicable(potioneffectIn);
    }
 
-   public boolean isClimbing() {
-      return (this.entityData.get(DATA_FLAGS_ID) & 1) != 0;
+   public boolean isBesideClimbableBlock() {
+      return (this.dataManager.get(CLIMBING) & 1) != 0;
    }
 
-   public void setClimbing(boolean p_70839_1_) {
-      byte b0 = this.entityData.get(DATA_FLAGS_ID);
-      if (p_70839_1_) {
+   public void setBesideClimbableBlock(boolean climbing) {
+      byte b0 = this.dataManager.get(CLIMBING);
+      if (climbing) {
          b0 = (byte)(b0 | 1);
       } else {
          b0 = (byte)(b0 & -2);
       }
 
-      this.entityData.set(DATA_FLAGS_ID, b0);
+      this.dataManager.set(CLIMBING, b0);
    }
 
    @Nullable
-   public ILivingEntityData finalizeSpawn(IServerWorld p_213386_1_, DifficultyInstance p_213386_2_, SpawnReason p_213386_3_, @Nullable ILivingEntityData p_213386_4_, @Nullable CompoundNBT p_213386_5_) {
-      p_213386_4_ = super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, p_213386_4_, p_213386_5_);
-      if (p_213386_1_.getRandom().nextInt(100) == 0) {
-         SkeletonEntity skeletonentity = EntityType.SKELETON.create(this.level);
-         skeletonentity.moveTo(this.getX(), this.getY(), this.getZ(), this.yRot, 0.0F);
-         skeletonentity.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, (ILivingEntityData)null, (CompoundNBT)null);
+   public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+      spawnDataIn = super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+      if (worldIn.getRandom().nextInt(100) == 0) {
+         SkeletonEntity skeletonentity = EntityType.SKELETON.create(this.world);
+         skeletonentity.setLocationAndAngles(this.getPosX(), this.getPosY(), this.getPosZ(), this.rotationYaw, 0.0F);
+         skeletonentity.onInitialSpawn(worldIn, difficultyIn, reason, (ILivingEntityData)null, (CompoundNBT)null);
          skeletonentity.startRiding(this);
       }
 
-      if (p_213386_4_ == null) {
-         p_213386_4_ = new SpiderEntity.GroupData();
-         if (p_213386_1_.getDifficulty() == Difficulty.HARD && p_213386_1_.getRandom().nextFloat() < 0.1F * p_213386_2_.getSpecialMultiplier()) {
-            ((SpiderEntity.GroupData)p_213386_4_).setRandomEffect(p_213386_1_.getRandom());
+      if (spawnDataIn == null) {
+         spawnDataIn = new SpiderEntity.GroupData();
+         if (worldIn.getDifficulty() == Difficulty.HARD && worldIn.getRandom().nextFloat() < 0.1F * difficultyIn.getClampedAdditionalDifficulty()) {
+            ((SpiderEntity.GroupData)spawnDataIn).setRandomEffect(worldIn.getRandom());
          }
       }
 
-      if (p_213386_4_ instanceof SpiderEntity.GroupData) {
-         Effect effect = ((SpiderEntity.GroupData)p_213386_4_).effect;
+      if (spawnDataIn instanceof SpiderEntity.GroupData) {
+         Effect effect = ((SpiderEntity.GroupData)spawnDataIn).effect;
          if (effect != null) {
-            this.addEffect(new EffectInstance(effect, Integer.MAX_VALUE));
+            this.addPotionEffect(new EffectInstance(effect, Integer.MAX_VALUE));
          }
       }
 
-      return p_213386_4_;
+      return spawnDataIn;
    }
 
-   protected float getStandingEyeHeight(Pose p_213348_1_, EntitySize p_213348_2_) {
+   protected float getStandingEyeHeight(Pose poseIn, EntitySize sizeIn) {
       return 0.65F;
    }
 
    static class AttackGoal extends MeleeAttackGoal {
-      public AttackGoal(SpiderEntity p_i46676_1_) {
-         super(p_i46676_1_, 1.0D, true);
+      public AttackGoal(SpiderEntity spider) {
+         super(spider, 1.0D, true);
       }
 
-      public boolean canUse() {
-         return super.canUse() && !this.mob.isVehicle();
+      public boolean shouldExecute() {
+         return super.shouldExecute() && !this.attacker.isBeingRidden();
       }
 
-      public boolean canContinueToUse() {
-         float f = this.mob.getBrightness();
-         if (f >= 0.5F && this.mob.getRandom().nextInt(100) == 0) {
-            this.mob.setTarget((LivingEntity)null);
+      public boolean shouldContinueExecuting() {
+         float f = this.attacker.getBrightness();
+         if (f >= 0.5F && this.attacker.getRNG().nextInt(100) == 0) {
+            this.attacker.setAttackTarget((LivingEntity)null);
             return false;
          } else {
-            return super.canContinueToUse();
+            return super.shouldContinueExecuting();
          }
       }
 
-      protected double getAttackReachSqr(LivingEntity p_179512_1_) {
-         return (double)(4.0F + p_179512_1_.getBbWidth());
+      protected double getAttackReachSqr(LivingEntity attackTarget) {
+         return (double)(4.0F + attackTarget.getWidth());
       }
    }
 
    public static class GroupData implements ILivingEntityData {
       public Effect effect;
 
-      public void setRandomEffect(Random p_111104_1_) {
-         int i = p_111104_1_.nextInt(5);
+      public void setRandomEffect(Random rand) {
+         int i = rand.nextInt(5);
          if (i <= 1) {
-            this.effect = Effects.MOVEMENT_SPEED;
+            this.effect = Effects.SPEED;
          } else if (i <= 2) {
-            this.effect = Effects.DAMAGE_BOOST;
+            this.effect = Effects.STRENGTH;
          } else if (i <= 3) {
             this.effect = Effects.REGENERATION;
          } else if (i <= 4) {
@@ -210,13 +210,13 @@ public class SpiderEntity extends MonsterEntity {
    }
 
    static class TargetGoal<T extends LivingEntity> extends NearestAttackableTargetGoal<T> {
-      public TargetGoal(SpiderEntity p_i45818_1_, Class<T> p_i45818_2_) {
-         super(p_i45818_1_, p_i45818_2_, true);
+      public TargetGoal(SpiderEntity spider, Class<T> classTarget) {
+         super(spider, classTarget, true);
       }
 
-      public boolean canUse() {
-         float f = this.mob.getBrightness();
-         return f >= 0.5F ? false : super.canUse();
+      public boolean shouldExecute() {
+         float f = this.goalOwner.getBrightness();
+         return f >= 0.5F ? false : super.shouldExecute();
       }
    }
 }

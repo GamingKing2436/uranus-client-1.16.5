@@ -29,7 +29,7 @@ public class FunctionObject {
       return this.entries;
    }
 
-   public static FunctionObject fromLines(ResourceLocation p_237140_0_, CommandDispatcher<CommandSource> p_237140_1_, CommandSource p_237140_2_, List<String> p_237140_3_) {
+   public static FunctionObject func_237140_a_(ResourceLocation p_237140_0_, CommandDispatcher<CommandSource> p_237140_1_, CommandSource p_237140_2_, List<String> p_237140_3_) {
       List<FunctionObject.IEntry> list = Lists.newArrayListWithCapacity(p_237140_3_.size());
 
       for(int i = 0; i < p_237140_3_.size(); ++i) {
@@ -50,7 +50,7 @@ public class FunctionObject {
             try {
                ParseResults<CommandSource> parseresults = p_237140_1_.parse(stringreader, p_237140_2_);
                if (parseresults.getReader().canRead()) {
-                  throw Commands.getParseException(parseresults);
+                  throw Commands.func_227481_a_(parseresults);
                }
 
                list.add(new FunctionObject.CommandEntry(parseresults));
@@ -64,29 +64,29 @@ public class FunctionObject {
    }
 
    public static class CacheableFunction {
-      public static final FunctionObject.CacheableFunction NONE = new FunctionObject.CacheableFunction((ResourceLocation)null);
+      public static final FunctionObject.CacheableFunction EMPTY = new FunctionObject.CacheableFunction((ResourceLocation)null);
       @Nullable
       private final ResourceLocation id;
-      private boolean resolved;
+      private boolean isValid;
       private Optional<FunctionObject> function = Optional.empty();
 
-      public CacheableFunction(@Nullable ResourceLocation p_i47537_1_) {
-         this.id = p_i47537_1_;
+      public CacheableFunction(@Nullable ResourceLocation idIn) {
+         this.id = idIn;
       }
 
-      public CacheableFunction(FunctionObject p_i47602_1_) {
-         this.resolved = true;
+      public CacheableFunction(FunctionObject functionIn) {
+         this.isValid = true;
          this.id = null;
-         this.function = Optional.of(p_i47602_1_);
+         this.function = Optional.of(functionIn);
       }
 
-      public Optional<FunctionObject> get(FunctionManager p_218039_1_) {
-         if (!this.resolved) {
+      public Optional<FunctionObject> func_218039_a(FunctionManager p_218039_1_) {
+         if (!this.isValid) {
             if (this.id != null) {
                this.function = p_218039_1_.get(this.id);
             }
 
-            this.resolved = true;
+            this.isValid = true;
          }
 
          return this.function;
@@ -101,30 +101,30 @@ public class FunctionObject {
    }
 
    public static class CommandEntry implements FunctionObject.IEntry {
-      private final ParseResults<CommandSource> parse;
+      private final ParseResults<CommandSource> field_196999_a;
 
       public CommandEntry(ParseResults<CommandSource> p_i47816_1_) {
-         this.parse = p_i47816_1_;
+         this.field_196999_a = p_i47816_1_;
       }
 
       public void execute(FunctionManager p_196998_1_, CommandSource p_196998_2_, ArrayDeque<FunctionManager.QueuedCommand> p_196998_3_, int p_196998_4_) throws CommandSyntaxException {
-         p_196998_1_.getDispatcher().execute(new ParseResults<>(this.parse.getContext().withSource(p_196998_2_), this.parse.getReader(), this.parse.getExceptions()));
+         p_196998_1_.getCommandDispatcher().execute(new ParseResults<>(this.field_196999_a.getContext().withSource(p_196998_2_), this.field_196999_a.getReader(), this.field_196999_a.getExceptions()));
       }
 
       public String toString() {
-         return this.parse.getReader().getString();
+         return this.field_196999_a.getReader().getString();
       }
    }
 
    public static class FunctionEntry implements FunctionObject.IEntry {
       private final FunctionObject.CacheableFunction function;
 
-      public FunctionEntry(FunctionObject p_i47601_1_) {
-         this.function = new FunctionObject.CacheableFunction(p_i47601_1_);
+      public FunctionEntry(FunctionObject functionIn) {
+         this.function = new FunctionObject.CacheableFunction(functionIn);
       }
 
       public void execute(FunctionManager p_196998_1_, CommandSource p_196998_2_, ArrayDeque<FunctionManager.QueuedCommand> p_196998_3_, int p_196998_4_) {
-         this.function.get(p_196998_1_).ifPresent((p_218041_4_) -> {
+         this.function.func_218039_a(p_196998_1_).ifPresent((p_218041_4_) -> {
             FunctionObject.IEntry[] afunctionobject$ientry = p_218041_4_.getEntries();
             int i = p_196998_4_ - p_196998_3_.size();
             int j = Math.min(afunctionobject$ientry.length, i);

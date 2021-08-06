@@ -13,10 +13,10 @@ public class OminousBannerTileEntityRenameFix extends NamedEntityFix {
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
-      return p_207419_1_.update(DSL.remainderFinder(), this::fixTag);
+      return p_207419_1_.update(DSL.remainderFinder(), this::func_222992_a);
    }
 
-   private Dynamic<?> fixTag(Dynamic<?> p_222992_1_) {
+   private Dynamic<?> func_222992_a(Dynamic<?> p_222992_1_) {
       Optional<String> optional = p_222992_1_.get("CustomName").asString().result();
       if (optional.isPresent()) {
          String s = optional.get();

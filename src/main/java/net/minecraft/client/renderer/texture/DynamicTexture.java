@@ -10,61 +10,61 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class DynamicTexture extends Texture {
-   private static final Logger LOGGER = LogManager.getLogger();
+   private static final Logger field_243504_d = LogManager.getLogger();
    @Nullable
-   private NativeImage pixels;
+   private NativeImage dynamicTextureData;
 
-   public DynamicTexture(NativeImage p_i48124_1_) {
-      this.pixels = p_i48124_1_;
+   public DynamicTexture(NativeImage nativeImageIn) {
+      this.dynamicTextureData = nativeImageIn;
       if (!RenderSystem.isOnRenderThread()) {
          RenderSystem.recordRenderCall(() -> {
-            TextureUtil.prepareImage(this.getId(), this.pixels.getWidth(), this.pixels.getHeight());
-            this.upload();
+            TextureUtil.prepareImage(this.getGlTextureId(), this.dynamicTextureData.getWidth(), this.dynamicTextureData.getHeight());
+            this.updateDynamicTexture();
          });
       } else {
-         TextureUtil.prepareImage(this.getId(), this.pixels.getWidth(), this.pixels.getHeight());
-         this.upload();
+         TextureUtil.prepareImage(this.getGlTextureId(), this.dynamicTextureData.getWidth(), this.dynamicTextureData.getHeight());
+         this.updateDynamicTexture();
       }
 
    }
 
-   public DynamicTexture(int p_i48125_1_, int p_i48125_2_, boolean p_i48125_3_) {
+   public DynamicTexture(int widthIn, int heightIn, boolean clearIn) {
       RenderSystem.assertThread(RenderSystem::isOnGameThreadOrInit);
-      this.pixels = new NativeImage(p_i48125_1_, p_i48125_2_, p_i48125_3_);
-      TextureUtil.prepareImage(this.getId(), this.pixels.getWidth(), this.pixels.getHeight());
+      this.dynamicTextureData = new NativeImage(widthIn, heightIn, clearIn);
+      TextureUtil.prepareImage(this.getGlTextureId(), this.dynamicTextureData.getWidth(), this.dynamicTextureData.getHeight());
    }
 
-   public void load(IResourceManager p_195413_1_) {
+   public void loadTexture(IResourceManager manager) {
    }
 
-   public void upload() {
-      if (this.pixels != null) {
-         this.bind();
-         this.pixels.upload(0, 0, 0, false);
+   public void updateDynamicTexture() {
+      if (this.dynamicTextureData != null) {
+         this.bindTexture();
+         this.dynamicTextureData.uploadTextureSub(0, 0, 0, false);
       } else {
-         LOGGER.warn("Trying to upload disposed texture {}", (int)this.getId());
+         field_243504_d.warn("Trying to upload disposed texture {}", (int)this.getGlTextureId());
       }
 
    }
 
    @Nullable
-   public NativeImage getPixels() {
-      return this.pixels;
+   public NativeImage getTextureData() {
+      return this.dynamicTextureData;
    }
 
-   public void setPixels(NativeImage p_195415_1_) {
-      if (this.pixels != null) {
-         this.pixels.close();
+   public void setTextureData(NativeImage nativeImageIn) {
+      if (this.dynamicTextureData != null) {
+         this.dynamicTextureData.close();
       }
 
-      this.pixels = p_195415_1_;
+      this.dynamicTextureData = nativeImageIn;
    }
 
    public void close() {
-      if (this.pixels != null) {
-         this.pixels.close();
-         this.releaseId();
-         this.pixels = null;
+      if (this.dynamicTextureData != null) {
+         this.dynamicTextureData.close();
+         this.deleteGlTexture();
+         this.dynamicTextureData = null;
       }
 
    }

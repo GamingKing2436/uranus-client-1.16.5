@@ -15,24 +15,24 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 
 public class SmithingTableBlock extends CraftingTableBlock {
-   private static final ITextComponent CONTAINER_TITLE = new TranslationTextComponent("container.upgrade");
+   private static final ITextComponent CONTAINER_NAME = new TranslationTextComponent("container.upgrade");
 
-   protected SmithingTableBlock(AbstractBlock.Properties p_i49974_1_) {
-      super(p_i49974_1_);
+   protected SmithingTableBlock(AbstractBlock.Properties properties) {
+      super(properties);
    }
 
-   public INamedContainerProvider getMenuProvider(BlockState p_220052_1_, World p_220052_2_, BlockPos p_220052_3_) {
+   public INamedContainerProvider getContainer(BlockState state, World worldIn, BlockPos pos) {
       return new SimpleNamedContainerProvider((p_235576_2_, p_235576_3_, p_235576_4_) -> {
-         return new SmithingTableContainer(p_235576_2_, p_235576_3_, IWorldPosCallable.create(p_220052_2_, p_220052_3_));
-      }, CONTAINER_TITLE);
+         return new SmithingTableContainer(p_235576_2_, p_235576_3_, IWorldPosCallable.of(worldIn, pos));
+      }, CONTAINER_NAME);
    }
 
-   public ActionResultType use(BlockState p_225533_1_, World p_225533_2_, BlockPos p_225533_3_, PlayerEntity p_225533_4_, Hand p_225533_5_, BlockRayTraceResult p_225533_6_) {
-      if (p_225533_2_.isClientSide) {
+   public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+      if (worldIn.isRemote) {
          return ActionResultType.SUCCESS;
       } else {
-         p_225533_4_.openMenu(p_225533_1_.getMenuProvider(p_225533_2_, p_225533_3_));
-         p_225533_4_.awardStat(Stats.INTERACT_WITH_SMITHING_TABLE);
+         player.openContainer(state.getContainer(worldIn, pos));
+         player.addStat(Stats.field_232864_aE_);
          return ActionResultType.CONSUME;
       }
    }

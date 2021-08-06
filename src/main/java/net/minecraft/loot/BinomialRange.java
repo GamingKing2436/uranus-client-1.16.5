@@ -16,16 +16,16 @@ public final class BinomialRange implements IRandomRange {
    private final int n;
    private final float p;
 
-   public BinomialRange(int p_i51276_1_, float p_i51276_2_) {
-      this.n = p_i51276_1_;
-      this.p = p_i51276_2_;
+   public BinomialRange(int n, float p) {
+      this.n = n;
+      this.p = p;
    }
 
-   public int getInt(Random p_186511_1_) {
+   public int generateInt(Random rand) {
       int i = 0;
 
       for(int j = 0; j < this.n; ++j) {
-         if (p_186511_1_.nextFloat() < this.p) {
+         if (rand.nextFloat() < this.p) {
             ++i;
          }
       }
@@ -33,8 +33,8 @@ public final class BinomialRange implements IRandomRange {
       return i;
    }
 
-   public static BinomialRange binomial(int p_215838_0_, float p_215838_1_) {
-      return new BinomialRange(p_215838_0_, p_215838_1_);
+   public static BinomialRange of(int nIn, float pIn) {
+      return new BinomialRange(nIn, pIn);
    }
 
    public ResourceLocation getType() {
@@ -43,9 +43,9 @@ public final class BinomialRange implements IRandomRange {
 
    public static class Serializer implements JsonDeserializer<BinomialRange>, JsonSerializer<BinomialRange> {
       public BinomialRange deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(p_deserialize_1_, "value");
-         int i = JSONUtils.getAsInt(jsonobject, "n");
-         float f = JSONUtils.getAsFloat(jsonobject, "p");
+         JsonObject jsonobject = JSONUtils.getJsonObject(p_deserialize_1_, "value");
+         int i = JSONUtils.getInt(jsonobject, "n");
+         float f = JSONUtils.getFloat(jsonobject, "p");
          return new BinomialRange(i, f);
       }
 

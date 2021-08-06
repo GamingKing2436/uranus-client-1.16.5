@@ -24,85 +24,85 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class VideoSettingsScreen extends SettingsScreen {
-   private static final ITextComponent FABULOUS = (new TranslationTextComponent("options.graphics.fabulous")).withStyle(TextFormatting.ITALIC);
-   private static final ITextComponent WARNING_MESSAGE = new TranslationTextComponent("options.graphics.warning.message", FABULOUS, FABULOUS);
-   private static final ITextComponent WARNING_TITLE = (new TranslationTextComponent("options.graphics.warning.title")).withStyle(TextFormatting.RED);
-   private static final ITextComponent BUTTON_ACCEPT = new TranslationTextComponent("options.graphics.warning.accept");
-   private static final ITextComponent BUTTON_CANCEL = new TranslationTextComponent("options.graphics.warning.cancel");
-   private static final ITextComponent NEW_LINE = new StringTextComponent("\n");
-   private static final AbstractOption[] OPTIONS = new AbstractOption[]{AbstractOption.GRAPHICS, AbstractOption.RENDER_DISTANCE, AbstractOption.AMBIENT_OCCLUSION, AbstractOption.FRAMERATE_LIMIT, AbstractOption.ENABLE_VSYNC, AbstractOption.VIEW_BOBBING, AbstractOption.GUI_SCALE, AbstractOption.ATTACK_INDICATOR, AbstractOption.GAMMA, AbstractOption.RENDER_CLOUDS, AbstractOption.USE_FULLSCREEN, AbstractOption.PARTICLES, AbstractOption.MIPMAP_LEVELS, AbstractOption.ENTITY_SHADOWS, AbstractOption.SCREEN_EFFECTS_SCALE, AbstractOption.ENTITY_DISTANCE_SCALING, AbstractOption.FOV_EFFECTS_SCALE};
-   private OptionsRowList list;
-   private final GPUWarning gpuWarnlistManager;
-   private final int oldMipmaps;
+   private static final ITextComponent field_241598_c_ = (new TranslationTextComponent("options.graphics.fabulous")).mergeStyle(TextFormatting.ITALIC);
+   private static final ITextComponent field_241599_p_ = new TranslationTextComponent("options.graphics.warning.message", field_241598_c_, field_241598_c_);
+   private static final ITextComponent field_241600_q_ = (new TranslationTextComponent("options.graphics.warning.title")).mergeStyle(TextFormatting.RED);
+   private static final ITextComponent field_241601_r_ = new TranslationTextComponent("options.graphics.warning.accept");
+   private static final ITextComponent field_241602_s_ = new TranslationTextComponent("options.graphics.warning.cancel");
+   private static final ITextComponent field_241603_t_ = new StringTextComponent("\n");
+   private static final AbstractOption[] OPTIONS = new AbstractOption[]{AbstractOption.GRAPHICS, AbstractOption.RENDER_DISTANCE, AbstractOption.AO, AbstractOption.FRAMERATE_LIMIT, AbstractOption.VSYNC, AbstractOption.VIEW_BOBBING, AbstractOption.GUI_SCALE, AbstractOption.ATTACK_INDICATOR, AbstractOption.GAMMA, AbstractOption.RENDER_CLOUDS, AbstractOption.FULLSCREEN, AbstractOption.PARTICLES, AbstractOption.MIPMAP_LEVELS, AbstractOption.ENTITY_SHADOWS, AbstractOption.SCREEN_EFFECT_SCALE_SLIDER, AbstractOption.ENTITY_DISTANCE_SCALING, AbstractOption.FOV_EFFECT_SCALE_SLIDER};
+   private OptionsRowList optionsRowList;
+   private final GPUWarning field_241604_x_;
+   private final int mipmapLevels;
 
-   public VideoSettingsScreen(Screen p_i1062_1_, GameSettings p_i1062_2_) {
-      super(p_i1062_1_, p_i1062_2_, new TranslationTextComponent("options.videoTitle"));
-      this.gpuWarnlistManager = p_i1062_1_.minecraft.getGpuWarnlistManager();
-      this.gpuWarnlistManager.resetWarnings();
-      if (p_i1062_2_.graphicsMode == GraphicsFanciness.FABULOUS) {
-         this.gpuWarnlistManager.dismissWarning();
+   public VideoSettingsScreen(Screen parentScreenIn, GameSettings gameSettingsIn) {
+      super(parentScreenIn, gameSettingsIn, new TranslationTextComponent("options.videoTitle"));
+      this.field_241604_x_ = parentScreenIn.minecraft.getGPUWarning();
+      this.field_241604_x_.func_241702_i_();
+      if (gameSettingsIn.graphicFanciness == GraphicsFanciness.FABULOUS) {
+         this.field_241604_x_.func_241698_e_();
       }
 
-      this.oldMipmaps = p_i1062_2_.mipmapLevels;
+      this.mipmapLevels = gameSettingsIn.mipmapLevels;
    }
 
    protected void init() {
-      this.list = new OptionsRowList(this.minecraft, this.width, this.height, 32, this.height - 32, 25);
-      this.list.addBig(new FullscreenResolutionOption(this.minecraft.getWindow()));
-      this.list.addBig(AbstractOption.BIOME_BLEND_RADIUS);
-      this.list.addSmall(OPTIONS);
-      this.children.add(this.list);
+      this.optionsRowList = new OptionsRowList(this.minecraft, this.width, this.height, 32, this.height - 32, 25);
+      this.optionsRowList.addOption(new FullscreenResolutionOption(this.minecraft.getMainWindow()));
+      this.optionsRowList.addOption(AbstractOption.BIOME_BLEND_RADIUS);
+      this.optionsRowList.addOptions(OPTIONS);
+      this.children.add(this.optionsRowList);
       this.addButton(new Button(this.width / 2 - 100, this.height - 27, 200, 20, DialogTexts.GUI_DONE, (p_213106_1_) -> {
-         this.minecraft.options.save();
-         this.minecraft.getWindow().changeFullscreenVideoMode();
-         this.minecraft.setScreen(this.lastScreen);
+         this.minecraft.gameSettings.saveOptions();
+         this.minecraft.getMainWindow().update();
+         this.minecraft.displayGuiScreen(this.parentScreen);
       }));
    }
 
-   public void removed() {
-      if (this.options.mipmapLevels != this.oldMipmaps) {
-         this.minecraft.updateMaxMipLevel(this.options.mipmapLevels);
-         this.minecraft.delayTextureReload();
+   public void onClose() {
+      if (this.gameSettings.mipmapLevels != this.mipmapLevels) {
+         this.minecraft.setMipmapLevels(this.gameSettings.mipmapLevels);
+         this.minecraft.scheduleResourcesRefresh();
       }
 
-      super.removed();
+      super.onClose();
    }
 
-   public boolean mouseClicked(double p_231044_1_, double p_231044_3_, int p_231044_5_) {
-      int i = this.options.guiScale;
-      if (super.mouseClicked(p_231044_1_, p_231044_3_, p_231044_5_)) {
-         if (this.options.guiScale != i) {
-            this.minecraft.resizeDisplay();
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      int i = this.gameSettings.guiScale;
+      if (super.mouseClicked(mouseX, mouseY, button)) {
+         if (this.gameSettings.guiScale != i) {
+            this.minecraft.updateWindowSize();
          }
 
-         if (this.gpuWarnlistManager.isShowingWarning()) {
-            List<ITextProperties> list = Lists.newArrayList(WARNING_MESSAGE, NEW_LINE);
-            String s = this.gpuWarnlistManager.getRendererWarnings();
+         if (this.field_241604_x_.func_241700_g_()) {
+            List<ITextProperties> list = Lists.newArrayList(field_241599_p_, field_241603_t_);
+            String s = this.field_241604_x_.func_241703_j_();
             if (s != null) {
-               list.add(NEW_LINE);
-               list.add((new TranslationTextComponent("options.graphics.warning.renderer", s)).withStyle(TextFormatting.GRAY));
+               list.add(field_241603_t_);
+               list.add((new TranslationTextComponent("options.graphics.warning.renderer", s)).mergeStyle(TextFormatting.GRAY));
             }
 
-            String s1 = this.gpuWarnlistManager.getVendorWarnings();
+            String s1 = this.field_241604_x_.func_241705_l_();
             if (s1 != null) {
-               list.add(NEW_LINE);
-               list.add((new TranslationTextComponent("options.graphics.warning.vendor", s1)).withStyle(TextFormatting.GRAY));
+               list.add(field_241603_t_);
+               list.add((new TranslationTextComponent("options.graphics.warning.vendor", s1)).mergeStyle(TextFormatting.GRAY));
             }
 
-            String s2 = this.gpuWarnlistManager.getVersionWarnings();
+            String s2 = this.field_241604_x_.func_241704_k_();
             if (s2 != null) {
-               list.add(NEW_LINE);
-               list.add((new TranslationTextComponent("options.graphics.warning.version", s2)).withStyle(TextFormatting.GRAY));
+               list.add(field_241603_t_);
+               list.add((new TranslationTextComponent("options.graphics.warning.version", s2)).mergeStyle(TextFormatting.GRAY));
             }
 
-            this.minecraft.setScreen(new GPUWarningScreen(WARNING_TITLE, list, ImmutableList.of(new GPUWarningScreen.Option(BUTTON_ACCEPT, (p_241606_1_) -> {
-               this.options.graphicsMode = GraphicsFanciness.FABULOUS;
-               Minecraft.getInstance().levelRenderer.allChanged();
-               this.gpuWarnlistManager.dismissWarning();
-               this.minecraft.setScreen(this);
-            }), new GPUWarningScreen.Option(BUTTON_CANCEL, (p_241605_1_) -> {
-               this.gpuWarnlistManager.dismissWarningAndSkipFabulous();
-               this.minecraft.setScreen(this);
+            this.minecraft.displayGuiScreen(new GPUWarningScreen(field_241600_q_, list, ImmutableList.of(new GPUWarningScreen.Option(field_241601_r_, (p_241606_1_) -> {
+               this.gameSettings.graphicFanciness = GraphicsFanciness.FABULOUS;
+               Minecraft.getInstance().worldRenderer.loadRenderers();
+               this.field_241604_x_.func_241698_e_();
+               this.minecraft.displayGuiScreen(this);
+            }), new GPUWarningScreen.Option(field_241602_s_, (p_241605_1_) -> {
+               this.field_241604_x_.func_241699_f_();
+               this.minecraft.displayGuiScreen(this);
             }))));
          }
 
@@ -112,13 +112,13 @@ public class VideoSettingsScreen extends SettingsScreen {
       }
    }
 
-   public boolean mouseReleased(double p_231048_1_, double p_231048_3_, int p_231048_5_) {
-      int i = this.options.guiScale;
-      if (super.mouseReleased(p_231048_1_, p_231048_3_, p_231048_5_)) {
+   public boolean mouseReleased(double mouseX, double mouseY, int button) {
+      int i = this.gameSettings.guiScale;
+      if (super.mouseReleased(mouseX, mouseY, button)) {
          return true;
-      } else if (this.list.mouseReleased(p_231048_1_, p_231048_3_, p_231048_5_)) {
-         if (this.options.guiScale != i) {
-            this.minecraft.resizeDisplay();
+      } else if (this.optionsRowList.mouseReleased(mouseX, mouseY, button)) {
+         if (this.gameSettings.guiScale != i) {
+            this.minecraft.updateWindowSize();
          }
 
          return true;
@@ -127,14 +127,14 @@ public class VideoSettingsScreen extends SettingsScreen {
       }
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.renderBackground(p_230430_1_);
-      this.list.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
-      drawCenteredString(p_230430_1_, this.font, this.title, this.width / 2, 5, 16777215);
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
-      List<IReorderingProcessor> list = tooltipAt(this.list, p_230430_2_, p_230430_3_);
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.renderBackground(matrixStack);
+      this.optionsRowList.render(matrixStack, mouseX, mouseY, partialTicks);
+      drawCenteredString(matrixStack, this.font, this.title, this.width / 2, 5, 16777215);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
+      List<IReorderingProcessor> list = func_243293_a(this.optionsRowList, mouseX, mouseY);
       if (list != null) {
-         this.renderTooltip(p_230430_1_, list, p_230430_2_, p_230430_3_);
+         this.renderTooltip(matrixStack, list, mouseX, mouseY);
       }
 
    }

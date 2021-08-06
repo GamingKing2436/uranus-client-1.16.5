@@ -13,59 +13,59 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class WorkingScreen extends Screen implements IProgressUpdate {
    @Nullable
-   private ITextComponent header;
+   private ITextComponent field_238648_a_;
    @Nullable
    private ITextComponent stage;
    private int progress;
-   private boolean stop;
+   private boolean doneWorking;
 
    public WorkingScreen() {
-      super(NarratorChatListener.NO_TITLE);
+      super(NarratorChatListener.EMPTY);
    }
 
    public boolean shouldCloseOnEsc() {
       return false;
    }
 
-   public void progressStartNoAbort(ITextComponent p_200210_1_) {
-      this.progressStart(p_200210_1_);
+   public void displaySavingString(ITextComponent component) {
+      this.resetProgressAndMessage(component);
    }
 
-   public void progressStart(ITextComponent p_200211_1_) {
-      this.header = p_200211_1_;
-      this.progressStage(new TranslationTextComponent("progress.working"));
+   public void resetProgressAndMessage(ITextComponent component) {
+      this.field_238648_a_ = component;
+      this.displayLoadingString(new TranslationTextComponent("progress.working"));
    }
 
-   public void progressStage(ITextComponent p_200209_1_) {
-      this.stage = p_200209_1_;
-      this.progressStagePercentage(0);
+   public void displayLoadingString(ITextComponent component) {
+      this.stage = component;
+      this.setLoadingProgress(0);
    }
 
-   public void progressStagePercentage(int p_73718_1_) {
-      this.progress = p_73718_1_;
+   public void setLoadingProgress(int progress) {
+      this.progress = progress;
    }
 
-   public void stop() {
-      this.stop = true;
+   public void setDoneWorking() {
+      this.doneWorking = true;
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      if (this.stop) {
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      if (this.doneWorking) {
          if (!this.minecraft.isConnectedToRealms()) {
-            this.minecraft.setScreen((Screen)null);
+            this.minecraft.displayGuiScreen((Screen)null);
          }
 
       } else {
-         this.renderBackground(p_230430_1_);
-         if (this.header != null) {
-            drawCenteredString(p_230430_1_, this.font, this.header, this.width / 2, 70, 16777215);
+         this.renderBackground(matrixStack);
+         if (this.field_238648_a_ != null) {
+            drawCenteredString(matrixStack, this.font, this.field_238648_a_, this.width / 2, 70, 16777215);
          }
 
          if (this.stage != null && this.progress != 0) {
-            drawCenteredString(p_230430_1_, this.font, (new StringTextComponent("")).append(this.stage).append(" " + this.progress + "%"), this.width / 2, 90, 16777215);
+            drawCenteredString(matrixStack, this.font, (new StringTextComponent("")).append(this.stage).appendString(" " + this.progress + "%"), this.width / 2, 90, 16777215);
          }
 
-         super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+         super.render(matrixStack, mouseX, mouseY, partialTicks);
       }
    }
 }

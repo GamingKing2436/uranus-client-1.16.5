@@ -20,18 +20,18 @@ public class CQueryEntityNBTPacket implements IPacket<IServerPlayNetHandler> {
       this.entityId = p_i49755_2_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.transactionId = p_148837_1_.readVarInt();
-      this.entityId = p_148837_1_.readVarInt();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.transactionId = buf.readVarInt();
+      this.entityId = buf.readVarInt();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.transactionId);
-      p_148840_1_.writeVarInt(this.entityId);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.transactionId);
+      buf.writeVarInt(this.entityId);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleEntityTagQuery(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processNBTQueryEntity(this);
    }
 
    public int getTransactionId() {

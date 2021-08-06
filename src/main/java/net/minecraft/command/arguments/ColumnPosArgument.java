@@ -20,21 +20,21 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class ColumnPosArgument implements ArgumentType<ILocationArgument> {
    private static final Collection<String> EXAMPLES = Arrays.asList("0 0", "~ ~", "~1 ~-2", "^ ^", "^-1 ^0");
-   public static final SimpleCommandExceptionType ERROR_NOT_COMPLETE = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos2d.incomplete"));
+   public static final SimpleCommandExceptionType INCOMPLETE_EXCEPTION = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos2d.incomplete"));
 
    public static ColumnPosArgument columnPos() {
       return new ColumnPosArgument();
    }
 
-   public static ColumnPos getColumnPos(CommandContext<CommandSource> p_218101_0_, String p_218101_1_) {
-      BlockPos blockpos = p_218101_0_.getArgument(p_218101_1_, ILocationArgument.class).getBlockPos(p_218101_0_.getSource());
+   public static ColumnPos fromBlockPos(CommandContext<CommandSource> context, String name) {
+      BlockPos blockpos = context.getArgument(name, ILocationArgument.class).getBlockPos(context.getSource());
       return new ColumnPos(blockpos.getX(), blockpos.getZ());
    }
 
    public ILocationArgument parse(StringReader p_parse_1_) throws CommandSyntaxException {
       int i = p_parse_1_.getCursor();
       if (!p_parse_1_.canRead()) {
-         throw ERROR_NOT_COMPLETE.createWithContext(p_parse_1_);
+         throw INCOMPLETE_EXCEPTION.createWithContext(p_parse_1_);
       } else {
          LocationPart locationpart = LocationPart.parseInt(p_parse_1_);
          if (p_parse_1_.canRead() && p_parse_1_.peek() == ' ') {
@@ -43,7 +43,7 @@ public class ColumnPosArgument implements ArgumentType<ILocationArgument> {
             return new LocationInput(locationpart, new LocationPart(true, 0.0D), locationpart1);
          } else {
             p_parse_1_.setCursor(i);
-            throw ERROR_NOT_COMPLETE.createWithContext(p_parse_1_);
+            throw INCOMPLETE_EXCEPTION.createWithContext(p_parse_1_);
          }
       }
    }
@@ -57,10 +57,10 @@ public class ColumnPosArgument implements ArgumentType<ILocationArgument> {
          if (!s.isEmpty() && s.charAt(0) == '^') {
             collection = Collections.singleton(ISuggestionProvider.Coordinates.DEFAULT_LOCAL);
          } else {
-            collection = ((ISuggestionProvider)p_listSuggestions_1_.getSource()).getRelevantCoordinates();
+            collection = ((ISuggestionProvider)p_listSuggestions_1_.getSource()).func_217294_q();
          }
 
-         return ISuggestionProvider.suggest2DCoordinates(s, collection, p_listSuggestions_2_, Commands.createValidator(this::parse));
+         return ISuggestionProvider.func_211269_a(s, collection, p_listSuggestions_2_, Commands.predicate(this::parse));
       }
    }
 

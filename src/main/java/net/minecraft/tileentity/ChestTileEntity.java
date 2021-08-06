@@ -33,21 +33,21 @@ import net.minecraftforge.api.distmarker.OnlyIn;
    _interface = IChestLid.class
 )
 public class ChestTileEntity extends LockableLootTileEntity implements IChestLid, ITickableTileEntity {
-   private NonNullList<ItemStack> items = NonNullList.withSize(27, ItemStack.EMPTY);
-   protected float openness;
-   protected float oOpenness;
-   protected int openCount;
-   private int tickInterval;
+   private NonNullList<ItemStack> chestContents = NonNullList.withSize(27, ItemStack.EMPTY);
+   protected float lidAngle;
+   protected float prevLidAngle;
+   protected int numPlayersUsing;
+   private int ticksSinceSync;
 
-   protected ChestTileEntity(TileEntityType<?> p_i48287_1_) {
-      super(p_i48287_1_);
+   protected ChestTileEntity(TileEntityType<?> typeIn) {
+      super(typeIn);
    }
 
    public ChestTileEntity() {
       this(TileEntityType.CHEST);
    }
 
-   public int getContainerSize() {
+   public int getSizeInventory() {
       return 27;
    }
 
@@ -55,76 +55,76 @@ public class ChestTileEntity extends LockableLootTileEntity implements IChestLid
       return new TranslationTextComponent("container.chest");
    }
 
-   public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
-      super.load(p_230337_1_, p_230337_2_);
-      this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-      if (!this.tryLoadLootTable(p_230337_2_)) {
-         ItemStackHelper.loadAllItems(p_230337_2_, this.items);
+   public void read(BlockState state, CompoundNBT nbt) {
+      super.read(state, nbt);
+      this.chestContents = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
+      if (!this.checkLootAndRead(nbt)) {
+         ItemStackHelper.loadAllItems(nbt, this.chestContents);
       }
 
    }
 
-   public CompoundNBT save(CompoundNBT p_189515_1_) {
-      super.save(p_189515_1_);
-      if (!this.trySaveLootTable(p_189515_1_)) {
-         ItemStackHelper.saveAllItems(p_189515_1_, this.items);
+   public CompoundNBT write(CompoundNBT compound) {
+      super.write(compound);
+      if (!this.checkLootAndWrite(compound)) {
+         ItemStackHelper.saveAllItems(compound, this.chestContents);
       }
 
-      return p_189515_1_;
+      return compound;
    }
 
    public void tick() {
-      int i = this.worldPosition.getX();
-      int j = this.worldPosition.getY();
-      int k = this.worldPosition.getZ();
-      ++this.tickInterval;
-      this.openCount = getOpenCount(this.level, this, this.tickInterval, i, j, k, this.openCount);
-      this.oOpenness = this.openness;
+      int i = this.pos.getX();
+      int j = this.pos.getY();
+      int k = this.pos.getZ();
+      ++this.ticksSinceSync;
+      this.numPlayersUsing = calculatePlayersUsingSync(this.world, this, this.ticksSinceSync, i, j, k, this.numPlayersUsing);
+      this.prevLidAngle = this.lidAngle;
       float f = 0.1F;
-      if (this.openCount > 0 && this.openness == 0.0F) {
-         this.playSound(SoundEvents.CHEST_OPEN);
+      if (this.numPlayersUsing > 0 && this.lidAngle == 0.0F) {
+         this.playSound(SoundEvents.BLOCK_CHEST_OPEN);
       }
 
-      if (this.openCount == 0 && this.openness > 0.0F || this.openCount > 0 && this.openness < 1.0F) {
-         float f1 = this.openness;
-         if (this.openCount > 0) {
-            this.openness += 0.1F;
+      if (this.numPlayersUsing == 0 && this.lidAngle > 0.0F || this.numPlayersUsing > 0 && this.lidAngle < 1.0F) {
+         float f1 = this.lidAngle;
+         if (this.numPlayersUsing > 0) {
+            this.lidAngle += 0.1F;
          } else {
-            this.openness -= 0.1F;
+            this.lidAngle -= 0.1F;
          }
 
-         if (this.openness > 1.0F) {
-            this.openness = 1.0F;
+         if (this.lidAngle > 1.0F) {
+            this.lidAngle = 1.0F;
          }
 
          float f2 = 0.5F;
-         if (this.openness < 0.5F && f1 >= 0.5F) {
-            this.playSound(SoundEvents.CHEST_CLOSE);
+         if (this.lidAngle < 0.5F && f1 >= 0.5F) {
+            this.playSound(SoundEvents.BLOCK_CHEST_CLOSE);
          }
 
-         if (this.openness < 0.0F) {
-            this.openness = 0.0F;
+         if (this.lidAngle < 0.0F) {
+            this.lidAngle = 0.0F;
          }
       }
 
    }
 
-   public static int getOpenCount(World p_213977_0_, LockableTileEntity p_213977_1_, int p_213977_2_, int p_213977_3_, int p_213977_4_, int p_213977_5_, int p_213977_6_) {
-      if (!p_213977_0_.isClientSide && p_213977_6_ != 0 && (p_213977_2_ + p_213977_3_ + p_213977_4_ + p_213977_5_) % 200 == 0) {
-         p_213977_6_ = getOpenCount(p_213977_0_, p_213977_1_, p_213977_3_, p_213977_4_, p_213977_5_);
+   public static int calculatePlayersUsingSync(World p_213977_0_, LockableTileEntity p_213977_1_, int p_213977_2_, int p_213977_3_, int p_213977_4_, int p_213977_5_, int p_213977_6_) {
+      if (!p_213977_0_.isRemote && p_213977_6_ != 0 && (p_213977_2_ + p_213977_3_ + p_213977_4_ + p_213977_5_) % 200 == 0) {
+         p_213977_6_ = calculatePlayersUsing(p_213977_0_, p_213977_1_, p_213977_3_, p_213977_4_, p_213977_5_);
       }
 
       return p_213977_6_;
    }
 
-   public static int getOpenCount(World p_213976_0_, LockableTileEntity p_213976_1_, int p_213976_2_, int p_213976_3_, int p_213976_4_) {
+   public static int calculatePlayersUsing(World p_213976_0_, LockableTileEntity p_213976_1_, int p_213976_2_, int p_213976_3_, int p_213976_4_) {
       int i = 0;
       float f = 5.0F;
 
-      for(PlayerEntity playerentity : p_213976_0_.getEntitiesOfClass(PlayerEntity.class, new AxisAlignedBB((double)((float)p_213976_2_ - 5.0F), (double)((float)p_213976_3_ - 5.0F), (double)((float)p_213976_4_ - 5.0F), (double)((float)(p_213976_2_ + 1) + 5.0F), (double)((float)(p_213976_3_ + 1) + 5.0F), (double)((float)(p_213976_4_ + 1) + 5.0F)))) {
-         if (playerentity.containerMenu instanceof ChestContainer) {
-            IInventory iinventory = ((ChestContainer)playerentity.containerMenu).getContainer();
-            if (iinventory == p_213976_1_ || iinventory instanceof DoubleSidedInventory && ((DoubleSidedInventory)iinventory).contains(p_213976_1_)) {
+      for(PlayerEntity playerentity : p_213976_0_.getEntitiesWithinAABB(PlayerEntity.class, new AxisAlignedBB((double)((float)p_213976_2_ - 5.0F), (double)((float)p_213976_3_ - 5.0F), (double)((float)p_213976_4_ - 5.0F), (double)((float)(p_213976_2_ + 1) + 5.0F), (double)((float)(p_213976_3_ + 1) + 5.0F), (double)((float)(p_213976_4_ + 1) + 5.0F)))) {
+         if (playerentity.openContainer instanceof ChestContainer) {
+            IInventory iinventory = ((ChestContainer)playerentity.openContainer).getLowerChestInventory();
+            if (iinventory == p_213976_1_ || iinventory instanceof DoubleSidedInventory && ((DoubleSidedInventory)iinventory).isPartOfLargeChest(p_213976_1_)) {
                ++i;
             }
          }
@@ -133,92 +133,92 @@ public class ChestTileEntity extends LockableLootTileEntity implements IChestLid
       return i;
    }
 
-   private void playSound(SoundEvent p_195483_1_) {
-      ChestType chesttype = this.getBlockState().getValue(ChestBlock.TYPE);
+   private void playSound(SoundEvent soundIn) {
+      ChestType chesttype = this.getBlockState().get(ChestBlock.TYPE);
       if (chesttype != ChestType.LEFT) {
-         double d0 = (double)this.worldPosition.getX() + 0.5D;
-         double d1 = (double)this.worldPosition.getY() + 0.5D;
-         double d2 = (double)this.worldPosition.getZ() + 0.5D;
+         double d0 = (double)this.pos.getX() + 0.5D;
+         double d1 = (double)this.pos.getY() + 0.5D;
+         double d2 = (double)this.pos.getZ() + 0.5D;
          if (chesttype == ChestType.RIGHT) {
-            Direction direction = ChestBlock.getConnectedDirection(this.getBlockState());
-            d0 += (double)direction.getStepX() * 0.5D;
-            d2 += (double)direction.getStepZ() * 0.5D;
+            Direction direction = ChestBlock.getDirectionToAttached(this.getBlockState());
+            d0 += (double)direction.getXOffset() * 0.5D;
+            d2 += (double)direction.getZOffset() * 0.5D;
          }
 
-         this.level.playSound((PlayerEntity)null, d0, d1, d2, p_195483_1_, SoundCategory.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
+         this.world.playSound((PlayerEntity)null, d0, d1, d2, soundIn, SoundCategory.BLOCKS, 0.5F, this.world.rand.nextFloat() * 0.1F + 0.9F);
       }
    }
 
-   public boolean triggerEvent(int p_145842_1_, int p_145842_2_) {
-      if (p_145842_1_ == 1) {
-         this.openCount = p_145842_2_;
+   public boolean receiveClientEvent(int id, int type) {
+      if (id == 1) {
+         this.numPlayersUsing = type;
          return true;
       } else {
-         return super.triggerEvent(p_145842_1_, p_145842_2_);
+         return super.receiveClientEvent(id, type);
       }
    }
 
-   public void startOpen(PlayerEntity p_174889_1_) {
-      if (!p_174889_1_.isSpectator()) {
-         if (this.openCount < 0) {
-            this.openCount = 0;
+   public void openInventory(PlayerEntity player) {
+      if (!player.isSpectator()) {
+         if (this.numPlayersUsing < 0) {
+            this.numPlayersUsing = 0;
          }
 
-         ++this.openCount;
-         this.signalOpenCount();
+         ++this.numPlayersUsing;
+         this.onOpenOrClose();
       }
 
    }
 
-   public void stopOpen(PlayerEntity p_174886_1_) {
-      if (!p_174886_1_.isSpectator()) {
-         --this.openCount;
-         this.signalOpenCount();
+   public void closeInventory(PlayerEntity player) {
+      if (!player.isSpectator()) {
+         --this.numPlayersUsing;
+         this.onOpenOrClose();
       }
 
    }
 
-   protected void signalOpenCount() {
+   protected void onOpenOrClose() {
       Block block = this.getBlockState().getBlock();
       if (block instanceof ChestBlock) {
-         this.level.blockEvent(this.worldPosition, block, 1, this.openCount);
-         this.level.updateNeighborsAt(this.worldPosition, block);
+         this.world.addBlockEvent(this.pos, block, 1, this.numPlayersUsing);
+         this.world.notifyNeighborsOfStateChange(this.pos, block);
       }
 
    }
 
    protected NonNullList<ItemStack> getItems() {
-      return this.items;
+      return this.chestContents;
    }
 
-   protected void setItems(NonNullList<ItemStack> p_199721_1_) {
-      this.items = p_199721_1_;
+   protected void setItems(NonNullList<ItemStack> itemsIn) {
+      this.chestContents = itemsIn;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getOpenNess(float p_195480_1_) {
-      return MathHelper.lerp(p_195480_1_, this.oOpenness, this.openness);
+   public float getLidAngle(float partialTicks) {
+      return MathHelper.lerp(partialTicks, this.prevLidAngle, this.lidAngle);
    }
 
-   public static int getOpenCount(IBlockReader p_195481_0_, BlockPos p_195481_1_) {
-      BlockState blockstate = p_195481_0_.getBlockState(p_195481_1_);
-      if (blockstate.getBlock().isEntityBlock()) {
-         TileEntity tileentity = p_195481_0_.getBlockEntity(p_195481_1_);
+   public static int getPlayersUsing(IBlockReader reader, BlockPos posIn) {
+      BlockState blockstate = reader.getBlockState(posIn);
+      if (blockstate.getBlock().isTileEntityProvider()) {
+         TileEntity tileentity = reader.getTileEntity(posIn);
          if (tileentity instanceof ChestTileEntity) {
-            return ((ChestTileEntity)tileentity).openCount;
+            return ((ChestTileEntity)tileentity).numPlayersUsing;
          }
       }
 
       return 0;
    }
 
-   public static void swapContents(ChestTileEntity p_199722_0_, ChestTileEntity p_199722_1_) {
-      NonNullList<ItemStack> nonnulllist = p_199722_0_.getItems();
-      p_199722_0_.setItems(p_199722_1_.getItems());
-      p_199722_1_.setItems(nonnulllist);
+   public static void swapContents(ChestTileEntity chest, ChestTileEntity otherChest) {
+      NonNullList<ItemStack> nonnulllist = chest.getItems();
+      chest.setItems(otherChest.getItems());
+      otherChest.setItems(nonnulllist);
    }
 
-   protected Container createMenu(int p_213906_1_, PlayerInventory p_213906_2_) {
-      return ChestContainer.threeRows(p_213906_1_, p_213906_2_, this);
+   protected Container createMenu(int id, PlayerInventory player) {
+      return ChestContainer.createGeneric9X3(id, player, this);
    }
 }

@@ -13,44 +13,44 @@ import net.minecraft.world.chunk.AbstractChunkProvider;
 import net.minecraft.world.storage.IWorldInfo;
 
 public interface IWorld extends IBiomeReader, IDayTimeReader {
-   default long dayTime() {
-      return this.getLevelData().getDayTime();
+   default long func_241851_ab() {
+      return this.getWorldInfo().getDayTime();
    }
 
-   ITickList<Block> getBlockTicks();
+   ITickList<Block> getPendingBlockTicks();
 
-   ITickList<Fluid> getLiquidTicks();
+   ITickList<Fluid> getPendingFluidTicks();
 
-   IWorldInfo getLevelData();
+   IWorldInfo getWorldInfo();
 
-   DifficultyInstance getCurrentDifficultyAt(BlockPos p_175649_1_);
+   DifficultyInstance getDifficultyForLocation(BlockPos pos);
 
    default Difficulty getDifficulty() {
-      return this.getLevelData().getDifficulty();
+      return this.getWorldInfo().getDifficulty();
    }
 
-   AbstractChunkProvider getChunkSource();
+   AbstractChunkProvider getChunkProvider();
 
-   default boolean hasChunk(int p_217354_1_, int p_217354_2_) {
-      return this.getChunkSource().hasChunk(p_217354_1_, p_217354_2_);
+   default boolean chunkExists(int chunkX, int chunkZ) {
+      return this.getChunkProvider().chunkExists(chunkX, chunkZ);
    }
 
    Random getRandom();
 
-   default void blockUpdated(BlockPos p_230547_1_, Block p_230547_2_) {
+   default void func_230547_a_(BlockPos p_230547_1_, Block p_230547_2_) {
    }
 
-   void playSound(@Nullable PlayerEntity p_184133_1_, BlockPos p_184133_2_, SoundEvent p_184133_3_, SoundCategory p_184133_4_, float p_184133_5_, float p_184133_6_);
+   void playSound(@Nullable PlayerEntity player, BlockPos pos, SoundEvent soundIn, SoundCategory category, float volume, float pitch);
 
-   void addParticle(IParticleData p_195594_1_, double p_195594_2_, double p_195594_4_, double p_195594_6_, double p_195594_8_, double p_195594_10_, double p_195594_12_);
+   void addParticle(IParticleData particleData, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed);
 
-   void levelEvent(@Nullable PlayerEntity p_217378_1_, int p_217378_2_, BlockPos p_217378_3_, int p_217378_4_);
+   void playEvent(@Nullable PlayerEntity player, int type, BlockPos pos, int data);
 
-   default int getHeight() {
-      return this.dimensionType().logicalHeight();
+   default int func_234938_ad_() {
+      return this.getDimensionType().getLogicalHeight();
    }
 
-   default void levelEvent(int p_217379_1_, BlockPos p_217379_2_, int p_217379_3_) {
-      this.levelEvent((PlayerEntity)null, p_217379_1_, p_217379_2_, p_217379_3_);
+   default void playEvent(int type, BlockPos pos, int data) {
+      this.playEvent((PlayerEntity)null, type, pos, data);
    }
 }

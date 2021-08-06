@@ -29,7 +29,7 @@ public class AdvancementTabGui extends AbstractGui {
    private final ItemStack icon;
    private final ITextComponent title;
    private final AdvancementEntryGui root;
-   private final Map<Advancement, AdvancementEntryGui> widgets = Maps.newLinkedHashMap();
+   private final Map<Advancement, AdvancementEntryGui> guis = Maps.newLinkedHashMap();
    private double scrollX;
    private double scrollY;
    private int minX = Integer.MAX_VALUE;
@@ -39,17 +39,17 @@ public class AdvancementTabGui extends AbstractGui {
    private float fade;
    private boolean centered;
 
-   public AdvancementTabGui(Minecraft p_i47589_1_, AdvancementsScreen p_i47589_2_, AdvancementTabType p_i47589_3_, int p_i47589_4_, Advancement p_i47589_5_, DisplayInfo p_i47589_6_) {
-      this.minecraft = p_i47589_1_;
-      this.screen = p_i47589_2_;
-      this.type = p_i47589_3_;
-      this.index = p_i47589_4_;
-      this.advancement = p_i47589_5_;
-      this.display = p_i47589_6_;
-      this.icon = p_i47589_6_.getIcon();
-      this.title = p_i47589_6_.getTitle();
-      this.root = new AdvancementEntryGui(this, p_i47589_1_, p_i47589_5_, p_i47589_6_);
-      this.addWidget(this.root, p_i47589_5_);
+   public AdvancementTabGui(Minecraft minecraft, AdvancementsScreen screen, AdvancementTabType type, int index, Advancement advancement, DisplayInfo displayInfo) {
+      this.minecraft = minecraft;
+      this.screen = screen;
+      this.type = type;
+      this.index = index;
+      this.advancement = advancement;
+      this.display = displayInfo;
+      this.icon = displayInfo.getIcon();
+      this.title = displayInfo.getTitle();
+      this.root = new AdvancementEntryGui(this, minecraft, advancement, displayInfo);
+      this.addGuiAdvancement(this.root, advancement);
    }
 
    public Advancement getAdvancement() {
@@ -60,15 +60,15 @@ public class AdvancementTabGui extends AbstractGui {
       return this.title;
    }
 
-   public void drawTab(MatrixStack p_238683_1_, int p_238683_2_, int p_238683_3_, boolean p_238683_4_) {
-      this.type.draw(p_238683_1_, this, p_238683_2_, p_238683_3_, p_238683_4_, this.index);
+   public void renderTabSelectorBackground(MatrixStack matrixStack, int offsetX, int offsetY, boolean isSelected) {
+      this.type.renderTabSelectorBackground(matrixStack, this, offsetX, offsetY, isSelected, this.index);
    }
 
-   public void drawIcon(int p_191796_1_, int p_191796_2_, ItemRenderer p_191796_3_) {
-      this.type.drawIcon(p_191796_1_, p_191796_2_, this.index, p_191796_3_, this.icon);
+   public void drawIcon(int offsetX, int offsetY, ItemRenderer renderer) {
+      this.type.drawIcon(offsetX, offsetY, this.index, renderer, this.icon);
    }
 
-   public void drawContents(MatrixStack p_238682_1_) {
+   public void drawTabBackground(MatrixStack matrixStack) {
       if (!this.centered) {
          this.scrollX = (double)(117 - (this.maxX + this.minX) / 2);
          this.scrollY = (double)(56 - (this.maxY + this.minY) / 2);
@@ -79,17 +79,17 @@ public class AdvancementTabGui extends AbstractGui {
       RenderSystem.enableDepthTest();
       RenderSystem.translatef(0.0F, 0.0F, 950.0F);
       RenderSystem.colorMask(false, false, false, false);
-      fill(p_238682_1_, 4680, 2260, -4680, -2260, -16777216);
+      fill(matrixStack, 4680, 2260, -4680, -2260, -16777216);
       RenderSystem.colorMask(true, true, true, true);
       RenderSystem.translatef(0.0F, 0.0F, -950.0F);
       RenderSystem.depthFunc(518);
-      fill(p_238682_1_, 234, 113, 0, 0, -16777216);
+      fill(matrixStack, 234, 113, 0, 0, -16777216);
       RenderSystem.depthFunc(515);
       ResourceLocation resourcelocation = this.display.getBackground();
       if (resourcelocation != null) {
-         this.minecraft.getTextureManager().bind(resourcelocation);
+         this.minecraft.getTextureManager().bindTexture(resourcelocation);
       } else {
-         this.minecraft.getTextureManager().bind(TextureManager.INTENTIONAL_MISSING_TEXTURE);
+         this.minecraft.getTextureManager().bindTexture(TextureManager.RESOURCE_LOCATION_EMPTY);
       }
 
       int i = MathHelper.floor(this.scrollX);
@@ -99,35 +99,35 @@ public class AdvancementTabGui extends AbstractGui {
 
       for(int i1 = -1; i1 <= 15; ++i1) {
          for(int j1 = -1; j1 <= 8; ++j1) {
-            blit(p_238682_1_, k + 16 * i1, l + 16 * j1, 0.0F, 0.0F, 16, 16, 16, 16);
+            blit(matrixStack, k + 16 * i1, l + 16 * j1, 0.0F, 0.0F, 16, 16, 16, 16);
          }
       }
 
-      this.root.drawConnectivity(p_238682_1_, i, j, true);
-      this.root.drawConnectivity(p_238682_1_, i, j, false);
-      this.root.draw(p_238682_1_, i, j);
+      this.root.drawConnectionLineToParent(matrixStack, i, j, true);
+      this.root.drawConnectionLineToParent(matrixStack, i, j, false);
+      this.root.drawAdvancement(matrixStack, i, j);
       RenderSystem.depthFunc(518);
       RenderSystem.translatef(0.0F, 0.0F, -950.0F);
       RenderSystem.colorMask(false, false, false, false);
-      fill(p_238682_1_, 4680, 2260, -4680, -2260, -16777216);
+      fill(matrixStack, 4680, 2260, -4680, -2260, -16777216);
       RenderSystem.colorMask(true, true, true, true);
       RenderSystem.translatef(0.0F, 0.0F, 950.0F);
       RenderSystem.depthFunc(515);
       RenderSystem.popMatrix();
    }
 
-   public void drawTooltips(MatrixStack p_238684_1_, int p_238684_2_, int p_238684_3_, int p_238684_4_, int p_238684_5_) {
+   public void drawTabTooltips(MatrixStack matrixStack, int mouseX, int mouseY, int width, int height) {
       RenderSystem.pushMatrix();
       RenderSystem.translatef(0.0F, 0.0F, 200.0F);
-      fill(p_238684_1_, 0, 0, 234, 113, MathHelper.floor(this.fade * 255.0F) << 24);
+      fill(matrixStack, 0, 0, 234, 113, MathHelper.floor(this.fade * 255.0F) << 24);
       boolean flag = false;
       int i = MathHelper.floor(this.scrollX);
       int j = MathHelper.floor(this.scrollY);
-      if (p_238684_2_ > 0 && p_238684_2_ < 234 && p_238684_3_ > 0 && p_238684_3_ < 113) {
-         for(AdvancementEntryGui advancemententrygui : this.widgets.values()) {
-            if (advancemententrygui.isMouseOver(i, j, p_238684_2_, p_238684_3_)) {
+      if (mouseX > 0 && mouseX < 234 && mouseY > 0 && mouseY < 113) {
+         for(AdvancementEntryGui advancemententrygui : this.guis.values()) {
+            if (advancemententrygui.isMouseOver(i, j, mouseX, mouseY)) {
                flag = true;
-               advancemententrygui.drawHover(p_238684_1_, i, j, this.fade, p_238684_4_, p_238684_5_);
+               advancemententrygui.drawAdvancementHover(matrixStack, i, j, this.fade, width, height);
                break;
             }
          }
@@ -142,65 +142,65 @@ public class AdvancementTabGui extends AbstractGui {
 
    }
 
-   public boolean isMouseOver(int p_195627_1_, int p_195627_2_, double p_195627_3_, double p_195627_5_) {
-      return this.type.isMouseOver(p_195627_1_, p_195627_2_, this.index, p_195627_3_, p_195627_5_);
+   public boolean isInsideTabSelector(int offsetX, int offsetY, double mouseX, double mouseY) {
+      return this.type.inInsideTabSelector(offsetX, offsetY, this.index, mouseX, mouseY);
    }
 
    @Nullable
-   public static AdvancementTabGui create(Minecraft p_193936_0_, AdvancementsScreen p_193936_1_, int p_193936_2_, Advancement p_193936_3_) {
-      if (p_193936_3_.getDisplay() == null) {
+   public static AdvancementTabGui create(Minecraft minecraft, AdvancementsScreen screen, int tabIndex, Advancement advancement) {
+      if (advancement.getDisplay() == null) {
          return null;
       } else {
          for(AdvancementTabType advancementtabtype : AdvancementTabType.values()) {
-            if (p_193936_2_ < advancementtabtype.getMax()) {
-               return new AdvancementTabGui(p_193936_0_, p_193936_1_, advancementtabtype, p_193936_2_, p_193936_3_, p_193936_3_.getDisplay());
+            if (tabIndex < advancementtabtype.getMax()) {
+               return new AdvancementTabGui(minecraft, screen, advancementtabtype, tabIndex, advancement, advancement.getDisplay());
             }
 
-            p_193936_2_ -= advancementtabtype.getMax();
+            tabIndex -= advancementtabtype.getMax();
          }
 
          return null;
       }
    }
 
-   public void scroll(double p_195626_1_, double p_195626_3_) {
+   public void dragSelectedGui(double dragX, double dragY) {
       if (this.maxX - this.minX > 234) {
-         this.scrollX = MathHelper.clamp(this.scrollX + p_195626_1_, (double)(-(this.maxX - 234)), 0.0D);
+         this.scrollX = MathHelper.clamp(this.scrollX + dragX, (double)(-(this.maxX - 234)), 0.0D);
       }
 
       if (this.maxY - this.minY > 113) {
-         this.scrollY = MathHelper.clamp(this.scrollY + p_195626_3_, (double)(-(this.maxY - 113)), 0.0D);
+         this.scrollY = MathHelper.clamp(this.scrollY + dragY, (double)(-(this.maxY - 113)), 0.0D);
       }
 
    }
 
-   public void addAdvancement(Advancement p_191800_1_) {
-      if (p_191800_1_.getDisplay() != null) {
-         AdvancementEntryGui advancemententrygui = new AdvancementEntryGui(this, this.minecraft, p_191800_1_, p_191800_1_.getDisplay());
-         this.addWidget(advancemententrygui, p_191800_1_);
+   public void addAdvancement(Advancement advancement) {
+      if (advancement.getDisplay() != null) {
+         AdvancementEntryGui advancemententrygui = new AdvancementEntryGui(this, this.minecraft, advancement, advancement.getDisplay());
+         this.addGuiAdvancement(advancemententrygui, advancement);
       }
    }
 
-   private void addWidget(AdvancementEntryGui p_193937_1_, Advancement p_193937_2_) {
-      this.widgets.put(p_193937_2_, p_193937_1_);
-      int i = p_193937_1_.getX();
+   private void addGuiAdvancement(AdvancementEntryGui gui, Advancement advancement) {
+      this.guis.put(advancement, gui);
+      int i = gui.getX();
       int j = i + 28;
-      int k = p_193937_1_.getY();
+      int k = gui.getY();
       int l = k + 27;
       this.minX = Math.min(this.minX, i);
       this.maxX = Math.max(this.maxX, j);
       this.minY = Math.min(this.minY, k);
       this.maxY = Math.max(this.maxY, l);
 
-      for(AdvancementEntryGui advancemententrygui : this.widgets.values()) {
+      for(AdvancementEntryGui advancemententrygui : this.guis.values()) {
          advancemententrygui.attachToParent();
       }
 
    }
 
    @Nullable
-   public AdvancementEntryGui getWidget(Advancement p_191794_1_) {
-      return this.widgets.get(p_191794_1_);
+   public AdvancementEntryGui getAdvancementGui(Advancement advancement) {
+      return this.guis.get(advancement);
    }
 
    public AdvancementsScreen getScreen() {

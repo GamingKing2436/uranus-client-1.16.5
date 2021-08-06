@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 public class MinecraftVersion implements GameVersion {
    private static final Logger LOGGER = LogManager.getLogger();
-   public static final GameVersion BUILT_IN = new MinecraftVersion();
+   public static final GameVersion GAME_VERSION = new MinecraftVersion();
    private final String id;
    private final String name;
    private final boolean stable;
@@ -29,32 +29,32 @@ public class MinecraftVersion implements GameVersion {
       this.name = "1.16.5";
       this.stable = true;
       this.worldVersion = 2586;
-      this.protocolVersion = SharedConstants.getProtocolVersion();
+      this.protocolVersion = SharedConstants.func_244709_b();
       this.packVersion = 6;
       this.buildTime = new Date();
       this.releaseTarget = "1.16.5";
    }
 
-   private MinecraftVersion(JsonObject p_i51407_1_) {
-      this.id = JSONUtils.getAsString(p_i51407_1_, "id");
-      this.name = JSONUtils.getAsString(p_i51407_1_, "name");
-      this.releaseTarget = JSONUtils.getAsString(p_i51407_1_, "release_target");
-      this.stable = JSONUtils.getAsBoolean(p_i51407_1_, "stable");
-      this.worldVersion = JSONUtils.getAsInt(p_i51407_1_, "world_version");
-      this.protocolVersion = JSONUtils.getAsInt(p_i51407_1_, "protocol_version");
-      this.packVersion = JSONUtils.getAsInt(p_i51407_1_, "pack_version");
-      this.buildTime = Date.from(ZonedDateTime.parse(JSONUtils.getAsString(p_i51407_1_, "build_time")).toInstant());
+   private MinecraftVersion(JsonObject json) {
+      this.id = JSONUtils.getString(json, "id");
+      this.name = JSONUtils.getString(json, "name");
+      this.releaseTarget = JSONUtils.getString(json, "release_target");
+      this.stable = JSONUtils.getBoolean(json, "stable");
+      this.worldVersion = JSONUtils.getInt(json, "world_version");
+      this.protocolVersion = JSONUtils.getInt(json, "protocol_version");
+      this.packVersion = JSONUtils.getInt(json, "pack_version");
+      this.buildTime = Date.from(ZonedDateTime.parse(JSONUtils.getString(json, "build_time")).toInstant());
    }
 
-   public static GameVersion tryDetectVersion() {
+   public static GameVersion load() {
       try (InputStream inputstream = MinecraftVersion.class.getResourceAsStream("/version.json")) {
          if (inputstream == null) {
             LOGGER.warn("Missing version information!");
-            return BUILT_IN;
+            return GAME_VERSION;
          } else {
             MinecraftVersion minecraftversion;
             try (InputStreamReader inputstreamreader = new InputStreamReader(inputstream)) {
-               minecraftversion = new MinecraftVersion(JSONUtils.parse(inputstreamreader));
+               minecraftversion = new MinecraftVersion(JSONUtils.fromJson(inputstreamreader));
             }
 
             return minecraftversion;

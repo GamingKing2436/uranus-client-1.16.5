@@ -9,31 +9,31 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class ModelResourceLocation extends ResourceLocation {
    private final String variant;
 
-   protected ModelResourceLocation(String[] p_i48111_1_) {
-      super(p_i48111_1_);
-      this.variant = p_i48111_1_[2].toLowerCase(Locale.ROOT);
+   protected ModelResourceLocation(String[] resourceParts) {
+      super(resourceParts);
+      this.variant = resourceParts[2].toLowerCase(Locale.ROOT);
    }
 
-   public ModelResourceLocation(String p_i46079_1_) {
-      this(decompose(p_i46079_1_));
+   public ModelResourceLocation(String pathIn) {
+      this(parsePathString(pathIn));
    }
 
-   public ModelResourceLocation(ResourceLocation p_i46080_1_, String p_i46080_2_) {
-      this(p_i46080_1_.toString(), p_i46080_2_);
+   public ModelResourceLocation(ResourceLocation location, String variantIn) {
+      this(location.toString(), variantIn);
    }
 
-   public ModelResourceLocation(String p_i46081_1_, String p_i46081_2_) {
-      this(decompose(p_i46081_1_ + '#' + p_i46081_2_));
+   public ModelResourceLocation(String location, String variantIn) {
+      this(parsePathString(location + '#' + variantIn));
    }
 
-   protected static String[] decompose(String p_177517_0_) {
-      String[] astring = new String[]{null, p_177517_0_, ""};
-      int i = p_177517_0_.indexOf(35);
-      String s = p_177517_0_;
+   protected static String[] parsePathString(String pathIn) {
+      String[] astring = new String[]{null, pathIn, ""};
+      int i = pathIn.indexOf(35);
+      String s = pathIn;
       if (i >= 0) {
-         astring[2] = p_177517_0_.substring(i + 1, p_177517_0_.length());
+         astring[2] = pathIn.substring(i + 1, pathIn.length());
          if (i > 1) {
-            s = p_177517_0_.substring(0, i);
+            s = pathIn.substring(0, i);
          }
       }
 

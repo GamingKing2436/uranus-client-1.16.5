@@ -38,27 +38,27 @@ public abstract class Placement<DC extends IPlacementConfig> {
    public static final Placement<NoPlacementConfig> END_ISLAND = register("end_island", new EndIsland(NoPlacementConfig.CODEC));
    public static final Placement<DecoratedPlacementConfig> DECORATED = register("decorated", new DecoratedPlacement(DecoratedPlacementConfig.CODEC));
    public static final Placement<FeatureSpreadConfig> COUNT_MULTILAYER = register("count_multilayer", new CountMultilayerPlacement(FeatureSpreadConfig.CODEC));
-   private final Codec<ConfiguredPlacement<DC>> configuredCodec;
+   private final Codec<ConfiguredPlacement<DC>> codec;
 
-   private static <T extends IPlacementConfig, G extends Placement<T>> G register(String p_214999_0_, G p_214999_1_) {
-      return Registry.register(Registry.DECORATOR, p_214999_0_, p_214999_1_);
+   private static <T extends IPlacementConfig, G extends Placement<T>> G register(String key, G placement) {
+      return Registry.register(Registry.DECORATOR, key, placement);
    }
 
-   public Placement(Codec<DC> p_i232086_1_) {
-      this.configuredCodec = p_i232086_1_.fieldOf("config").xmap((p_236966_1_) -> {
+   public Placement(Codec<DC> codec) {
+      this.codec = codec.fieldOf("config").xmap((p_236966_1_) -> {
          return new ConfiguredPlacement<DC>(this, p_236966_1_);
-      }, ConfiguredPlacement::config).codec();
+      }, ConfiguredPlacement::func_242877_b).codec();
    }
 
-   public ConfiguredPlacement<DC> configured(DC p_227446_1_) {
-      return new ConfiguredPlacement<>(this, p_227446_1_);
+   public ConfiguredPlacement<DC> configure(DC config) {
+      return new ConfiguredPlacement<>(this, config);
    }
 
-   public Codec<ConfiguredPlacement<DC>> configuredCodec() {
-      return this.configuredCodec;
+   public Codec<ConfiguredPlacement<DC>> getCodec() {
+      return this.codec;
    }
 
-   public abstract Stream<BlockPos> getPositions(WorldDecoratingHelper p_241857_1_, Random p_241857_2_, DC p_241857_3_, BlockPos p_241857_4_);
+   public abstract Stream<BlockPos> getPositions(WorldDecoratingHelper helper, Random rand, DC config, BlockPos pos);
 
    public String toString() {
       return this.getClass().getSimpleName() + "@" + Integer.toHexString(this.hashCode());

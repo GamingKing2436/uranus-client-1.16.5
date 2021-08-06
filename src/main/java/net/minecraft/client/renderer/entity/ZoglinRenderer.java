@@ -8,13 +8,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ZoglinRenderer extends MobRenderer<ZoglinEntity, BoarModel<ZoglinEntity>> {
-   private static final ResourceLocation ZOGLIN_LOCATION = new ResourceLocation("textures/entity/hoglin/zoglin.png");
+   private static final ResourceLocation field_239399_a_ = new ResourceLocation("textures/entity/hoglin/zoglin.png");
 
    public ZoglinRenderer(EntityRendererManager p_i232474_1_) {
       super(p_i232474_1_, new BoarModel<>(), 0.7F);
    }
 
-   public ResourceLocation getTextureLocation(ZoglinEntity p_110775_1_) {
-      return ZOGLIN_LOCATION;
+   public ResourceLocation getEntityTexture(ZoglinEntity entity) {
+      return field_239399_a_;
    }
 }

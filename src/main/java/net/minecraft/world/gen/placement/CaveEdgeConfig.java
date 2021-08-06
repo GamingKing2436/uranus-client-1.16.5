@@ -15,8 +15,8 @@ public class CaveEdgeConfig implements IPlacementConfig {
    protected final GenerationStage.Carving step;
    protected final float probability;
 
-   public CaveEdgeConfig(GenerationStage.Carving p_i49000_1_, float p_i49000_2_) {
-      this.step = p_i49000_1_;
-      this.probability = p_i49000_2_;
+   public CaveEdgeConfig(GenerationStage.Carving step, float probability) {
+      this.step = step;
+      this.probability = probability;
    }
 }

@@ -8,15 +8,15 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class TileEntityRenderer<T extends TileEntity> {
-   protected final TileEntityRendererDispatcher renderer;
+   protected final TileEntityRendererDispatcher renderDispatcher;
 
-   public TileEntityRenderer(TileEntityRendererDispatcher p_i226006_1_) {
-      this.renderer = p_i226006_1_;
+   public TileEntityRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
+      this.renderDispatcher = rendererDispatcherIn;
    }
 
-   public abstract void render(T p_225616_1_, float p_225616_2_, MatrixStack p_225616_3_, IRenderTypeBuffer p_225616_4_, int p_225616_5_, int p_225616_6_);
+   public abstract void render(T tileEntityIn, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn);
 
-   public boolean shouldRenderOffScreen(T p_188185_1_) {
+   public boolean isGlobalRenderer(T te) {
       return false;
    }
 }

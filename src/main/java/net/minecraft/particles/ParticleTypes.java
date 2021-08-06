@@ -8,7 +8,7 @@ public class ParticleTypes {
    public static final BasicParticleType AMBIENT_ENTITY_EFFECT = register("ambient_entity_effect", false);
    public static final BasicParticleType ANGRY_VILLAGER = register("angry_villager", false);
    public static final BasicParticleType BARRIER = register("barrier", false);
-   public static final ParticleType<BlockParticleData> BLOCK = register("block", BlockParticleData.DESERIALIZER, BlockParticleData::codec);
+   public static final ParticleType<BlockParticleData> BLOCK = register("block", BlockParticleData.DESERIALIZER, BlockParticleData::func_239800_a_);
    public static final BasicParticleType BUBBLE = register("bubble", false);
    public static final BasicParticleType CLOUD = register("cloud", false);
    public static final BasicParticleType CRIT = register("crit", false);
@@ -20,7 +20,7 @@ public class ParticleTypes {
    public static final BasicParticleType DRIPPING_WATER = register("dripping_water", false);
    public static final BasicParticleType FALLING_WATER = register("falling_water", false);
    public static final ParticleType<RedstoneParticleData> DUST = register("dust", RedstoneParticleData.DESERIALIZER, (p_239822_0_) -> {
-      return RedstoneParticleData.CODEC;
+      return RedstoneParticleData.field_239802_b_;
    });
    public static final BasicParticleType EFFECT = register("effect", false);
    public static final BasicParticleType ELDER_GUARDIAN = register("elder_guardian", true);
@@ -30,7 +30,7 @@ public class ParticleTypes {
    public static final BasicParticleType ENTITY_EFFECT = register("entity_effect", false);
    public static final BasicParticleType EXPLOSION_EMITTER = register("explosion_emitter", true);
    public static final BasicParticleType EXPLOSION = register("explosion", true);
-   public static final ParticleType<BlockParticleData> FALLING_DUST = register("falling_dust", BlockParticleData.DESERIALIZER, BlockParticleData::codec);
+   public static final ParticleType<BlockParticleData> FALLING_DUST = register("falling_dust", BlockParticleData.DESERIALIZER, BlockParticleData::func_239800_a_);
    public static final BasicParticleType FIREWORK = register("firework", false);
    public static final BasicParticleType FISHING = register("fishing", false);
    public static final BasicParticleType FLAME = register("flame", false);
@@ -41,7 +41,7 @@ public class ParticleTypes {
    public static final BasicParticleType COMPOSTER = register("composter", false);
    public static final BasicParticleType HEART = register("heart", false);
    public static final BasicParticleType INSTANT_EFFECT = register("instant_effect", false);
-   public static final ParticleType<ItemParticleData> ITEM = register("item", ItemParticleData.DESERIALIZER, ItemParticleData::codec);
+   public static final ParticleType<ItemParticleData> ITEM = register("item", ItemParticleData.DESERIALIZER, ItemParticleData::func_239809_a_);
    public static final BasicParticleType ITEM_SLIME = register("item_slime", false);
    public static final BasicParticleType ITEM_SNOWBALL = register("item_snowball", false);
    public static final BasicParticleType LARGE_SMOKE = register("large_smoke", false);
@@ -79,15 +79,15 @@ public class ParticleTypes {
    public static final BasicParticleType LANDING_OBSIDIAN_TEAR = register("landing_obsidian_tear", false);
    public static final BasicParticleType REVERSE_PORTAL = register("reverse_portal", false);
    public static final BasicParticleType WHITE_ASH = register("white_ash", false);
-   public static final Codec<IParticleData> CODEC = Registry.PARTICLE_TYPE.dispatch("type", IParticleData::getType, ParticleType::codec);
+   public static final Codec<IParticleData> CODEC = Registry.PARTICLE_TYPE.dispatch("type", IParticleData::getType, ParticleType::func_230522_e_);
 
-   private static BasicParticleType register(String p_218415_0_, boolean p_218415_1_) {
-      return Registry.register(Registry.PARTICLE_TYPE, p_218415_0_, new BasicParticleType(p_218415_1_));
+   private static BasicParticleType register(String key, boolean alwaysShow) {
+      return Registry.register(Registry.PARTICLE_TYPE, key, new BasicParticleType(alwaysShow));
    }
 
-   private static <T extends IParticleData> ParticleType<T> register(String p_218416_0_, IParticleData.IDeserializer<T> p_218416_1_, final Function<ParticleType<T>, Codec<T>> p_218416_2_) {
-      return Registry.register(Registry.PARTICLE_TYPE, p_218416_0_, new ParticleType<T>(false, p_218416_1_) {
-         public Codec<T> codec() {
+   private static <T extends IParticleData> ParticleType<T> register(String key, IParticleData.IDeserializer<T> deserializer, final Function<ParticleType<T>, Codec<T>> p_218416_2_) {
+      return Registry.register(Registry.PARTICLE_TYPE, key, new ParticleType<T>(false, deserializer) {
+         public Codec<T> func_230522_e_() {
             return p_218416_2_.apply(this);
          }
       });

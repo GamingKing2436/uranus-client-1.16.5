@@ -7,17 +7,17 @@ public enum WallHeight implements IStringSerializable {
    LOW("low"),
    TALL("tall");
 
-   private final String name;
+   private final String heightName;
 
-   private WallHeight(String p_i231882_3_) {
-      this.name = p_i231882_3_;
+   private WallHeight(String name) {
+      this.heightName = name;
    }
 
    public String toString() {
-      return this.getSerializedName();
+      return this.getString();
    }
 
-   public String getSerializedName() {
-      return this.name;
+   public String getString() {
+      return this.heightName;
    }
 }

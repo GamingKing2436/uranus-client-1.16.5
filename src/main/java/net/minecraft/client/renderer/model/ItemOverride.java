@@ -23,24 +23,24 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ItemOverride {
-   private final ResourceLocation model;
-   private final Map<ResourceLocation, Float> predicates;
+   private final ResourceLocation location;
+   private final Map<ResourceLocation, Float> mapResourceValues;
 
-   public ItemOverride(ResourceLocation p_i46571_1_, Map<ResourceLocation, Float> p_i46571_2_) {
-      this.model = p_i46571_1_;
-      this.predicates = p_i46571_2_;
+   public ItemOverride(ResourceLocation locationIn, Map<ResourceLocation, Float> propertyValues) {
+      this.location = locationIn;
+      this.mapResourceValues = propertyValues;
    }
 
-   public ResourceLocation getModel() {
-      return this.model;
+   public ResourceLocation getLocation() {
+      return this.location;
    }
 
-   boolean test(ItemStack p_239289_1_, @Nullable ClientWorld p_239289_2_, @Nullable LivingEntity p_239289_3_) {
-      Item item = p_239289_1_.getItem();
+   boolean matchesOverride(ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity livingEntity) {
+      Item item = stack.getItem();
 
-      for(Entry<ResourceLocation, Float> entry : this.predicates.entrySet()) {
-         IItemPropertyGetter iitempropertygetter = ItemModelsProperties.getProperty(item, entry.getKey());
-         if (iitempropertygetter == null || iitempropertygetter.call(p_239289_1_, p_239289_2_, p_239289_3_) < entry.getValue()) {
+      for(Entry<ResourceLocation, Float> entry : this.mapResourceValues.entrySet()) {
+         IItemPropertyGetter iitempropertygetter = ItemModelsProperties.func_239417_a_(item, entry.getKey());
+         if (iitempropertygetter == null || iitempropertygetter.call(stack, world, livingEntity) < entry.getValue()) {
             return false;
          }
       }
@@ -55,17 +55,17 @@ public class ItemOverride {
 
       public ItemOverride deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
          JsonObject jsonobject = p_deserialize_1_.getAsJsonObject();
-         ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getAsString(jsonobject, "model"));
-         Map<ResourceLocation, Float> map = this.getPredicates(jsonobject);
+         ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getString(jsonobject, "model"));
+         Map<ResourceLocation, Float> map = this.makeMapResourceValues(jsonobject);
          return new ItemOverride(resourcelocation, map);
       }
 
-      protected Map<ResourceLocation, Float> getPredicates(JsonObject p_188025_1_) {
+      protected Map<ResourceLocation, Float> makeMapResourceValues(JsonObject json) {
          Map<ResourceLocation, Float> map = Maps.newLinkedHashMap();
-         JsonObject jsonobject = JSONUtils.getAsJsonObject(p_188025_1_, "predicate");
+         JsonObject jsonobject = JSONUtils.getJsonObject(json, "predicate");
 
          for(Entry<String, JsonElement> entry : jsonobject.entrySet()) {
-            map.put(new ResourceLocation(entry.getKey()), JSONUtils.convertToFloat(entry.getValue(), entry.getKey()));
+            map.put(new ResourceLocation(entry.getKey()), JSONUtils.getFloat(entry.getValue(), entry.getKey()));
          }
 
          return map;

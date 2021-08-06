@@ -19,20 +19,20 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface ITagCollection<T> {
-   Map<ResourceLocation, ITag<T>> getAllTags();
+   Map<ResourceLocation, ITag<T>> getIDTagMap();
 
    @Nullable
-   default ITag<T> getTag(ResourceLocation p_199910_1_) {
-      return this.getAllTags().get(p_199910_1_);
+   default ITag<T> get(ResourceLocation resourceLocationIn) {
+      return this.getIDTagMap().get(resourceLocationIn);
    }
 
-   ITag<T> getTagOrEmpty(ResourceLocation p_241834_1_);
+   ITag<T> getTagByID(ResourceLocation id);
 
    @Nullable
-   ResourceLocation getId(ITag<T> p_232973_1_);
+   ResourceLocation getDirectIdFromTag(ITag<T> tag);
 
-   default ResourceLocation getIdOrThrow(ITag<T> p_232975_1_) {
-      ResourceLocation resourcelocation = this.getId(p_232975_1_);
+   default ResourceLocation getValidatedIdFromTag(ITag<T> tag) {
+      ResourceLocation resourcelocation = this.getDirectIdFromTag(tag);
       if (resourcelocation == null) {
          throw new IllegalStateException("Unrecognized tag");
       } else {
@@ -40,16 +40,16 @@ public interface ITagCollection<T> {
       }
    }
 
-   default Collection<ResourceLocation> getAvailableTags() {
-      return this.getAllTags().keySet();
+   default Collection<ResourceLocation> getRegisteredTags() {
+      return this.getIDTagMap().keySet();
    }
 
    @OnlyIn(Dist.CLIENT)
-   default Collection<ResourceLocation> getMatchingTags(T p_199913_1_) {
+   default Collection<ResourceLocation> getOwningTags(T itemIn) {
       List<ResourceLocation> list = Lists.newArrayList();
 
-      for(Entry<ResourceLocation, ITag<T>> entry : this.getAllTags().entrySet()) {
-         if (entry.getValue().contains(p_199913_1_)) {
+      for(Entry<ResourceLocation, ITag<T>> entry : this.getIDTagMap().entrySet()) {
+         if (entry.getValue().contains(itemIn)) {
             list.add(entry.getKey());
          }
       }
@@ -57,59 +57,59 @@ public interface ITagCollection<T> {
       return list;
    }
 
-   default void serializeToNetwork(PacketBuffer p_242203_1_, DefaultedRegistry<T> p_242203_2_) {
-      Map<ResourceLocation, ITag<T>> map = this.getAllTags();
-      p_242203_1_.writeVarInt(map.size());
+   default void writeTagCollectionToBuffer(PacketBuffer buffer, DefaultedRegistry<T> defaulted) {
+      Map<ResourceLocation, ITag<T>> map = this.getIDTagMap();
+      buffer.writeVarInt(map.size());
 
       for(Entry<ResourceLocation, ITag<T>> entry : map.entrySet()) {
-         p_242203_1_.writeResourceLocation(entry.getKey());
-         p_242203_1_.writeVarInt(entry.getValue().getValues().size());
+         buffer.writeResourceLocation(entry.getKey());
+         buffer.writeVarInt(entry.getValue().getAllElements().size());
 
-         for(T t : entry.getValue().getValues()) {
-            p_242203_1_.writeVarInt(p_242203_2_.getId(t));
+         for(T t : entry.getValue().getAllElements()) {
+            buffer.writeVarInt(defaulted.getId(t));
          }
       }
 
    }
 
-   static <T> ITagCollection<T> loadFromNetwork(PacketBuffer p_242204_0_, Registry<T> p_242204_1_) {
+   static <T> ITagCollection<T> readTagCollectionFromBuffer(PacketBuffer buffer, Registry<T> registry) {
       Map<ResourceLocation, ITag<T>> map = Maps.newHashMap();
-      int i = p_242204_0_.readVarInt();
+      int i = buffer.readVarInt();
 
       for(int j = 0; j < i; ++j) {
-         ResourceLocation resourcelocation = p_242204_0_.readResourceLocation();
-         int k = p_242204_0_.readVarInt();
+         ResourceLocation resourcelocation = buffer.readResourceLocation();
+         int k = buffer.readVarInt();
          Builder<T> builder = ImmutableSet.builder();
 
          for(int l = 0; l < k; ++l) {
-            builder.add(p_242204_1_.byId(p_242204_0_.readVarInt()));
+            builder.add(registry.getByValue(buffer.readVarInt()));
          }
 
-         map.put(resourcelocation, ITag.fromSet(builder.build()));
+         map.put(resourcelocation, ITag.getTagOf(builder.build()));
       }
 
-      return of(map);
+      return getTagCollectionFromMap(map);
    }
 
-   static <T> ITagCollection<T> empty() {
-      return of(ImmutableBiMap.of());
+   static <T> ITagCollection<T> getEmptyTagCollection() {
+      return getTagCollectionFromMap(ImmutableBiMap.of());
    }
 
-   static <T> ITagCollection<T> of(Map<ResourceLocation, ITag<T>> p_242202_0_) {
-      final BiMap<ResourceLocation, ITag<T>> bimap = ImmutableBiMap.copyOf(p_242202_0_);
+   static <T> ITagCollection<T> getTagCollectionFromMap(Map<ResourceLocation, ITag<T>> idTagMap) {
+      final BiMap<ResourceLocation, ITag<T>> bimap = ImmutableBiMap.copyOf(idTagMap);
       return new ITagCollection<T>() {
-         private final ITag<T> empty = Tag.empty();
+         private final ITag<T> emptyTag = Tag.getEmptyTag();
 
-         public ITag<T> getTagOrEmpty(ResourceLocation p_241834_1_) {
-            return bimap.getOrDefault(p_241834_1_, this.empty);
+         public ITag<T> getTagByID(ResourceLocation id) {
+            return bimap.getOrDefault(id, this.emptyTag);
          }
 
          @Nullable
-         public ResourceLocation getId(ITag<T> p_232973_1_) {
-            return p_232973_1_ instanceof ITag.INamedTag ? ((ITag.INamedTag)p_232973_1_).getName() : bimap.inverse().get(p_232973_1_);
+         public ResourceLocation getDirectIdFromTag(ITag<T> tag) {
+            return tag instanceof ITag.INamedTag ? ((ITag.INamedTag)tag).getName() : bimap.inverse().get(tag);
          }
 
-         public Map<ResourceLocation, ITag<T>> getAllTags() {
+         public Map<ResourceLocation, ITag<T>> getIDTagMap() {
             return bimap;
          }
       };

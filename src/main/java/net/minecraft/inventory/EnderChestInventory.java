@@ -7,40 +7,40 @@ import net.minecraft.nbt.ListNBT;
 import net.minecraft.tileentity.EnderChestTileEntity;
 
 public class EnderChestInventory extends Inventory {
-   private EnderChestTileEntity activeChest;
+   private EnderChestTileEntity associatedChest;
 
    public EnderChestInventory() {
       super(27);
    }
 
-   public void setActiveChest(EnderChestTileEntity p_146031_1_) {
-      this.activeChest = p_146031_1_;
+   public void setChestTileEntity(EnderChestTileEntity chestTileEntity) {
+      this.associatedChest = chestTileEntity;
    }
 
-   public void fromTag(ListNBT p_70486_1_) {
-      for(int i = 0; i < this.getContainerSize(); ++i) {
-         this.setItem(i, ItemStack.EMPTY);
+   public void read(ListNBT p_70486_1_) {
+      for(int i = 0; i < this.getSizeInventory(); ++i) {
+         this.setInventorySlotContents(i, ItemStack.EMPTY);
       }
 
       for(int k = 0; k < p_70486_1_.size(); ++k) {
          CompoundNBT compoundnbt = p_70486_1_.getCompound(k);
          int j = compoundnbt.getByte("Slot") & 255;
-         if (j >= 0 && j < this.getContainerSize()) {
-            this.setItem(j, ItemStack.of(compoundnbt));
+         if (j >= 0 && j < this.getSizeInventory()) {
+            this.setInventorySlotContents(j, ItemStack.read(compoundnbt));
          }
       }
 
    }
 
-   public ListNBT createTag() {
+   public ListNBT write() {
       ListNBT listnbt = new ListNBT();
 
-      for(int i = 0; i < this.getContainerSize(); ++i) {
-         ItemStack itemstack = this.getItem(i);
+      for(int i = 0; i < this.getSizeInventory(); ++i) {
+         ItemStack itemstack = this.getStackInSlot(i);
          if (!itemstack.isEmpty()) {
             CompoundNBT compoundnbt = new CompoundNBT();
             compoundnbt.putByte("Slot", (byte)i);
-            itemstack.save(compoundnbt);
+            itemstack.write(compoundnbt);
             listnbt.add(compoundnbt);
          }
       }
@@ -48,24 +48,24 @@ public class EnderChestInventory extends Inventory {
       return listnbt;
    }
 
-   public boolean stillValid(PlayerEntity p_70300_1_) {
-      return this.activeChest != null && !this.activeChest.stillValid(p_70300_1_) ? false : super.stillValid(p_70300_1_);
+   public boolean isUsableByPlayer(PlayerEntity player) {
+      return this.associatedChest != null && !this.associatedChest.canBeUsed(player) ? false : super.isUsableByPlayer(player);
    }
 
-   public void startOpen(PlayerEntity p_174889_1_) {
-      if (this.activeChest != null) {
-         this.activeChest.startOpen();
+   public void openInventory(PlayerEntity player) {
+      if (this.associatedChest != null) {
+         this.associatedChest.openChest();
       }
 
-      super.startOpen(p_174889_1_);
+      super.openInventory(player);
    }
 
-   public void stopOpen(PlayerEntity p_174886_1_) {
-      if (this.activeChest != null) {
-         this.activeChest.stopOpen();
+   public void closeInventory(PlayerEntity player) {
+      if (this.associatedChest != null) {
+         this.associatedChest.closeChest();
       }
 
-      super.stopOpen(p_174886_1_);
-      this.activeChest = null;
+      super.closeInventory(player);
+      this.associatedChest = null;
    }
 }

@@ -9,26 +9,26 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class StructureVoidBlock extends Block {
-   private static final VoxelShape SHAPE = Block.box(5.0D, 5.0D, 5.0D, 11.0D, 11.0D, 11.0D);
+   private static final VoxelShape SHAPE = Block.makeCuboidShape(5.0D, 5.0D, 5.0D, 11.0D, 11.0D, 11.0D);
 
-   protected StructureVoidBlock(AbstractBlock.Properties p_i48313_1_) {
-      super(p_i48313_1_);
+   protected StructureVoidBlock(AbstractBlock.Properties properties) {
+      super(properties);
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.INVISIBLE;
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
       return SHAPE;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getShadeBrightness(BlockState p_220080_1_, IBlockReader p_220080_2_, BlockPos p_220080_3_) {
+   public float getAmbientOcclusionLightValue(BlockState state, IBlockReader worldIn, BlockPos pos) {
       return 1.0F;
    }
 
-   public PushReaction getPistonPushReaction(BlockState p_149656_1_) {
+   public PushReaction getPushReaction(BlockState state) {
       return PushReaction.DESTROY;
    }
 }

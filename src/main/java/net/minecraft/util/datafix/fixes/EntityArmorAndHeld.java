@@ -18,8 +18,8 @@ import java.util.stream.Stream;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class EntityArmorAndHeld extends DataFix {
-   public EntityArmorAndHeld(Schema p_i49667_1_, boolean p_i49667_2_) {
-      super(p_i49667_1_, p_i49667_2_);
+   public EntityArmorAndHeld(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {

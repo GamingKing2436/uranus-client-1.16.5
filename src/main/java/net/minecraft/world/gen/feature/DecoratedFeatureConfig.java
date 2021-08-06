@@ -8,8 +8,8 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.world.gen.placement.ConfiguredPlacement;
 
 public class DecoratedFeatureConfig implements IFeatureConfig {
-   public static final Codec<DecoratedFeatureConfig> CODEC = RecordCodecBuilder.create((p_236493_0_) -> {
-      return p_236493_0_.group(ConfiguredFeature.CODEC.fieldOf("feature").forGetter((p_236494_0_) -> {
+   public static final Codec<DecoratedFeatureConfig> field_236491_a_ = RecordCodecBuilder.create((p_236493_0_) -> {
+      return p_236493_0_.group(ConfiguredFeature.field_236264_b_.fieldOf("feature").forGetter((p_236494_0_) -> {
          return p_236494_0_.feature;
       }), ConfiguredPlacement.CODEC.fieldOf("decorator").forGetter((p_236492_0_) -> {
          return p_236492_0_.decorator;
@@ -24,10 +24,10 @@ public class DecoratedFeatureConfig implements IFeatureConfig {
    }
 
    public String toString() {
-      return String.format("< %s [%s | %s] >", this.getClass().getSimpleName(), Registry.FEATURE.getKey(this.feature.get().feature()), this.decorator);
+      return String.format("< %s [%s | %s] >", this.getClass().getSimpleName(), Registry.FEATURE.getKey(this.feature.get().getFeature()), this.decorator);
    }
 
-   public Stream<ConfiguredFeature<?, ?>> getFeatures() {
-      return this.feature.get().getFeatures();
+   public Stream<ConfiguredFeature<?, ?>> func_241856_an_() {
+      return this.feature.get().func_242768_d();
    }
 }

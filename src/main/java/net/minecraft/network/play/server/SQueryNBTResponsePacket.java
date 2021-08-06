@@ -22,18 +22,18 @@ public class SQueryNBTResponsePacket implements IPacket<IClientPlayNetHandler> {
       this.tag = p_i49757_2_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.transactionId = p_148837_1_.readVarInt();
-      this.tag = p_148837_1_.readNbt();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.transactionId = buf.readVarInt();
+      this.tag = buf.readCompoundTag();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.transactionId);
-      p_148840_1_.writeNbt(this.tag);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.transactionId);
+      buf.writeCompoundTag(this.tag);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleTagQueryPacket(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleNBTQueryResponse(this);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -47,7 +47,7 @@ public class SQueryNBTResponsePacket implements IPacket<IClientPlayNetHandler> {
       return this.tag;
    }
 
-   public boolean isSkippable() {
+   public boolean shouldSkipErrors() {
       return true;
    }
 }

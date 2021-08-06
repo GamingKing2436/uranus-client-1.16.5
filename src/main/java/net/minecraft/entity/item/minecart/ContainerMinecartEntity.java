@@ -29,28 +29,28 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
 public abstract class ContainerMinecartEntity extends AbstractMinecartEntity implements IInventory, INamedContainerProvider {
-   private NonNullList<ItemStack> itemStacks = NonNullList.withSize(36, ItemStack.EMPTY);
-   private boolean dropEquipment = true;
+   private NonNullList<ItemStack> minecartContainerItems = NonNullList.withSize(36, ItemStack.EMPTY);
+   private boolean dropContentsWhenDead = true;
    @Nullable
    private ResourceLocation lootTable;
    private long lootTableSeed;
 
-   protected ContainerMinecartEntity(EntityType<?> p_i48536_1_, World p_i48536_2_) {
-      super(p_i48536_1_, p_i48536_2_);
+   protected ContainerMinecartEntity(EntityType<?> type, World world) {
+      super(type, world);
    }
 
-   protected ContainerMinecartEntity(EntityType<?> p_i48537_1_, double p_i48537_2_, double p_i48537_4_, double p_i48537_6_, World p_i48537_8_) {
-      super(p_i48537_1_, p_i48537_8_, p_i48537_2_, p_i48537_4_, p_i48537_6_);
+   protected ContainerMinecartEntity(EntityType<?> type, double x, double y, double z, World world) {
+      super(type, world, x, y, z);
    }
 
-   public void destroy(DamageSource p_94095_1_) {
-      super.destroy(p_94095_1_);
-      if (this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
-         InventoryHelper.dropContents(this.level, this, this);
-         if (!this.level.isClientSide) {
-            Entity entity = p_94095_1_.getDirectEntity();
+   public void killMinecart(DamageSource source) {
+      super.killMinecart(source);
+      if (this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
+         InventoryHelper.dropInventoryItems(this.world, this, this);
+         if (!this.world.isRemote) {
+            Entity entity = source.getImmediateSource();
             if (entity != null && entity.getType() == EntityType.PLAYER) {
-               PiglinTasks.angerNearbyPiglins((PlayerEntity)entity, true);
+               PiglinTasks.func_234478_a_((PlayerEntity)entity, true);
             }
          }
       }
@@ -58,7 +58,7 @@ public abstract class ContainerMinecartEntity extends AbstractMinecartEntity imp
    }
 
    public boolean isEmpty() {
-      for(ItemStack itemstack : this.itemStacks) {
+      for(ItemStack itemstack : this.minecartContainerItems) {
          if (!itemstack.isEmpty()) {
             return false;
          }
@@ -67,141 +67,141 @@ public abstract class ContainerMinecartEntity extends AbstractMinecartEntity imp
       return true;
    }
 
-   public ItemStack getItem(int p_70301_1_) {
-      this.unpackLootTable((PlayerEntity)null);
-      return this.itemStacks.get(p_70301_1_);
+   public ItemStack getStackInSlot(int index) {
+      this.addLoot((PlayerEntity)null);
+      return this.minecartContainerItems.get(index);
    }
 
-   public ItemStack removeItem(int p_70298_1_, int p_70298_2_) {
-      this.unpackLootTable((PlayerEntity)null);
-      return ItemStackHelper.removeItem(this.itemStacks, p_70298_1_, p_70298_2_);
+   public ItemStack decrStackSize(int index, int count) {
+      this.addLoot((PlayerEntity)null);
+      return ItemStackHelper.getAndSplit(this.minecartContainerItems, index, count);
    }
 
-   public ItemStack removeItemNoUpdate(int p_70304_1_) {
-      this.unpackLootTable((PlayerEntity)null);
-      ItemStack itemstack = this.itemStacks.get(p_70304_1_);
+   public ItemStack removeStackFromSlot(int index) {
+      this.addLoot((PlayerEntity)null);
+      ItemStack itemstack = this.minecartContainerItems.get(index);
       if (itemstack.isEmpty()) {
          return ItemStack.EMPTY;
       } else {
-         this.itemStacks.set(p_70304_1_, ItemStack.EMPTY);
+         this.minecartContainerItems.set(index, ItemStack.EMPTY);
          return itemstack;
       }
    }
 
-   public void setItem(int p_70299_1_, ItemStack p_70299_2_) {
-      this.unpackLootTable((PlayerEntity)null);
-      this.itemStacks.set(p_70299_1_, p_70299_2_);
-      if (!p_70299_2_.isEmpty() && p_70299_2_.getCount() > this.getMaxStackSize()) {
-         p_70299_2_.setCount(this.getMaxStackSize());
+   public void setInventorySlotContents(int index, ItemStack stack) {
+      this.addLoot((PlayerEntity)null);
+      this.minecartContainerItems.set(index, stack);
+      if (!stack.isEmpty() && stack.getCount() > this.getInventoryStackLimit()) {
+         stack.setCount(this.getInventoryStackLimit());
       }
 
    }
 
-   public boolean setSlot(int p_174820_1_, ItemStack p_174820_2_) {
-      if (p_174820_1_ >= 0 && p_174820_1_ < this.getContainerSize()) {
-         this.setItem(p_174820_1_, p_174820_2_);
+   public boolean replaceItemInInventory(int inventorySlot, ItemStack itemStackIn) {
+      if (inventorySlot >= 0 && inventorySlot < this.getSizeInventory()) {
+         this.setInventorySlotContents(inventorySlot, itemStackIn);
          return true;
       } else {
          return false;
       }
    }
 
-   public void setChanged() {
+   public void markDirty() {
    }
 
-   public boolean stillValid(PlayerEntity p_70300_1_) {
+   public boolean isUsableByPlayer(PlayerEntity player) {
       if (this.removed) {
          return false;
       } else {
-         return !(p_70300_1_.distanceToSqr(this) > 64.0D);
+         return !(player.getDistanceSq(this) > 64.0D);
       }
    }
 
    @Nullable
-   public Entity changeDimension(ServerWorld p_241206_1_) {
-      this.dropEquipment = false;
-      return super.changeDimension(p_241206_1_);
+   public Entity changeDimension(ServerWorld server) {
+      this.dropContentsWhenDead = false;
+      return super.changeDimension(server);
    }
 
    public void remove() {
-      if (!this.level.isClientSide && this.dropEquipment) {
-         InventoryHelper.dropContents(this.level, this, this);
+      if (!this.world.isRemote && this.dropContentsWhenDead) {
+         InventoryHelper.dropInventoryItems(this.world, this, this);
       }
 
       super.remove();
    }
 
-   protected void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
+   protected void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
       if (this.lootTable != null) {
-         p_213281_1_.putString("LootTable", this.lootTable.toString());
+         compound.putString("LootTable", this.lootTable.toString());
          if (this.lootTableSeed != 0L) {
-            p_213281_1_.putLong("LootTableSeed", this.lootTableSeed);
+            compound.putLong("LootTableSeed", this.lootTableSeed);
          }
       } else {
-         ItemStackHelper.saveAllItems(p_213281_1_, this.itemStacks);
+         ItemStackHelper.saveAllItems(compound, this.minecartContainerItems);
       }
 
    }
 
-   protected void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-      if (p_70037_1_.contains("LootTable", 8)) {
-         this.lootTable = new ResourceLocation(p_70037_1_.getString("LootTable"));
-         this.lootTableSeed = p_70037_1_.getLong("LootTableSeed");
+   protected void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.minecartContainerItems = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
+      if (compound.contains("LootTable", 8)) {
+         this.lootTable = new ResourceLocation(compound.getString("LootTable"));
+         this.lootTableSeed = compound.getLong("LootTableSeed");
       } else {
-         ItemStackHelper.loadAllItems(p_70037_1_, this.itemStacks);
+         ItemStackHelper.loadAllItems(compound, this.minecartContainerItems);
       }
 
    }
 
-   public ActionResultType interact(PlayerEntity p_184230_1_, Hand p_184230_2_) {
-      p_184230_1_.openMenu(this);
-      if (!p_184230_1_.level.isClientSide) {
-         PiglinTasks.angerNearbyPiglins(p_184230_1_, true);
+   public ActionResultType processInitialInteract(PlayerEntity player, Hand hand) {
+      player.openContainer(this);
+      if (!player.world.isRemote) {
+         PiglinTasks.func_234478_a_(player, true);
          return ActionResultType.CONSUME;
       } else {
          return ActionResultType.SUCCESS;
       }
    }
 
-   protected void applyNaturalSlowdown() {
+   protected void applyDrag() {
       float f = 0.98F;
       if (this.lootTable == null) {
-         int i = 15 - Container.getRedstoneSignalFromContainer(this);
+         int i = 15 - Container.calcRedstoneFromInventory(this);
          f += (float)i * 0.001F;
       }
 
-      this.setDeltaMovement(this.getDeltaMovement().multiply((double)f, 0.0D, (double)f));
+      this.setMotion(this.getMotion().mul((double)f, 0.0D, (double)f));
    }
 
-   public void unpackLootTable(@Nullable PlayerEntity p_184288_1_) {
-      if (this.lootTable != null && this.level.getServer() != null) {
-         LootTable loottable = this.level.getServer().getLootTables().get(this.lootTable);
-         if (p_184288_1_ instanceof ServerPlayerEntity) {
-            CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayerEntity)p_184288_1_, this.lootTable);
+   public void addLoot(@Nullable PlayerEntity player) {
+      if (this.lootTable != null && this.world.getServer() != null) {
+         LootTable loottable = this.world.getServer().getLootTableManager().getLootTableFromLocation(this.lootTable);
+         if (player instanceof ServerPlayerEntity) {
+            CriteriaTriggers.PLAYER_GENERATES_CONTAINER_LOOT.test((ServerPlayerEntity)player, this.lootTable);
          }
 
          this.lootTable = null;
-         LootContext.Builder lootcontext$builder = (new LootContext.Builder((ServerWorld)this.level)).withParameter(LootParameters.ORIGIN, this.position()).withOptionalRandomSeed(this.lootTableSeed);
-         if (p_184288_1_ != null) {
-            lootcontext$builder.withLuck(p_184288_1_.getLuck()).withParameter(LootParameters.THIS_ENTITY, p_184288_1_);
+         LootContext.Builder lootcontext$builder = (new LootContext.Builder((ServerWorld)this.world)).withParameter(LootParameters.field_237457_g_, this.getPositionVec()).withSeed(this.lootTableSeed);
+         if (player != null) {
+            lootcontext$builder.withLuck(player.getLuck()).withParameter(LootParameters.THIS_ENTITY, player);
          }
 
-         loottable.fill(this, lootcontext$builder.create(LootParameterSets.CHEST));
+         loottable.fillInventory(this, lootcontext$builder.build(LootParameterSets.CHEST));
       }
 
    }
 
-   public void clearContent() {
-      this.unpackLootTable((PlayerEntity)null);
-      this.itemStacks.clear();
+   public void clear() {
+      this.addLoot((PlayerEntity)null);
+      this.minecartContainerItems.clear();
    }
 
-   public void setLootTable(ResourceLocation p_184289_1_, long p_184289_2_) {
-      this.lootTable = p_184289_1_;
-      this.lootTableSeed = p_184289_2_;
+   public void setLootTable(ResourceLocation lootTableIn, long lootTableSeedIn) {
+      this.lootTable = lootTableIn;
+      this.lootTableSeed = lootTableSeedIn;
    }
 
    @Nullable
@@ -209,10 +209,10 @@ public abstract class ContainerMinecartEntity extends AbstractMinecartEntity imp
       if (this.lootTable != null && p_createMenu_3_.isSpectator()) {
          return null;
       } else {
-         this.unpackLootTable(p_createMenu_2_.player);
-         return this.createMenu(p_createMenu_1_, p_createMenu_2_);
+         this.addLoot(p_createMenu_2_.player);
+         return this.createContainer(p_createMenu_1_, p_createMenu_2_);
       }
    }
 
-   protected abstract Container createMenu(int p_213968_1_, PlayerInventory p_213968_2_);
+   protected abstract Container createContainer(int id, PlayerInventory playerInventoryIn);
 }

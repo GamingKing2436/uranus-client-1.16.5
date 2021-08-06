@@ -19,56 +19,56 @@ import net.minecraft.world.World;
 
 public class SwordItem extends TieredItem implements IVanishable {
    private final float attackDamage;
-   private final Multimap<Attribute, AttributeModifier> defaultModifiers;
+   private final Multimap<Attribute, AttributeModifier> attributeModifiers;
 
-   public SwordItem(IItemTier p_i48460_1_, int p_i48460_2_, float p_i48460_3_, Item.Properties p_i48460_4_) {
-      super(p_i48460_1_, p_i48460_4_);
-      this.attackDamage = (float)p_i48460_2_ + p_i48460_1_.getAttackDamageBonus();
+   public SwordItem(IItemTier tier, int attackDamageIn, float attackSpeedIn, Item.Properties builderIn) {
+      super(tier, builderIn);
+      this.attackDamage = (float)attackDamageIn + tier.getAttackDamage();
       Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-      builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", (double)this.attackDamage, AttributeModifier.Operation.ADDITION));
-      builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "Weapon modifier", (double)p_i48460_3_, AttributeModifier.Operation.ADDITION));
-      this.defaultModifiers = builder.build();
+      builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(ATTACK_DAMAGE_MODIFIER, "Weapon modifier", (double)this.attackDamage, AttributeModifier.Operation.ADDITION));
+      builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(ATTACK_SPEED_MODIFIER, "Weapon modifier", (double)attackSpeedIn, AttributeModifier.Operation.ADDITION));
+      this.attributeModifiers = builder.build();
    }
 
-   public float getDamage() {
+   public float getAttackDamage() {
       return this.attackDamage;
    }
 
-   public boolean canAttackBlock(BlockState p_195938_1_, World p_195938_2_, BlockPos p_195938_3_, PlayerEntity p_195938_4_) {
-      return !p_195938_4_.isCreative();
+   public boolean canPlayerBreakBlockWhileHolding(BlockState state, World worldIn, BlockPos pos, PlayerEntity player) {
+      return !player.isCreative();
    }
 
-   public float getDestroySpeed(ItemStack p_150893_1_, BlockState p_150893_2_) {
-      if (p_150893_2_.is(Blocks.COBWEB)) {
+   public float getDestroySpeed(ItemStack stack, BlockState state) {
+      if (state.isIn(Blocks.COBWEB)) {
          return 15.0F;
       } else {
-         Material material = p_150893_2_.getMaterial();
-         return material != Material.PLANT && material != Material.REPLACEABLE_PLANT && material != Material.CORAL && !p_150893_2_.is(BlockTags.LEAVES) && material != Material.VEGETABLE ? 1.0F : 1.5F;
+         Material material = state.getMaterial();
+         return material != Material.PLANTS && material != Material.TALL_PLANTS && material != Material.CORAL && !state.isIn(BlockTags.LEAVES) && material != Material.GOURD ? 1.0F : 1.5F;
       }
    }
 
-   public boolean hurtEnemy(ItemStack p_77644_1_, LivingEntity p_77644_2_, LivingEntity p_77644_3_) {
-      p_77644_1_.hurtAndBreak(1, p_77644_3_, (p_220045_0_) -> {
-         p_220045_0_.broadcastBreakEvent(EquipmentSlotType.MAINHAND);
+   public boolean hitEntity(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+      stack.damageItem(1, attacker, (p_220045_0_) -> {
+         p_220045_0_.sendBreakAnimation(EquipmentSlotType.MAINHAND);
       });
       return true;
    }
 
-   public boolean mineBlock(ItemStack p_179218_1_, World p_179218_2_, BlockState p_179218_3_, BlockPos p_179218_4_, LivingEntity p_179218_5_) {
-      if (p_179218_3_.getDestroySpeed(p_179218_2_, p_179218_4_) != 0.0F) {
-         p_179218_1_.hurtAndBreak(2, p_179218_5_, (p_220044_0_) -> {
-            p_220044_0_.broadcastBreakEvent(EquipmentSlotType.MAINHAND);
+   public boolean onBlockDestroyed(ItemStack stack, World worldIn, BlockState state, BlockPos pos, LivingEntity entityLiving) {
+      if (state.getBlockHardness(worldIn, pos) != 0.0F) {
+         stack.damageItem(2, entityLiving, (p_220044_0_) -> {
+            p_220044_0_.sendBreakAnimation(EquipmentSlotType.MAINHAND);
          });
       }
 
       return true;
    }
 
-   public boolean isCorrectToolForDrops(BlockState p_150897_1_) {
-      return p_150897_1_.is(Blocks.COBWEB);
+   public boolean canHarvestBlock(BlockState blockIn) {
+      return blockIn.isIn(Blocks.COBWEB);
    }
 
-   public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlotType p_111205_1_) {
-      return p_111205_1_ == EquipmentSlotType.MAINHAND ? this.defaultModifiers : super.getDefaultAttributeModifiers(p_111205_1_);
+   public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlotType equipmentSlot) {
+      return equipmentSlot == EquipmentSlotType.MAINHAND ? this.attributeModifiers : super.getAttributeModifiers(equipmentSlot);
    }
 }

@@ -38,32 +38,32 @@ import net.minecraft.world.IServerWorld;
 import net.minecraft.world.World;
 
 public class VexEntity extends MonsterEntity {
-   protected static final DataParameter<Byte> DATA_FLAGS_ID = EntityDataManager.defineId(VexEntity.class, DataSerializers.BYTE);
+   protected static final DataParameter<Byte> VEX_FLAGS = EntityDataManager.createKey(VexEntity.class, DataSerializers.BYTE);
    private MobEntity owner;
    @Nullable
    private BlockPos boundOrigin;
-   private boolean hasLimitedLife;
+   private boolean limitedLifespan;
    private int limitedLifeTicks;
 
    public VexEntity(EntityType<? extends VexEntity> p_i50190_1_, World p_i50190_2_) {
       super(p_i50190_1_, p_i50190_2_);
-      this.moveControl = new VexEntity.MoveHelperController(this);
-      this.xpReward = 3;
+      this.moveController = new VexEntity.MoveHelperController(this);
+      this.experienceValue = 3;
    }
 
-   public void move(MoverType p_213315_1_, Vector3d p_213315_2_) {
-      super.move(p_213315_1_, p_213315_2_);
-      this.checkInsideBlocks();
+   public void move(MoverType typeIn, Vector3d pos) {
+      super.move(typeIn, pos);
+      this.doBlockCollisions();
    }
 
    public void tick() {
-      this.noPhysics = true;
+      this.noClip = true;
       super.tick();
-      this.noPhysics = false;
+      this.noClip = false;
       this.setNoGravity(true);
-      if (this.hasLimitedLife && --this.limitedLifeTicks <= 0) {
+      if (this.limitedLifespan && --this.limitedLifeTicks <= 0) {
          this.limitedLifeTicks = 20;
-         this.hurt(DamageSource.STARVE, 1.0F);
+         this.attackEntityFrom(DamageSource.STARVE, 1.0F);
       }
 
    }
@@ -75,42 +75,42 @@ public class VexEntity extends MonsterEntity {
       this.goalSelector.addGoal(8, new VexEntity.MoveRandomGoal());
       this.goalSelector.addGoal(9, new LookAtGoal(this, PlayerEntity.class, 3.0F, 1.0F));
       this.goalSelector.addGoal(10, new LookAtGoal(this, MobEntity.class, 8.0F));
-      this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, AbstractRaiderEntity.class)).setAlertOthers());
+      this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, AbstractRaiderEntity.class)).setCallsForHelp());
       this.targetSelector.addGoal(2, new VexEntity.CopyOwnerTargetGoal(this));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, PlayerEntity.class, true));
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return MonsterEntity.createMonsterAttributes().add(Attributes.MAX_HEALTH, 14.0D).add(Attributes.ATTACK_DAMAGE, 4.0D);
+   public static AttributeModifierMap.MutableAttribute func_234321_m_() {
+      return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MAX_HEALTH, 14.0D).createMutableAttribute(Attributes.ATTACK_DAMAGE, 4.0D);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_FLAGS_ID, (byte)0);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(VEX_FLAGS, (byte)0);
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      if (p_70037_1_.contains("BoundX")) {
-         this.boundOrigin = new BlockPos(p_70037_1_.getInt("BoundX"), p_70037_1_.getInt("BoundY"), p_70037_1_.getInt("BoundZ"));
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      if (compound.contains("BoundX")) {
+         this.boundOrigin = new BlockPos(compound.getInt("BoundX"), compound.getInt("BoundY"), compound.getInt("BoundZ"));
       }
 
-      if (p_70037_1_.contains("LifeTicks")) {
-         this.setLimitedLife(p_70037_1_.getInt("LifeTicks"));
+      if (compound.contains("LifeTicks")) {
+         this.setLimitedLife(compound.getInt("LifeTicks"));
       }
 
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
       if (this.boundOrigin != null) {
-         p_213281_1_.putInt("BoundX", this.boundOrigin.getX());
-         p_213281_1_.putInt("BoundY", this.boundOrigin.getY());
-         p_213281_1_.putInt("BoundZ", this.boundOrigin.getZ());
+         compound.putInt("BoundX", this.boundOrigin.getX());
+         compound.putInt("BoundY", this.boundOrigin.getY());
+         compound.putInt("BoundZ", this.boundOrigin.getZ());
       }
 
-      if (this.hasLimitedLife) {
-         p_213281_1_.putInt("LifeTicks", this.limitedLifeTicks);
+      if (this.limitedLifespan) {
+         compound.putInt("LifeTicks", this.limitedLifeTicks);
       }
 
    }
@@ -124,53 +124,53 @@ public class VexEntity extends MonsterEntity {
       return this.boundOrigin;
    }
 
-   public void setBoundOrigin(@Nullable BlockPos p_190651_1_) {
-      this.boundOrigin = p_190651_1_;
+   public void setBoundOrigin(@Nullable BlockPos boundOriginIn) {
+      this.boundOrigin = boundOriginIn;
    }
 
-   private boolean getVexFlag(int p_190656_1_) {
-      int i = this.entityData.get(DATA_FLAGS_ID);
-      return (i & p_190656_1_) != 0;
+   private boolean getVexFlag(int mask) {
+      int i = this.dataManager.get(VEX_FLAGS);
+      return (i & mask) != 0;
    }
 
-   private void setVexFlag(int p_190660_1_, boolean p_190660_2_) {
-      int i = this.entityData.get(DATA_FLAGS_ID);
-      if (p_190660_2_) {
-         i = i | p_190660_1_;
+   private void setVexFlag(int mask, boolean value) {
+      int i = this.dataManager.get(VEX_FLAGS);
+      if (value) {
+         i = i | mask;
       } else {
-         i = i & ~p_190660_1_;
+         i = i & ~mask;
       }
 
-      this.entityData.set(DATA_FLAGS_ID, (byte)(i & 255));
+      this.dataManager.set(VEX_FLAGS, (byte)(i & 255));
    }
 
    public boolean isCharging() {
       return this.getVexFlag(1);
    }
 
-   public void setIsCharging(boolean p_190648_1_) {
-      this.setVexFlag(1, p_190648_1_);
+   public void setCharging(boolean charging) {
+      this.setVexFlag(1, charging);
    }
 
-   public void setOwner(MobEntity p_190658_1_) {
-      this.owner = p_190658_1_;
+   public void setOwner(MobEntity ownerIn) {
+      this.owner = ownerIn;
    }
 
-   public void setLimitedLife(int p_190653_1_) {
-      this.hasLimitedLife = true;
-      this.limitedLifeTicks = p_190653_1_;
+   public void setLimitedLife(int limitedLifeTicksIn) {
+      this.limitedLifespan = true;
+      this.limitedLifeTicks = limitedLifeTicksIn;
    }
 
    protected SoundEvent getAmbientSound() {
-      return SoundEvents.VEX_AMBIENT;
+      return SoundEvents.ENTITY_VEX_AMBIENT;
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.VEX_DEATH;
+      return SoundEvents.ENTITY_VEX_DEATH;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.VEX_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_VEX_HURT;
    }
 
    public float getBrightness() {
@@ -178,56 +178,56 @@ public class VexEntity extends MonsterEntity {
    }
 
    @Nullable
-   public ILivingEntityData finalizeSpawn(IServerWorld p_213386_1_, DifficultyInstance p_213386_2_, SpawnReason p_213386_3_, @Nullable ILivingEntityData p_213386_4_, @Nullable CompoundNBT p_213386_5_) {
-      this.populateDefaultEquipmentSlots(p_213386_2_);
-      this.populateDefaultEquipmentEnchantments(p_213386_2_);
-      return super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, p_213386_4_, p_213386_5_);
+   public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+      this.setEquipmentBasedOnDifficulty(difficultyIn);
+      this.setEnchantmentBasedOnDifficulty(difficultyIn);
+      return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
    }
 
-   protected void populateDefaultEquipmentSlots(DifficultyInstance p_180481_1_) {
-      this.setItemSlot(EquipmentSlotType.MAINHAND, new ItemStack(Items.IRON_SWORD));
+   protected void setEquipmentBasedOnDifficulty(DifficultyInstance difficulty) {
+      this.setItemStackToSlot(EquipmentSlotType.MAINHAND, new ItemStack(Items.IRON_SWORD));
       this.setDropChance(EquipmentSlotType.MAINHAND, 0.0F);
    }
 
    class ChargeAttackGoal extends Goal {
       public ChargeAttackGoal() {
-         this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+         this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE));
       }
 
-      public boolean canUse() {
-         if (VexEntity.this.getTarget() != null && !VexEntity.this.getMoveControl().hasWanted() && VexEntity.this.random.nextInt(7) == 0) {
-            return VexEntity.this.distanceToSqr(VexEntity.this.getTarget()) > 4.0D;
+      public boolean shouldExecute() {
+         if (VexEntity.this.getAttackTarget() != null && !VexEntity.this.getMoveHelper().isUpdating() && VexEntity.this.rand.nextInt(7) == 0) {
+            return VexEntity.this.getDistanceSq(VexEntity.this.getAttackTarget()) > 4.0D;
          } else {
             return false;
          }
       }
 
-      public boolean canContinueToUse() {
-         return VexEntity.this.getMoveControl().hasWanted() && VexEntity.this.isCharging() && VexEntity.this.getTarget() != null && VexEntity.this.getTarget().isAlive();
+      public boolean shouldContinueExecuting() {
+         return VexEntity.this.getMoveHelper().isUpdating() && VexEntity.this.isCharging() && VexEntity.this.getAttackTarget() != null && VexEntity.this.getAttackTarget().isAlive();
       }
 
-      public void start() {
-         LivingEntity livingentity = VexEntity.this.getTarget();
+      public void startExecuting() {
+         LivingEntity livingentity = VexEntity.this.getAttackTarget();
          Vector3d vector3d = livingentity.getEyePosition(1.0F);
-         VexEntity.this.moveControl.setWantedPosition(vector3d.x, vector3d.y, vector3d.z, 1.0D);
-         VexEntity.this.setIsCharging(true);
-         VexEntity.this.playSound(SoundEvents.VEX_CHARGE, 1.0F, 1.0F);
+         VexEntity.this.moveController.setMoveTo(vector3d.x, vector3d.y, vector3d.z, 1.0D);
+         VexEntity.this.setCharging(true);
+         VexEntity.this.playSound(SoundEvents.ENTITY_VEX_CHARGE, 1.0F, 1.0F);
       }
 
-      public void stop() {
-         VexEntity.this.setIsCharging(false);
+      public void resetTask() {
+         VexEntity.this.setCharging(false);
       }
 
       public void tick() {
-         LivingEntity livingentity = VexEntity.this.getTarget();
+         LivingEntity livingentity = VexEntity.this.getAttackTarget();
          if (VexEntity.this.getBoundingBox().intersects(livingentity.getBoundingBox())) {
-            VexEntity.this.doHurtTarget(livingentity);
-            VexEntity.this.setIsCharging(false);
+            VexEntity.this.attackEntityAsMob(livingentity);
+            VexEntity.this.setCharging(false);
          } else {
-            double d0 = VexEntity.this.distanceToSqr(livingentity);
+            double d0 = VexEntity.this.getDistanceSq(livingentity);
             if (d0 < 9.0D) {
                Vector3d vector3d = livingentity.getEyePosition(1.0F);
-               VexEntity.this.moveControl.setWantedPosition(vector3d.x, vector3d.y, vector3d.z, 1.0D);
+               VexEntity.this.moveController.setMoveTo(vector3d.x, vector3d.y, vector3d.z, 1.0D);
             }
          }
 
@@ -235,45 +235,45 @@ public class VexEntity extends MonsterEntity {
    }
 
    class CopyOwnerTargetGoal extends TargetGoal {
-      private final EntityPredicate copyOwnerTargeting = (new EntityPredicate()).allowUnseeable().ignoreInvisibilityTesting();
+      private final EntityPredicate field_220803_b = (new EntityPredicate()).setLineOfSiteRequired().setUseInvisibilityCheck();
 
-      public CopyOwnerTargetGoal(CreatureEntity p_i47231_2_) {
-         super(p_i47231_2_, false);
+      public CopyOwnerTargetGoal(CreatureEntity creature) {
+         super(creature, false);
       }
 
-      public boolean canUse() {
-         return VexEntity.this.owner != null && VexEntity.this.owner.getTarget() != null && this.canAttack(VexEntity.this.owner.getTarget(), this.copyOwnerTargeting);
+      public boolean shouldExecute() {
+         return VexEntity.this.owner != null && VexEntity.this.owner.getAttackTarget() != null && this.isSuitableTarget(VexEntity.this.owner.getAttackTarget(), this.field_220803_b);
       }
 
-      public void start() {
-         VexEntity.this.setTarget(VexEntity.this.owner.getTarget());
-         super.start();
+      public void startExecuting() {
+         VexEntity.this.setAttackTarget(VexEntity.this.owner.getAttackTarget());
+         super.startExecuting();
       }
    }
 
    class MoveHelperController extends MovementController {
-      public MoveHelperController(VexEntity p_i47230_2_) {
-         super(p_i47230_2_);
+      public MoveHelperController(VexEntity vex) {
+         super(vex);
       }
 
       public void tick() {
-         if (this.operation == MovementController.Action.MOVE_TO) {
-            Vector3d vector3d = new Vector3d(this.wantedX - VexEntity.this.getX(), this.wantedY - VexEntity.this.getY(), this.wantedZ - VexEntity.this.getZ());
+         if (this.action == MovementController.Action.MOVE_TO) {
+            Vector3d vector3d = new Vector3d(this.posX - VexEntity.this.getPosX(), this.posY - VexEntity.this.getPosY(), this.posZ - VexEntity.this.getPosZ());
             double d0 = vector3d.length();
-            if (d0 < VexEntity.this.getBoundingBox().getSize()) {
-               this.operation = MovementController.Action.WAIT;
-               VexEntity.this.setDeltaMovement(VexEntity.this.getDeltaMovement().scale(0.5D));
+            if (d0 < VexEntity.this.getBoundingBox().getAverageEdgeLength()) {
+               this.action = MovementController.Action.WAIT;
+               VexEntity.this.setMotion(VexEntity.this.getMotion().scale(0.5D));
             } else {
-               VexEntity.this.setDeltaMovement(VexEntity.this.getDeltaMovement().add(vector3d.scale(this.speedModifier * 0.05D / d0)));
-               if (VexEntity.this.getTarget() == null) {
-                  Vector3d vector3d1 = VexEntity.this.getDeltaMovement();
-                  VexEntity.this.yRot = -((float)MathHelper.atan2(vector3d1.x, vector3d1.z)) * (180F / (float)Math.PI);
-                  VexEntity.this.yBodyRot = VexEntity.this.yRot;
+               VexEntity.this.setMotion(VexEntity.this.getMotion().add(vector3d.scale(this.speed * 0.05D / d0)));
+               if (VexEntity.this.getAttackTarget() == null) {
+                  Vector3d vector3d1 = VexEntity.this.getMotion();
+                  VexEntity.this.rotationYaw = -((float)MathHelper.atan2(vector3d1.x, vector3d1.z)) * (180F / (float)Math.PI);
+                  VexEntity.this.renderYawOffset = VexEntity.this.rotationYaw;
                } else {
-                  double d2 = VexEntity.this.getTarget().getX() - VexEntity.this.getX();
-                  double d1 = VexEntity.this.getTarget().getZ() - VexEntity.this.getZ();
-                  VexEntity.this.yRot = -((float)MathHelper.atan2(d2, d1)) * (180F / (float)Math.PI);
-                  VexEntity.this.yBodyRot = VexEntity.this.yRot;
+                  double d2 = VexEntity.this.getAttackTarget().getPosX() - VexEntity.this.getPosX();
+                  double d1 = VexEntity.this.getAttackTarget().getPosZ() - VexEntity.this.getPosZ();
+                  VexEntity.this.rotationYaw = -((float)MathHelper.atan2(d2, d1)) * (180F / (float)Math.PI);
+                  VexEntity.this.renderYawOffset = VexEntity.this.rotationYaw;
                }
             }
 
@@ -283,29 +283,29 @@ public class VexEntity extends MonsterEntity {
 
    class MoveRandomGoal extends Goal {
       public MoveRandomGoal() {
-         this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+         this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE));
       }
 
-      public boolean canUse() {
-         return !VexEntity.this.getMoveControl().hasWanted() && VexEntity.this.random.nextInt(7) == 0;
+      public boolean shouldExecute() {
+         return !VexEntity.this.getMoveHelper().isUpdating() && VexEntity.this.rand.nextInt(7) == 0;
       }
 
-      public boolean canContinueToUse() {
+      public boolean shouldContinueExecuting() {
          return false;
       }
 
       public void tick() {
          BlockPos blockpos = VexEntity.this.getBoundOrigin();
          if (blockpos == null) {
-            blockpos = VexEntity.this.blockPosition();
+            blockpos = VexEntity.this.getPosition();
          }
 
          for(int i = 0; i < 3; ++i) {
-            BlockPos blockpos1 = blockpos.offset(VexEntity.this.random.nextInt(15) - 7, VexEntity.this.random.nextInt(11) - 5, VexEntity.this.random.nextInt(15) - 7);
-            if (VexEntity.this.level.isEmptyBlock(blockpos1)) {
-               VexEntity.this.moveControl.setWantedPosition((double)blockpos1.getX() + 0.5D, (double)blockpos1.getY() + 0.5D, (double)blockpos1.getZ() + 0.5D, 0.25D);
-               if (VexEntity.this.getTarget() == null) {
-                  VexEntity.this.getLookControl().setLookAt((double)blockpos1.getX() + 0.5D, (double)blockpos1.getY() + 0.5D, (double)blockpos1.getZ() + 0.5D, 180.0F, 20.0F);
+            BlockPos blockpos1 = blockpos.add(VexEntity.this.rand.nextInt(15) - 7, VexEntity.this.rand.nextInt(11) - 5, VexEntity.this.rand.nextInt(15) - 7);
+            if (VexEntity.this.world.isAirBlock(blockpos1)) {
+               VexEntity.this.moveController.setMoveTo((double)blockpos1.getX() + 0.5D, (double)blockpos1.getY() + 0.5D, (double)blockpos1.getZ() + 0.5D, 0.25D);
+               if (VexEntity.this.getAttackTarget() == null) {
+                  VexEntity.this.getLookController().setLookPosition((double)blockpos1.getX() + 0.5D, (double)blockpos1.getY() + 0.5D, (double)blockpos1.getZ() + 0.5D, 180.0F, 20.0F);
                }
                break;
             }

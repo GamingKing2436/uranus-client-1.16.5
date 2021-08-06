@@ -48,93 +48,93 @@ import net.minecraft.network.play.client.CUpdateStructureBlockPacket;
 import net.minecraft.network.play.client.CUseEntityPacket;
 
 public interface IServerPlayNetHandler extends INetHandler {
-   void handleAnimate(CAnimateHandPacket p_175087_1_);
+   void handleAnimation(CAnimateHandPacket packetIn);
 
-   void handleChat(CChatMessagePacket p_147354_1_);
+   void processChatMessage(CChatMessagePacket packetIn);
 
-   void handleClientCommand(CClientStatusPacket p_147342_1_);
+   void processClientStatus(CClientStatusPacket packetIn);
 
-   void handleClientInformation(CClientSettingsPacket p_147352_1_);
+   void processClientSettings(CClientSettingsPacket packetIn);
 
-   void handleContainerAck(CConfirmTransactionPacket p_147339_1_);
+   void processConfirmTransaction(CConfirmTransactionPacket packetIn);
 
-   void handleContainerButtonClick(CEnchantItemPacket p_147338_1_);
+   void processEnchantItem(CEnchantItemPacket packetIn);
 
-   void handleContainerClick(CClickWindowPacket p_147351_1_);
+   void processClickWindow(CClickWindowPacket packetIn);
 
-   void handlePlaceRecipe(CPlaceRecipePacket p_194308_1_);
+   void processPlaceRecipe(CPlaceRecipePacket packetIn);
 
-   void handleContainerClose(CCloseWindowPacket p_147356_1_);
+   void processCloseWindow(CCloseWindowPacket packetIn);
 
-   void handleCustomPayload(CCustomPayloadPacket p_147349_1_);
+   void processCustomPayload(CCustomPayloadPacket packetIn);
 
-   void handleInteract(CUseEntityPacket p_147340_1_);
+   void processUseEntity(CUseEntityPacket packetIn);
 
-   void handleKeepAlive(CKeepAlivePacket p_147353_1_);
+   void processKeepAlive(CKeepAlivePacket packetIn);
 
-   void handleMovePlayer(CPlayerPacket p_147347_1_);
+   void processPlayer(CPlayerPacket packetIn);
 
-   void handlePlayerAbilities(CPlayerAbilitiesPacket p_147348_1_);
+   void processPlayerAbilities(CPlayerAbilitiesPacket packetIn);
 
-   void handlePlayerAction(CPlayerDiggingPacket p_147345_1_);
+   void processPlayerDigging(CPlayerDiggingPacket packetIn);
 
-   void handlePlayerCommand(CEntityActionPacket p_147357_1_);
+   void processEntityAction(CEntityActionPacket packetIn);
 
-   void handlePlayerInput(CInputPacket p_147358_1_);
+   void processInput(CInputPacket packetIn);
 
-   void handleSetCarriedItem(CHeldItemChangePacket p_147355_1_);
+   void processHeldItemChange(CHeldItemChangePacket packetIn);
 
-   void handleSetCreativeModeSlot(CCreativeInventoryActionPacket p_147344_1_);
+   void processCreativeInventoryAction(CCreativeInventoryActionPacket packetIn);
 
-   void handleSignUpdate(CUpdateSignPacket p_147343_1_);
+   void processUpdateSign(CUpdateSignPacket packetIn);
 
-   void handleUseItemOn(CPlayerTryUseItemOnBlockPacket p_184337_1_);
+   void processTryUseItemOnBlock(CPlayerTryUseItemOnBlockPacket packetIn);
 
-   void handleUseItem(CPlayerTryUseItemPacket p_147346_1_);
+   void processTryUseItem(CPlayerTryUseItemPacket packetIn);
 
-   void handleTeleportToEntityPacket(CSpectatePacket p_175088_1_);
+   void handleSpectate(CSpectatePacket packetIn);
 
-   void handleResourcePackResponse(CResourcePackStatusPacket p_175086_1_);
+   void handleResourcePackStatus(CResourcePackStatusPacket packetIn);
 
-   void handlePaddleBoat(CSteerBoatPacket p_184340_1_);
+   void processSteerBoat(CSteerBoatPacket packetIn);
 
-   void handleMoveVehicle(CMoveVehiclePacket p_184338_1_);
+   void processVehicleMove(CMoveVehiclePacket packetIn);
 
-   void handleAcceptTeleportPacket(CConfirmTeleportPacket p_184339_1_);
+   void processConfirmTeleport(CConfirmTeleportPacket packetIn);
 
-   void handleRecipeBookSeenRecipePacket(CMarkRecipeSeenPacket p_191984_1_);
+   void handleRecipeBookUpdate(CMarkRecipeSeenPacket packetIn);
 
-   void handleRecipeBookChangeSettingsPacket(CUpdateRecipeBookStatusPacket p_241831_1_);
+   void func_241831_a(CUpdateRecipeBookStatusPacket p_241831_1_);
 
-   void handleSeenAdvancements(CSeenAdvancementsPacket p_194027_1_);
+   void handleSeenAdvancements(CSeenAdvancementsPacket packetIn);
 
-   void handleCustomCommandSuggestions(CTabCompletePacket p_195518_1_);
+   void processTabComplete(CTabCompletePacket packetIn);
 
-   void handleSetCommandBlock(CUpdateCommandBlockPacket p_210153_1_);
+   void processUpdateCommandBlock(CUpdateCommandBlockPacket packetIn);
 
-   void handleSetCommandMinecart(CUpdateMinecartCommandBlockPacket p_210158_1_);
+   void processUpdateCommandMinecart(CUpdateMinecartCommandBlockPacket packetIn);
 
-   void handlePickItem(CPickItemPacket p_210152_1_);
+   void processPickItem(CPickItemPacket packetIn);
 
-   void handleRenameItem(CRenameItemPacket p_210155_1_);
+   void processRenameItem(CRenameItemPacket packetIn);
 
-   void handleSetBeaconPacket(CUpdateBeaconPacket p_210154_1_);
+   void processUpdateBeacon(CUpdateBeaconPacket packetIn);
 
-   void handleSetStructureBlock(CUpdateStructureBlockPacket p_210157_1_);
+   void processUpdateStructureBlock(CUpdateStructureBlockPacket packetIn);
 
-   void handleSelectTrade(CSelectTradePacket p_210159_1_);
+   void processSelectTrade(CSelectTradePacket packetIn);
 
-   void handleEditBook(CEditBookPacket p_210156_1_);
+   void processEditBook(CEditBookPacket packetIn);
 
-   void handleEntityTagQuery(CQueryEntityNBTPacket p_211526_1_);
+   void processNBTQueryEntity(CQueryEntityNBTPacket packetIn);
 
-   void handleBlockEntityTagQuery(CQueryTileEntityNBTPacket p_211525_1_);
+   void processNBTQueryBlockEntity(CQueryTileEntityNBTPacket packetIn);
 
-   void handleSetJigsawBlock(CUpdateJigsawBlockPacket p_217262_1_);
+   void func_217262_a(CUpdateJigsawBlockPacket p_217262_1_);
 
-   void handleJigsawGenerate(CJigsawBlockGeneratePacket p_230549_1_);
+   void func_230549_a_(CJigsawBlockGeneratePacket p_230549_1_);
 
-   void handleChangeDifficulty(CSetDifficultyPacket p_217263_1_);
+   void func_217263_a(CSetDifficultyPacket p_217263_1_);
 
-   void handleLockDifficulty(CLockDifficultyPacket p_217261_1_);
+   void func_217261_a(CLockDifficultyPacket p_217261_1_);
 }

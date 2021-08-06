@@ -17,11 +17,11 @@ public enum SoundCategory {
    AMBIENT("ambient"),
    VOICE("voice");
 
-   private static final Map<String, SoundCategory> BY_NAME = Arrays.stream(values()).collect(Collectors.toMap(SoundCategory::getName, Function.identity()));
+   private static final Map<String, SoundCategory> SOUND_CATEGORIES = Arrays.stream(values()).collect(Collectors.toMap(SoundCategory::getName, Function.identity()));
    private final String name;
 
-   private SoundCategory(String p_i46833_3_) {
-      this.name = p_i46833_3_;
+   private SoundCategory(String nameIn) {
+      this.name = nameIn;
    }
 
    public String getName() {

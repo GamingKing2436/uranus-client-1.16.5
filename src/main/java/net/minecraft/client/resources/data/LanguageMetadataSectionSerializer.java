@@ -14,19 +14,19 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class LanguageMetadataSectionSerializer implements IMetadataSectionSerializer<LanguageMetadataSection> {
-   public LanguageMetadataSection fromJson(JsonObject p_195812_1_) {
+   public LanguageMetadataSection deserialize(JsonObject json) {
       Set<Language> set = Sets.newHashSet();
 
-      for(Entry<String, JsonElement> entry : p_195812_1_.entrySet()) {
+      for(Entry<String, JsonElement> entry : json.entrySet()) {
          String s = entry.getKey();
          if (s.length() > 16) {
             throw new JsonParseException("Invalid language->'" + s + "': language code must not be more than " + 16 + " characters long");
          }
 
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(entry.getValue(), "language");
-         String s1 = JSONUtils.getAsString(jsonobject, "region");
-         String s2 = JSONUtils.getAsString(jsonobject, "name");
-         boolean flag = JSONUtils.getAsBoolean(jsonobject, "bidirectional", false);
+         JsonObject jsonobject = JSONUtils.getJsonObject(entry.getValue(), "language");
+         String s1 = JSONUtils.getString(jsonobject, "region");
+         String s2 = JSONUtils.getString(jsonobject, "name");
+         boolean flag = JSONUtils.getBoolean(jsonobject, "bidirectional", false);
          if (s1.isEmpty()) {
             throw new JsonParseException("Invalid language->'" + s + "'->region: empty value");
          }
@@ -43,7 +43,7 @@ public class LanguageMetadataSectionSerializer implements IMetadataSectionSerial
       return new LanguageMetadataSection(set);
    }
 
-   public String getMetadataSectionName() {
+   public String getSectionName() {
       return "language";
    }
 }

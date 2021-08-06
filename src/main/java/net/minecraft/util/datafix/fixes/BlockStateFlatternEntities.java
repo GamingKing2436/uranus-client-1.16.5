@@ -276,8 +276,8 @@ public class BlockStateFlatternEntities extends DataFix {
       p_209311_0_.put("minecraft:structure_block", 255);
    });
 
-   public BlockStateFlatternEntities(Schema p_i49671_1_, boolean p_i49671_2_) {
-      super(p_i49671_1_, p_i49671_2_);
+   public BlockStateFlatternEntities(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public static int getBlockId(String p_199171_0_) {
@@ -294,7 +294,7 @@ public class BlockStateFlatternEntities extends DataFix {
       Function<Typed<?>, Typed<?>> function1 = (p_211429_1_) -> {
          return this.updateBlockToBlockState(p_211429_1_, "inTile", "inData", "inBlockState");
       };
-      Type<Pair<Either<Pair<String, Either<Integer, String>>, Unit>, Dynamic<?>>> type = DSL.and(DSL.optional(DSL.field("inTile", DSL.named(TypeReferences.BLOCK_NAME.typeName(), DSL.or(DSL.intType(), NamespacedSchema.namespacedString())))), DSL.remainderType());
+      Type<Pair<Either<Pair<String, Either<Integer, String>>, Unit>, Dynamic<?>>> type = DSL.and(DSL.optional(DSL.field("inTile", DSL.named(TypeReferences.BLOCK_NAME.typeName(), DSL.or(DSL.intType(), NamespacedSchema.func_233457_a_())))), DSL.remainderType());
       Function<Typed<?>, Typed<?>> function2 = (p_211439_1_) -> {
          return p_211439_1_.update(type.finder(), DSL.remainderType(), Pair::getSecond);
       };
@@ -324,7 +324,7 @@ public class BlockStateFlatternEntities extends DataFix {
    }
 
    private Typed<?> updateFallingBlock(Typed<?> p_211442_1_) {
-      Type<Either<Pair<String, Either<Integer, String>>, Unit>> type = DSL.optional(DSL.field("Block", DSL.named(TypeReferences.BLOCK_NAME.typeName(), DSL.or(DSL.intType(), NamespacedSchema.namespacedString()))));
+      Type<Either<Pair<String, Either<Integer, String>>, Unit>> type = DSL.optional(DSL.field("Block", DSL.named(TypeReferences.BLOCK_NAME.typeName(), DSL.or(DSL.intType(), NamespacedSchema.func_233457_a_()))));
       Type<Either<Pair<String, Dynamic<?>>, Unit>> type1 = DSL.optional(DSL.field("BlockState", DSL.named(TypeReferences.BLOCK_STATE.typeName(), DSL.remainderType())));
       Dynamic<?> dynamic = p_211442_1_.get(DSL.remainderFinder());
       return p_211442_1_.update(type.finder(), type1, (p_211437_1_) -> {
@@ -339,12 +339,12 @@ public class BlockStateFlatternEntities extends DataFix {
             });
          });
          int j = dynamic.get("Data").asInt(0) & 15;
-         return Either.left(Pair.of(TypeReferences.BLOCK_STATE.typeName(), BlockStateFlatteningMap.getTag(i << 4 | j)));
+         return Either.left(Pair.of(TypeReferences.BLOCK_STATE.typeName(), BlockStateFlatteningMap.getFixedNBTForID(i << 4 | j)));
       }).set(DSL.remainderFinder(), dynamic.remove("Data").remove("TileID").remove("Tile"));
    }
 
    private Typed<?> updateBlockToBlockState(Typed<?> p_211434_1_, String p_211434_2_, String p_211434_3_, String p_211434_4_) {
-      Type<Pair<String, Either<Integer, String>>> type = DSL.field(p_211434_2_, DSL.named(TypeReferences.BLOCK_NAME.typeName(), DSL.or(DSL.intType(), NamespacedSchema.namespacedString())));
+      Type<Pair<String, Either<Integer, String>>> type = DSL.field(p_211434_2_, DSL.named(TypeReferences.BLOCK_NAME.typeName(), DSL.or(DSL.intType(), NamespacedSchema.func_233457_a_())));
       Type<Pair<String, Dynamic<?>>> type1 = DSL.field(p_211434_4_, DSL.named(TypeReferences.BLOCK_STATE.typeName(), DSL.remainderType()));
       Dynamic<?> dynamic = p_211434_1_.getOrCreate(DSL.remainderFinder());
       return p_211434_1_.update(type.finder(), type1, (p_211432_2_) -> {
@@ -352,7 +352,7 @@ public class BlockStateFlatternEntities extends DataFix {
             return p_211435_0_;
          }, BlockStateFlatternEntities::getBlockId);
          int j = dynamic.get(p_211434_3_).asInt(0) & 15;
-         return Pair.of(TypeReferences.BLOCK_STATE.typeName(), BlockStateFlatteningMap.getTag(i << 4 | j));
+         return Pair.of(TypeReferences.BLOCK_STATE.typeName(), BlockStateFlatteningMap.getFixedNBTForID(i << 4 | j));
       }).set(DSL.remainderFinder(), dynamic.remove(p_211434_3_));
    }
 

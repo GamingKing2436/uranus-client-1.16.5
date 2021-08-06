@@ -24,38 +24,38 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ChunkInfoDebugRenderer implements DebugRenderer.IDebugRenderer {
-   private final Minecraft minecraft;
-   private double lastUpdateTime = Double.MIN_VALUE;
-   private final int radius = 12;
+   private final Minecraft client;
+   private double field_217679_b = Double.MIN_VALUE;
+   private final int field_217680_c = 12;
    @Nullable
-   private ChunkInfoDebugRenderer.Entry data;
+   private ChunkInfoDebugRenderer.Entry field_217681_d;
 
-   public ChunkInfoDebugRenderer(Minecraft p_i50978_1_) {
-      this.minecraft = p_i50978_1_;
+   public ChunkInfoDebugRenderer(Minecraft client) {
+      this.client = client;
    }
 
-   public void render(MatrixStack p_225619_1_, IRenderTypeBuffer p_225619_2_, double p_225619_3_, double p_225619_5_, double p_225619_7_) {
-      double d0 = (double)Util.getNanos();
-      if (d0 - this.lastUpdateTime > 3.0E9D) {
-         this.lastUpdateTime = d0;
-         IntegratedServer integratedserver = this.minecraft.getSingleplayerServer();
+   public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, double camX, double camY, double camZ) {
+      double d0 = (double)Util.nanoTime();
+      if (d0 - this.field_217679_b > 3.0E9D) {
+         this.field_217679_b = d0;
+         IntegratedServer integratedserver = this.client.getIntegratedServer();
          if (integratedserver != null) {
-            this.data = new ChunkInfoDebugRenderer.Entry(integratedserver, p_225619_3_, p_225619_7_);
+            this.field_217681_d = new ChunkInfoDebugRenderer.Entry(integratedserver, camX, camZ);
          } else {
-            this.data = null;
+            this.field_217681_d = null;
          }
       }
 
-      if (this.data != null) {
+      if (this.field_217681_d != null) {
          RenderSystem.enableBlend();
          RenderSystem.defaultBlendFunc();
          RenderSystem.lineWidth(2.0F);
          RenderSystem.disableTexture();
          RenderSystem.depthMask(false);
-         Map<ChunkPos, String> map = this.data.serverData.getNow((Map<ChunkPos, String>)null);
-         double d1 = this.minecraft.gameRenderer.getMainCamera().getPosition().y * 0.85D;
+         Map<ChunkPos, String> map = this.field_217681_d.field_217722_c.getNow((Map<ChunkPos, String>)null);
+         double d1 = this.client.gameRenderer.getActiveRenderInfo().getProjectedView().y * 0.85D;
 
-         for(Map.Entry<ChunkPos, String> entry : this.data.clientData.entrySet()) {
+         for(Map.Entry<ChunkPos, String> entry : this.field_217681_d.field_217721_b.entrySet()) {
             ChunkPos chunkpos = entry.getKey();
             String s = entry.getValue();
             if (map != null) {
@@ -66,7 +66,7 @@ public class ChunkInfoDebugRenderer implements DebugRenderer.IDebugRenderer {
             int i = 0;
 
             for(String s1 : astring) {
-               DebugRenderer.renderFloatingText(s1, (double)((chunkpos.x << 4) + 8), d1 + (double)i, (double)((chunkpos.z << 4) + 8), -1, 0.15F);
+               DebugRenderer.renderText(s1, (double)((chunkpos.x << 4) + 8), d1 + (double)i, (double)((chunkpos.z << 4) + 8), -1, 0.15F);
                i -= 2;
             }
          }
@@ -80,16 +80,16 @@ public class ChunkInfoDebugRenderer implements DebugRenderer.IDebugRenderer {
 
    @OnlyIn(Dist.CLIENT)
    final class Entry {
-      private final Map<ChunkPos, String> clientData;
-      private final CompletableFuture<Map<ChunkPos, String>> serverData;
+      private final Map<ChunkPos, String> field_217721_b;
+      private final CompletableFuture<Map<ChunkPos, String>> field_217722_c;
 
       private Entry(IntegratedServer p_i226030_2_, double p_i226030_3_, double p_i226030_5_) {
-         ClientWorld clientworld = ChunkInfoDebugRenderer.this.minecraft.level;
-         RegistryKey<World> registrykey = clientworld.dimension();
+         ClientWorld clientworld = ChunkInfoDebugRenderer.this.client.world;
+         RegistryKey<World> registrykey = clientworld.getDimensionKey();
          int i = (int)p_i226030_3_ >> 4;
          int j = (int)p_i226030_5_ >> 4;
          Builder<ChunkPos, String> builder = ImmutableMap.builder();
-         ClientChunkProvider clientchunkprovider = clientworld.getChunkSource();
+         ClientChunkProvider clientchunkprovider = clientworld.getChunkProvider();
 
          for(int k = i - 12; k <= i + 12; ++k) {
             for(int l = j - 12; l <= j + 12; ++l) {
@@ -108,19 +108,19 @@ public class ChunkInfoDebugRenderer implements DebugRenderer.IDebugRenderer {
             }
          }
 
-         this.clientData = builder.build();
-         this.serverData = p_i226030_2_.submit(() -> {
-            ServerWorld serverworld = p_i226030_2_.getLevel(registrykey);
+         this.field_217721_b = builder.build();
+         this.field_217722_c = p_i226030_2_.supplyAsync(() -> {
+            ServerWorld serverworld = p_i226030_2_.getWorld(registrykey);
             if (serverworld == null) {
                return ImmutableMap.of();
             } else {
                Builder<ChunkPos, String> builder1 = ImmutableMap.builder();
-               ServerChunkProvider serverchunkprovider = serverworld.getChunkSource();
+               ServerChunkProvider serverchunkprovider = serverworld.getChunkProvider();
 
                for(int i1 = i - 12; i1 <= i + 12; ++i1) {
                   for(int j1 = j - 12; j1 <= j + 12; ++j1) {
                      ChunkPos chunkpos1 = new ChunkPos(i1, j1);
-                     builder1.put(chunkpos1, "Server: " + serverchunkprovider.getChunkDebugData(chunkpos1));
+                     builder1.put(chunkpos1, "Server: " + serverchunkprovider.getDebugInfo(chunkpos1));
                   }
                }
 

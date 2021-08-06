@@ -7,13 +7,13 @@ import net.minecraft.nbt.INBT;
 import net.minecraft.util.text.ITextComponent;
 
 public interface IDataAccessor {
-   void setData(CompoundNBT p_198925_1_) throws CommandSyntaxException;
+   void mergeData(CompoundNBT other) throws CommandSyntaxException;
 
    CompoundNBT getData() throws CommandSyntaxException;
 
-   ITextComponent getModifiedSuccess();
+   ITextComponent getModifiedMessage();
 
-   ITextComponent getPrintSuccess(INBT p_198924_1_);
+   ITextComponent getQueryMessage(INBT nbt);
 
-   ITextComponent getPrintSuccess(NBTPathArgument.NBTPath p_198922_1_, double p_198922_2_, int p_198922_4_);
+   ITextComponent getGetMessage(NBTPathArgument.NBTPath pathIn, double scale, int value);
 }

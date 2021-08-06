@@ -13,9 +13,9 @@ public interface IGlyphProvider extends Closeable {
    }
 
    @Nullable
-   default IGlyphInfo getGlyph(int p_212248_1_) {
+   default IGlyphInfo getGlyphInfo(int character) {
       return null;
    }
 
-   IntSet getSupportedGlyphs();
+   IntSet func_230428_a_();
 }

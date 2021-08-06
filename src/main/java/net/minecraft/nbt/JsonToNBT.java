@@ -33,8 +33,8 @@ public class JsonToNBT {
    private static final Pattern INT_PATTERN = Pattern.compile("[-+]?(?:0|[1-9][0-9]*)");
    private final StringReader reader;
 
-   public static CompoundNBT parseTag(String p_180713_0_) throws CommandSyntaxException {
-      return (new JsonToNBT(new StringReader(p_180713_0_))).readSingleStruct();
+   public static CompoundNBT getTagFromJson(String jsonString) throws CommandSyntaxException {
+      return (new JsonToNBT(new StringReader(jsonString))).readSingleStruct();
    }
 
    @VisibleForTesting
@@ -48,8 +48,8 @@ public class JsonToNBT {
       }
    }
 
-   public JsonToNBT(StringReader p_i47948_1_) {
-      this.reader = p_i47948_1_;
+   public JsonToNBT(StringReader readerIn) {
+      this.reader = readerIn;
    }
 
    protected String readKey() throws CommandSyntaxException {
@@ -77,47 +77,47 @@ public class JsonToNBT {
       }
    }
 
-   private INBT type(String p_193596_1_) {
+   private INBT type(String stringIn) {
       try {
-         if (FLOAT_PATTERN.matcher(p_193596_1_).matches()) {
-            return FloatNBT.valueOf(Float.parseFloat(p_193596_1_.substring(0, p_193596_1_.length() - 1)));
+         if (FLOAT_PATTERN.matcher(stringIn).matches()) {
+            return FloatNBT.valueOf(Float.parseFloat(stringIn.substring(0, stringIn.length() - 1)));
          }
 
-         if (BYTE_PATTERN.matcher(p_193596_1_).matches()) {
-            return ByteNBT.valueOf(Byte.parseByte(p_193596_1_.substring(0, p_193596_1_.length() - 1)));
+         if (BYTE_PATTERN.matcher(stringIn).matches()) {
+            return ByteNBT.valueOf(Byte.parseByte(stringIn.substring(0, stringIn.length() - 1)));
          }
 
-         if (LONG_PATTERN.matcher(p_193596_1_).matches()) {
-            return LongNBT.valueOf(Long.parseLong(p_193596_1_.substring(0, p_193596_1_.length() - 1)));
+         if (LONG_PATTERN.matcher(stringIn).matches()) {
+            return LongNBT.valueOf(Long.parseLong(stringIn.substring(0, stringIn.length() - 1)));
          }
 
-         if (SHORT_PATTERN.matcher(p_193596_1_).matches()) {
-            return ShortNBT.valueOf(Short.parseShort(p_193596_1_.substring(0, p_193596_1_.length() - 1)));
+         if (SHORT_PATTERN.matcher(stringIn).matches()) {
+            return ShortNBT.valueOf(Short.parseShort(stringIn.substring(0, stringIn.length() - 1)));
          }
 
-         if (INT_PATTERN.matcher(p_193596_1_).matches()) {
-            return IntNBT.valueOf(Integer.parseInt(p_193596_1_));
+         if (INT_PATTERN.matcher(stringIn).matches()) {
+            return IntNBT.valueOf(Integer.parseInt(stringIn));
          }
 
-         if (DOUBLE_PATTERN.matcher(p_193596_1_).matches()) {
-            return DoubleNBT.valueOf(Double.parseDouble(p_193596_1_.substring(0, p_193596_1_.length() - 1)));
+         if (DOUBLE_PATTERN.matcher(stringIn).matches()) {
+            return DoubleNBT.valueOf(Double.parseDouble(stringIn.substring(0, stringIn.length() - 1)));
          }
 
-         if (DOUBLE_PATTERN_NOSUFFIX.matcher(p_193596_1_).matches()) {
-            return DoubleNBT.valueOf(Double.parseDouble(p_193596_1_));
+         if (DOUBLE_PATTERN_NOSUFFIX.matcher(stringIn).matches()) {
+            return DoubleNBT.valueOf(Double.parseDouble(stringIn));
          }
 
-         if ("true".equalsIgnoreCase(p_193596_1_)) {
+         if ("true".equalsIgnoreCase(stringIn)) {
             return ByteNBT.ONE;
          }
 
-         if ("false".equalsIgnoreCase(p_193596_1_)) {
+         if ("false".equalsIgnoreCase(stringIn)) {
             return ByteNBT.ZERO;
          }
       } catch (NumberFormatException numberformatexception) {
       }
 
-      return StringNBT.valueOf(p_193596_1_);
+      return StringNBT.valueOf(stringIn);
    }
 
    public INBT readValue() throws CommandSyntaxException {
@@ -183,7 +183,7 @@ public class JsonToNBT {
                inbttype = inbttype1;
             } else if (inbttype1 != inbttype) {
                this.reader.setCursor(i);
-               throw ERROR_INSERT_MIXED_LIST.createWithContext(this.reader, inbttype1.getPrettyName(), inbttype.getPrettyName());
+               throw ERROR_INSERT_MIXED_LIST.createWithContext(this.reader, inbttype1.getTagName(), inbttype.getTagName());
             }
 
             listnbt.add(inbt);
@@ -210,18 +210,18 @@ public class JsonToNBT {
       if (!this.reader.canRead()) {
          throw ERROR_EXPECTED_VALUE.createWithContext(this.reader);
       } else if (c0 == 'B') {
-         return new ByteArrayNBT(this.readArray(ByteArrayNBT.TYPE, ByteNBT.TYPE));
+         return new ByteArrayNBT(this.getNumberList(ByteArrayNBT.TYPE, ByteNBT.TYPE));
       } else if (c0 == 'L') {
-         return new LongArrayNBT(this.readArray(LongArrayNBT.TYPE, LongNBT.TYPE));
+         return new LongArrayNBT(this.getNumberList(LongArrayNBT.TYPE, LongNBT.TYPE));
       } else if (c0 == 'I') {
-         return new IntArrayNBT(this.readArray(IntArrayNBT.TYPE, IntNBT.TYPE));
+         return new IntArrayNBT(this.getNumberList(IntArrayNBT.TYPE, IntNBT.TYPE));
       } else {
          this.reader.setCursor(i);
          throw ERROR_INVALID_ARRAY.createWithContext(this.reader, String.valueOf(c0));
       }
    }
 
-   private <T extends Number> List<T> readArray(INBTType<?> p_229706_1_, INBTType<?> p_229706_2_) throws CommandSyntaxException {
+   private <T extends Number> List<T> getNumberList(INBTType<?> arrayType, INBTType<?> numberType) throws CommandSyntaxException {
       List<T> list = Lists.newArrayList();
 
       while(true) {
@@ -229,17 +229,17 @@ public class JsonToNBT {
             int i = this.reader.getCursor();
             INBT inbt = this.readValue();
             INBTType<?> inbttype = inbt.getType();
-            if (inbttype != p_229706_2_) {
+            if (inbttype != numberType) {
                this.reader.setCursor(i);
-               throw ERROR_INSERT_MIXED_ARRAY.createWithContext(this.reader, inbttype.getPrettyName(), p_229706_1_.getPrettyName());
+               throw ERROR_INSERT_MIXED_ARRAY.createWithContext(this.reader, inbttype.getTagName(), arrayType.getTagName());
             }
 
-            if (p_229706_2_ == ByteNBT.TYPE) {
-               list.add((T)(Byte)((NumberNBT)inbt).getAsByte());
-            } else if (p_229706_2_ == LongNBT.TYPE) {
-               list.add((T)(Long)((NumberNBT)inbt).getAsLong());
+            if (numberType == ByteNBT.TYPE) {
+               list.add((T)(Byte)((NumberNBT)inbt).getByte());
+            } else if (numberType == LongNBT.TYPE) {
+               list.add((T)(Long)((NumberNBT)inbt).getLong());
             } else {
-               list.add((T)(Integer)((NumberNBT)inbt).getAsInt());
+               list.add((T)(Integer)((NumberNBT)inbt).getInt());
             }
 
             if (this.hasElementSeparator()) {
@@ -266,8 +266,8 @@ public class JsonToNBT {
       }
    }
 
-   private void expect(char p_193604_1_) throws CommandSyntaxException {
+   private void expect(char expected) throws CommandSyntaxException {
       this.reader.skipWhitespace();
-      this.reader.expect(p_193604_1_);
+      this.reader.expect(expected);
    }
 }

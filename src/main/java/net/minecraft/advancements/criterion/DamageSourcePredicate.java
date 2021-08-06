@@ -23,62 +23,62 @@ public class DamageSourcePredicate {
    private final EntityPredicate directEntity;
    private final EntityPredicate sourceEntity;
 
-   public DamageSourcePredicate(@Nullable Boolean p_i50810_1_, @Nullable Boolean p_i50810_2_, @Nullable Boolean p_i50810_3_, @Nullable Boolean p_i50810_4_, @Nullable Boolean p_i50810_5_, @Nullable Boolean p_i50810_6_, @Nullable Boolean p_i50810_7_, @Nullable Boolean p_i50810_8_, EntityPredicate p_i50810_9_, EntityPredicate p_i50810_10_) {
-      this.isProjectile = p_i50810_1_;
-      this.isExplosion = p_i50810_2_;
-      this.bypassesArmor = p_i50810_3_;
-      this.bypassesInvulnerability = p_i50810_4_;
-      this.bypassesMagic = p_i50810_5_;
-      this.isFire = p_i50810_6_;
-      this.isMagic = p_i50810_7_;
-      this.isLightning = p_i50810_8_;
-      this.directEntity = p_i50810_9_;
-      this.sourceEntity = p_i50810_10_;
+   public DamageSourcePredicate(@Nullable Boolean isProjectile, @Nullable Boolean isExplosion, @Nullable Boolean bypassesArmor, @Nullable Boolean bypassesInvulnerability, @Nullable Boolean bypassesMagic, @Nullable Boolean isFire, @Nullable Boolean isMagic, @Nullable Boolean isLightning, EntityPredicate directEntity, EntityPredicate sourceEntity) {
+      this.isProjectile = isProjectile;
+      this.isExplosion = isExplosion;
+      this.bypassesArmor = bypassesArmor;
+      this.bypassesInvulnerability = bypassesInvulnerability;
+      this.bypassesMagic = bypassesMagic;
+      this.isFire = isFire;
+      this.isMagic = isMagic;
+      this.isLightning = isLightning;
+      this.directEntity = directEntity;
+      this.sourceEntity = sourceEntity;
    }
 
-   public boolean matches(ServerPlayerEntity p_193418_1_, DamageSource p_193418_2_) {
-      return this.matches(p_193418_1_.getLevel(), p_193418_1_.position(), p_193418_2_);
+   public boolean test(ServerPlayerEntity player, DamageSource source) {
+      return this.test(player.getServerWorld(), player.getPositionVec(), source);
    }
 
-   public boolean matches(ServerWorld p_217952_1_, Vector3d p_217952_2_, DamageSource p_217952_3_) {
+   public boolean test(ServerWorld world, Vector3d vector, DamageSource source) {
       if (this == ANY) {
          return true;
-      } else if (this.isProjectile != null && this.isProjectile != p_217952_3_.isProjectile()) {
+      } else if (this.isProjectile != null && this.isProjectile != source.isProjectile()) {
          return false;
-      } else if (this.isExplosion != null && this.isExplosion != p_217952_3_.isExplosion()) {
+      } else if (this.isExplosion != null && this.isExplosion != source.isExplosion()) {
          return false;
-      } else if (this.bypassesArmor != null && this.bypassesArmor != p_217952_3_.isBypassArmor()) {
+      } else if (this.bypassesArmor != null && this.bypassesArmor != source.isUnblockable()) {
          return false;
-      } else if (this.bypassesInvulnerability != null && this.bypassesInvulnerability != p_217952_3_.isBypassInvul()) {
+      } else if (this.bypassesInvulnerability != null && this.bypassesInvulnerability != source.canHarmInCreative()) {
          return false;
-      } else if (this.bypassesMagic != null && this.bypassesMagic != p_217952_3_.isBypassMagic()) {
+      } else if (this.bypassesMagic != null && this.bypassesMagic != source.isDamageAbsolute()) {
          return false;
-      } else if (this.isFire != null && this.isFire != p_217952_3_.isFire()) {
+      } else if (this.isFire != null && this.isFire != source.isFireDamage()) {
          return false;
-      } else if (this.isMagic != null && this.isMagic != p_217952_3_.isMagic()) {
+      } else if (this.isMagic != null && this.isMagic != source.isMagicDamage()) {
          return false;
-      } else if (this.isLightning != null && this.isLightning != (p_217952_3_ == DamageSource.LIGHTNING_BOLT)) {
+      } else if (this.isLightning != null && this.isLightning != (source == DamageSource.LIGHTNING_BOLT)) {
          return false;
-      } else if (!this.directEntity.matches(p_217952_1_, p_217952_2_, p_217952_3_.getDirectEntity())) {
+      } else if (!this.directEntity.test(world, vector, source.getImmediateSource())) {
          return false;
       } else {
-         return this.sourceEntity.matches(p_217952_1_, p_217952_2_, p_217952_3_.getEntity());
+         return this.sourceEntity.test(world, vector, source.getTrueSource());
       }
    }
 
-   public static DamageSourcePredicate fromJson(@Nullable JsonElement p_192447_0_) {
-      if (p_192447_0_ != null && !p_192447_0_.isJsonNull()) {
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(p_192447_0_, "damage type");
-         Boolean obool = getOptionalBoolean(jsonobject, "is_projectile");
-         Boolean obool1 = getOptionalBoolean(jsonobject, "is_explosion");
-         Boolean obool2 = getOptionalBoolean(jsonobject, "bypasses_armor");
-         Boolean obool3 = getOptionalBoolean(jsonobject, "bypasses_invulnerability");
-         Boolean obool4 = getOptionalBoolean(jsonobject, "bypasses_magic");
-         Boolean obool5 = getOptionalBoolean(jsonobject, "is_fire");
-         Boolean obool6 = getOptionalBoolean(jsonobject, "is_magic");
-         Boolean obool7 = getOptionalBoolean(jsonobject, "is_lightning");
-         EntityPredicate entitypredicate = EntityPredicate.fromJson(jsonobject.get("direct_entity"));
-         EntityPredicate entitypredicate1 = EntityPredicate.fromJson(jsonobject.get("source_entity"));
+   public static DamageSourcePredicate deserialize(@Nullable JsonElement element) {
+      if (element != null && !element.isJsonNull()) {
+         JsonObject jsonobject = JSONUtils.getJsonObject(element, "damage type");
+         Boolean obool = optionalBoolean(jsonobject, "is_projectile");
+         Boolean obool1 = optionalBoolean(jsonobject, "is_explosion");
+         Boolean obool2 = optionalBoolean(jsonobject, "bypasses_armor");
+         Boolean obool3 = optionalBoolean(jsonobject, "bypasses_invulnerability");
+         Boolean obool4 = optionalBoolean(jsonobject, "bypasses_magic");
+         Boolean obool5 = optionalBoolean(jsonobject, "is_fire");
+         Boolean obool6 = optionalBoolean(jsonobject, "is_magic");
+         Boolean obool7 = optionalBoolean(jsonobject, "is_lightning");
+         EntityPredicate entitypredicate = EntityPredicate.deserialize(jsonobject.get("direct_entity"));
+         EntityPredicate entitypredicate1 = EntityPredicate.deserialize(jsonobject.get("source_entity"));
          return new DamageSourcePredicate(obool, obool1, obool2, obool3, obool4, obool5, obool6, obool7, entitypredicate, entitypredicate1);
       } else {
          return ANY;
@@ -86,32 +86,32 @@ public class DamageSourcePredicate {
    }
 
    @Nullable
-   private static Boolean getOptionalBoolean(JsonObject p_192448_0_, String p_192448_1_) {
-      return p_192448_0_.has(p_192448_1_) ? JSONUtils.getAsBoolean(p_192448_0_, p_192448_1_) : null;
+   private static Boolean optionalBoolean(JsonObject object, String memberName) {
+      return object.has(memberName) ? JSONUtils.getBoolean(object, memberName) : null;
    }
 
-   public JsonElement serializeToJson() {
+   public JsonElement serialize() {
       if (this == ANY) {
          return JsonNull.INSTANCE;
       } else {
          JsonObject jsonobject = new JsonObject();
-         this.addOptionally(jsonobject, "is_projectile", this.isProjectile);
-         this.addOptionally(jsonobject, "is_explosion", this.isExplosion);
-         this.addOptionally(jsonobject, "bypasses_armor", this.bypassesArmor);
-         this.addOptionally(jsonobject, "bypasses_invulnerability", this.bypassesInvulnerability);
-         this.addOptionally(jsonobject, "bypasses_magic", this.bypassesMagic);
-         this.addOptionally(jsonobject, "is_fire", this.isFire);
-         this.addOptionally(jsonobject, "is_magic", this.isMagic);
-         this.addOptionally(jsonobject, "is_lightning", this.isLightning);
-         jsonobject.add("direct_entity", this.directEntity.serializeToJson());
-         jsonobject.add("source_entity", this.sourceEntity.serializeToJson());
+         this.addProperty(jsonobject, "is_projectile", this.isProjectile);
+         this.addProperty(jsonobject, "is_explosion", this.isExplosion);
+         this.addProperty(jsonobject, "bypasses_armor", this.bypassesArmor);
+         this.addProperty(jsonobject, "bypasses_invulnerability", this.bypassesInvulnerability);
+         this.addProperty(jsonobject, "bypasses_magic", this.bypassesMagic);
+         this.addProperty(jsonobject, "is_fire", this.isFire);
+         this.addProperty(jsonobject, "is_magic", this.isMagic);
+         this.addProperty(jsonobject, "is_lightning", this.isLightning);
+         jsonobject.add("direct_entity", this.directEntity.serialize());
+         jsonobject.add("source_entity", this.sourceEntity.serialize());
          return jsonobject;
       }
    }
 
-   private void addOptionally(JsonObject p_203992_1_, String p_203992_2_, @Nullable Boolean p_203992_3_) {
-      if (p_203992_3_ != null) {
-         p_203992_1_.addProperty(p_203992_2_, p_203992_3_);
+   private void addProperty(JsonObject obj, String key, @Nullable Boolean value) {
+      if (value != null) {
+         obj.addProperty(key, value);
       }
 
    }
@@ -132,18 +132,18 @@ public class DamageSourcePredicate {
          return new DamageSourcePredicate.Builder();
       }
 
-      public DamageSourcePredicate.Builder isProjectile(Boolean p_203978_1_) {
-         this.isProjectile = p_203978_1_;
+      public DamageSourcePredicate.Builder isProjectile(Boolean isProjectile) {
+         this.isProjectile = isProjectile;
          return this;
       }
 
-      public DamageSourcePredicate.Builder isLightning(Boolean p_217950_1_) {
-         this.isLightning = p_217950_1_;
+      public DamageSourcePredicate.Builder isLightning(Boolean isLightning) {
+         this.isLightning = isLightning;
          return this;
       }
 
-      public DamageSourcePredicate.Builder direct(EntityPredicate.Builder p_203980_1_) {
-         this.directEntity = p_203980_1_.build();
+      public DamageSourcePredicate.Builder direct(EntityPredicate.Builder directEntity) {
+         this.directEntity = directEntity.build();
          return this;
       }
 

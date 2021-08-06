@@ -13,14 +13,14 @@ import org.apache.commons.lang3.ArrayUtils;
 
 public class LongArrayNBT extends CollectionNBT<LongNBT> {
    public static final INBTType<LongArrayNBT> TYPE = new INBTType<LongArrayNBT>() {
-      public LongArrayNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(192L);
-         int i = p_225649_1_.readInt();
-         p_225649_3_.accountBits(64L * (long)i);
+      public LongArrayNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(192L);
+         int i = input.readInt();
+         accounter.read(64L * (long)i);
          long[] along = new long[i];
 
          for(int j = 0; j < i; ++j) {
-            along[j] = p_225649_1_.readLong();
+            along[j] = input.readLong();
          }
 
          return new LongArrayNBT(along);
@@ -30,40 +30,40 @@ public class LongArrayNBT extends CollectionNBT<LongNBT> {
          return "LONG[]";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_Long_Array";
       }
    };
    private long[] data;
 
-   public LongArrayNBT(long[] p_i47524_1_) {
-      this.data = p_i47524_1_;
+   public LongArrayNBT(long[] data) {
+      this.data = data;
    }
 
-   public LongArrayNBT(LongSet p_i48736_1_) {
-      this.data = p_i48736_1_.toLongArray();
+   public LongArrayNBT(LongSet data) {
+      this.data = data.toLongArray();
    }
 
-   public LongArrayNBT(List<Long> p_i47525_1_) {
-      this(toArray(p_i47525_1_));
+   public LongArrayNBT(List<Long> longs) {
+      this(toArray(longs));
    }
 
-   private static long[] toArray(List<Long> p_193586_0_) {
-      long[] along = new long[p_193586_0_.size()];
+   private static long[] toArray(List<Long> longs) {
+      long[] along = new long[longs.size()];
 
-      for(int i = 0; i < p_193586_0_.size(); ++i) {
-         Long olong = p_193586_0_.get(i);
+      for(int i = 0; i < longs.size(); ++i) {
+         Long olong = longs.get(i);
          along[i] = olong == null ? 0L : olong;
       }
 
       return along;
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      p_74734_1_.writeInt(this.data.length);
+   public void write(DataOutput output) throws IOException {
+      output.writeInt(this.data.length);
 
       for(long i : this.data) {
-         p_74734_1_.writeLong(i);
+         output.writeLong(i);
       }
 
    }
@@ -108,19 +108,19 @@ public class LongArrayNBT extends CollectionNBT<LongNBT> {
       return Arrays.hashCode(this.data);
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
-      ITextComponent itextcomponent = (new StringTextComponent("L")).withStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
-      IFormattableTextComponent iformattabletextcomponent = (new StringTextComponent("[")).append(itextcomponent).append(";");
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
+      ITextComponent itextcomponent = (new StringTextComponent("L")).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
+      IFormattableTextComponent iformattabletextcomponent = (new StringTextComponent("[")).append(itextcomponent).appendString(";");
 
       for(int i = 0; i < this.data.length; ++i) {
-         IFormattableTextComponent iformattabletextcomponent1 = (new StringTextComponent(String.valueOf(this.data[i]))).withStyle(SYNTAX_HIGHLIGHTING_NUMBER);
-         iformattabletextcomponent.append(" ").append(iformattabletextcomponent1).append(itextcomponent);
+         IFormattableTextComponent iformattabletextcomponent1 = (new StringTextComponent(String.valueOf(this.data[i]))).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER);
+         iformattabletextcomponent.appendString(" ").append(iformattabletextcomponent1).append(itextcomponent);
          if (i != this.data.length - 1) {
-            iformattabletextcomponent.append(",");
+            iformattabletextcomponent.appendString(",");
          }
       }
 
-      iformattabletextcomponent.append("]");
+      iformattabletextcomponent.appendString("]");
       return iformattabletextcomponent;
    }
 
@@ -138,26 +138,26 @@ public class LongArrayNBT extends CollectionNBT<LongNBT> {
 
    public LongNBT set(int p_set_1_, LongNBT p_set_2_) {
       long i = this.data[p_set_1_];
-      this.data[p_set_1_] = p_set_2_.getAsLong();
+      this.data[p_set_1_] = p_set_2_.getLong();
       return LongNBT.valueOf(i);
    }
 
    public void add(int p_add_1_, LongNBT p_add_2_) {
-      this.data = ArrayUtils.add(this.data, p_add_1_, p_add_2_.getAsLong());
+      this.data = ArrayUtils.add(this.data, p_add_1_, p_add_2_.getLong());
    }
 
-   public boolean setTag(int p_218659_1_, INBT p_218659_2_) {
-      if (p_218659_2_ instanceof NumberNBT) {
-         this.data[p_218659_1_] = ((NumberNBT)p_218659_2_).getAsLong();
+   public boolean setNBTByIndex(int index, INBT nbt) {
+      if (nbt instanceof NumberNBT) {
+         this.data[index] = ((NumberNBT)nbt).getLong();
          return true;
       } else {
          return false;
       }
    }
 
-   public boolean addTag(int p_218660_1_, INBT p_218660_2_) {
-      if (p_218660_2_ instanceof NumberNBT) {
-         this.data = ArrayUtils.add(this.data, p_218660_1_, ((NumberNBT)p_218660_2_).getAsLong());
+   public boolean addNBTByIndex(int index, INBT nbt) {
+      if (nbt instanceof NumberNBT) {
+         this.data = ArrayUtils.add(this.data, index, ((NumberNBT)nbt).getLong());
          return true;
       } else {
          return false;
@@ -170,7 +170,7 @@ public class LongArrayNBT extends CollectionNBT<LongNBT> {
       return LongNBT.valueOf(i);
    }
 
-   public byte getElementType() {
+   public byte getTagType() {
       return 4;
    }
 

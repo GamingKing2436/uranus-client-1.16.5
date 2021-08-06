@@ -5,5 +5,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface ISpectatorMenuRecipient {
-   void onSpectatorMenuClosed(SpectatorMenu p_175257_1_);
+   void onSpectatorMenuClosed(SpectatorMenu menu);
 }

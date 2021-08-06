@@ -8,20 +8,20 @@ import net.minecraft.util.text.StringTextComponent;
 
 public class ByteNBT extends NumberNBT {
    public static final INBTType<ByteNBT> TYPE = new INBTType<ByteNBT>() {
-      public ByteNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(72L);
-         return ByteNBT.valueOf(p_225649_1_.readByte());
+      public ByteNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(72L);
+         return ByteNBT.valueOf(input.readByte());
       }
 
       public String getName() {
          return "BYTE";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_Byte";
       }
 
-      public boolean isValue() {
+      public boolean isPrimitive() {
          return true;
       }
    };
@@ -29,20 +29,20 @@ public class ByteNBT extends NumberNBT {
    public static final ByteNBT ONE = valueOf((byte)1);
    private final byte data;
 
-   private ByteNBT(byte p_i45129_1_) {
-      this.data = p_i45129_1_;
+   private ByteNBT(byte data) {
+      this.data = data;
    }
 
-   public static ByteNBT valueOf(byte p_229671_0_) {
-      return ByteNBT.Cache.cache[128 + p_229671_0_];
+   public static ByteNBT valueOf(byte byteIn) {
+      return ByteNBT.Cache.CACHE[128 + byteIn];
    }
 
-   public static ByteNBT valueOf(boolean p_229672_0_) {
-      return p_229672_0_ ? ONE : ZERO;
+   public static ByteNBT valueOf(boolean one) {
+      return one ? ONE : ZERO;
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      p_74734_1_.writeByte(this.data);
+   public void write(DataOutput output) throws IOException {
+      output.writeByte(this.data);
    }
 
    public byte getId() {
@@ -73,32 +73,32 @@ public class ByteNBT extends NumberNBT {
       return this.data;
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
-      ITextComponent itextcomponent = (new StringTextComponent("b")).withStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
-      return (new StringTextComponent(String.valueOf((int)this.data))).append(itextcomponent).withStyle(SYNTAX_HIGHLIGHTING_NUMBER);
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
+      ITextComponent itextcomponent = (new StringTextComponent("b")).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
+      return (new StringTextComponent(String.valueOf((int)this.data))).append(itextcomponent).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER);
    }
 
-   public long getAsLong() {
+   public long getLong() {
       return (long)this.data;
    }
 
-   public int getAsInt() {
+   public int getInt() {
       return this.data;
    }
 
-   public short getAsShort() {
+   public short getShort() {
       return (short)this.data;
    }
 
-   public byte getAsByte() {
+   public byte getByte() {
       return this.data;
    }
 
-   public double getAsDouble() {
+   public double getDouble() {
       return (double)this.data;
    }
 
-   public float getAsFloat() {
+   public float getFloat() {
       return (float)this.data;
    }
 
@@ -107,11 +107,11 @@ public class ByteNBT extends NumberNBT {
    }
 
    static class Cache {
-      private static final ByteNBT[] cache = new ByteNBT[256];
+      private static final ByteNBT[] CACHE = new ByteNBT[256];
 
       static {
-         for(int i = 0; i < cache.length; ++i) {
-            cache[i] = new ByteNBT((byte)(i - 128));
+         for(int i = 0; i < CACHE.length; ++i) {
+            CACHE[i] = new ByteNBT((byte)(i - 128));
          }
 
       }

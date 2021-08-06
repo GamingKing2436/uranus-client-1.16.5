@@ -10,20 +10,20 @@ import net.minecraft.util.math.MathHelper;
 
 public abstract class LevelBasedGraph {
    private final int levelCount;
-   private final LongLinkedOpenHashSet[] queues;
-   private final Long2ByteMap computedLevels;
-   private int firstQueuedLevel;
-   private volatile boolean hasWork;
+   private final LongLinkedOpenHashSet[] updatesByLevel;
+   private final Long2ByteMap propagationLevels;
+   private int minLevelToUpdate;
+   private volatile boolean needsUpdate;
 
-   protected LevelBasedGraph(int p_i51298_1_, final int p_i51298_2_, final int p_i51298_3_) {
-      if (p_i51298_1_ >= 254) {
+   protected LevelBasedGraph(int levelCount, final int p_i51298_2_, final int p_i51298_3_) {
+      if (levelCount >= 254) {
          throw new IllegalArgumentException("Level count must be < 254.");
       } else {
-         this.levelCount = p_i51298_1_;
-         this.queues = new LongLinkedOpenHashSet[p_i51298_1_];
+         this.levelCount = levelCount;
+         this.updatesByLevel = new LongLinkedOpenHashSet[levelCount];
 
-         for(int i = 0; i < p_i51298_1_; ++i) {
-            this.queues[i] = new LongLinkedOpenHashSet(p_i51298_2_, 0.5F) {
+         for(int i = 0; i < levelCount; ++i) {
+            this.updatesByLevel[i] = new LongLinkedOpenHashSet(p_i51298_2_, 0.5F) {
                protected void rehash(int p_rehash_1_) {
                   if (p_rehash_1_ > p_i51298_2_) {
                      super.rehash(p_rehash_1_);
@@ -33,7 +33,7 @@ public abstract class LevelBasedGraph {
             };
          }
 
-         this.computedLevels = new Long2ByteOpenHashMap(p_i51298_3_, 0.5F) {
+         this.propagationLevels = new Long2ByteOpenHashMap(p_i51298_3_, 0.5F) {
             protected void rehash(int p_rehash_1_) {
                if (p_rehash_1_ > p_i51298_3_) {
                   super.rehash(p_rehash_1_);
@@ -41,15 +41,15 @@ public abstract class LevelBasedGraph {
 
             }
          };
-         this.computedLevels.defaultReturnValue((byte)-1);
-         this.firstQueuedLevel = p_i51298_1_;
+         this.propagationLevels.defaultReturnValue((byte)-1);
+         this.minLevelToUpdate = levelCount;
       }
    }
 
-   private int getKey(int p_215482_1_, int p_215482_2_) {
-      int i = p_215482_1_;
-      if (p_215482_1_ > p_215482_2_) {
-         i = p_215482_2_;
+   private int minLevel(int level1, int level2) {
+      int i = level1;
+      if (level1 > level2) {
+         i = level2;
       }
 
       if (i > this.levelCount - 1) {
@@ -59,173 +59,173 @@ public abstract class LevelBasedGraph {
       return i;
    }
 
-   private void checkFirstQueuedLevel(int p_215472_1_) {
-      int i = this.firstQueuedLevel;
-      this.firstQueuedLevel = p_215472_1_;
+   private void updateMinLevel(int maxLevel) {
+      int i = this.minLevelToUpdate;
+      this.minLevelToUpdate = maxLevel;
 
-      for(int j = i + 1; j < p_215472_1_; ++j) {
-         if (!this.queues[j].isEmpty()) {
-            this.firstQueuedLevel = j;
+      for(int j = i + 1; j < maxLevel; ++j) {
+         if (!this.updatesByLevel[j].isEmpty()) {
+            this.minLevelToUpdate = j;
             break;
          }
       }
 
    }
 
-   protected void removeFromQueue(long p_215479_1_) {
-      int i = this.computedLevels.get(p_215479_1_) & 255;
+   protected void cancelUpdate(long positionIn) {
+      int i = this.propagationLevels.get(positionIn) & 255;
       if (i != 255) {
-         int j = this.getLevel(p_215479_1_);
-         int k = this.getKey(j, i);
-         this.dequeue(p_215479_1_, k, this.levelCount, true);
-         this.hasWork = this.firstQueuedLevel < this.levelCount;
+         int j = this.getLevel(positionIn);
+         int k = this.minLevel(j, i);
+         this.removeToUpdate(positionIn, k, this.levelCount, true);
+         this.needsUpdate = this.minLevelToUpdate < this.levelCount;
       }
    }
 
-   public void removeIf(LongPredicate p_227465_1_) {
+   public void func_227465_a_(LongPredicate p_227465_1_) {
       LongList longlist = new LongArrayList();
-      this.computedLevels.keySet().forEach((long p_229982_2_) -> {
+      this.propagationLevels.keySet().forEach((long p_229982_2_) -> {
          if (p_227465_1_.test(p_229982_2_)) {
             longlist.add(p_229982_2_);
          }
 
       });
-      longlist.forEach((java.util.function.LongConsumer) this::removeFromQueue);
+      longlist.forEach((java.util.function.LongConsumer) this::cancelUpdate);
    }
 
-   private void dequeue(long p_215484_1_, int p_215484_3_, int p_215484_4_, boolean p_215484_5_) {
-      if (p_215484_5_) {
-         this.computedLevels.remove(p_215484_1_);
+   private void removeToUpdate(long pos, int level, int maxLevel, boolean removeAll) {
+      if (removeAll) {
+         this.propagationLevels.remove(pos);
       }
 
-      this.queues[p_215484_3_].remove(p_215484_1_);
-      if (this.queues[p_215484_3_].isEmpty() && this.firstQueuedLevel == p_215484_3_) {
-         this.checkFirstQueuedLevel(p_215484_4_);
-      }
-
-   }
-
-   private void enqueue(long p_215470_1_, int p_215470_3_, int p_215470_4_) {
-      this.computedLevels.put(p_215470_1_, (byte)p_215470_3_);
-      this.queues[p_215470_4_].add(p_215470_1_);
-      if (this.firstQueuedLevel > p_215470_4_) {
-         this.firstQueuedLevel = p_215470_4_;
+      this.updatesByLevel[level].remove(pos);
+      if (this.updatesByLevel[level].isEmpty() && this.minLevelToUpdate == level) {
+         this.updateMinLevel(maxLevel);
       }
 
    }
 
-   protected void checkNode(long p_215473_1_) {
-      this.checkEdge(p_215473_1_, p_215473_1_, this.levelCount - 1, false);
+   private void addToUpdate(long pos, int levelToSet, int updateLevel) {
+      this.propagationLevels.put(pos, (byte)levelToSet);
+      this.updatesByLevel[updateLevel].add(pos);
+      if (this.minLevelToUpdate > updateLevel) {
+         this.minLevelToUpdate = updateLevel;
+      }
+
    }
 
-   protected void checkEdge(long p_215469_1_, long p_215469_3_, int p_215469_5_, boolean p_215469_6_) {
-      this.checkEdge(p_215469_1_, p_215469_3_, p_215469_5_, this.getLevel(p_215469_3_), this.computedLevels.get(p_215469_3_) & 255, p_215469_6_);
-      this.hasWork = this.firstQueuedLevel < this.levelCount;
+   protected void scheduleUpdate(long worldPos) {
+      this.scheduleUpdate(worldPos, worldPos, this.levelCount - 1, false);
    }
 
-   private void checkEdge(long p_215474_1_, long p_215474_3_, int p_215474_5_, int p_215474_6_, int p_215474_7_, boolean p_215474_8_) {
-      if (!this.isSource(p_215474_3_)) {
-         p_215474_5_ = MathHelper.clamp(p_215474_5_, 0, this.levelCount - 1);
-         p_215474_6_ = MathHelper.clamp(p_215474_6_, 0, this.levelCount - 1);
+   protected void scheduleUpdate(long fromPos, long toPos, int newLevel, boolean isDecreasing) {
+      this.propagateLevel(fromPos, toPos, newLevel, this.getLevel(toPos), this.propagationLevels.get(toPos) & 255, isDecreasing);
+      this.needsUpdate = this.minLevelToUpdate < this.levelCount;
+   }
+
+   private void propagateLevel(long fromPos, long toPos, int newLevel, int previousLevel, int propagationLevel, boolean isDecreasing) {
+      if (!this.isRoot(toPos)) {
+         newLevel = MathHelper.clamp(newLevel, 0, this.levelCount - 1);
+         previousLevel = MathHelper.clamp(previousLevel, 0, this.levelCount - 1);
          boolean flag;
-         if (p_215474_7_ == 255) {
+         if (propagationLevel == 255) {
             flag = true;
-            p_215474_7_ = p_215474_6_;
+            propagationLevel = previousLevel;
          } else {
             flag = false;
          }
 
          int i;
-         if (p_215474_8_) {
-            i = Math.min(p_215474_7_, p_215474_5_);
+         if (isDecreasing) {
+            i = Math.min(propagationLevel, newLevel);
          } else {
-            i = MathHelper.clamp(this.getComputedLevel(p_215474_3_, p_215474_1_, p_215474_5_), 0, this.levelCount - 1);
+            i = MathHelper.clamp(this.computeLevel(toPos, fromPos, newLevel), 0, this.levelCount - 1);
          }
 
-         int j = this.getKey(p_215474_6_, p_215474_7_);
-         if (p_215474_6_ != i) {
-            int k = this.getKey(p_215474_6_, i);
+         int j = this.minLevel(previousLevel, propagationLevel);
+         if (previousLevel != i) {
+            int k = this.minLevel(previousLevel, i);
             if (j != k && !flag) {
-               this.dequeue(p_215474_3_, j, k, false);
+               this.removeToUpdate(toPos, j, k, false);
             }
 
-            this.enqueue(p_215474_3_, i, k);
+            this.addToUpdate(toPos, i, k);
          } else if (!flag) {
-            this.dequeue(p_215474_3_, j, this.levelCount, true);
+            this.removeToUpdate(toPos, j, this.levelCount, true);
          }
 
       }
    }
 
-   protected final void checkNeighbor(long p_215475_1_, long p_215475_3_, int p_215475_5_, boolean p_215475_6_) {
-      int i = this.computedLevels.get(p_215475_3_) & 255;
-      int j = MathHelper.clamp(this.computeLevelFromNeighbor(p_215475_1_, p_215475_3_, p_215475_5_), 0, this.levelCount - 1);
-      if (p_215475_6_) {
-         this.checkEdge(p_215475_1_, p_215475_3_, j, this.getLevel(p_215475_3_), i, true);
+   protected final void propagateLevel(long fromPos, long toPos, int sourceLevel, boolean isDecreasing) {
+      int i = this.propagationLevels.get(toPos) & 255;
+      int j = MathHelper.clamp(this.getEdgeLevel(fromPos, toPos, sourceLevel), 0, this.levelCount - 1);
+      if (isDecreasing) {
+         this.propagateLevel(fromPos, toPos, j, this.getLevel(toPos), i, true);
       } else {
          int k;
          boolean flag;
          if (i == 255) {
             flag = true;
-            k = MathHelper.clamp(this.getLevel(p_215475_3_), 0, this.levelCount - 1);
+            k = MathHelper.clamp(this.getLevel(toPos), 0, this.levelCount - 1);
          } else {
             k = i;
             flag = false;
          }
 
          if (j == k) {
-            this.checkEdge(p_215475_1_, p_215475_3_, this.levelCount - 1, flag ? k : this.getLevel(p_215475_3_), i, false);
+            this.propagateLevel(fromPos, toPos, this.levelCount - 1, flag ? k : this.getLevel(toPos), i, false);
          }
       }
 
    }
 
-   protected final boolean hasWork() {
-      return this.hasWork;
+   protected final boolean needsUpdate() {
+      return this.needsUpdate;
    }
 
-   protected final int runUpdates(int p_215483_1_) {
-      if (this.firstQueuedLevel >= this.levelCount) {
-         return p_215483_1_;
+   protected final int processUpdates(int toUpdateCount) {
+      if (this.minLevelToUpdate >= this.levelCount) {
+         return toUpdateCount;
       } else {
-         while(this.firstQueuedLevel < this.levelCount && p_215483_1_ > 0) {
-            --p_215483_1_;
-            LongLinkedOpenHashSet longlinkedopenhashset = this.queues[this.firstQueuedLevel];
+         while(this.minLevelToUpdate < this.levelCount && toUpdateCount > 0) {
+            --toUpdateCount;
+            LongLinkedOpenHashSet longlinkedopenhashset = this.updatesByLevel[this.minLevelToUpdate];
             long i = longlinkedopenhashset.removeFirstLong();
             int j = MathHelper.clamp(this.getLevel(i), 0, this.levelCount - 1);
             if (longlinkedopenhashset.isEmpty()) {
-               this.checkFirstQueuedLevel(this.levelCount);
+               this.updateMinLevel(this.levelCount);
             }
 
-            int k = this.computedLevels.remove(i) & 255;
+            int k = this.propagationLevels.remove(i) & 255;
             if (k < j) {
                this.setLevel(i, k);
-               this.checkNeighborsAfterUpdate(i, k, true);
+               this.notifyNeighbors(i, k, true);
             } else if (k > j) {
-               this.enqueue(i, k, this.getKey(this.levelCount - 1, k));
+               this.addToUpdate(i, k, this.minLevel(this.levelCount - 1, k));
                this.setLevel(i, this.levelCount - 1);
-               this.checkNeighborsAfterUpdate(i, j, false);
+               this.notifyNeighbors(i, j, false);
             }
          }
 
-         this.hasWork = this.firstQueuedLevel < this.levelCount;
-         return p_215483_1_;
+         this.needsUpdate = this.minLevelToUpdate < this.levelCount;
+         return toUpdateCount;
       }
    }
 
-   public int getQueueSize() {
-      return this.computedLevels.size();
+   public int func_227467_c_() {
+      return this.propagationLevels.size();
    }
 
-   protected abstract boolean isSource(long p_215485_1_);
+   protected abstract boolean isRoot(long pos);
 
-   protected abstract int getComputedLevel(long p_215477_1_, long p_215477_3_, int p_215477_5_);
+   protected abstract int computeLevel(long pos, long excludedSourcePos, int level);
 
-   protected abstract void checkNeighborsAfterUpdate(long p_215478_1_, int p_215478_3_, boolean p_215478_4_);
+   protected abstract void notifyNeighbors(long pos, int level, boolean isDecreasing);
 
-   protected abstract int getLevel(long p_215471_1_);
+   protected abstract int getLevel(long sectionPosIn);
 
-   protected abstract void setLevel(long p_215476_1_, int p_215476_3_);
+   protected abstract void setLevel(long sectionPosIn, int level);
 
-   protected abstract int computeLevelFromNeighbor(long p_215480_1_, long p_215480_3_, int p_215480_5_);
+   protected abstract int getEdgeLevel(long startPos, long endPos, int startLevel);
 }

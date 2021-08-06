@@ -14,10 +14,10 @@ import net.minecraft.util.datafix.TypeReferences;
 import net.minecraft.util.math.MathHelper;
 
 public class VillagerLevelAndXpFix extends DataFix {
-   private static final int[] LEVEL_XP_THRESHOLDS = new int[]{0, 10, 50, 100, 150};
+   private static final int[] field_223004_a = new int[]{0, 10, 50, 100, 150};
 
-   public static int getMinXpPerLevel(int p_223001_0_) {
-      return LEVEL_XP_THRESHOLDS[MathHelper.clamp(p_223001_0_ - 1, 0, LEVEL_XP_THRESHOLDS.length - 1)];
+   public static int func_223001_a(int p_223001_0_) {
+      return field_223004_a[MathHelper.clamp(p_223001_0_ - 1, 0, field_223004_a.length - 1)];
    }
 
    public VillagerLevelAndXpFix(Schema p_i51508_1_, boolean p_i51508_2_) {
@@ -45,13 +45,13 @@ public class VillagerLevelAndXpFix extends DataFix {
                }).orElse(0);
                i = MathHelper.clamp(j / 2, 1, 5);
                if (i > 1) {
-                  typed = addLevel(p_222995_3_, i);
+                  typed = func_223003_a(p_222995_3_, i);
                }
             }
 
             Optional<Number> optional = dynamic.get("Xp").asNumber().result();
             if (!optional.isPresent()) {
-               typed = addXpFromLevel(typed, i);
+               typed = func_222994_b(typed, i);
             }
 
             return typed;
@@ -59,7 +59,7 @@ public class VillagerLevelAndXpFix extends DataFix {
       });
    }
 
-   private static Typed<?> addLevel(Typed<?> p_223003_0_, int p_223003_1_) {
+   private static Typed<?> func_223003_a(Typed<?> p_223003_0_, int p_223003_1_) {
       return p_223003_0_.update(DSL.remainderFinder(), (p_222998_1_) -> {
          return p_222998_1_.update("VillagerData", (p_222999_1_) -> {
             return p_222999_1_.set("level", p_222999_1_.createInt(p_223003_1_));
@@ -67,8 +67,8 @@ public class VillagerLevelAndXpFix extends DataFix {
       });
    }
 
-   private static Typed<?> addXpFromLevel(Typed<?> p_222994_0_, int p_222994_1_) {
-      int i = getMinXpPerLevel(p_222994_1_);
+   private static Typed<?> func_222994_b(Typed<?> p_222994_0_, int p_222994_1_) {
+      int i = func_223001_a(p_222994_1_);
       return p_222994_0_.update(DSL.remainderFinder(), (p_223000_1_) -> {
          return p_223000_1_.set("Xp", p_223000_1_.createInt(i));
       });

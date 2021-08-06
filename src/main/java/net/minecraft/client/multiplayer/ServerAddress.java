@@ -12,36 +12,36 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ServerAddress {
-   private final String host;
-   private final int port;
+   private final String ipAddress;
+   private final int serverPort;
 
-   private ServerAddress(String p_i1192_1_, int p_i1192_2_) {
-      this.host = p_i1192_1_;
-      this.port = p_i1192_2_;
+   private ServerAddress(String address, int port) {
+      this.ipAddress = address;
+      this.serverPort = port;
    }
 
-   public String getHost() {
+   public String getIP() {
       try {
-         return IDN.toASCII(this.host);
+         return IDN.toASCII(this.ipAddress);
       } catch (IllegalArgumentException illegalargumentexception) {
          return "";
       }
    }
 
    public int getPort() {
-      return this.port;
+      return this.serverPort;
    }
 
-   public static ServerAddress parseString(String p_78860_0_) {
-      if (p_78860_0_ == null) {
+   public static ServerAddress fromString(String addrString) {
+      if (addrString == null) {
          return null;
       } else {
-         String[] astring = p_78860_0_.split(":");
-         if (p_78860_0_.startsWith("[")) {
-            int i = p_78860_0_.indexOf("]");
+         String[] astring = addrString.split(":");
+         if (addrString.startsWith("[")) {
+            int i = addrString.indexOf("]");
             if (i > 0) {
-               String s = p_78860_0_.substring(1, i);
-               String s1 = p_78860_0_.substring(i + 1).trim();
+               String s = addrString.substring(1, i);
+               String s1 = addrString.substring(i + 1).trim();
                if (s1.startsWith(":") && !s1.isEmpty()) {
                   s1 = s1.substring(1);
                   astring = new String[]{s, s1};
@@ -52,13 +52,13 @@ public class ServerAddress {
          }
 
          if (astring.length > 2) {
-            astring = new String[]{p_78860_0_};
+            astring = new String[]{addrString};
          }
 
          String s2 = astring[0];
-         int j = astring.length > 1 ? parseInt(astring[1], 25565) : 25565;
+         int j = astring.length > 1 ? getInt(astring[1], 25565) : 25565;
          if (j == 25565) {
-            Pair<String, Integer> pair = lookupSrv(s2);
+            Pair<String, Integer> pair = func_241677_b_(s2);
             s2 = pair.getFirst();
             j = pair.getSecond();
          }
@@ -67,7 +67,7 @@ public class ServerAddress {
       }
    }
 
-   private static Pair<String, Integer> lookupSrv(String p_241677_0_) {
+   private static Pair<String, Integer> func_241677_b_(String p_241677_0_) {
       try {
          String s = "com.sun.jndi.dns.DnsContextFactory";
          Class.forName("com.sun.jndi.dns.DnsContextFactory");
@@ -80,7 +80,7 @@ public class ServerAddress {
          Attribute attribute = attributes.get("srv");
          if (attribute != null) {
             String[] astring = attribute.get().toString().split(" ", 4);
-            return Pair.of(astring[3], parseInt(astring[2], 25565));
+            return Pair.of(astring[3], getInt(astring[2], 25565));
          }
       } catch (Throwable throwable) {
       }
@@ -88,11 +88,11 @@ public class ServerAddress {
       return Pair.of(p_241677_0_, 25565);
    }
 
-   private static int parseInt(String p_78862_0_, int p_78862_1_) {
+   private static int getInt(String value, int defaultValue) {
       try {
-         return Integer.parseInt(p_78862_0_.trim());
+         return Integer.parseInt(value.trim());
       } catch (Exception exception) {
-         return p_78862_1_;
+         return defaultValue;
       }
    }
 }

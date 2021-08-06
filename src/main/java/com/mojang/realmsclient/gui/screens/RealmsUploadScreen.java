@@ -44,59 +44,59 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class RealmsUploadScreen extends RealmsScreen {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private static final ReentrantLock UPLOAD_LOCK = new ReentrantLock();
-   private static final String[] DOTS = new String[]{"", ".", ". .", ". . ."};
-   private static final ITextComponent VERIFYING_TEXT = new TranslationTextComponent("mco.upload.verifying");
-   private final RealmsResetWorldScreen lastScreen;
-   private final WorldSummary selectedLevel;
-   private final long worldId;
-   private final int slotId;
-   private final UploadStatus uploadStatus;
-   private final RateLimiter narrationRateLimiter;
-   private volatile ITextComponent[] errorMessage;
-   private volatile ITextComponent status = new TranslationTextComponent("mco.upload.preparing");
-   private volatile String progress;
-   private volatile boolean cancelled;
-   private volatile boolean uploadFinished;
-   private volatile boolean showDots = true;
-   private volatile boolean uploadStarted;
-   private Button backButton;
-   private Button cancelButton;
-   private int tickCount;
-   private Long previousWrittenBytes;
-   private Long previousTimeSnapshot;
-   private long bytesPersSecond;
-   private final Runnable callback;
+   private static final Logger field_224696_a = LogManager.getLogger();
+   private static final ReentrantLock field_238081_b_ = new ReentrantLock();
+   private static final String[] field_224713_r = new String[]{"", ".", ". .", ". . ."};
+   private static final ITextComponent field_243187_p = new TranslationTextComponent("mco.upload.verifying");
+   private final RealmsResetWorldScreen field_224697_b;
+   private final WorldSummary field_224698_c;
+   private final long field_224699_d;
+   private final int field_224700_e;
+   private final UploadStatus field_224701_f;
+   private final RateLimiter field_224702_g;
+   private volatile ITextComponent[] field_224703_h;
+   private volatile ITextComponent field_224704_i = new TranslationTextComponent("mco.upload.preparing");
+   private volatile String field_224705_j;
+   private volatile boolean field_224706_k;
+   private volatile boolean field_224707_l;
+   private volatile boolean field_224708_m = true;
+   private volatile boolean field_224709_n;
+   private Button field_224710_o;
+   private Button field_224711_p;
+   private int field_238079_E_;
+   private Long field_224715_t;
+   private Long field_224716_u;
+   private long field_224717_v;
+   private final Runnable field_238080_I_;
 
    public RealmsUploadScreen(long p_i232226_1_, int p_i232226_3_, RealmsResetWorldScreen p_i232226_4_, WorldSummary p_i232226_5_, Runnable p_i232226_6_) {
-      this.worldId = p_i232226_1_;
-      this.slotId = p_i232226_3_;
-      this.lastScreen = p_i232226_4_;
-      this.selectedLevel = p_i232226_5_;
-      this.uploadStatus = new UploadStatus();
-      this.narrationRateLimiter = RateLimiter.create((double)0.1F);
-      this.callback = p_i232226_6_;
+      this.field_224699_d = p_i232226_1_;
+      this.field_224700_e = p_i232226_3_;
+      this.field_224697_b = p_i232226_4_;
+      this.field_224698_c = p_i232226_5_;
+      this.field_224701_f = new UploadStatus();
+      this.field_224702_g = RateLimiter.create((double)0.1F);
+      this.field_238080_I_ = p_i232226_6_;
    }
 
    public void init() {
-      this.minecraft.keyboardHandler.setSendRepeatsToGui(true);
-      this.backButton = this.addButton(new Button(this.width / 2 - 100, this.height - 42, 200, 20, DialogTexts.GUI_BACK, (p_238087_1_) -> {
-         this.onBack();
+      this.minecraft.keyboardListener.enableRepeatEvents(true);
+      this.field_224710_o = this.addButton(new Button(this.width / 2 - 100, this.height - 42, 200, 20, DialogTexts.GUI_BACK, (p_238087_1_) -> {
+         this.func_224679_c();
       }));
-      this.backButton.visible = false;
-      this.cancelButton = this.addButton(new Button(this.width / 2 - 100, this.height - 42, 200, 20, DialogTexts.GUI_CANCEL, (p_238084_1_) -> {
-         this.onCancel();
+      this.field_224710_o.visible = false;
+      this.field_224711_p = this.addButton(new Button(this.width / 2 - 100, this.height - 42, 200, 20, DialogTexts.GUI_CANCEL, (p_238084_1_) -> {
+         this.func_224695_d();
       }));
-      if (!this.uploadStarted) {
-         if (this.lastScreen.slot == -1) {
-            this.upload();
+      if (!this.field_224709_n) {
+         if (this.field_224697_b.field_224455_a == -1) {
+            this.func_224682_h();
          } else {
-            this.lastScreen.switchSlot(() -> {
-               if (!this.uploadStarted) {
-                  this.uploadStarted = true;
-                  this.minecraft.setScreen(this);
-                  this.upload();
+            this.field_224697_b.func_237952_a_(() -> {
+               if (!this.field_224709_n) {
+                  this.field_224709_n = true;
+                  this.minecraft.displayGuiScreen(this);
+                  this.func_224682_h();
                }
 
             });
@@ -105,213 +105,213 @@ public class RealmsUploadScreen extends RealmsScreen {
 
    }
 
-   public void removed() {
-      this.minecraft.keyboardHandler.setSendRepeatsToGui(false);
+   public void onClose() {
+      this.minecraft.keyboardListener.enableRepeatEvents(false);
    }
 
-   private void onBack() {
-      this.callback.run();
+   private void func_224679_c() {
+      this.field_238080_I_.run();
    }
 
-   private void onCancel() {
-      this.cancelled = true;
-      this.minecraft.setScreen(this.lastScreen);
+   private void func_224695_d() {
+      this.field_224706_k = true;
+      this.minecraft.displayGuiScreen(this.field_224697_b);
    }
 
-   public boolean keyPressed(int p_231046_1_, int p_231046_2_, int p_231046_3_) {
-      if (p_231046_1_ == 256) {
-         if (this.showDots) {
-            this.onCancel();
+   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+      if (keyCode == 256) {
+         if (this.field_224708_m) {
+            this.func_224695_d();
          } else {
-            this.onBack();
+            this.func_224679_c();
          }
 
          return true;
       } else {
-         return super.keyPressed(p_231046_1_, p_231046_2_, p_231046_3_);
+         return super.keyPressed(keyCode, scanCode, modifiers);
       }
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.renderBackground(p_230430_1_);
-      if (!this.uploadFinished && this.uploadStatus.bytesWritten != 0L && this.uploadStatus.bytesWritten == this.uploadStatus.totalBytes) {
-         this.status = VERIFYING_TEXT;
-         this.cancelButton.active = false;
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.renderBackground(matrixStack);
+      if (!this.field_224707_l && this.field_224701_f.field_224978_a != 0L && this.field_224701_f.field_224978_a == this.field_224701_f.field_224979_b) {
+         this.field_224704_i = field_243187_p;
+         this.field_224711_p.active = false;
       }
 
-      drawCenteredString(p_230430_1_, this.font, this.status, this.width / 2, 50, 16777215);
-      if (this.showDots) {
-         this.drawDots(p_230430_1_);
+      drawCenteredString(matrixStack, this.font, this.field_224704_i, this.width / 2, 50, 16777215);
+      if (this.field_224708_m) {
+         this.func_238086_b_(matrixStack);
       }
 
-      if (this.uploadStatus.bytesWritten != 0L && !this.cancelled) {
-         this.drawProgressBar(p_230430_1_);
-         this.drawUploadSpeed(p_230430_1_);
+      if (this.field_224701_f.field_224978_a != 0L && !this.field_224706_k) {
+         this.func_238088_c_(matrixStack);
+         this.func_238089_d_(matrixStack);
       }
 
-      if (this.errorMessage != null) {
-         for(int i = 0; i < this.errorMessage.length; ++i) {
-            drawCenteredString(p_230430_1_, this.font, this.errorMessage[i], this.width / 2, 110 + 12 * i, 16711680);
+      if (this.field_224703_h != null) {
+         for(int i = 0; i < this.field_224703_h.length; ++i) {
+            drawCenteredString(matrixStack, this.font, this.field_224703_h[i], this.width / 2, 110 + 12 * i, 16711680);
          }
       }
 
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
    }
 
-   private void drawDots(MatrixStack p_238086_1_) {
-      int i = this.font.width(this.status);
-      this.font.draw(p_238086_1_, DOTS[this.tickCount / 10 % DOTS.length], (float)(this.width / 2 + i / 2 + 5), 50.0F, 16777215);
+   private void func_238086_b_(MatrixStack p_238086_1_) {
+      int i = this.font.getStringPropertyWidth(this.field_224704_i);
+      this.font.drawString(p_238086_1_, field_224713_r[this.field_238079_E_ / 10 % field_224713_r.length], (float)(this.width / 2 + i / 2 + 5), 50.0F, 16777215);
    }
 
-   private void drawProgressBar(MatrixStack p_238088_1_) {
-      double d0 = Math.min((double)this.uploadStatus.bytesWritten / (double)this.uploadStatus.totalBytes, 1.0D);
-      this.progress = String.format(Locale.ROOT, "%.1f", d0 * 100.0D);
+   private void func_238088_c_(MatrixStack p_238088_1_) {
+      double d0 = Math.min((double)this.field_224701_f.field_224978_a / (double)this.field_224701_f.field_224979_b, 1.0D);
+      this.field_224705_j = String.format(Locale.ROOT, "%.1f", d0 * 100.0D);
       RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
       RenderSystem.disableTexture();
       double d1 = (double)(this.width / 2 - 100);
       double d2 = 0.5D;
       Tessellator tessellator = Tessellator.getInstance();
-      BufferBuilder bufferbuilder = tessellator.getBuilder();
+      BufferBuilder bufferbuilder = tessellator.getBuffer();
       bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-      bufferbuilder.vertex(d1 - 0.5D, 95.5D, 0.0D).color(217, 210, 210, 255).endVertex();
-      bufferbuilder.vertex(d1 + 200.0D * d0 + 0.5D, 95.5D, 0.0D).color(217, 210, 210, 255).endVertex();
-      bufferbuilder.vertex(d1 + 200.0D * d0 + 0.5D, 79.5D, 0.0D).color(217, 210, 210, 255).endVertex();
-      bufferbuilder.vertex(d1 - 0.5D, 79.5D, 0.0D).color(217, 210, 210, 255).endVertex();
-      bufferbuilder.vertex(d1, 95.0D, 0.0D).color(128, 128, 128, 255).endVertex();
-      bufferbuilder.vertex(d1 + 200.0D * d0, 95.0D, 0.0D).color(128, 128, 128, 255).endVertex();
-      bufferbuilder.vertex(d1 + 200.0D * d0, 80.0D, 0.0D).color(128, 128, 128, 255).endVertex();
-      bufferbuilder.vertex(d1, 80.0D, 0.0D).color(128, 128, 128, 255).endVertex();
-      tessellator.end();
+      bufferbuilder.pos(d1 - 0.5D, 95.5D, 0.0D).color(217, 210, 210, 255).endVertex();
+      bufferbuilder.pos(d1 + 200.0D * d0 + 0.5D, 95.5D, 0.0D).color(217, 210, 210, 255).endVertex();
+      bufferbuilder.pos(d1 + 200.0D * d0 + 0.5D, 79.5D, 0.0D).color(217, 210, 210, 255).endVertex();
+      bufferbuilder.pos(d1 - 0.5D, 79.5D, 0.0D).color(217, 210, 210, 255).endVertex();
+      bufferbuilder.pos(d1, 95.0D, 0.0D).color(128, 128, 128, 255).endVertex();
+      bufferbuilder.pos(d1 + 200.0D * d0, 95.0D, 0.0D).color(128, 128, 128, 255).endVertex();
+      bufferbuilder.pos(d1 + 200.0D * d0, 80.0D, 0.0D).color(128, 128, 128, 255).endVertex();
+      bufferbuilder.pos(d1, 80.0D, 0.0D).color(128, 128, 128, 255).endVertex();
+      tessellator.draw();
       RenderSystem.enableTexture();
-      drawCenteredString(p_238088_1_, this.font, this.progress + " %", this.width / 2, 84, 16777215);
+      drawCenteredString(p_238088_1_, this.font, this.field_224705_j + " %", this.width / 2, 84, 16777215);
    }
 
-   private void drawUploadSpeed(MatrixStack p_238089_1_) {
-      if (this.tickCount % 20 == 0) {
-         if (this.previousWrittenBytes != null) {
-            long i = Util.getMillis() - this.previousTimeSnapshot;
+   private void func_238089_d_(MatrixStack p_238089_1_) {
+      if (this.field_238079_E_ % 20 == 0) {
+         if (this.field_224715_t != null) {
+            long i = Util.milliTime() - this.field_224716_u;
             if (i == 0L) {
                i = 1L;
             }
 
-            this.bytesPersSecond = 1000L * (this.uploadStatus.bytesWritten - this.previousWrittenBytes) / i;
-            this.drawUploadSpeed0(p_238089_1_, this.bytesPersSecond);
+            this.field_224717_v = 1000L * (this.field_224701_f.field_224978_a - this.field_224715_t) / i;
+            this.func_238083_a_(p_238089_1_, this.field_224717_v);
          }
 
-         this.previousWrittenBytes = this.uploadStatus.bytesWritten;
-         this.previousTimeSnapshot = Util.getMillis();
+         this.field_224715_t = this.field_224701_f.field_224978_a;
+         this.field_224716_u = Util.milliTime();
       } else {
-         this.drawUploadSpeed0(p_238089_1_, this.bytesPersSecond);
+         this.func_238083_a_(p_238089_1_, this.field_224717_v);
       }
 
    }
 
-   private void drawUploadSpeed0(MatrixStack p_238083_1_, long p_238083_2_) {
+   private void func_238083_a_(MatrixStack p_238083_1_, long p_238083_2_) {
       if (p_238083_2_ > 0L) {
-         int i = this.font.width(this.progress);
-         String s = "(" + UploadSpeed.humanReadable(p_238083_2_) + "/s)";
-         this.font.draw(p_238083_1_, s, (float)(this.width / 2 + i / 2 + 15), 84.0F, 16777215);
+         int i = this.font.getStringWidth(this.field_224705_j);
+         String s = "(" + UploadSpeed.func_237684_b_(p_238083_2_) + "/s)";
+         this.font.drawString(p_238083_1_, s, (float)(this.width / 2 + i / 2 + 15), 84.0F, 16777215);
       }
 
    }
 
    public void tick() {
       super.tick();
-      ++this.tickCount;
-      if (this.status != null && this.narrationRateLimiter.tryAcquire(1)) {
+      ++this.field_238079_E_;
+      if (this.field_224704_i != null && this.field_224702_g.tryAcquire(1)) {
          List<String> list = Lists.newArrayList();
-         list.add(this.status.getString());
-         if (this.progress != null) {
-            list.add(this.progress + "%");
+         list.add(this.field_224704_i.getString());
+         if (this.field_224705_j != null) {
+            list.add(this.field_224705_j + "%");
          }
 
-         if (this.errorMessage != null) {
-            Stream.of(this.errorMessage).map(ITextComponent::getString).forEach(list::add);
+         if (this.field_224703_h != null) {
+            Stream.of(this.field_224703_h).map(ITextComponent::getString).forEach(list::add);
          }
 
-         RealmsNarratorHelper.now(String.join(System.lineSeparator(), list));
+         RealmsNarratorHelper.func_239550_a_(String.join(System.lineSeparator(), list));
       }
 
    }
 
-   private void upload() {
-      this.uploadStarted = true;
+   private void func_224682_h() {
+      this.field_224709_n = true;
       (new Thread(() -> {
          File file1 = null;
-         RealmsClient realmsclient = RealmsClient.create();
-         long i = this.worldId;
+         RealmsClient realmsclient = RealmsClient.func_224911_a();
+         long i = this.field_224699_d;
 
          try {
-            if (UPLOAD_LOCK.tryLock(1L, TimeUnit.SECONDS)) {
+            if (field_238081_b_.tryLock(1L, TimeUnit.SECONDS)) {
                UploadInfo uploadinfo = null;
 
                for(int j = 0; j < 20; ++j) {
                   try {
-                     if (this.cancelled) {
-                        this.uploadCancelled();
+                     if (this.field_224706_k) {
+                        this.func_224676_i();
                         return;
                      }
 
-                     uploadinfo = realmsclient.requestUploadInfo(i, UploadTokenCache.get(i));
+                     uploadinfo = realmsclient.func_224934_h(i, UploadTokenCache.func_225235_a(i));
                      if (uploadinfo != null) {
                         break;
                      }
                   } catch (RetryCallException retrycallexception) {
-                     Thread.sleep((long)(retrycallexception.delaySeconds * 1000));
+                     Thread.sleep((long)(retrycallexception.field_224985_e * 1000));
                   }
                }
 
                if (uploadinfo == null) {
-                  this.status = new TranslationTextComponent("mco.upload.close.failure");
+                  this.field_224704_i = new TranslationTextComponent("mco.upload.close.failure");
                   return;
                }
 
-               UploadTokenCache.put(i, uploadinfo.getToken());
-               if (!uploadinfo.isWorldClosed()) {
-                  this.status = new TranslationTextComponent("mco.upload.close.failure");
+               UploadTokenCache.func_225234_a(i, uploadinfo.func_230795_a_());
+               if (!uploadinfo.func_230799_c_()) {
+                  this.field_224704_i = new TranslationTextComponent("mco.upload.close.failure");
                   return;
                }
 
-               if (this.cancelled) {
-                  this.uploadCancelled();
+               if (this.field_224706_k) {
+                  this.func_224676_i();
                   return;
                }
 
-               File file2 = new File(this.minecraft.gameDirectory.getAbsolutePath(), "saves");
-               file1 = this.tarGzipArchive(new File(file2, this.selectedLevel.getLevelId()));
-               if (this.cancelled) {
-                  this.uploadCancelled();
+               File file2 = new File(this.minecraft.gameDir.getAbsolutePath(), "saves");
+               file1 = this.func_224675_b(new File(file2, this.field_224698_c.getFileName()));
+               if (this.field_224706_k) {
+                  this.func_224676_i();
                   return;
                }
 
-               if (this.verify(file1)) {
-                  this.status = new TranslationTextComponent("mco.upload.uploading", this.selectedLevel.getLevelName());
-                  FileUpload fileupload = new FileUpload(file1, this.worldId, this.slotId, uploadinfo, this.minecraft.getUser(), SharedConstants.getCurrentVersion().getName(), this.uploadStatus);
-                  fileupload.upload((p_238082_3_) -> {
-                     if (p_238082_3_.statusCode >= 200 && p_238082_3_.statusCode < 300) {
-                        this.uploadFinished = true;
-                        this.status = new TranslationTextComponent("mco.upload.done");
-                        this.backButton.setMessage(DialogTexts.GUI_DONE);
-                        UploadTokenCache.invalidate(i);
-                     } else if (p_238082_3_.statusCode == 400 && p_238082_3_.errorMessage != null) {
-                        this.setErrorMessage(new TranslationTextComponent("mco.upload.failed", p_238082_3_.errorMessage));
+               if (this.func_224692_a(file1)) {
+                  this.field_224704_i = new TranslationTextComponent("mco.upload.uploading", this.field_224698_c.getDisplayName());
+                  FileUpload fileupload = new FileUpload(file1, this.field_224699_d, this.field_224700_e, uploadinfo, this.minecraft.getSession(), SharedConstants.getVersion().getName(), this.field_224701_f);
+                  fileupload.func_224874_a((p_238082_3_) -> {
+                     if (p_238082_3_.field_225179_a >= 200 && p_238082_3_.field_225179_a < 300) {
+                        this.field_224707_l = true;
+                        this.field_224704_i = new TranslationTextComponent("mco.upload.done");
+                        this.field_224710_o.setMessage(DialogTexts.GUI_DONE);
+                        UploadTokenCache.func_225233_b(i);
+                     } else if (p_238082_3_.field_225179_a == 400 && p_238082_3_.field_225180_b != null) {
+                        this.func_238085_a_(new TranslationTextComponent("mco.upload.failed", p_238082_3_.field_225180_b));
                      } else {
-                        this.setErrorMessage(new TranslationTextComponent("mco.upload.failed", p_238082_3_.statusCode));
+                        this.func_238085_a_(new TranslationTextComponent("mco.upload.failed", p_238082_3_.field_225179_a));
                      }
 
                   });
 
-                  while(!fileupload.isFinished()) {
-                     if (this.cancelled) {
-                        fileupload.cancel();
-                        this.uploadCancelled();
+                  while(!fileupload.func_224881_b()) {
+                     if (this.field_224706_k) {
+                        fileupload.func_224878_a();
+                        this.func_224676_i();
                         return;
                      }
 
                      try {
                         Thread.sleep(500L);
                      } catch (InterruptedException interruptedexception) {
-                        LOGGER.error("Failed to check Realms file upload status");
+                        field_224696_a.error("Failed to check Realms file upload status");
                      }
                   }
 
@@ -319,37 +319,37 @@ public class RealmsUploadScreen extends RealmsScreen {
                }
 
                long k = file1.length();
-               UploadSpeed uploadspeed = UploadSpeed.getLargest(k);
-               UploadSpeed uploadspeed1 = UploadSpeed.getLargest(5368709120L);
-               if (UploadSpeed.humanReadable(k, uploadspeed).equals(UploadSpeed.humanReadable(5368709120L, uploadspeed1)) && uploadspeed != UploadSpeed.B) {
+               UploadSpeed uploadspeed = UploadSpeed.func_237682_a_(k);
+               UploadSpeed uploadspeed1 = UploadSpeed.func_237682_a_(5368709120L);
+               if (UploadSpeed.func_237685_b_(k, uploadspeed).equals(UploadSpeed.func_237685_b_(5368709120L, uploadspeed1)) && uploadspeed != UploadSpeed.B) {
                   UploadSpeed uploadspeed2 = UploadSpeed.values()[uploadspeed.ordinal() - 1];
-                  this.setErrorMessage(new TranslationTextComponent("mco.upload.size.failure.line1", this.selectedLevel.getLevelName()), new TranslationTextComponent("mco.upload.size.failure.line2", UploadSpeed.humanReadable(k, uploadspeed2), UploadSpeed.humanReadable(5368709120L, uploadspeed2)));
+                  this.func_238085_a_(new TranslationTextComponent("mco.upload.size.failure.line1", this.field_224698_c.getDisplayName()), new TranslationTextComponent("mco.upload.size.failure.line2", UploadSpeed.func_237685_b_(k, uploadspeed2), UploadSpeed.func_237685_b_(5368709120L, uploadspeed2)));
                   return;
                }
 
-               this.setErrorMessage(new TranslationTextComponent("mco.upload.size.failure.line1", this.selectedLevel.getLevelName()), new TranslationTextComponent("mco.upload.size.failure.line2", UploadSpeed.humanReadable(k, uploadspeed), UploadSpeed.humanReadable(5368709120L, uploadspeed1)));
+               this.func_238085_a_(new TranslationTextComponent("mco.upload.size.failure.line1", this.field_224698_c.getDisplayName()), new TranslationTextComponent("mco.upload.size.failure.line2", UploadSpeed.func_237685_b_(k, uploadspeed), UploadSpeed.func_237685_b_(5368709120L, uploadspeed1)));
                return;
             }
 
-            this.status = new TranslationTextComponent("mco.upload.close.failure");
+            this.field_224704_i = new TranslationTextComponent("mco.upload.close.failure");
          } catch (IOException ioexception) {
-            this.setErrorMessage(new TranslationTextComponent("mco.upload.failed", ioexception.getMessage()));
+            this.func_238085_a_(new TranslationTextComponent("mco.upload.failed", ioexception.getMessage()));
             return;
          } catch (RealmsServiceException realmsserviceexception) {
-            this.setErrorMessage(new TranslationTextComponent("mco.upload.failed", realmsserviceexception.toString()));
+            this.func_238085_a_(new TranslationTextComponent("mco.upload.failed", realmsserviceexception.toString()));
             return;
          } catch (InterruptedException interruptedexception1) {
-            LOGGER.error("Could not acquire upload lock");
+            field_224696_a.error("Could not acquire upload lock");
             return;
          } finally {
-            this.uploadFinished = true;
-            if (UPLOAD_LOCK.isHeldByCurrentThread()) {
-               UPLOAD_LOCK.unlock();
-               this.showDots = false;
-               this.backButton.visible = true;
-               this.cancelButton.visible = false;
+            this.field_224707_l = true;
+            if (field_238081_b_.isHeldByCurrentThread()) {
+               field_238081_b_.unlock();
+               this.field_224708_m = false;
+               this.field_224710_o.visible = true;
+               this.field_224711_p.visible = false;
                if (file1 != null) {
-                  LOGGER.debug("Deleting file " + file1.getAbsolutePath());
+                  field_224696_a.debug("Deleting file " + file1.getAbsolutePath());
                   file1.delete();
                }
 
@@ -361,20 +361,20 @@ public class RealmsUploadScreen extends RealmsScreen {
       })).start();
    }
 
-   private void setErrorMessage(ITextComponent... p_238085_1_) {
-      this.errorMessage = p_238085_1_;
+   private void func_238085_a_(ITextComponent... p_238085_1_) {
+      this.field_224703_h = p_238085_1_;
    }
 
-   private void uploadCancelled() {
-      this.status = new TranslationTextComponent("mco.upload.cancelled");
-      LOGGER.debug("Upload was cancelled");
+   private void func_224676_i() {
+      this.field_224704_i = new TranslationTextComponent("mco.upload.cancelled");
+      field_224696_a.debug("Upload was cancelled");
    }
 
-   private boolean verify(File p_224692_1_) {
+   private boolean func_224692_a(File p_224692_1_) {
       return p_224692_1_.length() < 5368709120L;
    }
 
-   private File tarGzipArchive(File p_224675_1_) throws IOException {
+   private File func_224675_b(File p_224675_1_) throws IOException {
       TarArchiveOutputStream tararchiveoutputstream = null;
 
       File file2;
@@ -382,7 +382,7 @@ public class RealmsUploadScreen extends RealmsScreen {
          File file1 = File.createTempFile("realms-upload-file", ".tar.gz");
          tararchiveoutputstream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(file1)));
          tararchiveoutputstream.setLongFileMode(3);
-         this.addFileToTarGz(tararchiveoutputstream, p_224675_1_.getAbsolutePath(), "world", true);
+         this.func_224669_a(tararchiveoutputstream, p_224675_1_.getAbsolutePath(), "world", true);
          tararchiveoutputstream.finish();
          file2 = file1;
       } finally {
@@ -395,8 +395,8 @@ public class RealmsUploadScreen extends RealmsScreen {
       return file2;
    }
 
-   private void addFileToTarGz(TarArchiveOutputStream p_224669_1_, String p_224669_2_, String p_224669_3_, boolean p_224669_4_) throws IOException {
-      if (!this.cancelled) {
+   private void func_224669_a(TarArchiveOutputStream p_224669_1_, String p_224669_2_, String p_224669_3_, boolean p_224669_4_) throws IOException {
+      if (!this.field_224706_k) {
          File file1 = new File(p_224669_2_);
          String s = p_224669_4_ ? p_224669_3_ : p_224669_3_ + file1.getName();
          TarArchiveEntry tararchiveentry = new TarArchiveEntry(file1, s);
@@ -409,7 +409,7 @@ public class RealmsUploadScreen extends RealmsScreen {
             File[] afile = file1.listFiles();
             if (afile != null) {
                for(File file2 : afile) {
-                  this.addFileToTarGz(p_224669_1_, file2.getAbsolutePath(), s + "/", false);
+                  this.func_224669_a(p_224669_1_, file2.getAbsolutePath(), s + "/", false);
                }
             }
          }

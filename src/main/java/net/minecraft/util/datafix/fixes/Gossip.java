@@ -16,7 +16,7 @@ public class Gossip extends NamedEntityFix {
          return p_233255_0_.update("Gossips", (p_233257_0_) -> {
             return DataFixUtils.orElse(p_233257_0_.asStreamOpt().result().map((p_233256_0_) -> {
                return p_233256_0_.map((p_233258_0_) -> {
-                  return AbstractUUIDFix.replaceUUIDLeastMost(p_233258_0_, "Target", "Target").orElse(p_233258_0_);
+                  return AbstractUUIDFix.func_233064_c_(p_233258_0_, "Target", "Target").orElse(p_233258_0_);
                });
             }).map(p_233257_0_::createList), p_233257_0_);
          });

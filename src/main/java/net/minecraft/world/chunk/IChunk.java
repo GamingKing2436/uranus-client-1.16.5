@@ -28,14 +28,14 @@ import org.apache.logging.log4j.LogManager;
 
 public interface IChunk extends IBlockReader, IStructureReader {
    @Nullable
-   BlockState setBlockState(BlockPos p_177436_1_, BlockState p_177436_2_, boolean p_177436_3_);
+   BlockState setBlockState(BlockPos pos, BlockState state, boolean isMoving);
 
-   void setBlockEntity(BlockPos p_177426_1_, TileEntity p_177426_2_);
+   void addTileEntity(BlockPos pos, TileEntity tileEntityIn);
 
-   void addEntity(Entity p_76612_1_);
+   void addEntity(Entity entityIn);
 
    @Nullable
-   default ChunkSection getHighestSection() {
+   default ChunkSection getLastExtendedBlockStorage() {
       ChunkSection[] achunksection = this.getSections();
 
       for(int i = achunksection.length - 1; i >= 0; --i) {
@@ -48,41 +48,41 @@ public interface IChunk extends IBlockReader, IStructureReader {
       return null;
    }
 
-   default int getHighestSectionPosition() {
-      ChunkSection chunksection = this.getHighestSection();
-      return chunksection == null ? 0 : chunksection.bottomBlockY();
+   default int getTopFilledSegment() {
+      ChunkSection chunksection = this.getLastExtendedBlockStorage();
+      return chunksection == null ? 0 : chunksection.getYLocation();
    }
 
-   Set<BlockPos> getBlockEntitiesPos();
+   Set<BlockPos> getTileEntitiesPos();
 
    ChunkSection[] getSections();
 
    Collection<Entry<Heightmap.Type, Heightmap>> getHeightmaps();
 
-   void setHeightmap(Heightmap.Type p_201607_1_, long[] p_201607_2_);
+   void setHeightmap(Heightmap.Type type, long[] data);
 
-   Heightmap getOrCreateHeightmapUnprimed(Heightmap.Type p_217303_1_);
+   Heightmap getHeightmap(Heightmap.Type typeIn);
 
-   int getHeight(Heightmap.Type p_201576_1_, int p_201576_2_, int p_201576_3_);
+   int getTopBlockY(Heightmap.Type heightmapType, int x, int z);
 
    ChunkPos getPos();
 
-   void setLastSaveTime(long p_177432_1_);
+   void setLastSaveTime(long saveTime);
 
-   Map<Structure<?>, StructureStart<?>> getAllStarts();
+   Map<Structure<?>, StructureStart<?>> getStructureStarts();
 
-   void setAllStarts(Map<Structure<?>, StructureStart<?>> p_201612_1_);
+   void setStructureStarts(Map<Structure<?>, StructureStart<?>> structureStartsIn);
 
-   default boolean isYSpaceEmpty(int p_76606_1_, int p_76606_2_) {
-      if (p_76606_1_ < 0) {
-         p_76606_1_ = 0;
+   default boolean isEmptyBetween(int startY, int endY) {
+      if (startY < 0) {
+         startY = 0;
       }
 
-      if (p_76606_2_ >= 256) {
-         p_76606_2_ = 255;
+      if (endY >= 256) {
+         endY = 255;
       }
 
-      for(int i = p_76606_1_; i <= p_76606_2_; i += 16) {
+      for(int i = startY; i <= endY; i += 16) {
          if (!ChunkSection.isEmpty(this.getSections()[i >> 4])) {
             return false;
          }
@@ -94,55 +94,55 @@ public interface IChunk extends IBlockReader, IStructureReader {
    @Nullable
    BiomeContainer getBiomes();
 
-   void setUnsaved(boolean p_177427_1_);
+   void setModified(boolean modified);
 
-   boolean isUnsaved();
+   boolean isModified();
 
    ChunkStatus getStatus();
 
-   void removeBlockEntity(BlockPos p_177425_1_);
+   void removeTileEntity(BlockPos pos);
 
-   default void markPosForPostprocessing(BlockPos p_201594_1_) {
-      LogManager.getLogger().warn("Trying to mark a block for PostProcessing @ {}, but this operation is not supported.", (Object)p_201594_1_);
+   default void markBlockForPostprocessing(BlockPos pos) {
+      LogManager.getLogger().warn("Trying to mark a block for PostProcessing @ {}, but this operation is not supported.", (Object)pos);
    }
 
-   ShortList[] getPostProcessing();
+   ShortList[] getPackedPositions();
 
-   default void addPackedPostProcess(short p_201636_1_, int p_201636_2_) {
-      getOrCreateOffsetList(this.getPostProcessing(), p_201636_2_).add(p_201636_1_);
+   default void addPackedPosition(short packedPosition, int index) {
+      getList(this.getPackedPositions(), index).add(packedPosition);
    }
 
-   default void setBlockEntityNbt(CompoundNBT p_201591_1_) {
+   default void addTileEntity(CompoundNBT nbt) {
       LogManager.getLogger().warn("Trying to set a BlockEntity, but this operation is not supported.");
    }
 
    @Nullable
-   CompoundNBT getBlockEntityNbt(BlockPos p_201579_1_);
+   CompoundNBT getDeferredTileEntity(BlockPos pos);
 
    @Nullable
-   CompoundNBT getBlockEntityNbtForSaving(BlockPos p_223134_1_);
+   CompoundNBT getTileEntityNBT(BlockPos pos);
 
-   Stream<BlockPos> getLights();
+   Stream<BlockPos> getLightSources();
 
-   ITickList<Block> getBlockTicks();
+   ITickList<Block> getBlocksToBeTicked();
 
-   ITickList<Fluid> getLiquidTicks();
+   ITickList<Fluid> getFluidsToBeTicked();
 
    UpgradeData getUpgradeData();
 
-   void setInhabitedTime(long p_177415_1_);
+   void setInhabitedTime(long newInhabitedTime);
 
    long getInhabitedTime();
 
-   static ShortList getOrCreateOffsetList(ShortList[] p_217308_0_, int p_217308_1_) {
-      if (p_217308_0_[p_217308_1_] == null) {
-         p_217308_0_[p_217308_1_] = new ShortArrayList();
+   static ShortList getList(ShortList[] packedPositions, int index) {
+      if (packedPositions[index] == null) {
+         packedPositions[index] = new ShortArrayList();
       }
 
-      return p_217308_0_[p_217308_1_];
+      return packedPositions[index];
    }
 
-   boolean isLightCorrect();
+   boolean hasLight();
 
-   void setLightCorrect(boolean p_217305_1_);
+   void setLight(boolean lightCorrectIn);
 }

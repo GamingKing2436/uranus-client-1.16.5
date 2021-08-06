@@ -6,19 +6,19 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class TextureMetadataSection {
    public static final TextureMetadataSectionSerializer SERIALIZER = new TextureMetadataSectionSerializer();
-   private final boolean blur;
-   private final boolean clamp;
+   private final boolean textureBlur;
+   private final boolean textureClamp;
 
-   public TextureMetadataSection(boolean p_i46538_1_, boolean p_i46538_2_) {
-      this.blur = p_i46538_1_;
-      this.clamp = p_i46538_2_;
+   public TextureMetadataSection(boolean textureBlurIn, boolean textureClampIn) {
+      this.textureBlur = textureBlurIn;
+      this.textureClamp = textureClampIn;
    }
 
-   public boolean isBlur() {
-      return this.blur;
+   public boolean getTextureBlur() {
+      return this.textureBlur;
    }
 
-   public boolean isClamp() {
-      return this.clamp;
+   public boolean getTextureClamp() {
+      return this.textureClamp;
    }
 }

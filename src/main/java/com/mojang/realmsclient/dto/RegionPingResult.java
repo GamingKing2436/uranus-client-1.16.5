@@ -9,20 +9,20 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class RegionPingResult extends ValueObject implements IPersistentSerializable {
    @SerializedName("regionName")
-   private final String regionName;
+   private final String field_230632_a_;
    @SerializedName("ping")
-   private final int ping;
+   private final int field_230633_b_;
 
-   public RegionPingResult(String p_i51641_1_, int p_i51641_2_) {
-      this.regionName = p_i51641_1_;
-      this.ping = p_i51641_2_;
+   public RegionPingResult(String entityRendererIn, int mcIn) {
+      this.field_230632_a_ = entityRendererIn;
+      this.field_230633_b_ = mcIn;
    }
 
-   public int ping() {
-      return this.ping;
+   public int func_230792_a_() {
+      return this.field_230633_b_;
    }
 
    public String toString() {
-      return String.format(Locale.ROOT, "%s --> %.2f ms", this.regionName, (float)this.ping);
+      return String.format(Locale.ROOT, "%s --> %.2f ms", this.field_230632_a_, (float)this.field_230633_b_);
    }
 }

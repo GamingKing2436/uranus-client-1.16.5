@@ -8,7 +8,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class CTabCompletePacket implements IPacket<IServerPlayNetHandler> {
-   private int id;
+   private int transactionId;
    private String command;
 
    public CTabCompletePacket() {
@@ -16,26 +16,26 @@ public class CTabCompletePacket implements IPacket<IServerPlayNetHandler> {
 
    @OnlyIn(Dist.CLIENT)
    public CTabCompletePacket(int p_i47928_1_, String p_i47928_2_) {
-      this.id = p_i47928_1_;
+      this.transactionId = p_i47928_1_;
       this.command = p_i47928_2_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.id = p_148837_1_.readVarInt();
-      this.command = p_148837_1_.readUtf(32500);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.transactionId = buf.readVarInt();
+      this.command = buf.readString(32500);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.id);
-      p_148840_1_.writeUtf(this.command, 32500);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.transactionId);
+      buf.writeString(this.command, 32500);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleCustomCommandSuggestions(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processTabComplete(this);
    }
 
-   public int getId() {
-      return this.id;
+   public int getTransactionId() {
+      return this.transactionId;
    }
 
    public String getCommand() {

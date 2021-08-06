@@ -14,18 +14,18 @@ import net.minecraft.world.World;
 import org.apache.commons.lang3.StringUtils;
 
 public class SkullPlayerBlock extends SkullBlock {
-   protected SkullPlayerBlock(AbstractBlock.Properties p_i48354_1_) {
-      super(SkullBlock.Types.PLAYER, p_i48354_1_);
+   protected SkullPlayerBlock(AbstractBlock.Properties properties) {
+      super(SkullBlock.Types.PLAYER, properties);
    }
 
-   public void setPlacedBy(World p_180633_1_, BlockPos p_180633_2_, BlockState p_180633_3_, @Nullable LivingEntity p_180633_4_, ItemStack p_180633_5_) {
-      super.setPlacedBy(p_180633_1_, p_180633_2_, p_180633_3_, p_180633_4_, p_180633_5_);
-      TileEntity tileentity = p_180633_1_.getBlockEntity(p_180633_2_);
+   public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+      super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+      TileEntity tileentity = worldIn.getTileEntity(pos);
       if (tileentity instanceof SkullTileEntity) {
          SkullTileEntity skulltileentity = (SkullTileEntity)tileentity;
          GameProfile gameprofile = null;
-         if (p_180633_5_.hasTag()) {
-            CompoundNBT compoundnbt = p_180633_5_.getTag();
+         if (stack.hasTag()) {
+            CompoundNBT compoundnbt = stack.getTag();
             if (compoundnbt.contains("SkullOwner", 10)) {
                gameprofile = NBTUtil.readGameProfile(compoundnbt.getCompound("SkullOwner"));
             } else if (compoundnbt.contains("SkullOwner", 8) && !StringUtils.isBlank(compoundnbt.getString("SkullOwner"))) {
@@ -33,7 +33,7 @@ public class SkullPlayerBlock extends SkullBlock {
             }
          }
 
-         skulltileentity.setOwner(gameprofile);
+         skulltileentity.setPlayerProfile(gameprofile);
       }
 
    }

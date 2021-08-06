@@ -20,8 +20,8 @@ import java.util.stream.Stream;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ChunkGenStatus extends DataFix {
-   public ChunkGenStatus(Schema p_i49674_1_, boolean p_i49674_2_) {
-      super(p_i49674_1_, p_i49674_2_);
+   public ChunkGenStatus(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {

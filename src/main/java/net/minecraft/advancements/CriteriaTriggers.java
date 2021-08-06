@@ -44,7 +44,7 @@ import net.minecraft.advancements.criterion.VillagerTradeTrigger;
 import net.minecraft.util.ResourceLocation;
 
 public class CriteriaTriggers {
-   private static final Map<ResourceLocation, ICriterionTrigger<?>> CRITERIA = Maps.newHashMap();
+   private static final Map<ResourceLocation, ICriterionTrigger<?>> REGISTRY = Maps.newHashMap();
    public static final ImpossibleTrigger IMPOSSIBLE = register(new ImpossibleTrigger());
    public static final KilledTrigger PLAYER_KILLED_ENTITY = register(new KilledTrigger(new ResourceLocation("player_killed_entity")));
    public static final KilledTrigger ENTITY_KILLED_PLAYER = register(new KilledTrigger(new ResourceLocation("entity_killed_player")));
@@ -63,7 +63,7 @@ public class CriteriaTriggers {
    public static final PositionTrigger LOCATION = register(new PositionTrigger(new ResourceLocation("location")));
    public static final PositionTrigger SLEPT_IN_BED = register(new PositionTrigger(new ResourceLocation("slept_in_bed")));
    public static final CuredZombieVillagerTrigger CURED_ZOMBIE_VILLAGER = register(new CuredZombieVillagerTrigger());
-   public static final VillagerTradeTrigger TRADE = register(new VillagerTradeTrigger());
+   public static final VillagerTradeTrigger VILLAGER_TRADE = register(new VillagerTradeTrigger());
    public static final ItemDurabilityTrigger ITEM_DURABILITY_CHANGED = register(new ItemDurabilityTrigger());
    public static final LevitationTrigger LEVITATION = register(new LevitationTrigger());
    public static final ChangeDimensionTrigger CHANGED_DIMENSION = register(new ChangeDimensionTrigger());
@@ -78,31 +78,31 @@ public class CriteriaTriggers {
    public static final ChanneledLightningTrigger CHANNELED_LIGHTNING = register(new ChanneledLightningTrigger());
    public static final ShotCrossbowTrigger SHOT_CROSSBOW = register(new ShotCrossbowTrigger());
    public static final KilledByCrossbowTrigger KILLED_BY_CROSSBOW = register(new KilledByCrossbowTrigger());
-   public static final PositionTrigger RAID_WIN = register(new PositionTrigger(new ResourceLocation("hero_of_the_village")));
-   public static final PositionTrigger BAD_OMEN = register(new PositionTrigger(new ResourceLocation("voluntary_exile")));
-   public static final SlideDownBlockTrigger HONEY_BLOCK_SLIDE = register(new SlideDownBlockTrigger());
+   public static final PositionTrigger HERO_OF_THE_VILLAGE = register(new PositionTrigger(new ResourceLocation("hero_of_the_village")));
+   public static final PositionTrigger VOLUNTARY_EXILE = register(new PositionTrigger(new ResourceLocation("voluntary_exile")));
+   public static final SlideDownBlockTrigger SLIDE_DOWN_BLOCK = register(new SlideDownBlockTrigger());
    public static final BeeNestDestroyedTrigger BEE_NEST_DESTROYED = register(new BeeNestDestroyedTrigger());
-   public static final TargetHitTrigger TARGET_BLOCK_HIT = register(new TargetHitTrigger());
-   public static final RightClickBlockWithItemTrigger ITEM_USED_ON_BLOCK = register(new RightClickBlockWithItemTrigger());
-   public static final PlayerGeneratesContainerLootTrigger GENERATE_LOOT = register(new PlayerGeneratesContainerLootTrigger());
-   public static final ThrownItemPickedUpByEntityTrigger ITEM_PICKED_UP_BY_ENTITY = register(new ThrownItemPickedUpByEntityTrigger());
-   public static final PlayerEntityInteractionTrigger PLAYER_INTERACTED_WITH_ENTITY = register(new PlayerEntityInteractionTrigger());
+   public static final TargetHitTrigger TARGET_HIT = register(new TargetHitTrigger());
+   public static final RightClickBlockWithItemTrigger RIGHT_CLICK_BLOCK_WITH_ITEM = register(new RightClickBlockWithItemTrigger());
+   public static final PlayerGeneratesContainerLootTrigger PLAYER_GENERATES_CONTAINER_LOOT = register(new PlayerGeneratesContainerLootTrigger());
+   public static final ThrownItemPickedUpByEntityTrigger THROWN_ITEM_PICKED_UP_BY_ENTITY = register(new ThrownItemPickedUpByEntityTrigger());
+   public static final PlayerEntityInteractionTrigger PLAYER_ENTITY_INTERACTION = register(new PlayerEntityInteractionTrigger());
 
-   private static <T extends ICriterionTrigger<?>> T register(T p_192118_0_) {
-      if (CRITERIA.containsKey(p_192118_0_.getId())) {
-         throw new IllegalArgumentException("Duplicate criterion id " + p_192118_0_.getId());
+   private static <T extends ICriterionTrigger<?>> T register(T criterion) {
+      if (REGISTRY.containsKey(criterion.getId())) {
+         throw new IllegalArgumentException("Duplicate criterion id " + criterion.getId());
       } else {
-         CRITERIA.put(p_192118_0_.getId(), p_192118_0_);
-         return p_192118_0_;
+         REGISTRY.put(criterion.getId(), criterion);
+         return criterion;
       }
    }
 
    @Nullable
-   public static <T extends ICriterionInstance> ICriterionTrigger<T> getCriterion(ResourceLocation p_192119_0_) {
-      return (ICriterionTrigger<T>) CRITERIA.get(p_192119_0_);
+   public static <T extends ICriterionInstance> ICriterionTrigger<T> get(ResourceLocation id) {
+      return (ICriterionTrigger<T>) REGISTRY.get(id);
    }
 
-   public static Iterable<? extends ICriterionTrigger<?>> all() {
-      return CRITERIA.values();
+   public static Iterable<? extends ICriterionTrigger<?>> getAll() {
+      return REGISTRY.values();
    }
 }

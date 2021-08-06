@@ -20,31 +20,31 @@ public final class VideoMode {
    private final int refreshRate;
    private static final Pattern PATTERN = Pattern.compile("(\\d+)x(\\d+)(?:@(\\d+)(?::(\\d+))?)?");
 
-   public VideoMode(int p_i47669_1_, int p_i47669_2_, int p_i47669_3_, int p_i47669_4_, int p_i47669_5_, int p_i47669_6_) {
-      this.width = p_i47669_1_;
-      this.height = p_i47669_2_;
-      this.redBits = p_i47669_3_;
-      this.greenBits = p_i47669_4_;
-      this.blueBits = p_i47669_5_;
-      this.refreshRate = p_i47669_6_;
+   public VideoMode(int widthIn, int heightIn, int redBitsIn, int greenBitsIn, int blueBitsIn, int refreshRateIn) {
+      this.width = widthIn;
+      this.height = heightIn;
+      this.redBits = redBitsIn;
+      this.greenBits = greenBitsIn;
+      this.blueBits = blueBitsIn;
+      this.refreshRate = refreshRateIn;
    }
 
-   public VideoMode(Buffer p_i47670_1_) {
-      this.width = p_i47670_1_.width();
-      this.height = p_i47670_1_.height();
-      this.redBits = p_i47670_1_.redBits();
-      this.greenBits = p_i47670_1_.greenBits();
-      this.blueBits = p_i47670_1_.blueBits();
-      this.refreshRate = p_i47670_1_.refreshRate();
+   public VideoMode(Buffer buffer) {
+      this.width = buffer.width();
+      this.height = buffer.height();
+      this.redBits = buffer.redBits();
+      this.greenBits = buffer.greenBits();
+      this.blueBits = buffer.blueBits();
+      this.refreshRate = buffer.refreshRate();
    }
 
-   public VideoMode(GLFWVidMode p_i47671_1_) {
-      this.width = p_i47671_1_.width();
-      this.height = p_i47671_1_.height();
-      this.redBits = p_i47671_1_.redBits();
-      this.greenBits = p_i47671_1_.greenBits();
-      this.blueBits = p_i47671_1_.blueBits();
-      this.refreshRate = p_i47671_1_.refreshRate();
+   public VideoMode(GLFWVidMode glfwVidMode) {
+      this.width = glfwVidMode.width();
+      this.height = glfwVidMode.height();
+      this.redBits = glfwVidMode.redBits();
+      this.greenBits = glfwVidMode.greenBits();
+      this.blueBits = glfwVidMode.blueBits();
+      this.refreshRate = glfwVidMode.refreshRate();
    }
 
    public int getWidth() {
@@ -90,12 +90,12 @@ public final class VideoMode {
       return String.format("%sx%s@%s (%sbit)", this.width, this.height, this.refreshRate, this.redBits + this.greenBits + this.blueBits);
    }
 
-   public static Optional<VideoMode> read(@Nullable String p_198061_0_) {
-      if (p_198061_0_ == null) {
+   public static Optional<VideoMode> parseFromSettings(@Nullable String videoModeIn) {
+      if (videoModeIn == null) {
          return Optional.empty();
       } else {
          try {
-            Matcher matcher = PATTERN.matcher(p_198061_0_);
+            Matcher matcher = PATTERN.matcher(videoModeIn);
             if (matcher.matches()) {
                int i = Integer.parseInt(matcher.group(1));
                int j = Integer.parseInt(matcher.group(2));
@@ -125,7 +125,7 @@ public final class VideoMode {
       }
    }
 
-   public String write() {
+   public String getSettingsString() {
       return String.format("%sx%s@%s:%s", this.width, this.height, this.refreshRate, this.redBits + this.greenBits + this.blueBits);
    }
 }

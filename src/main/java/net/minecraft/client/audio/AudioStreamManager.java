@@ -18,51 +18,51 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class AudioStreamManager {
    private final IResourceManager resourceManager;
-   private final Map<ResourceLocation, CompletableFuture<AudioStreamBuffer>> cache = Maps.newHashMap();
+   private final Map<ResourceLocation, CompletableFuture<AudioStreamBuffer>> bufferCache = Maps.newHashMap();
 
-   public AudioStreamManager(IResourceManager p_i50893_1_) {
-      this.resourceManager = p_i50893_1_;
+   public AudioStreamManager(IResourceManager resourceManagerIn) {
+      this.resourceManager = resourceManagerIn;
    }
 
-   public CompletableFuture<AudioStreamBuffer> getCompleteBuffer(ResourceLocation p_217909_1_) {
-      return this.cache.computeIfAbsent(p_217909_1_, (p_217913_1_) -> {
+   public CompletableFuture<AudioStreamBuffer> createResource(ResourceLocation soundIDIn) {
+      return this.bufferCache.computeIfAbsent(soundIDIn, (p_217913_1_) -> {
          return CompletableFuture.supplyAsync(() -> {
             try (
                IResource iresource = this.resourceManager.getResource(p_217913_1_);
                InputStream inputstream = iresource.getInputStream();
                OggAudioStream oggaudiostream = new OggAudioStream(inputstream);
             ) {
-               ByteBuffer bytebuffer = oggaudiostream.readAll();
-               return new AudioStreamBuffer(bytebuffer, oggaudiostream.getFormat());
+               ByteBuffer bytebuffer = oggaudiostream.readOggSound();
+               return new AudioStreamBuffer(bytebuffer, oggaudiostream.getAudioFormat());
             } catch (IOException ioexception) {
                throw new CompletionException(ioexception);
             }
-         }, Util.backgroundExecutor());
+         }, Util.getServerExecutor());
       });
    }
 
-   public CompletableFuture<IAudioStream> getStream(ResourceLocation p_217917_1_, boolean p_217917_2_) {
+   public CompletableFuture<IAudioStream> createStreamingResource(ResourceLocation resourceLocation, boolean isWrapper) {
       return CompletableFuture.supplyAsync(() -> {
          try {
-            IResource iresource = this.resourceManager.getResource(p_217917_1_);
+            IResource iresource = this.resourceManager.getResource(resourceLocation);
             InputStream inputstream = iresource.getInputStream();
-            return (IAudioStream)(p_217917_2_ ? new OggAudioStreamWrapper(OggAudioStream::new, inputstream) : new OggAudioStream(inputstream));
+            return (IAudioStream)(isWrapper ? new OggAudioStreamWrapper(OggAudioStream::new, inputstream) : new OggAudioStream(inputstream));
          } catch (IOException ioexception) {
             throw new CompletionException(ioexception);
          }
-      }, Util.backgroundExecutor());
+      }, Util.getServerExecutor());
    }
 
-   public void clear() {
-      this.cache.values().forEach((p_217910_0_) -> {
-         p_217910_0_.thenAccept(AudioStreamBuffer::discardAlBuffer);
+   public void clearAudioBufferCache() {
+      this.bufferCache.values().forEach((p_217910_0_) -> {
+         p_217910_0_.thenAccept(AudioStreamBuffer::deleteBuffer);
       });
-      this.cache.clear();
+      this.bufferCache.clear();
    }
 
-   public CompletableFuture<?> preload(Collection<Sound> p_217908_1_) {
-      return CompletableFuture.allOf(p_217908_1_.stream().map((p_217911_1_) -> {
-         return this.getCompleteBuffer(p_217911_1_.getPath());
+   public CompletableFuture<?> preload(Collection<Sound> sounds) {
+      return CompletableFuture.allOf(sounds.stream().map((p_217911_1_) -> {
+         return this.createResource(p_217911_1_.getSoundAsOggLocation());
       }).toArray((p_217916_0_) -> {
          return new CompletableFuture[p_217916_0_];
       }));

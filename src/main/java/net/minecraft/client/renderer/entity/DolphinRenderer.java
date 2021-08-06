@@ -11,12 +11,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class DolphinRenderer extends MobRenderer<DolphinEntity, DolphinModel<DolphinEntity>> {
    private static final ResourceLocation DOLPHIN_LOCATION = new ResourceLocation("textures/entity/dolphin.png");
 
-   public DolphinRenderer(EntityRendererManager p_i48949_1_) {
-      super(p_i48949_1_, new DolphinModel<>(), 0.7F);
+   public DolphinRenderer(EntityRendererManager renderManagerIn) {
+      super(renderManagerIn, new DolphinModel<>(), 0.7F);
       this.addLayer(new DolphinCarriedItemLayer(this));
    }
 
-   public ResourceLocation getTextureLocation(DolphinEntity p_110775_1_) {
+   public ResourceLocation getEntityTexture(DolphinEntity entity) {
       return DOLPHIN_LOCATION;
    }
 }

@@ -7,15 +7,15 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IArmorMaterial {
-   int getDurabilityForSlot(EquipmentSlotType p_200896_1_);
+   int getDurability(EquipmentSlotType slotIn);
 
-   int getDefenseForSlot(EquipmentSlotType p_200902_1_);
+   int getDamageReductionAmount(EquipmentSlotType slotIn);
 
-   int getEnchantmentValue();
+   int getEnchantability();
 
-   SoundEvent getEquipSound();
+   SoundEvent getSoundEvent();
 
-   Ingredient getRepairIngredient();
+   Ingredient getRepairMaterial();
 
    @OnlyIn(Dist.CLIENT)
    String getName();

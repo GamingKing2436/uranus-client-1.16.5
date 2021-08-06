@@ -16,22 +16,22 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class FolderResourceIndex extends ResourceIndex {
-   private final File assetsDirectory;
+   private final File baseDir;
 
-   public FolderResourceIndex(File p_i46540_1_) {
-      this.assetsDirectory = p_i46540_1_;
+   public FolderResourceIndex(File folder) {
+      this.baseDir = folder;
    }
 
-   public File getFile(ResourceLocation p_188547_1_) {
-      return new File(this.assetsDirectory, p_188547_1_.toString().replace(':', '/'));
+   public File getFile(ResourceLocation location) {
+      return new File(this.baseDir, location.toString().replace(':', '/'));
    }
 
-   public File getRootFile(String p_225638_1_) {
-      return new File(this.assetsDirectory, p_225638_1_);
+   public File getFile(String p_225638_1_) {
+      return new File(this.baseDir, p_225638_1_);
    }
 
    public Collection<ResourceLocation> getFiles(String p_225639_1_, String p_225639_2_, int p_225639_3_, Predicate<String> p_225639_4_) {
-      Path path = this.assetsDirectory.toPath().resolve(p_225639_2_);
+      Path path = this.baseDir.toPath().resolve(p_225639_2_);
 
       try (Stream<Path> stream = Files.walk(path.resolve(p_225639_1_), p_225639_3_)) {
          return stream.filter((p_211686_0_) -> {

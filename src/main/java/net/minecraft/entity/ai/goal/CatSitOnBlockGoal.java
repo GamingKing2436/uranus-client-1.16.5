@@ -14,40 +14,40 @@ import net.minecraft.world.IWorldReader;
 public class CatSitOnBlockGoal extends MoveToBlockGoal {
    private final CatEntity cat;
 
-   public CatSitOnBlockGoal(CatEntity p_i50330_1_, double p_i50330_2_) {
-      super(p_i50330_1_, p_i50330_2_, 8);
-      this.cat = p_i50330_1_;
+   public CatSitOnBlockGoal(CatEntity cat, double speed) {
+      super(cat, speed, 8);
+      this.cat = cat;
    }
 
-   public boolean canUse() {
-      return this.cat.isTame() && !this.cat.isOrderedToSit() && super.canUse();
+   public boolean shouldExecute() {
+      return this.cat.isTamed() && !this.cat.isSitting() && super.shouldExecute();
    }
 
-   public void start() {
-      super.start();
-      this.cat.setInSittingPose(false);
+   public void startExecuting() {
+      super.startExecuting();
+      this.cat.setSleeping(false);
    }
 
-   public void stop() {
-      super.stop();
-      this.cat.setInSittingPose(false);
+   public void resetTask() {
+      super.resetTask();
+      this.cat.setSleeping(false);
    }
 
    public void tick() {
       super.tick();
-      this.cat.setInSittingPose(this.isReachedTarget());
+      this.cat.setSleeping(this.getIsAboveDestination());
    }
 
-   protected boolean isValidTarget(IWorldReader p_179488_1_, BlockPos p_179488_2_) {
-      if (!p_179488_1_.isEmptyBlock(p_179488_2_.above())) {
+   protected boolean shouldMoveTo(IWorldReader worldIn, BlockPos pos) {
+      if (!worldIn.isAirBlock(pos.up())) {
          return false;
       } else {
-         BlockState blockstate = p_179488_1_.getBlockState(p_179488_2_);
-         if (blockstate.is(Blocks.CHEST)) {
-            return ChestTileEntity.getOpenCount(p_179488_1_, p_179488_2_) < 1;
+         BlockState blockstate = worldIn.getBlockState(pos);
+         if (blockstate.isIn(Blocks.CHEST)) {
+            return ChestTileEntity.getPlayersUsing(worldIn, pos) < 1;
          } else {
-            return blockstate.is(Blocks.FURNACE) && blockstate.getValue(FurnaceBlock.LIT) ? true : blockstate.is(BlockTags.BEDS, (p_234025_0_) -> {
-               return p_234025_0_.<BedPart>getOptionalValue(BedBlock.PART).map((p_234026_0_) -> {
+            return blockstate.isIn(Blocks.FURNACE) && blockstate.get(FurnaceBlock.LIT) ? true : blockstate.isInAndMatches(BlockTags.BEDS, (p_234025_0_) -> {
+               return p_234025_0_.<BedPart>func_235903_d_(BedBlock.PART).map((p_234026_0_) -> {
                   return p_234026_0_ != BedPart.HEAD;
                }).orElse(true);
             });

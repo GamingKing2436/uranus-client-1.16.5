@@ -16,29 +16,29 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SServerInfoPacket implements IPacket<IClientStatusNetHandler> {
    private static final Gson GSON = (new GsonBuilder()).registerTypeAdapter(ServerStatusResponse.Version.class, new ServerStatusResponse.Version.Serializer()).registerTypeAdapter(ServerStatusResponse.Players.class, new ServerStatusResponse.Players.Serializer()).registerTypeAdapter(ServerStatusResponse.class, new ServerStatusResponse.Serializer()).registerTypeHierarchyAdapter(ITextComponent.class, new ITextComponent.Serializer()).registerTypeHierarchyAdapter(Style.class, new Style.Serializer()).registerTypeAdapterFactory(new EnumTypeAdapterFactory()).create();
-   private ServerStatusResponse status;
+   private ServerStatusResponse response;
 
    public SServerInfoPacket() {
    }
 
-   public SServerInfoPacket(ServerStatusResponse p_i46848_1_) {
-      this.status = p_i46848_1_;
+   public SServerInfoPacket(ServerStatusResponse responseIn) {
+      this.response = responseIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.status = JSONUtils.fromJson(GSON, p_148837_1_.readUtf(32767), ServerStatusResponse.class);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.response = JSONUtils.fromJson(GSON, buf.readString(32767), ServerStatusResponse.class);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeUtf(GSON.toJson(this.status));
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeString(GSON.toJson(this.response));
    }
 
-   public void handle(IClientStatusNetHandler p_148833_1_) {
-      p_148833_1_.handleStatusResponse(this);
+   public void processPacket(IClientStatusNetHandler handler) {
+      handler.handleServerInfo(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ServerStatusResponse getStatus() {
-      return this.status;
+   public ServerStatusResponse getResponse() {
+      return this.response;
    }
 }

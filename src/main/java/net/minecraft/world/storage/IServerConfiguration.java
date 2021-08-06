@@ -16,31 +16,31 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IServerConfiguration {
-   DatapackCodec getDataPackConfig();
+   DatapackCodec getDatapackCodec();
 
-   void setDataPackConfig(DatapackCodec p_230410_1_);
+   void setDatapackCodec(DatapackCodec codec);
 
-   boolean wasModded();
+   boolean isModded();
 
-   Set<String> getKnownServerBrands();
+   Set<String> getServerBranding();
 
-   void setModdedInfo(String p_230412_1_, boolean p_230412_2_);
+   void addServerBranding(String name, boolean isModded);
 
-   default void fillCrashReportCategory(CrashReportCategory p_85118_1_) {
-      p_85118_1_.setDetail("Known server brands", () -> {
-         return String.join(", ", this.getKnownServerBrands());
+   default void addToCrashReport(CrashReportCategory category) {
+      category.addDetail("Known server brands", () -> {
+         return String.join(", ", this.getServerBranding());
       });
-      p_85118_1_.setDetail("Level was modded", () -> {
-         return Boolean.toString(this.wasModded());
+      category.addDetail("Level was modded", () -> {
+         return Boolean.toString(this.isModded());
       });
-      p_85118_1_.setDetail("Level storage version", () -> {
-         int i = this.getVersion();
+      category.addDetail("Level storage version", () -> {
+         int i = this.getStorageVersionId();
          return String.format("0x%05X - %s", i, this.getStorageVersionName(i));
       });
    }
 
-   default String getStorageVersionName(int p_237379_1_) {
-      switch(p_237379_1_) {
+   default String getStorageVersionName(int storageVersionId) {
+      switch(storageVersionId) {
       case 19132:
          return "McRegion";
       case 19133:
@@ -51,47 +51,47 @@ public interface IServerConfiguration {
    }
 
    @Nullable
-   CompoundNBT getCustomBossEvents();
+   CompoundNBT getCustomBossEventData();
 
-   void setCustomBossEvents(@Nullable CompoundNBT p_230414_1_);
+   void setCustomBossEventData(@Nullable CompoundNBT nbt);
 
-   IServerWorldInfo overworldData();
+   IServerWorldInfo getServerWorldInfo();
 
    @OnlyIn(Dist.CLIENT)
-   WorldSettings getLevelSettings();
+   WorldSettings getWorldSettings();
 
-   CompoundNBT createTag(DynamicRegistries p_230411_1_, @Nullable CompoundNBT p_230411_2_);
+   CompoundNBT serialize(DynamicRegistries registries, @Nullable CompoundNBT hostPlayerNBT);
 
    boolean isHardcore();
 
-   int getVersion();
+   int getStorageVersionId();
 
-   String getLevelName();
+   String getWorldName();
 
    GameType getGameType();
 
-   void setGameType(GameType p_230392_1_);
+   void setGameType(GameType type);
 
-   boolean getAllowCommands();
+   boolean areCommandsAllowed();
 
    Difficulty getDifficulty();
 
-   void setDifficulty(Difficulty p_230409_1_);
+   void setDifficulty(Difficulty difficulty);
 
    boolean isDifficultyLocked();
 
-   void setDifficultyLocked(boolean p_230415_1_);
+   void setDifficultyLocked(boolean locked);
 
-   GameRules getGameRules();
+   GameRules getGameRulesInstance();
 
-   CompoundNBT getLoadedPlayerTag();
+   CompoundNBT getHostPlayerNBT();
 
-   CompoundNBT endDragonFightData();
+   CompoundNBT getDragonFightData();
 
-   void setEndDragonFightData(CompoundNBT p_230413_1_);
+   void setDragonFightData(CompoundNBT nbt);
 
-   DimensionGeneratorSettings worldGenSettings();
+   DimensionGeneratorSettings getDimensionGeneratorSettings();
 
    @OnlyIn(Dist.CLIENT)
-   Lifecycle worldGenSettingsLifecycle();
+   Lifecycle getLifecycle();
 }

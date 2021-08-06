@@ -7,21 +7,21 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class WaterWakeParticle extends SpriteTexturedParticle {
-   private final IAnimatedSprite sprites;
+   private final IAnimatedSprite spriteWithAge;
 
-   private WaterWakeParticle(ClientWorld p_i232454_1_, double p_i232454_2_, double p_i232454_4_, double p_i232454_6_, double p_i232454_8_, double p_i232454_10_, double p_i232454_12_, IAnimatedSprite p_i232454_14_) {
-      super(p_i232454_1_, p_i232454_2_, p_i232454_4_, p_i232454_6_, 0.0D, 0.0D, 0.0D);
-      this.sprites = p_i232454_14_;
-      this.xd *= (double)0.3F;
-      this.yd = Math.random() * (double)0.2F + (double)0.1F;
-      this.zd *= (double)0.3F;
+   private WaterWakeParticle(ClientWorld world, double x, double y, double z, double motionX, double motionY, double motionZ, IAnimatedSprite spriteWithAge) {
+      super(world, x, y, z, 0.0D, 0.0D, 0.0D);
+      this.spriteWithAge = spriteWithAge;
+      this.motionX *= (double)0.3F;
+      this.motionY = Math.random() * (double)0.2F + (double)0.1F;
+      this.motionZ *= (double)0.3F;
       this.setSize(0.01F, 0.01F);
-      this.lifetime = (int)(8.0D / (Math.random() * 0.8D + 0.2D));
-      this.setSpriteFromAge(p_i232454_14_);
-      this.gravity = 0.0F;
-      this.xd = p_i232454_8_;
-      this.yd = p_i232454_10_;
-      this.zd = p_i232454_12_;
+      this.maxAge = (int)(8.0D / (Math.random() * 0.8D + 0.2D));
+      this.selectSpriteWithAge(spriteWithAge);
+      this.particleGravity = 0.0F;
+      this.motionX = motionX;
+      this.motionY = motionY;
+      this.motionZ = motionZ;
    }
 
    public IParticleRenderType getRenderType() {
@@ -29,34 +29,34 @@ public class WaterWakeParticle extends SpriteTexturedParticle {
    }
 
    public void tick() {
-      this.xo = this.x;
-      this.yo = this.y;
-      this.zo = this.z;
-      int i = 60 - this.lifetime;
-      if (this.lifetime-- <= 0) {
-         this.remove();
+      this.prevPosX = this.posX;
+      this.prevPosY = this.posY;
+      this.prevPosZ = this.posZ;
+      int i = 60 - this.maxAge;
+      if (this.maxAge-- <= 0) {
+         this.setExpired();
       } else {
-         this.yd -= (double)this.gravity;
-         this.move(this.xd, this.yd, this.zd);
-         this.xd *= (double)0.98F;
-         this.yd *= (double)0.98F;
-         this.zd *= (double)0.98F;
+         this.motionY -= (double)this.particleGravity;
+         this.move(this.motionX, this.motionY, this.motionZ);
+         this.motionX *= (double)0.98F;
+         this.motionY *= (double)0.98F;
+         this.motionZ *= (double)0.98F;
          float f = (float)i * 0.001F;
          this.setSize(f, f);
-         this.setSprite(this.sprites.get(i % 4, 4));
+         this.setSprite(this.spriteWithAge.get(i % 4, 4));
       }
    }
 
    @OnlyIn(Dist.CLIENT)
    public static class Factory implements IParticleFactory<BasicParticleType> {
-      private final IAnimatedSprite sprites;
+      private final IAnimatedSprite spriteSet;
 
-      public Factory(IAnimatedSprite p_i51267_1_) {
-         this.sprites = p_i51267_1_;
+      public Factory(IAnimatedSprite spriteSet) {
+         this.spriteSet = spriteSet;
       }
 
-      public Particle createParticle(BasicParticleType p_199234_1_, ClientWorld p_199234_2_, double p_199234_3_, double p_199234_5_, double p_199234_7_, double p_199234_9_, double p_199234_11_, double p_199234_13_) {
-         return new WaterWakeParticle(p_199234_2_, p_199234_3_, p_199234_5_, p_199234_7_, p_199234_9_, p_199234_11_, p_199234_13_, this.sprites);
+      public Particle makeParticle(BasicParticleType typeIn, ClientWorld worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+         return new WaterWakeParticle(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
       }
    }
 }

@@ -14,29 +14,29 @@ public class SkeletonEntity extends AbstractSkeletonEntity {
    }
 
    protected SoundEvent getAmbientSound() {
-      return SoundEvents.SKELETON_AMBIENT;
+      return SoundEvents.ENTITY_SKELETON_AMBIENT;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.SKELETON_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_SKELETON_HURT;
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.SKELETON_DEATH;
+      return SoundEvents.ENTITY_SKELETON_DEATH;
    }
 
    SoundEvent getStepSound() {
-      return SoundEvents.SKELETON_STEP;
+      return SoundEvents.ENTITY_SKELETON_STEP;
    }
 
-   protected void dropCustomDeathLoot(DamageSource p_213333_1_, int p_213333_2_, boolean p_213333_3_) {
-      super.dropCustomDeathLoot(p_213333_1_, p_213333_2_, p_213333_3_);
-      Entity entity = p_213333_1_.getEntity();
+   protected void dropSpecialItems(DamageSource source, int looting, boolean recentlyHitIn) {
+      super.dropSpecialItems(source, looting, recentlyHitIn);
+      Entity entity = source.getTrueSource();
       if (entity instanceof CreeperEntity) {
          CreeperEntity creeperentity = (CreeperEntity)entity;
-         if (creeperentity.canDropMobsSkull()) {
-            creeperentity.increaseDroppedSkulls();
-            this.spawnAtLocation(Items.SKELETON_SKULL);
+         if (creeperentity.ableToCauseSkullDrop()) {
+            creeperentity.incrementDroppedSkulls();
+            this.entityDropItem(Items.SKELETON_SKULL);
          }
       }
 

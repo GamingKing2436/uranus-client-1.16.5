@@ -17,29 +17,29 @@ public class MapBanner {
    @Nullable
    private final ITextComponent name;
 
-   public MapBanner(BlockPos p_i48876_1_, DyeColor p_i48876_2_, @Nullable ITextComponent p_i48876_3_) {
-      this.pos = p_i48876_1_;
-      this.color = p_i48876_2_;
-      this.name = p_i48876_3_;
+   public MapBanner(BlockPos pos, DyeColor color, @Nullable ITextComponent name) {
+      this.pos = pos;
+      this.color = color;
+      this.name = name;
    }
 
-   public static MapBanner load(CompoundNBT p_204300_0_) {
-      BlockPos blockpos = NBTUtil.readBlockPos(p_204300_0_.getCompound("Pos"));
-      DyeColor dyecolor = DyeColor.byName(p_204300_0_.getString("Color"), DyeColor.WHITE);
-      ITextComponent itextcomponent = p_204300_0_.contains("Name") ? ITextComponent.Serializer.fromJson(p_204300_0_.getString("Name")) : null;
+   public static MapBanner read(CompoundNBT nbt) {
+      BlockPos blockpos = NBTUtil.readBlockPos(nbt.getCompound("Pos"));
+      DyeColor dyecolor = DyeColor.byTranslationKey(nbt.getString("Color"), DyeColor.WHITE);
+      ITextComponent itextcomponent = nbt.contains("Name") ? ITextComponent.Serializer.getComponentFromJson(nbt.getString("Name")) : null;
       return new MapBanner(blockpos, dyecolor, itextcomponent);
    }
 
    @Nullable
-   public static MapBanner fromWorld(IBlockReader p_204301_0_, BlockPos p_204301_1_) {
-      TileEntity tileentity = p_204301_0_.getBlockEntity(p_204301_1_);
+   public static MapBanner fromWorld(IBlockReader reader, BlockPos pos) {
+      TileEntity tileentity = reader.getTileEntity(pos);
       if (tileentity instanceof BannerTileEntity) {
          BannerTileEntity bannertileentity = (BannerTileEntity)tileentity;
          DyeColor dyecolor = bannertileentity.getBaseColor(() -> {
-            return p_204301_0_.getBlockState(p_204301_1_);
+            return reader.getBlockState(pos);
          });
          ITextComponent itextcomponent = bannertileentity.hasCustomName() ? bannertileentity.getCustomName() : null;
-         return new MapBanner(p_204301_1_, dyecolor, itextcomponent);
+         return new MapBanner(pos, dyecolor, itextcomponent);
       } else {
          return null;
       }
@@ -49,7 +49,7 @@ public class MapBanner {
       return this.pos;
    }
 
-   public MapDecoration.Type getDecoration() {
+   public MapDecoration.Type getDecorationType() {
       switch(this.color) {
       case WHITE:
          return MapDecoration.Type.BANNER_WHITE;
@@ -107,10 +107,10 @@ public class MapBanner {
       return Objects.hash(this.pos, this.color, this.name);
    }
 
-   public CompoundNBT save() {
+   public CompoundNBT write() {
       CompoundNBT compoundnbt = new CompoundNBT();
       compoundnbt.put("Pos", NBTUtil.writeBlockPos(this.pos));
-      compoundnbt.putString("Color", this.color.getName());
+      compoundnbt.putString("Color", this.color.getTranslationKey());
       if (this.name != null) {
          compoundnbt.putString("Name", ITextComponent.Serializer.toJson(this.name));
       }
@@ -118,7 +118,7 @@ public class MapBanner {
       return compoundnbt;
    }
 
-   public String getId() {
+   public String getMapDecorationId() {
       return "banner-" + this.pos.getX() + "," + this.pos.getY() + "," + this.pos.getZ();
    }
 }

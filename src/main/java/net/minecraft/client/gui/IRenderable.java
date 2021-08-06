@@ -6,5 +6,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IRenderable {
-   void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_);
+   void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks);
 }

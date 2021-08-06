@@ -11,24 +11,24 @@ public class CChatMessagePacket implements IPacket<IServerPlayNetHandler> {
    public CChatMessagePacket() {
    }
 
-   public CChatMessagePacket(String p_i46887_1_) {
-      if (p_i46887_1_.length() > 256) {
-         p_i46887_1_ = p_i46887_1_.substring(0, 256);
+   public CChatMessagePacket(String messageIn) {
+      if (messageIn.length() > 256) {
+         messageIn = messageIn.substring(0, 256);
       }
 
-      this.message = p_i46887_1_;
+      this.message = messageIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.message = p_148837_1_.readUtf(256);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.message = buf.readString(256);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeUtf(this.message);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeString(this.message);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleChat(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processChatMessage(this);
    }
 
    public String getMessage() {

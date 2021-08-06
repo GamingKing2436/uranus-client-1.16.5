@@ -12,7 +12,7 @@ public abstract class RealmsObjectSelectionList<E extends ExtendedList.AbstractL
       super(Minecraft.getInstance(), p_i50516_1_, p_i50516_2_, p_i50516_3_, p_i50516_4_, p_i50516_5_);
    }
 
-   public void setSelectedItem(int p_239561_1_) {
+   public void func_239561_k_(int p_239561_1_) {
       if (p_239561_1_ == -1) {
          this.setSelected((E)null);
       } else if (super.getItemCount() != 0) {
@@ -21,11 +21,11 @@ public abstract class RealmsObjectSelectionList<E extends ExtendedList.AbstractL
 
    }
 
-   public void selectItem(int p_231400_1_) {
-      this.setSelectedItem(p_231400_1_);
+   public void func_231400_a_(int p_231400_1_) {
+      this.func_239561_k_(p_231400_1_);
    }
 
-   public void itemClicked(int p_231401_1_, int p_231401_2_, double p_231401_3_, double p_231401_5_, int p_231401_7_) {
+   public void func_231401_a_(int p_231401_1_, int p_231401_2_, double p_231401_3_, double p_231401_5_, int p_231401_7_) {
    }
 
    public int getMaxPosition() {
@@ -40,8 +40,8 @@ public abstract class RealmsObjectSelectionList<E extends ExtendedList.AbstractL
       return (int)((double)this.width * 0.6D);
    }
 
-   public void replaceEntries(Collection<E> p_230942_1_) {
-      super.replaceEntries(p_230942_1_);
+   public void replaceEntries(Collection<E> entries) {
+      super.replaceEntries(entries);
    }
 
    public int getItemCount() {
@@ -56,11 +56,11 @@ public abstract class RealmsObjectSelectionList<E extends ExtendedList.AbstractL
       return super.getRowLeft();
    }
 
-   public int addEntry(E p_230513_1_) {
-      return super.addEntry(p_230513_1_);
+   public int addEntry(E entry) {
+      return super.addEntry(entry);
    }
 
-   public void clear() {
+   public void func_231409_q_() {
       this.clearEntries();
    }
 }

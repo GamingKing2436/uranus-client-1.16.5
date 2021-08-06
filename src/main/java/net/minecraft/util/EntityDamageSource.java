@@ -11,44 +11,44 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class EntityDamageSource extends DamageSource {
    @Nullable
-   protected final Entity entity;
-   private boolean isThorns;
+   protected final Entity damageSourceEntity;
+   private boolean isThornsDamage;
 
-   public EntityDamageSource(String p_i1567_1_, @Nullable Entity p_i1567_2_) {
-      super(p_i1567_1_);
-      this.entity = p_i1567_2_;
+   public EntityDamageSource(String damageTypeIn, @Nullable Entity damageSourceEntityIn) {
+      super(damageTypeIn);
+      this.damageSourceEntity = damageSourceEntityIn;
    }
 
-   public EntityDamageSource setThorns() {
-      this.isThorns = true;
+   public EntityDamageSource setIsThornsDamage() {
+      this.isThornsDamage = true;
       return this;
    }
 
-   public boolean isThorns() {
-      return this.isThorns;
+   public boolean getIsThornsDamage() {
+      return this.isThornsDamage;
    }
 
    @Nullable
-   public Entity getEntity() {
-      return this.entity;
+   public Entity getTrueSource() {
+      return this.damageSourceEntity;
    }
 
-   public ITextComponent getLocalizedDeathMessage(LivingEntity p_151519_1_) {
-      ItemStack itemstack = this.entity instanceof LivingEntity ? ((LivingEntity)this.entity).getMainHandItem() : ItemStack.EMPTY;
-      String s = "death.attack." + this.msgId;
-      return !itemstack.isEmpty() && itemstack.hasCustomHoverName() ? new TranslationTextComponent(s + ".item", p_151519_1_.getDisplayName(), this.entity.getDisplayName(), itemstack.getDisplayName()) : new TranslationTextComponent(s, p_151519_1_.getDisplayName(), this.entity.getDisplayName());
+   public ITextComponent getDeathMessage(LivingEntity entityLivingBaseIn) {
+      ItemStack itemstack = this.damageSourceEntity instanceof LivingEntity ? ((LivingEntity)this.damageSourceEntity).getHeldItemMainhand() : ItemStack.EMPTY;
+      String s = "death.attack." + this.damageType;
+      return !itemstack.isEmpty() && itemstack.hasDisplayName() ? new TranslationTextComponent(s + ".item", entityLivingBaseIn.getDisplayName(), this.damageSourceEntity.getDisplayName(), itemstack.getTextComponent()) : new TranslationTextComponent(s, entityLivingBaseIn.getDisplayName(), this.damageSourceEntity.getDisplayName());
    }
 
-   public boolean scalesWithDifficulty() {
-      return this.entity != null && this.entity instanceof LivingEntity && !(this.entity instanceof PlayerEntity);
+   public boolean isDifficultyScaled() {
+      return this.damageSourceEntity != null && this.damageSourceEntity instanceof LivingEntity && !(this.damageSourceEntity instanceof PlayerEntity);
    }
 
    @Nullable
-   public Vector3d getSourcePosition() {
-      return this.entity != null ? this.entity.position() : null;
+   public Vector3d getDamageLocation() {
+      return this.damageSourceEntity != null ? this.damageSourceEntity.getPositionVec() : null;
    }
 
    public String toString() {
-      return "EntityDamageSource (" + this.entity + ")";
+      return "EntityDamageSource (" + this.damageSourceEntity + ")";
    }
 }

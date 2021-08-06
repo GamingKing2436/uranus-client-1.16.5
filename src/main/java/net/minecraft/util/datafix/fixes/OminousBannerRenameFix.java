@@ -19,7 +19,7 @@ public class OminousBannerRenameFix extends DataFix {
       super(p_i50433_1_, p_i50433_2_);
    }
 
-   private Dynamic<?> fixTag(Dynamic<?> p_219818_1_) {
+   private Dynamic<?> func_219818_a(Dynamic<?> p_219818_1_) {
       Optional<? extends Dynamic<?>> optional = p_219818_1_.get("display").result();
       if (optional.isPresent()) {
          Dynamic<?> dynamic = optional.get();
@@ -38,7 +38,7 @@ public class OminousBannerRenameFix extends DataFix {
 
    public TypeRewriteRule makeRule() {
       Type<?> type = this.getInputSchema().getType(TypeReferences.ITEM_STACK);
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
       OpticFinder<?> opticfinder1 = type.findField("tag");
       return this.fixTypeEverywhereTyped("OminousBannerRenameFix", type, (p_219819_3_) -> {
          Optional<Pair<String, String>> optional = p_219819_3_.getOptional(opticfinder);
@@ -47,7 +47,7 @@ public class OminousBannerRenameFix extends DataFix {
             if (optional1.isPresent()) {
                Typed<?> typed = optional1.get();
                Dynamic<?> dynamic = typed.get(DSL.remainderFinder());
-               return p_219819_3_.set(opticfinder1, typed.set(DSL.remainderFinder(), this.fixTag(dynamic)));
+               return p_219819_3_.set(opticfinder1, typed.set(DSL.remainderFinder(), this.func_219818_a(dynamic)));
             }
          }
 

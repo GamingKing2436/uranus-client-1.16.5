@@ -4,23 +4,23 @@ import javax.annotation.Nullable;
 import net.minecraft.util.math.BlockPos;
 
 public class TestBlockPosException extends TestRuntimeException {
-   private final BlockPos absolutePos = null;
-   private final BlockPos relativePos = null;
-   private final long tick = 0L;
+   private final BlockPos field_229455_a_ = null;
+   private final BlockPos field_229456_b_ = null;
+   private final long field_229457_c_ = 0L;
 
    public String getMessage() {
-      String s = "" + this.absolutePos.getX() + "," + this.absolutePos.getY() + "," + this.absolutePos.getZ() + " (relative: " + this.relativePos.getX() + "," + this.relativePos.getY() + "," + this.relativePos.getZ() + ")";
-      return super.getMessage() + " at " + s + " (t=" + this.tick + ")";
+      String s = "" + this.field_229455_a_.getX() + "," + this.field_229455_a_.getY() + "," + this.field_229455_a_.getZ() + " (relative: " + this.field_229456_b_.getX() + "," + this.field_229456_b_.getY() + "," + this.field_229456_b_.getZ() + ")";
+      return super.getMessage() + " at " + s + " (t=" + this.field_229457_c_ + ")";
    }
 
    @Nullable
-   public String getMessageToShowAtBlock() {
+   public String func_229458_a_() {
       return super.getMessage() + " here";
    }
 
    @Nullable
-   public BlockPos getAbsolutePos() {
-      return this.absolutePos;
+   public BlockPos func_229459_c_() {
+      return this.field_229455_a_;
    }
 
    private TestBlockPosException() {

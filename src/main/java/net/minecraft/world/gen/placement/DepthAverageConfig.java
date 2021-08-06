@@ -14,8 +14,8 @@ public class DepthAverageConfig implements IPlacementConfig {
    public final int baseline;
    public final int spread;
 
-   public DepthAverageConfig(int p_i242022_1_, int p_i242022_2_) {
-      this.baseline = p_i242022_1_;
-      this.spread = p_i242022_2_;
+   public DepthAverageConfig(int baseline, int spread) {
+      this.baseline = baseline;
+      this.spread = spread;
    }
 }

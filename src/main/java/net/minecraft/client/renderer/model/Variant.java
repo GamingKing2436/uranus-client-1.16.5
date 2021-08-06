@@ -20,11 +20,11 @@ public class Variant implements IModelTransform {
    private final boolean uvLock;
    private final int weight;
 
-   public Variant(ResourceLocation p_i226001_1_, TransformationMatrix p_i226001_2_, boolean p_i226001_3_, int p_i226001_4_) {
-      this.modelLocation = p_i226001_1_;
-      this.rotation = p_i226001_2_;
-      this.uvLock = p_i226001_3_;
-      this.weight = p_i226001_4_;
+   public Variant(ResourceLocation modelLocationIn, TransformationMatrix rotationIn, boolean uvLockIn, int weightIn) {
+      this.modelLocation = modelLocationIn;
+      this.rotation = rotationIn;
+      this.uvLock = uvLockIn;
+      this.weight = weightIn;
    }
 
    public ResourceLocation getModelLocation() {
@@ -35,7 +35,7 @@ public class Variant implements IModelTransform {
       return this.rotation;
    }
 
-   public boolean isUvLocked() {
+   public boolean isUvLock() {
       return this.uvLock;
    }
 
@@ -69,21 +69,21 @@ public class Variant implements IModelTransform {
    public static class Deserializer implements JsonDeserializer<Variant> {
       public Variant deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
          JsonObject jsonobject = p_deserialize_1_.getAsJsonObject();
-         ResourceLocation resourcelocation = this.getModel(jsonobject);
-         ModelRotation modelrotation = this.getBlockRotation(jsonobject);
-         boolean flag = this.getUvLock(jsonobject);
-         int i = this.getWeight(jsonobject);
+         ResourceLocation resourcelocation = this.getStringModel(jsonobject);
+         ModelRotation modelrotation = this.parseModelRotation(jsonobject);
+         boolean flag = this.parseUvLock(jsonobject);
+         int i = this.parseWeight(jsonobject);
          return new Variant(resourcelocation, modelrotation.getRotation(), flag, i);
       }
 
-      private boolean getUvLock(JsonObject p_188044_1_) {
-         return JSONUtils.getAsBoolean(p_188044_1_, "uvlock", false);
+      private boolean parseUvLock(JsonObject json) {
+         return JSONUtils.getBoolean(json, "uvlock", false);
       }
 
-      protected ModelRotation getBlockRotation(JsonObject p_188042_1_) {
-         int i = JSONUtils.getAsInt(p_188042_1_, "x", 0);
-         int j = JSONUtils.getAsInt(p_188042_1_, "y", 0);
-         ModelRotation modelrotation = ModelRotation.by(i, j);
+      protected ModelRotation parseModelRotation(JsonObject json) {
+         int i = JSONUtils.getInt(json, "x", 0);
+         int j = JSONUtils.getInt(json, "y", 0);
+         ModelRotation modelrotation = ModelRotation.getModelRotation(i, j);
          if (modelrotation == null) {
             throw new JsonParseException("Invalid BlockModelRotation x: " + i + ", y: " + j);
          } else {
@@ -91,12 +91,12 @@ public class Variant implements IModelTransform {
          }
       }
 
-      protected ResourceLocation getModel(JsonObject p_188043_1_) {
-         return new ResourceLocation(JSONUtils.getAsString(p_188043_1_, "model"));
+      protected ResourceLocation getStringModel(JsonObject json) {
+         return new ResourceLocation(JSONUtils.getString(json, "model"));
       }
 
-      protected int getWeight(JsonObject p_188045_1_) {
-         int i = JSONUtils.getAsInt(p_188045_1_, "weight", 1);
+      protected int parseWeight(JsonObject json) {
+         int i = JSONUtils.getInt(json, "weight", 1);
          if (i < 1) {
             throw new JsonParseException("Invalid weight " + i + " found, expected integer >= 1");
          } else {

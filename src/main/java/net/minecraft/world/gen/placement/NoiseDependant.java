@@ -17,9 +17,9 @@ public class NoiseDependant implements IPlacementConfig {
    public final int belowNoise;
    public final int aboveNoise;
 
-   public NoiseDependant(double p_i48685_1_, int p_i48685_3_, int p_i48685_4_) {
-      this.noiseLevel = p_i48685_1_;
-      this.belowNoise = p_i48685_3_;
-      this.aboveNoise = p_i48685_4_;
+   public NoiseDependant(double noiseLevel, int belowNoise, int aboveNoise) {
+      this.noiseLevel = noiseLevel;
+      this.belowNoise = belowNoise;
+      this.aboveNoise = aboveNoise;
    }
 }

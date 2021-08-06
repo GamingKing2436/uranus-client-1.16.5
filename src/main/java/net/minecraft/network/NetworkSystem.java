@@ -41,37 +41,37 @@ import org.apache.logging.log4j.Logger;
 
 public class NetworkSystem {
    private static final Logger LOGGER = LogManager.getLogger();
-   public static final LazyValue<NioEventLoopGroup> SERVER_EVENT_GROUP = new LazyValue<>(() -> {
+   public static final LazyValue<NioEventLoopGroup> SERVER_NIO_EVENTLOOP = new LazyValue<>(() -> {
       return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Server IO #%d").setDaemon(true).build());
    });
-   public static final LazyValue<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = new LazyValue<>(() -> {
+   public static final LazyValue<EpollEventLoopGroup> SERVER_EPOLL_EVENTLOOP = new LazyValue<>(() -> {
       return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).build());
    });
    private final MinecraftServer server;
-   public volatile boolean running;
-   private final List<ChannelFuture> channels = Collections.synchronizedList(Lists.newArrayList());
-   private final List<NetworkManager> connections = Collections.synchronizedList(Lists.newArrayList());
+   public volatile boolean isAlive;
+   private final List<ChannelFuture> endpoints = Collections.synchronizedList(Lists.newArrayList());
+   private final List<NetworkManager> networkManagers = Collections.synchronizedList(Lists.newArrayList());
 
-   public NetworkSystem(MinecraftServer p_i45292_1_) {
-      this.server = p_i45292_1_;
-      this.running = true;
+   public NetworkSystem(MinecraftServer server) {
+      this.server = server;
+      this.isAlive = true;
    }
 
-   public void startTcpServerListener(@Nullable InetAddress p_151265_1_, int p_151265_2_) throws IOException {
-      synchronized(this.channels) {
+   public void addEndpoint(@Nullable InetAddress address, int port) throws IOException {
+      synchronized(this.endpoints) {
          Class<? extends ServerSocketChannel> oclass;
          LazyValue<? extends EventLoopGroup> lazyvalue;
-         if (Epoll.isAvailable() && this.server.isEpollEnabled()) {
+         if (Epoll.isAvailable() && this.server.shouldUseNativeTransport()) {
             oclass = EpollServerSocketChannel.class;
-            lazyvalue = SERVER_EPOLL_EVENT_GROUP;
+            lazyvalue = SERVER_EPOLL_EVENTLOOP;
             LOGGER.info("Using epoll channel type");
          } else {
             oclass = NioServerSocketChannel.class;
-            lazyvalue = SERVER_EVENT_GROUP;
+            lazyvalue = SERVER_NIO_EVENTLOOP;
             LOGGER.info("Using default channel type");
          }
 
-         this.channels.add((new ServerBootstrap()).channel(oclass).childHandler(new ChannelInitializer<Channel>() {
+         this.endpoints.add((new ServerBootstrap()).channel(oclass).childHandler(new ChannelInitializer<Channel>() {
             protected void initChannel(Channel p_initChannel_1_) throws Exception {
                try {
                   p_initChannel_1_.config().setOption(ChannelOption.TCP_NODELAY, true);
@@ -79,38 +79,38 @@ public class NetworkSystem {
                }
 
                p_initChannel_1_.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(NetworkSystem.this)).addLast("splitter", new NettyVarint21FrameDecoder()).addLast("decoder", new NettyPacketDecoder(PacketDirection.SERVERBOUND)).addLast("prepender", new NettyVarint21FrameEncoder()).addLast("encoder", new NettyPacketEncoder(PacketDirection.CLIENTBOUND));
-               int i = NetworkSystem.this.server.getRateLimitPacketsPerSecond();
+               int i = NetworkSystem.this.server.func_241871_k();
                NetworkManager networkmanager = (NetworkManager)(i > 0 ? new RateLimitedNetworkManager(i) : new NetworkManager(PacketDirection.SERVERBOUND));
-               NetworkSystem.this.connections.add(networkmanager);
+               NetworkSystem.this.networkManagers.add(networkmanager);
                p_initChannel_1_.pipeline().addLast("packet_handler", networkmanager);
-               networkmanager.setListener(new ServerHandshakeNetHandler(NetworkSystem.this.server, networkmanager));
+               networkmanager.setNetHandler(new ServerHandshakeNetHandler(NetworkSystem.this.server, networkmanager));
             }
-         }).group(lazyvalue.get()).localAddress(p_151265_1_, p_151265_2_).bind().syncUninterruptibly());
+         }).group(lazyvalue.getValue()).localAddress(address, port).bind().syncUninterruptibly());
       }
    }
 
    @OnlyIn(Dist.CLIENT)
-   public SocketAddress startMemoryChannel() {
+   public SocketAddress addLocalEndpoint() {
       ChannelFuture channelfuture;
-      synchronized(this.channels) {
+      synchronized(this.endpoints) {
          channelfuture = (new ServerBootstrap()).channel(LocalServerChannel.class).childHandler(new ChannelInitializer<Channel>() {
             protected void initChannel(Channel p_initChannel_1_) throws Exception {
                NetworkManager networkmanager = new NetworkManager(PacketDirection.SERVERBOUND);
-               networkmanager.setListener(new ClientHandshakeNetHandler(NetworkSystem.this.server, networkmanager));
-               NetworkSystem.this.connections.add(networkmanager);
+               networkmanager.setNetHandler(new ClientHandshakeNetHandler(NetworkSystem.this.server, networkmanager));
+               NetworkSystem.this.networkManagers.add(networkmanager);
                p_initChannel_1_.pipeline().addLast("packet_handler", networkmanager);
             }
-         }).group(SERVER_EVENT_GROUP.get()).localAddress(LocalAddress.ANY).bind().syncUninterruptibly();
-         this.channels.add(channelfuture);
+         }).group(SERVER_NIO_EVENTLOOP.getValue()).localAddress(LocalAddress.ANY).bind().syncUninterruptibly();
+         this.endpoints.add(channelfuture);
       }
 
       return channelfuture.channel().localAddress();
    }
 
-   public void stop() {
-      this.running = false;
+   public void terminateEndpoints() {
+      this.isAlive = false;
 
-      for(ChannelFuture channelfuture : this.channels) {
+      for(ChannelFuture channelfuture : this.endpoints) {
          try {
             channelfuture.channel().close().sync();
          } catch (InterruptedException interruptedexception) {
@@ -121,26 +121,26 @@ public class NetworkSystem {
    }
 
    public void tick() {
-      synchronized(this.connections) {
-         Iterator<NetworkManager> iterator = this.connections.iterator();
+      synchronized(this.networkManagers) {
+         Iterator<NetworkManager> iterator = this.networkManagers.iterator();
 
          while(iterator.hasNext()) {
             NetworkManager networkmanager = iterator.next();
-            if (!networkmanager.isConnecting()) {
-               if (networkmanager.isConnected()) {
+            if (!networkmanager.hasNoChannel()) {
+               if (networkmanager.isChannelOpen()) {
                   try {
                      networkmanager.tick();
                   } catch (Exception exception) {
-                     if (networkmanager.isMemoryConnection()) {
-                        throw new ReportedException(CrashReport.forThrowable(exception, "Ticking memory connection"));
+                     if (networkmanager.isLocalChannel()) {
+                        throw new ReportedException(CrashReport.makeCrashReport(exception, "Ticking memory connection"));
                      }
 
                      LOGGER.warn("Failed to handle packet for {}", networkmanager.getRemoteAddress(), exception);
                      ITextComponent itextcomponent = new StringTextComponent("Internal server error");
-                     networkmanager.send(new SDisconnectPacket(itextcomponent), (p_210474_2_) -> {
-                        networkmanager.disconnect(itextcomponent);
+                     networkmanager.sendPacket(new SDisconnectPacket(itextcomponent), (p_210474_2_) -> {
+                        networkmanager.closeChannel(itextcomponent);
                      });
-                     networkmanager.setReadOnly();
+                     networkmanager.disableAutoRead();
                   }
                } else {
                   iterator.remove();

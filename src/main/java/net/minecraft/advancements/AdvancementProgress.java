@@ -26,8 +26,8 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
    private final Map<String, CriterionProgress> criteria = Maps.newHashMap();
    private String[][] requirements = new String[0][];
 
-   public void update(Map<String, Criterion> p_192099_1_, String[][] p_192099_2_) {
-      Set<String> set = p_192099_1_.keySet();
+   public void update(Map<String, Criterion> criteriaIn, String[][] requirements) {
+      Set<String> set = criteriaIn.keySet();
       this.criteria.entrySet().removeIf((p_209539_1_) -> {
          return !set.contains(p_209539_1_.getKey());
       });
@@ -38,7 +38,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
          }
       }
 
-      this.requirements = p_192099_2_;
+      this.requirements = requirements;
    }
 
    public boolean isDone() {
@@ -49,8 +49,8 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
             boolean flag = false;
 
             for(String s : astring) {
-               CriterionProgress criterionprogress = this.getCriterion(s);
-               if (criterionprogress != null && criterionprogress.isDone()) {
+               CriterionProgress criterionprogress = this.getCriterionProgress(s);
+               if (criterionprogress != null && criterionprogress.isObtained()) {
                   flag = true;
                   break;
                }
@@ -67,7 +67,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
 
    public boolean hasProgress() {
       for(CriterionProgress criterionprogress : this.criteria.values()) {
-         if (criterionprogress.isDone()) {
+         if (criterionprogress.isObtained()) {
             return true;
          }
       }
@@ -75,20 +75,20 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
       return false;
    }
 
-   public boolean grantProgress(String p_192109_1_) {
-      CriterionProgress criterionprogress = this.criteria.get(p_192109_1_);
-      if (criterionprogress != null && !criterionprogress.isDone()) {
-         criterionprogress.grant();
+   public boolean grantCriterion(String criterionIn) {
+      CriterionProgress criterionprogress = this.criteria.get(criterionIn);
+      if (criterionprogress != null && !criterionprogress.isObtained()) {
+         criterionprogress.obtain();
          return true;
       } else {
          return false;
       }
    }
 
-   public boolean revokeProgress(String p_192101_1_) {
-      CriterionProgress criterionprogress = this.criteria.get(p_192101_1_);
-      if (criterionprogress != null && criterionprogress.isDone()) {
-         criterionprogress.revoke();
+   public boolean revokeCriterion(String criterionIn) {
+      CriterionProgress criterionprogress = this.criteria.get(criterionIn);
+      if (criterionprogress != null && criterionprogress.isObtained()) {
+         criterionprogress.reset();
          return true;
       } else {
          return false;
@@ -99,30 +99,30 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
       return "AdvancementProgress{criteria=" + this.criteria + ", requirements=" + Arrays.deepToString(this.requirements) + '}';
    }
 
-   public void serializeToNetwork(PacketBuffer p_192104_1_) {
-      p_192104_1_.writeVarInt(this.criteria.size());
+   public void serializeToNetwork(PacketBuffer buffer) {
+      buffer.writeVarInt(this.criteria.size());
 
       for(Entry<String, CriterionProgress> entry : this.criteria.entrySet()) {
-         p_192104_1_.writeUtf(entry.getKey());
-         entry.getValue().serializeToNetwork(p_192104_1_);
+         buffer.writeString(entry.getKey());
+         entry.getValue().write(buffer);
       }
 
    }
 
-   public static AdvancementProgress fromNetwork(PacketBuffer p_192100_0_) {
+   public static AdvancementProgress fromNetwork(PacketBuffer buffer) {
       AdvancementProgress advancementprogress = new AdvancementProgress();
-      int i = p_192100_0_.readVarInt();
+      int i = buffer.readVarInt();
 
       for(int j = 0; j < i; ++j) {
-         advancementprogress.criteria.put(p_192100_0_.readUtf(32767), CriterionProgress.fromNetwork(p_192100_0_));
+         advancementprogress.criteria.put(buffer.readString(32767), CriterionProgress.read(buffer));
       }
 
       return advancementprogress;
    }
 
    @Nullable
-   public CriterionProgress getCriterion(String p_192106_1_) {
-      return this.criteria.get(p_192106_1_);
+   public CriterionProgress getCriterionProgress(String criterionIn) {
+      return this.criteria.get(criterionIn);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -160,8 +160,8 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
          boolean flag = false;
 
          for(String s : astring) {
-            CriterionProgress criterionprogress = this.getCriterion(s);
-            if (criterionprogress != null && criterionprogress.isDone()) {
+            CriterionProgress criterionprogress = this.getCriterionProgress(s);
+            if (criterionprogress != null && criterionprogress.isObtained()) {
                flag = true;
                break;
             }
@@ -175,11 +175,11 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
       return i;
    }
 
-   public Iterable<String> getRemainingCriteria() {
+   public Iterable<String> getRemaningCriteria() {
       List<String> list = Lists.newArrayList();
 
       for(Entry<String, CriterionProgress> entry : this.criteria.entrySet()) {
-         if (!entry.getValue().isDone()) {
+         if (!entry.getValue().isObtained()) {
             list.add(entry.getKey());
          }
       }
@@ -191,7 +191,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
       List<String> list = Lists.newArrayList();
 
       for(Entry<String, CriterionProgress> entry : this.criteria.entrySet()) {
-         if (entry.getValue().isDone()) {
+         if (entry.getValue().isObtained()) {
             list.add(entry.getKey());
          }
       }
@@ -204,7 +204,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
       Date date = null;
 
       for(CriterionProgress criterionprogress : this.criteria.values()) {
-         if (criterionprogress.isDone() && (date == null || criterionprogress.getObtained().before(date))) {
+         if (criterionprogress.isObtained() && (date == null || criterionprogress.getObtained().before(date))) {
             date = criterionprogress.getObtained();
          }
       }
@@ -231,8 +231,8 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
 
          for(Entry<String, CriterionProgress> entry : p_serialize_1_.criteria.entrySet()) {
             CriterionProgress criterionprogress = entry.getValue();
-            if (criterionprogress.isDone()) {
-               jsonobject1.add(entry.getKey(), criterionprogress.serializeToJson());
+            if (criterionprogress.isObtained()) {
+               jsonobject1.add(entry.getKey(), criterionprogress.serialize());
             }
          }
 
@@ -245,13 +245,13 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
       }
 
       public AdvancementProgress deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(p_deserialize_1_, "advancement");
-         JsonObject jsonobject1 = JSONUtils.getAsJsonObject(jsonobject, "criteria", new JsonObject());
+         JsonObject jsonobject = JSONUtils.getJsonObject(p_deserialize_1_, "advancement");
+         JsonObject jsonobject1 = JSONUtils.getJsonObject(jsonobject, "criteria", new JsonObject());
          AdvancementProgress advancementprogress = new AdvancementProgress();
 
          for(Entry<String, JsonElement> entry : jsonobject1.entrySet()) {
             String s = entry.getKey();
-            advancementprogress.criteria.put(s, CriterionProgress.fromJson(JSONUtils.convertToString(entry.getValue(), s)));
+            advancementprogress.criteria.put(s, CriterionProgress.fromJson(JSONUtils.getString(entry.getValue(), s)));
          }
 
          return advancementprogress;

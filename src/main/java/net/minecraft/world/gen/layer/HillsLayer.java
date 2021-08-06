@@ -14,7 +14,7 @@ public enum HillsLayer implements IAreaTransformer2, IDimOffset1Transformer {
    INSTANCE;
 
    private static final Logger LOGGER = LogManager.getLogger();
-   private static final Int2IntMap MUTATIONS = Util.make(new Int2IntOpenHashMap(), (p_242941_0_) -> {
+   private static final Int2IntMap field_242940_c = Util.make(new Int2IntOpenHashMap(), (p_242941_0_) -> {
       p_242941_0_.put(1, 129);
       p_242941_0_.put(2, 130);
       p_242941_0_.put(3, 131);
@@ -38,18 +38,18 @@ public enum HillsLayer implements IAreaTransformer2, IDimOffset1Transformer {
       p_242941_0_.put(39, 167);
    });
 
-   public int applyPixel(INoiseRandom p_215723_1_, IArea p_215723_2_, IArea p_215723_3_, int p_215723_4_, int p_215723_5_) {
-      int i = p_215723_2_.get(this.getParentX(p_215723_4_ + 1), this.getParentY(p_215723_5_ + 1));
-      int j = p_215723_3_.get(this.getParentX(p_215723_4_ + 1), this.getParentY(p_215723_5_ + 1));
+   public int apply(INoiseRandom p_215723_1_, IArea p_215723_2_, IArea p_215723_3_, int p_215723_4_, int p_215723_5_) {
+      int i = p_215723_2_.getValue(this.getOffsetX(p_215723_4_ + 1), this.getOffsetZ(p_215723_5_ + 1));
+      int j = p_215723_3_.getValue(this.getOffsetX(p_215723_4_ + 1), this.getOffsetZ(p_215723_5_ + 1));
       if (i > 255) {
          LOGGER.debug("old! {}", (int)i);
       }
 
       int k = (j - 2) % 29;
       if (!LayerUtil.isShallowOcean(i) && j >= 2 && k == 1) {
-         return MUTATIONS.getOrDefault(i, i);
+         return field_242940_c.getOrDefault(i, i);
       } else {
-         if (p_215723_1_.nextRandom(3) == 0 || k == 0) {
+         if (p_215723_1_.random(3) == 0 || k == 0) {
             int l = i;
             if (i == 2) {
                l = 17;
@@ -66,7 +66,7 @@ public enum HillsLayer implements IAreaTransformer2, IDimOffset1Transformer {
             } else if (i == 30) {
                l = 31;
             } else if (i == 1) {
-               l = p_215723_1_.nextRandom(3) == 0 ? 18 : 4;
+               l = p_215723_1_.random(3) == 0 ? 18 : 4;
             } else if (i == 12) {
                l = 13;
             } else if (i == 21) {
@@ -85,31 +85,31 @@ public enum HillsLayer implements IAreaTransformer2, IDimOffset1Transformer {
                l = 34;
             } else if (i == 35) {
                l = 36;
-            } else if (LayerUtil.isSame(i, 38)) {
+            } else if (LayerUtil.areBiomesSimilar(i, 38)) {
                l = 37;
-            } else if ((i == 24 || i == 48 || i == 49 || i == 50) && p_215723_1_.nextRandom(3) == 0) {
-               l = p_215723_1_.nextRandom(2) == 0 ? 1 : 4;
+            } else if ((i == 24 || i == 48 || i == 49 || i == 50) && p_215723_1_.random(3) == 0) {
+               l = p_215723_1_.random(2) == 0 ? 1 : 4;
             }
 
             if (k == 0 && l != i) {
-               l = MUTATIONS.getOrDefault(l, i);
+               l = field_242940_c.getOrDefault(l, i);
             }
 
             if (l != i) {
                int i1 = 0;
-               if (LayerUtil.isSame(p_215723_2_.get(this.getParentX(p_215723_4_ + 1), this.getParentY(p_215723_5_ + 0)), i)) {
+               if (LayerUtil.areBiomesSimilar(p_215723_2_.getValue(this.getOffsetX(p_215723_4_ + 1), this.getOffsetZ(p_215723_5_ + 0)), i)) {
                   ++i1;
                }
 
-               if (LayerUtil.isSame(p_215723_2_.get(this.getParentX(p_215723_4_ + 2), this.getParentY(p_215723_5_ + 1)), i)) {
+               if (LayerUtil.areBiomesSimilar(p_215723_2_.getValue(this.getOffsetX(p_215723_4_ + 2), this.getOffsetZ(p_215723_5_ + 1)), i)) {
                   ++i1;
                }
 
-               if (LayerUtil.isSame(p_215723_2_.get(this.getParentX(p_215723_4_ + 0), this.getParentY(p_215723_5_ + 1)), i)) {
+               if (LayerUtil.areBiomesSimilar(p_215723_2_.getValue(this.getOffsetX(p_215723_4_ + 0), this.getOffsetZ(p_215723_5_ + 1)), i)) {
                   ++i1;
                }
 
-               if (LayerUtil.isSame(p_215723_2_.get(this.getParentX(p_215723_4_ + 1), this.getParentY(p_215723_5_ + 2)), i)) {
+               if (LayerUtil.areBiomesSimilar(p_215723_2_.getValue(this.getOffsetX(p_215723_4_ + 1), this.getOffsetZ(p_215723_5_ + 2)), i)) {
                   ++i1;
                }
 

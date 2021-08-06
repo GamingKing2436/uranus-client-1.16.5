@@ -27,37 +27,37 @@ public abstract class TagsProvider<T> implements IDataProvider {
    private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
    protected final DataGenerator generator;
    protected final Registry<T> registry;
-   private final Map<ResourceLocation, ITag.Builder> builders = Maps.newLinkedHashMap();
+   private final Map<ResourceLocation, ITag.Builder> tagToBuilder = Maps.newLinkedHashMap();
 
-   protected TagsProvider(DataGenerator p_i49827_1_, Registry<T> p_i49827_2_) {
-      this.generator = p_i49827_1_;
-      this.registry = p_i49827_2_;
+   protected TagsProvider(DataGenerator generatorIn, Registry<T> registryIn) {
+      this.generator = generatorIn;
+      this.registry = registryIn;
    }
 
-   protected abstract void addTags();
+   protected abstract void registerTags();
 
-   public void run(DirectoryCache p_200398_1_) {
-      this.builders.clear();
-      this.addTags();
-      ITag<T> itag = Tag.empty();
+   public void act(DirectoryCache cache) {
+      this.tagToBuilder.clear();
+      this.registerTags();
+      ITag<T> itag = Tag.getEmptyTag();
       Function<ResourceLocation, ITag<T>> function = (p_240523_2_) -> {
-         return this.builders.containsKey(p_240523_2_) ? itag : null;
+         return this.tagToBuilder.containsKey(p_240523_2_) ? itag : null;
       };
       Function<ResourceLocation, T> function1 = (p_240527_1_) -> {
          return this.registry.getOptional(p_240527_1_).orElse((T)null);
       };
-      this.builders.forEach((p_240524_4_, p_240524_5_) -> {
-         List<ITag.Proxy> list = p_240524_5_.getUnresolvedEntries(function, function1).collect(Collectors.toList());
+      this.tagToBuilder.forEach((p_240524_4_, p_240524_5_) -> {
+         List<ITag.Proxy> list = p_240524_5_.getProxyTags(function, function1).collect(Collectors.toList());
          if (!list.isEmpty()) {
             throw new IllegalArgumentException(String.format("Couldn't define tag %s as it is missing following references: %s", p_240524_4_, list.stream().map(Objects::toString).collect(Collectors.joining(","))));
          } else {
-            JsonObject jsonobject = p_240524_5_.serializeToJson();
-            Path path = this.getPath(p_240524_4_);
+            JsonObject jsonobject = p_240524_5_.serialize();
+            Path path = this.makePath(p_240524_4_);
 
             try {
                String s = GSON.toJson((JsonElement)jsonobject);
-               String s1 = SHA1.hashUnencodedChars(s).toString();
-               if (!Objects.equals(p_200398_1_.getHash(path), s1) || !Files.exists(path)) {
+               String s1 = HASH_FUNCTION.hashUnencodedChars(s).toString();
+               if (!Objects.equals(cache.getPreviousHash(path), s1) || !Files.exists(path)) {
                   Files.createDirectories(path.getParent());
 
                   try (BufferedWriter bufferedwriter = Files.newBufferedWriter(path)) {
@@ -65,7 +65,7 @@ public abstract class TagsProvider<T> implements IDataProvider {
                   }
                }
 
-               p_200398_1_.putNew(path, s1);
+               cache.recordHash(path, s1);
             } catch (IOException ioexception) {
                LOGGER.error("Couldn't save tags to {}", path, ioexception);
             }
@@ -74,15 +74,15 @@ public abstract class TagsProvider<T> implements IDataProvider {
       });
    }
 
-   protected abstract Path getPath(ResourceLocation p_200431_1_);
+   protected abstract Path makePath(ResourceLocation id);
 
-   protected TagsProvider.Builder<T> tag(ITag.INamedTag<T> p_240522_1_) {
-      ITag.Builder itag$builder = this.getOrCreateRawBuilder(p_240522_1_);
+   protected TagsProvider.Builder<T> getOrCreateBuilder(ITag.INamedTag<T> tag) {
+      ITag.Builder itag$builder = this.createBuilderIfAbsent(tag);
       return new TagsProvider.Builder<>(itag$builder, this.registry, "vanilla");
    }
 
-   protected ITag.Builder getOrCreateRawBuilder(ITag.INamedTag<T> p_240525_1_) {
-      return this.builders.computeIfAbsent(p_240525_1_.getName(), (p_240526_0_) -> {
+   protected ITag.Builder createBuilderIfAbsent(ITag.INamedTag<T> tag) {
+      return this.tagToBuilder.computeIfAbsent(tag.getName(), (p_240526_0_) -> {
          return new ITag.Builder();
       });
    }
@@ -90,28 +90,28 @@ public abstract class TagsProvider<T> implements IDataProvider {
    public static class Builder<T> {
       private final ITag.Builder builder;
       private final Registry<T> registry;
-      private final String source;
+      private final String id;
 
-      private Builder(ITag.Builder p_i232553_1_, Registry<T> p_i232553_2_, String p_i232553_3_) {
-         this.builder = p_i232553_1_;
-         this.registry = p_i232553_2_;
-         this.source = p_i232553_3_;
+      private Builder(ITag.Builder builder, Registry<T> registry, String id) {
+         this.builder = builder;
+         this.registry = registry;
+         this.id = id;
       }
 
-      public TagsProvider.Builder<T> add(T p_240532_1_) {
-         this.builder.addElement(this.registry.getKey(p_240532_1_), this.source);
+      public TagsProvider.Builder<T> addItemEntry(T item) {
+         this.builder.addItemEntry(this.registry.getKey(item), this.id);
          return this;
       }
 
-      public TagsProvider.Builder<T> addTag(ITag.INamedTag<T> p_240531_1_) {
-         this.builder.addTag(p_240531_1_.getName(), this.source);
+      public TagsProvider.Builder<T> addTag(ITag.INamedTag<T> tag) {
+         this.builder.addTagEntry(tag.getName(), this.id);
          return this;
       }
 
       @SafeVarargs
-      public final TagsProvider.Builder<T> add(T... p_240534_1_) {
-         Stream.<T>of(p_240534_1_).map(this.registry::getKey).forEach((p_240533_1_) -> {
-            this.builder.addElement(p_240533_1_, this.source);
+      public final TagsProvider.Builder<T> add(T... toAdd) {
+         Stream.<T>of(toAdd).map(this.registry::getKey).forEach((p_240533_1_) -> {
+            this.builder.addItemEntry(p_240533_1_, this.id);
          });
          return this;
       }

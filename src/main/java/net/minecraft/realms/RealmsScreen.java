@@ -12,10 +12,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public abstract class RealmsScreen extends Screen {
    public RealmsScreen() {
-      super(NarratorChatListener.NO_TITLE);
+      super(NarratorChatListener.EMPTY);
    }
 
-   protected static int row(int p_239562_0_) {
+   protected static int func_239562_k_(int p_239562_0_) {
       return 40 + p_239562_0_ * 13;
    }
 
@@ -28,8 +28,8 @@ public abstract class RealmsScreen extends Screen {
 
    }
 
-   public void narrateLabels() {
-      List<String> list = this.children.stream().filter(RealmsLabel.class::isInstance).map(RealmsLabel.class::cast).map(RealmsLabel::getText).collect(Collectors.toList());
-      RealmsNarratorHelper.now(list);
+   public void func_231411_u_() {
+      List<String> list = this.children.stream().filter(RealmsLabel.class::isInstance).map(RealmsLabel.class::cast).map(RealmsLabel::func_231399_a_).collect(Collectors.toList());
+      RealmsNarratorHelper.func_239549_a_(list);
    }
 }

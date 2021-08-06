@@ -13,13 +13,13 @@ public class BedTileEntity extends TileEntity {
       super(TileEntityType.BED);
    }
 
-   public BedTileEntity(DyeColor p_i47730_1_) {
+   public BedTileEntity(DyeColor colorIn) {
       this();
-      this.setColor(p_i47730_1_);
+      this.setColor(colorIn);
    }
 
    public SUpdateTileEntityPacket getUpdatePacket() {
-      return new SUpdateTileEntityPacket(this.worldPosition, 11, this.getUpdateTag());
+      return new SUpdateTileEntityPacket(this.pos, 11, this.getUpdateTag());
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -31,7 +31,7 @@ public class BedTileEntity extends TileEntity {
       return this.color;
    }
 
-   public void setColor(DyeColor p_193052_1_) {
-      this.color = p_193052_1_;
+   public void setColor(DyeColor color) {
+      this.color = color;
    }
 }

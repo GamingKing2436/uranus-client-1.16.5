@@ -13,76 +13,76 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class ItemGroup {
-   public static final ItemGroup[] TABS = new ItemGroup[12];
-   public static final ItemGroup TAB_BUILDING_BLOCKS = (new ItemGroup(0, "buildingBlocks") {
+   public static final ItemGroup[] GROUPS = new ItemGroup[12];
+   public static final ItemGroup BUILDING_BLOCKS = (new ItemGroup(0, "buildingBlocks") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Blocks.BRICKS);
       }
-   }).setRecipeFolderName("building_blocks");
-   public static final ItemGroup TAB_DECORATIONS = new ItemGroup(1, "decorations") {
+   }).setTabPath("building_blocks");
+   public static final ItemGroup DECORATIONS = new ItemGroup(1, "decorations") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Blocks.PEONY);
       }
    };
-   public static final ItemGroup TAB_REDSTONE = new ItemGroup(2, "redstone") {
+   public static final ItemGroup REDSTONE = new ItemGroup(2, "redstone") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Items.REDSTONE);
       }
    };
-   public static final ItemGroup TAB_TRANSPORTATION = new ItemGroup(3, "transportation") {
+   public static final ItemGroup TRANSPORTATION = new ItemGroup(3, "transportation") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Blocks.POWERED_RAIL);
       }
    };
-   public static final ItemGroup TAB_MISC = new ItemGroup(6, "misc") {
+   public static final ItemGroup MISC = new ItemGroup(6, "misc") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Items.LAVA_BUCKET);
       }
    };
-   public static final ItemGroup TAB_SEARCH = (new ItemGroup(5, "search") {
+   public static final ItemGroup SEARCH = (new ItemGroup(5, "search") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Items.COMPASS);
       }
-   }).setBackgroundSuffix("item_search.png");
-   public static final ItemGroup TAB_FOOD = new ItemGroup(7, "food") {
+   }).setBackgroundImageName("item_search.png");
+   public static final ItemGroup FOOD = new ItemGroup(7, "food") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Items.APPLE);
       }
    };
-   public static final ItemGroup TAB_TOOLS = (new ItemGroup(8, "tools") {
+   public static final ItemGroup TOOLS = (new ItemGroup(8, "tools") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Items.IRON_AXE);
       }
-   }).setEnchantmentCategories(new EnchantmentType[]{EnchantmentType.VANISHABLE, EnchantmentType.DIGGER, EnchantmentType.FISHING_ROD, EnchantmentType.BREAKABLE});
-   public static final ItemGroup TAB_COMBAT = (new ItemGroup(9, "combat") {
+   }).setRelevantEnchantmentTypes(new EnchantmentType[]{EnchantmentType.VANISHABLE, EnchantmentType.DIGGER, EnchantmentType.FISHING_ROD, EnchantmentType.BREAKABLE});
+   public static final ItemGroup COMBAT = (new ItemGroup(9, "combat") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Items.GOLDEN_SWORD);
       }
-   }).setEnchantmentCategories(new EnchantmentType[]{EnchantmentType.VANISHABLE, EnchantmentType.ARMOR, EnchantmentType.ARMOR_FEET, EnchantmentType.ARMOR_HEAD, EnchantmentType.ARMOR_LEGS, EnchantmentType.ARMOR_CHEST, EnchantmentType.BOW, EnchantmentType.WEAPON, EnchantmentType.WEARABLE, EnchantmentType.BREAKABLE, EnchantmentType.TRIDENT, EnchantmentType.CROSSBOW});
-   public static final ItemGroup TAB_BREWING = new ItemGroup(10, "brewing") {
+   }).setRelevantEnchantmentTypes(new EnchantmentType[]{EnchantmentType.VANISHABLE, EnchantmentType.ARMOR, EnchantmentType.ARMOR_FEET, EnchantmentType.ARMOR_HEAD, EnchantmentType.ARMOR_LEGS, EnchantmentType.ARMOR_CHEST, EnchantmentType.BOW, EnchantmentType.WEAPON, EnchantmentType.WEARABLE, EnchantmentType.BREAKABLE, EnchantmentType.TRIDENT, EnchantmentType.CROSSBOW});
+   public static final ItemGroup BREWING = new ItemGroup(10, "brewing") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
-         return PotionUtils.setPotion(new ItemStack(Items.POTION), Potions.WATER);
+      public ItemStack createIcon() {
+         return PotionUtils.addPotionToItemStack(new ItemStack(Items.POTION), Potions.WATER);
       }
    };
-   public static final ItemGroup TAB_MATERIALS = TAB_MISC;
-   public static final ItemGroup TAB_HOTBAR = new ItemGroup(4, "hotbar") {
+   public static final ItemGroup MATERIALS = MISC;
+   public static final ItemGroup HOTBAR = new ItemGroup(4, "hotbar") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Blocks.BOOKSHELF);
       }
 
       @OnlyIn(Dist.CLIENT)
-      public void fillItemList(NonNullList<ItemStack> p_78018_1_) {
+      public void fill(NonNullList<ItemStack> items) {
          throw new RuntimeException("Implement exception client-side.");
       }
 
@@ -91,99 +91,99 @@ public abstract class ItemGroup {
          return true;
       }
    };
-   public static final ItemGroup TAB_INVENTORY = (new ItemGroup(11, "inventory") {
+   public static final ItemGroup INVENTORY = (new ItemGroup(11, "inventory") {
       @OnlyIn(Dist.CLIENT)
-      public ItemStack makeIcon() {
+      public ItemStack createIcon() {
          return new ItemStack(Blocks.CHEST);
       }
-   }).setBackgroundSuffix("inventory.png").hideScroll().hideTitle();
-   private final int id;
-   private final String langId;
-   private final ITextComponent displayName;
-   private String recipeFolderName;
-   private String backgroundSuffix = "items.png";
-   private boolean canScroll = true;
-   private boolean showTitle = true;
-   private EnchantmentType[] enchantmentCategories = new EnchantmentType[0];
-   private ItemStack iconItemStack;
+   }).setBackgroundImageName("inventory.png").setNoScrollbar().setNoTitle();
+   private final int index;
+   private final String tabLabel;
+   private final ITextComponent groupName;
+   private String tabPath;
+   private String backgroundTexture = "items.png";
+   private boolean hasScrollbar = true;
+   private boolean drawTitle = true;
+   private EnchantmentType[] enchantmentTypes = new EnchantmentType[0];
+   private ItemStack icon;
 
-   public ItemGroup(int p_i1853_1_, String p_i1853_2_) {
-      this.id = p_i1853_1_;
-      this.langId = p_i1853_2_;
-      this.displayName = new TranslationTextComponent("itemGroup." + p_i1853_2_);
-      this.iconItemStack = ItemStack.EMPTY;
-      TABS[p_i1853_1_] = this;
+   public ItemGroup(int index, String label) {
+      this.index = index;
+      this.tabLabel = label;
+      this.groupName = new TranslationTextComponent("itemGroup." + label);
+      this.icon = ItemStack.EMPTY;
+      GROUPS[index] = this;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getId() {
-      return this.id;
+   public int getIndex() {
+      return this.index;
    }
 
-   public String getRecipeFolderName() {
-      return this.recipeFolderName == null ? this.langId : this.recipeFolderName;
-   }
-
-   @OnlyIn(Dist.CLIENT)
-   public ITextComponent getDisplayName() {
-      return this.displayName;
+   public String getPath() {
+      return this.tabPath == null ? this.tabLabel : this.tabPath;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack getIconItem() {
-      if (this.iconItemStack.isEmpty()) {
-         this.iconItemStack = this.makeIcon();
+   public ITextComponent getGroupName() {
+      return this.groupName;
+   }
+
+   @OnlyIn(Dist.CLIENT)
+   public ItemStack getIcon() {
+      if (this.icon.isEmpty()) {
+         this.icon = this.createIcon();
       }
 
-      return this.iconItemStack;
+      return this.icon;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public abstract ItemStack makeIcon();
+   public abstract ItemStack createIcon();
 
    @OnlyIn(Dist.CLIENT)
-   public String getBackgroundSuffix() {
-      return this.backgroundSuffix;
+   public String getBackgroundImageName() {
+      return this.backgroundTexture;
    }
 
-   public ItemGroup setBackgroundSuffix(String p_78025_1_) {
-      this.backgroundSuffix = p_78025_1_;
+   public ItemGroup setBackgroundImageName(String texture) {
+      this.backgroundTexture = texture;
       return this;
    }
 
-   public ItemGroup setRecipeFolderName(String p_199783_1_) {
-      this.recipeFolderName = p_199783_1_;
-      return this;
-   }
-
-   @OnlyIn(Dist.CLIENT)
-   public boolean showTitle() {
-      return this.showTitle;
-   }
-
-   public ItemGroup hideTitle() {
-      this.showTitle = false;
+   public ItemGroup setTabPath(String pathIn) {
+      this.tabPath = pathIn;
       return this;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canScroll() {
-      return this.canScroll;
+   public boolean drawInForegroundOfTab() {
+      return this.drawTitle;
    }
 
-   public ItemGroup hideScroll() {
-      this.canScroll = false;
+   public ItemGroup setNoTitle() {
+      this.drawTitle = false;
+      return this;
+   }
+
+   @OnlyIn(Dist.CLIENT)
+   public boolean hasScrollbar() {
+      return this.hasScrollbar;
+   }
+
+   public ItemGroup setNoScrollbar() {
+      this.hasScrollbar = false;
       return this;
    }
 
    @OnlyIn(Dist.CLIENT)
    public int getColumn() {
-      return this.id % 6;
+      return this.index % 6;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean isTopRow() {
-      return this.id < 6;
+   public boolean isOnTopRow() {
+      return this.index < 6;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -191,19 +191,19 @@ public abstract class ItemGroup {
       return this.getColumn() == 5;
    }
 
-   public EnchantmentType[] getEnchantmentCategories() {
-      return this.enchantmentCategories;
+   public EnchantmentType[] getRelevantEnchantmentTypes() {
+      return this.enchantmentTypes;
    }
 
-   public ItemGroup setEnchantmentCategories(EnchantmentType... p_111229_1_) {
-      this.enchantmentCategories = p_111229_1_;
+   public ItemGroup setRelevantEnchantmentTypes(EnchantmentType... types) {
+      this.enchantmentTypes = types;
       return this;
    }
 
-   public boolean hasEnchantmentCategory(@Nullable EnchantmentType p_111226_1_) {
-      if (p_111226_1_ != null) {
-         for(EnchantmentType enchantmenttype : this.enchantmentCategories) {
-            if (enchantmenttype == p_111226_1_) {
+   public boolean hasRelevantEnchantmentType(@Nullable EnchantmentType enchantmentType) {
+      if (enchantmentType != null) {
+         for(EnchantmentType enchantmenttype : this.enchantmentTypes) {
+            if (enchantmenttype == enchantmentType) {
                return true;
             }
          }
@@ -213,9 +213,9 @@ public abstract class ItemGroup {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void fillItemList(NonNullList<ItemStack> p_78018_1_) {
+   public void fill(NonNullList<ItemStack> items) {
       for(Item item : Registry.ITEM) {
-         item.fillItemCategory(this, p_78018_1_);
+         item.fillItemGroup(this, items);
       }
 
    }

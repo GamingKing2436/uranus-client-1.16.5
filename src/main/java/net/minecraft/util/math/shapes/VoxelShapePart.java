@@ -11,35 +11,35 @@ public abstract class VoxelShapePart {
    protected final int ySize;
    protected final int zSize;
 
-   protected VoxelShapePart(int p_i47686_1_, int p_i47686_2_, int p_i47686_3_) {
-      this.xSize = p_i47686_1_;
-      this.ySize = p_i47686_2_;
-      this.zSize = p_i47686_3_;
+   protected VoxelShapePart(int xIn, int yIn, int zIn) {
+      this.xSize = xIn;
+      this.ySize = yIn;
+      this.zSize = zIn;
    }
 
-   public boolean isFullWide(AxisRotation p_197824_1_, int p_197824_2_, int p_197824_3_, int p_197824_4_) {
-      return this.isFullWide(p_197824_1_.cycle(p_197824_2_, p_197824_3_, p_197824_4_, Direction.Axis.X), p_197824_1_.cycle(p_197824_2_, p_197824_3_, p_197824_4_, Direction.Axis.Y), p_197824_1_.cycle(p_197824_2_, p_197824_3_, p_197824_4_, Direction.Axis.Z));
+   public boolean containsWithRotation(AxisRotation axis, int x, int y, int z) {
+      return this.contains(axis.getCoordinate(x, y, z, Direction.Axis.X), axis.getCoordinate(x, y, z, Direction.Axis.Y), axis.getCoordinate(x, y, z, Direction.Axis.Z));
    }
 
-   public boolean isFullWide(int p_197818_1_, int p_197818_2_, int p_197818_3_) {
-      if (p_197818_1_ >= 0 && p_197818_2_ >= 0 && p_197818_3_ >= 0) {
-         return p_197818_1_ < this.xSize && p_197818_2_ < this.ySize && p_197818_3_ < this.zSize ? this.isFull(p_197818_1_, p_197818_2_, p_197818_3_) : false;
+   public boolean contains(int x, int y, int z) {
+      if (x >= 0 && y >= 0 && z >= 0) {
+         return x < this.xSize && y < this.ySize && z < this.zSize ? this.isFilled(x, y, z) : false;
       } else {
          return false;
       }
    }
 
-   public boolean isFull(AxisRotation p_197829_1_, int p_197829_2_, int p_197829_3_, int p_197829_4_) {
-      return this.isFull(p_197829_1_.cycle(p_197829_2_, p_197829_3_, p_197829_4_, Direction.Axis.X), p_197829_1_.cycle(p_197829_2_, p_197829_3_, p_197829_4_, Direction.Axis.Y), p_197829_1_.cycle(p_197829_2_, p_197829_3_, p_197829_4_, Direction.Axis.Z));
+   public boolean isFilledWithRotation(AxisRotation rotationIn, int x, int y, int z) {
+      return this.isFilled(rotationIn.getCoordinate(x, y, z, Direction.Axis.X), rotationIn.getCoordinate(x, y, z, Direction.Axis.Y), rotationIn.getCoordinate(x, y, z, Direction.Axis.Z));
    }
 
-   public abstract boolean isFull(int p_197835_1_, int p_197835_2_, int p_197835_3_);
+   public abstract boolean isFilled(int x, int y, int z);
 
-   public abstract void setFull(int p_199625_1_, int p_199625_2_, int p_199625_3_, boolean p_199625_4_, boolean p_199625_5_);
+   public abstract void setFilled(int x, int y, int z, boolean expandBounds, boolean filled);
 
    public boolean isEmpty() {
       for(Direction.Axis direction$axis : AXIS_VALUES) {
-         if (this.firstFull(direction$axis) >= this.lastFull(direction$axis)) {
+         if (this.getStart(direction$axis) >= this.getEnd(direction$axis)) {
             return true;
          }
       }
@@ -47,21 +47,21 @@ public abstract class VoxelShapePart {
       return false;
    }
 
-   public abstract int firstFull(Direction.Axis p_199623_1_);
+   public abstract int getStart(Direction.Axis axis);
 
-   public abstract int lastFull(Direction.Axis p_199624_1_);
+   public abstract int getEnd(Direction.Axis axis);
 
    @OnlyIn(Dist.CLIENT)
-   public int lastFull(Direction.Axis p_197836_1_, int p_197836_2_, int p_197836_3_) {
+   public int lastFilled(Direction.Axis axis, int p_197836_2_, int p_197836_3_) {
       if (p_197836_2_ >= 0 && p_197836_3_ >= 0) {
-         Direction.Axis direction$axis = AxisRotation.FORWARD.cycle(p_197836_1_);
-         Direction.Axis direction$axis1 = AxisRotation.BACKWARD.cycle(p_197836_1_);
+         Direction.Axis direction$axis = AxisRotation.FORWARD.rotate(axis);
+         Direction.Axis direction$axis1 = AxisRotation.BACKWARD.rotate(axis);
          if (p_197836_2_ < this.getSize(direction$axis) && p_197836_3_ < this.getSize(direction$axis1)) {
-            int i = this.getSize(p_197836_1_);
-            AxisRotation axisrotation = AxisRotation.between(Direction.Axis.X, p_197836_1_);
+            int i = this.getSize(axis);
+            AxisRotation axisrotation = AxisRotation.from(Direction.Axis.X, axis);
 
             for(int j = i - 1; j >= 0; --j) {
-               if (this.isFull(axisrotation, j, p_197836_2_, p_197836_3_)) {
+               if (this.isFilledWithRotation(axisrotation, j, p_197836_2_, p_197836_3_)) {
                   return j + 1;
                }
             }
@@ -75,8 +75,8 @@ public abstract class VoxelShapePart {
       }
    }
 
-   public int getSize(Direction.Axis p_197819_1_) {
-      return p_197819_1_.choose(this.xSize, this.ySize, this.zSize);
+   public int getSize(Direction.Axis axis) {
+      return axis.getCoordinate(this.xSize, this.ySize, this.zSize);
    }
 
    public int getXSize() {
@@ -92,18 +92,18 @@ public abstract class VoxelShapePart {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void forAllEdges(VoxelShapePart.ILineConsumer p_197828_1_, boolean p_197828_2_) {
-      this.forAllAxisEdges(p_197828_1_, AxisRotation.NONE, p_197828_2_);
-      this.forAllAxisEdges(p_197828_1_, AxisRotation.FORWARD, p_197828_2_);
-      this.forAllAxisEdges(p_197828_1_, AxisRotation.BACKWARD, p_197828_2_);
+   public void forEachEdge(VoxelShapePart.ILineConsumer consumer, boolean combine) {
+      this.forEachEdgeOnAxis(consumer, AxisRotation.NONE, combine);
+      this.forEachEdgeOnAxis(consumer, AxisRotation.FORWARD, combine);
+      this.forEachEdgeOnAxis(consumer, AxisRotation.BACKWARD, combine);
    }
 
    @OnlyIn(Dist.CLIENT)
-   private void forAllAxisEdges(VoxelShapePart.ILineConsumer p_197832_1_, AxisRotation p_197832_2_, boolean p_197832_3_) {
-      AxisRotation axisrotation = p_197832_2_.inverse();
-      int j = this.getSize(axisrotation.cycle(Direction.Axis.X));
-      int k = this.getSize(axisrotation.cycle(Direction.Axis.Y));
-      int l = this.getSize(axisrotation.cycle(Direction.Axis.Z));
+   private void forEachEdgeOnAxis(VoxelShapePart.ILineConsumer lineConsumer, AxisRotation axis, boolean p_197832_3_) {
+      AxisRotation axisrotation = axis.reverse();
+      int j = this.getSize(axisrotation.rotate(Direction.Axis.X));
+      int k = this.getSize(axisrotation.rotate(Direction.Axis.Y));
+      int l = this.getSize(axisrotation.rotate(Direction.Axis.Z));
 
       for(int i1 = 0; i1 <= j; ++i1) {
          for(int j1 = 0; j1 <= k; ++j1) {
@@ -115,7 +115,7 @@ public abstract class VoxelShapePart {
 
                for(int j2 = 0; j2 <= 1; ++j2) {
                   for(int k2 = 0; k2 <= 1; ++k2) {
-                     if (this.isFullWide(axisrotation, i1 + j2 - 1, j1 + k2 - 1, k1)) {
+                     if (this.containsWithRotation(axisrotation, i1 + j2 - 1, j1 + k2 - 1, k1)) {
                         ++l1;
                         i2 ^= j2 ^ k2;
                      }
@@ -128,10 +128,10 @@ public abstract class VoxelShapePart {
                         i = k1;
                      }
                   } else {
-                     p_197832_1_.consume(axisrotation.cycle(i1, j1, k1, Direction.Axis.X), axisrotation.cycle(i1, j1, k1, Direction.Axis.Y), axisrotation.cycle(i1, j1, k1, Direction.Axis.Z), axisrotation.cycle(i1, j1, k1 + 1, Direction.Axis.X), axisrotation.cycle(i1, j1, k1 + 1, Direction.Axis.Y), axisrotation.cycle(i1, j1, k1 + 1, Direction.Axis.Z));
+                     lineConsumer.consume(axisrotation.getCoordinate(i1, j1, k1, Direction.Axis.X), axisrotation.getCoordinate(i1, j1, k1, Direction.Axis.Y), axisrotation.getCoordinate(i1, j1, k1, Direction.Axis.Z), axisrotation.getCoordinate(i1, j1, k1 + 1, Direction.Axis.X), axisrotation.getCoordinate(i1, j1, k1 + 1, Direction.Axis.Y), axisrotation.getCoordinate(i1, j1, k1 + 1, Direction.Axis.Z));
                   }
                } else if (i != -1) {
-                  p_197832_1_.consume(axisrotation.cycle(i1, j1, i, Direction.Axis.X), axisrotation.cycle(i1, j1, i, Direction.Axis.Y), axisrotation.cycle(i1, j1, i, Direction.Axis.Z), axisrotation.cycle(i1, j1, k1, Direction.Axis.X), axisrotation.cycle(i1, j1, k1, Direction.Axis.Y), axisrotation.cycle(i1, j1, k1, Direction.Axis.Z));
+                  lineConsumer.consume(axisrotation.getCoordinate(i1, j1, i, Direction.Axis.X), axisrotation.getCoordinate(i1, j1, i, Direction.Axis.Y), axisrotation.getCoordinate(i1, j1, i, Direction.Axis.Z), axisrotation.getCoordinate(i1, j1, k1, Direction.Axis.X), axisrotation.getCoordinate(i1, j1, k1, Direction.Axis.Y), axisrotation.getCoordinate(i1, j1, k1, Direction.Axis.Z));
                   i = -1;
                }
             }
@@ -140,9 +140,9 @@ public abstract class VoxelShapePart {
 
    }
 
-   protected boolean isZStripFull(int p_197833_1_, int p_197833_2_, int p_197833_3_, int p_197833_4_) {
-      for(int i = p_197833_1_; i < p_197833_2_; ++i) {
-         if (!this.isFullWide(p_197833_3_, p_197833_4_, i)) {
+   protected boolean isZAxisLineFull(int fromZ, int toZ, int x, int y) {
+      for(int i = fromZ; i < toZ; ++i) {
+         if (!this.contains(x, y, i)) {
             return false;
          }
       }
@@ -150,16 +150,16 @@ public abstract class VoxelShapePart {
       return true;
    }
 
-   protected void setZStrip(int p_197834_1_, int p_197834_2_, int p_197834_3_, int p_197834_4_, boolean p_197834_5_) {
-      for(int i = p_197834_1_; i < p_197834_2_; ++i) {
-         this.setFull(p_197834_3_, p_197834_4_, i, false, p_197834_5_);
+   protected void setZAxisLine(int fromZ, int toZ, int x, int y, boolean filled) {
+      for(int i = fromZ; i < toZ; ++i) {
+         this.setFilled(x, y, i, false, filled);
       }
 
    }
 
-   protected boolean isXZRectangleFull(int p_197827_1_, int p_197827_2_, int p_197827_3_, int p_197827_4_, int p_197827_5_) {
-      for(int i = p_197827_1_; i < p_197827_2_; ++i) {
-         if (!this.isZStripFull(p_197827_3_, p_197827_4_, i, p_197827_5_)) {
+   protected boolean isXZRectangleFull(int fromX, int toX, int fromZ, int toZ, int x) {
+      for(int i = fromX; i < toX; ++i) {
+         if (!this.isZAxisLineFull(fromZ, toZ, i, x)) {
             return false;
          }
       }
@@ -167,7 +167,7 @@ public abstract class VoxelShapePart {
       return true;
    }
 
-   public void forAllBoxes(VoxelShapePart.ILineConsumer p_197831_1_, boolean p_197831_2_) {
+   public void forEachBox(VoxelShapePart.ILineConsumer consumer, boolean combine) {
       VoxelShapePart voxelshapepart = new BitSetVoxelShapePart(this);
 
       for(int i = 0; i <= this.xSize; ++i) {
@@ -175,34 +175,34 @@ public abstract class VoxelShapePart {
             int k = -1;
 
             for(int l = 0; l <= this.zSize; ++l) {
-               if (voxelshapepart.isFullWide(i, j, l)) {
-                  if (p_197831_2_) {
+               if (voxelshapepart.contains(i, j, l)) {
+                  if (combine) {
                      if (k == -1) {
                         k = l;
                      }
                   } else {
-                     p_197831_1_.consume(i, j, l, i + 1, j + 1, l + 1);
+                     consumer.consume(i, j, l, i + 1, j + 1, l + 1);
                   }
                } else if (k != -1) {
                   int i1 = i;
                   int j1 = i;
                   int k1 = j;
                   int l1 = j;
-                  voxelshapepart.setZStrip(k, l, i, j, false);
+                  voxelshapepart.setZAxisLine(k, l, i, j, false);
 
-                  while(voxelshapepart.isZStripFull(k, l, i1 - 1, k1)) {
-                     voxelshapepart.setZStrip(k, l, i1 - 1, k1, false);
+                  while(voxelshapepart.isZAxisLineFull(k, l, i1 - 1, k1)) {
+                     voxelshapepart.setZAxisLine(k, l, i1 - 1, k1, false);
                      --i1;
                   }
 
-                  while(voxelshapepart.isZStripFull(k, l, j1 + 1, k1)) {
-                     voxelshapepart.setZStrip(k, l, j1 + 1, k1, false);
+                  while(voxelshapepart.isZAxisLineFull(k, l, j1 + 1, k1)) {
+                     voxelshapepart.setZAxisLine(k, l, j1 + 1, k1, false);
                      ++j1;
                   }
 
                   while(voxelshapepart.isXZRectangleFull(i1, j1 + 1, k, l, k1 - 1)) {
                      for(int i2 = i1; i2 <= j1; ++i2) {
-                        voxelshapepart.setZStrip(k, l, i2, k1 - 1, false);
+                        voxelshapepart.setZAxisLine(k, l, i2, k1 - 1, false);
                      }
 
                      --k1;
@@ -210,13 +210,13 @@ public abstract class VoxelShapePart {
 
                   while(voxelshapepart.isXZRectangleFull(i1, j1 + 1, k, l, l1 + 1)) {
                      for(int j2 = i1; j2 <= j1; ++j2) {
-                        voxelshapepart.setZStrip(k, l, j2, l1 + 1, false);
+                        voxelshapepart.setZAxisLine(k, l, j2, l1 + 1, false);
                      }
 
                      ++l1;
                   }
 
-                  p_197831_1_.consume(i1, k1, k, j1 + 1, l1 + 1, l);
+                  consumer.consume(i1, k1, k, j1 + 1, l1 + 1, l);
                   k = -1;
                }
             }
@@ -225,33 +225,33 @@ public abstract class VoxelShapePart {
 
    }
 
-   public void forAllFaces(VoxelShapePart.IFaceConsumer p_211540_1_) {
-      this.forAllAxisFaces(p_211540_1_, AxisRotation.NONE);
-      this.forAllAxisFaces(p_211540_1_, AxisRotation.FORWARD);
-      this.forAllAxisFaces(p_211540_1_, AxisRotation.BACKWARD);
+   public void forEachFace(VoxelShapePart.IFaceConsumer faceConsumer) {
+      this.forEachFaceOnAxis(faceConsumer, AxisRotation.NONE);
+      this.forEachFaceOnAxis(faceConsumer, AxisRotation.FORWARD);
+      this.forEachFaceOnAxis(faceConsumer, AxisRotation.BACKWARD);
    }
 
-   private void forAllAxisFaces(VoxelShapePart.IFaceConsumer p_211541_1_, AxisRotation p_211541_2_) {
-      AxisRotation axisrotation = p_211541_2_.inverse();
-      Direction.Axis direction$axis = axisrotation.cycle(Direction.Axis.Z);
-      int i = this.getSize(axisrotation.cycle(Direction.Axis.X));
-      int j = this.getSize(axisrotation.cycle(Direction.Axis.Y));
+   private void forEachFaceOnAxis(VoxelShapePart.IFaceConsumer faceConsumer, AxisRotation axisRotationIn) {
+      AxisRotation axisrotation = axisRotationIn.reverse();
+      Direction.Axis direction$axis = axisrotation.rotate(Direction.Axis.Z);
+      int i = this.getSize(axisrotation.rotate(Direction.Axis.X));
+      int j = this.getSize(axisrotation.rotate(Direction.Axis.Y));
       int k = this.getSize(direction$axis);
-      Direction direction = Direction.fromAxisAndDirection(direction$axis, Direction.AxisDirection.NEGATIVE);
-      Direction direction1 = Direction.fromAxisAndDirection(direction$axis, Direction.AxisDirection.POSITIVE);
+      Direction direction = Direction.getFacingFromAxisDirection(direction$axis, Direction.AxisDirection.NEGATIVE);
+      Direction direction1 = Direction.getFacingFromAxisDirection(direction$axis, Direction.AxisDirection.POSITIVE);
 
       for(int l = 0; l < i; ++l) {
          for(int i1 = 0; i1 < j; ++i1) {
             boolean flag = false;
 
             for(int j1 = 0; j1 <= k; ++j1) {
-               boolean flag1 = j1 != k && this.isFull(axisrotation, l, i1, j1);
+               boolean flag1 = j1 != k && this.isFilledWithRotation(axisrotation, l, i1, j1);
                if (!flag && flag1) {
-                  p_211541_1_.consume(direction, axisrotation.cycle(l, i1, j1, Direction.Axis.X), axisrotation.cycle(l, i1, j1, Direction.Axis.Y), axisrotation.cycle(l, i1, j1, Direction.Axis.Z));
+                  faceConsumer.consume(direction, axisrotation.getCoordinate(l, i1, j1, Direction.Axis.X), axisrotation.getCoordinate(l, i1, j1, Direction.Axis.Y), axisrotation.getCoordinate(l, i1, j1, Direction.Axis.Z));
                }
 
                if (flag && !flag1) {
-                  p_211541_1_.consume(direction1, axisrotation.cycle(l, i1, j1 - 1, Direction.Axis.X), axisrotation.cycle(l, i1, j1 - 1, Direction.Axis.Y), axisrotation.cycle(l, i1, j1 - 1, Direction.Axis.Z));
+                  faceConsumer.consume(direction1, axisrotation.getCoordinate(l, i1, j1 - 1, Direction.Axis.X), axisrotation.getCoordinate(l, i1, j1 - 1, Direction.Axis.Y), axisrotation.getCoordinate(l, i1, j1 - 1, Direction.Axis.Z));
                }
 
                flag = flag1;

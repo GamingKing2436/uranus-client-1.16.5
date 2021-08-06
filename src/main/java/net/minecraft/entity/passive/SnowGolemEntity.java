@@ -41,10 +41,10 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SnowGolemEntity extends GolemEntity implements IShearable, IRangedAttackMob {
-   private static final DataParameter<Byte> DATA_PUMPKIN_ID = EntityDataManager.defineId(SnowGolemEntity.class, DataSerializers.BYTE);
+   private static final DataParameter<Byte> PUMPKIN_EQUIPPED = EntityDataManager.createKey(SnowGolemEntity.class, DataSerializers.BYTE);
 
-   public SnowGolemEntity(EntityType<? extends SnowGolemEntity> p_i50244_1_, World p_i50244_2_) {
-      super(p_i50244_1_, p_i50244_2_);
+   public SnowGolemEntity(EntityType<? extends SnowGolemEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
    protected void registerGoals() {
@@ -57,137 +57,137 @@ public class SnowGolemEntity extends GolemEntity implements IShearable, IRangedA
       }));
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return MobEntity.createMobAttributes().add(Attributes.MAX_HEALTH, 4.0D).add(Attributes.MOVEMENT_SPEED, (double)0.2F);
+   public static AttributeModifierMap.MutableAttribute func_234226_m_() {
+      return MobEntity.func_233666_p_().createMutableAttribute(Attributes.MAX_HEALTH, 4.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, (double)0.2F);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_PUMPKIN_ID, (byte)16);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(PUMPKIN_EQUIPPED, (byte)16);
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      p_213281_1_.putBoolean("Pumpkin", this.hasPumpkin());
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      compound.putBoolean("Pumpkin", this.isPumpkinEquipped());
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      if (p_70037_1_.contains("Pumpkin")) {
-         this.setPumpkin(p_70037_1_.getBoolean("Pumpkin"));
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      if (compound.contains("Pumpkin")) {
+         this.setPumpkinEquipped(compound.getBoolean("Pumpkin"));
       }
 
    }
 
-   public boolean isSensitiveToWater() {
+   public boolean isWaterSensitive() {
       return true;
    }
 
-   public void aiStep() {
-      super.aiStep();
-      if (!this.level.isClientSide) {
-         int i = MathHelper.floor(this.getX());
-         int j = MathHelper.floor(this.getY());
-         int k = MathHelper.floor(this.getZ());
-         if (this.level.getBiome(new BlockPos(i, 0, k)).getTemperature(new BlockPos(i, j, k)) > 1.0F) {
-            this.hurt(DamageSource.ON_FIRE, 1.0F);
+   public void livingTick() {
+      super.livingTick();
+      if (!this.world.isRemote) {
+         int i = MathHelper.floor(this.getPosX());
+         int j = MathHelper.floor(this.getPosY());
+         int k = MathHelper.floor(this.getPosZ());
+         if (this.world.getBiome(new BlockPos(i, 0, k)).getTemperature(new BlockPos(i, j, k)) > 1.0F) {
+            this.attackEntityFrom(DamageSource.ON_FIRE, 1.0F);
          }
 
-         if (!this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+         if (!this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
             return;
          }
 
-         BlockState blockstate = Blocks.SNOW.defaultBlockState();
+         BlockState blockstate = Blocks.SNOW.getDefaultState();
 
          for(int l = 0; l < 4; ++l) {
-            i = MathHelper.floor(this.getX() + (double)((float)(l % 2 * 2 - 1) * 0.25F));
-            j = MathHelper.floor(this.getY());
-            k = MathHelper.floor(this.getZ() + (double)((float)(l / 2 % 2 * 2 - 1) * 0.25F));
+            i = MathHelper.floor(this.getPosX() + (double)((float)(l % 2 * 2 - 1) * 0.25F));
+            j = MathHelper.floor(this.getPosY());
+            k = MathHelper.floor(this.getPosZ() + (double)((float)(l / 2 % 2 * 2 - 1) * 0.25F));
             BlockPos blockpos = new BlockPos(i, j, k);
-            if (this.level.getBlockState(blockpos).isAir() && this.level.getBiome(blockpos).getTemperature(blockpos) < 0.8F && blockstate.canSurvive(this.level, blockpos)) {
-               this.level.setBlockAndUpdate(blockpos, blockstate);
+            if (this.world.getBlockState(blockpos).isAir() && this.world.getBiome(blockpos).getTemperature(blockpos) < 0.8F && blockstate.isValidPosition(this.world, blockpos)) {
+               this.world.setBlockState(blockpos, blockstate);
             }
          }
       }
 
    }
 
-   public void performRangedAttack(LivingEntity p_82196_1_, float p_82196_2_) {
-      SnowballEntity snowballentity = new SnowballEntity(this.level, this);
-      double d0 = p_82196_1_.getEyeY() - (double)1.1F;
-      double d1 = p_82196_1_.getX() - this.getX();
-      double d2 = d0 - snowballentity.getY();
-      double d3 = p_82196_1_.getZ() - this.getZ();
+   public void attackEntityWithRangedAttack(LivingEntity target, float distanceFactor) {
+      SnowballEntity snowballentity = new SnowballEntity(this.world, this);
+      double d0 = target.getPosYEye() - (double)1.1F;
+      double d1 = target.getPosX() - this.getPosX();
+      double d2 = d0 - snowballentity.getPosY();
+      double d3 = target.getPosZ() - this.getPosZ();
       float f = MathHelper.sqrt(d1 * d1 + d3 * d3) * 0.2F;
       snowballentity.shoot(d1, d2 + (double)f, d3, 1.6F, 12.0F);
-      this.playSound(SoundEvents.SNOW_GOLEM_SHOOT, 1.0F, 0.4F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
-      this.level.addFreshEntity(snowballentity);
+      this.playSound(SoundEvents.ENTITY_SNOW_GOLEM_SHOOT, 1.0F, 0.4F / (this.getRNG().nextFloat() * 0.4F + 0.8F));
+      this.world.addEntity(snowballentity);
    }
 
-   protected float getStandingEyeHeight(Pose p_213348_1_, EntitySize p_213348_2_) {
+   protected float getStandingEyeHeight(Pose poseIn, EntitySize sizeIn) {
       return 1.7F;
    }
 
-   protected ActionResultType mobInteract(PlayerEntity p_230254_1_, Hand p_230254_2_) {
-      ItemStack itemstack = p_230254_1_.getItemInHand(p_230254_2_);
-      if (itemstack.getItem() == Items.SHEARS && this.readyForShearing()) {
+   protected ActionResultType func_230254_b_(PlayerEntity p_230254_1_, Hand p_230254_2_) {
+      ItemStack itemstack = p_230254_1_.getHeldItem(p_230254_2_);
+      if (itemstack.getItem() == Items.SHEARS && this.isShearable()) {
          this.shear(SoundCategory.PLAYERS);
-         if (!this.level.isClientSide) {
-            itemstack.hurtAndBreak(1, p_230254_1_, (p_213622_1_) -> {
-               p_213622_1_.broadcastBreakEvent(p_230254_2_);
+         if (!this.world.isRemote) {
+            itemstack.damageItem(1, p_230254_1_, (p_213622_1_) -> {
+               p_213622_1_.sendBreakAnimation(p_230254_2_);
             });
          }
 
-         return ActionResultType.sidedSuccess(this.level.isClientSide);
+         return ActionResultType.func_233537_a_(this.world.isRemote);
       } else {
          return ActionResultType.PASS;
       }
    }
 
-   public void shear(SoundCategory p_230263_1_) {
-      this.level.playSound((PlayerEntity)null, this, SoundEvents.SNOW_GOLEM_SHEAR, p_230263_1_, 1.0F, 1.0F);
-      if (!this.level.isClientSide()) {
-         this.setPumpkin(false);
-         this.spawnAtLocation(new ItemStack(Items.CARVED_PUMPKIN), 1.7F);
+   public void shear(SoundCategory category) {
+      this.world.playMovingSound((PlayerEntity)null, this, SoundEvents.ENTITY_SNOW_GOLEM_SHEAR, category, 1.0F, 1.0F);
+      if (!this.world.isRemote()) {
+         this.setPumpkinEquipped(false);
+         this.entityDropItem(new ItemStack(Items.CARVED_PUMPKIN), 1.7F);
       }
 
    }
 
-   public boolean readyForShearing() {
-      return this.isAlive() && this.hasPumpkin();
+   public boolean isShearable() {
+      return this.isAlive() && this.isPumpkinEquipped();
    }
 
-   public boolean hasPumpkin() {
-      return (this.entityData.get(DATA_PUMPKIN_ID) & 16) != 0;
+   public boolean isPumpkinEquipped() {
+      return (this.dataManager.get(PUMPKIN_EQUIPPED) & 16) != 0;
    }
 
-   public void setPumpkin(boolean p_184747_1_) {
-      byte b0 = this.entityData.get(DATA_PUMPKIN_ID);
-      if (p_184747_1_) {
-         this.entityData.set(DATA_PUMPKIN_ID, (byte)(b0 | 16));
+   public void setPumpkinEquipped(boolean pumpkinEquipped) {
+      byte b0 = this.dataManager.get(PUMPKIN_EQUIPPED);
+      if (pumpkinEquipped) {
+         this.dataManager.set(PUMPKIN_EQUIPPED, (byte)(b0 | 16));
       } else {
-         this.entityData.set(DATA_PUMPKIN_ID, (byte)(b0 & -17));
+         this.dataManager.set(PUMPKIN_EQUIPPED, (byte)(b0 & -17));
       }
 
    }
 
    @Nullable
    protected SoundEvent getAmbientSound() {
-      return SoundEvents.SNOW_GOLEM_AMBIENT;
+      return SoundEvents.ENTITY_SNOW_GOLEM_AMBIENT;
    }
 
    @Nullable
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.SNOW_GOLEM_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_SNOW_GOLEM_HURT;
    }
 
    @Nullable
    protected SoundEvent getDeathSound() {
-      return SoundEvents.SNOW_GOLEM_DEATH;
+      return SoundEvents.ENTITY_SNOW_GOLEM_DEATH;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Vector3d getLeashOffset() {
-      return new Vector3d(0.0D, (double)(0.75F * this.getEyeHeight()), (double)(this.getBbWidth() * 0.4F));
+   public Vector3d func_241205_ce_() {
+      return new Vector3d(0.0D, (double)(0.75F * this.getEyeHeight()), (double)(this.getWidth() * 0.4F));
    }
 }

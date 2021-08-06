@@ -1,8 +1,8 @@
 package net.minecraft.block;
 
 public class MelonBlock extends StemGrownBlock {
-   protected MelonBlock(AbstractBlock.Properties p_i48365_1_) {
-      super(p_i48365_1_);
+   protected MelonBlock(AbstractBlock.Properties builder) {
+      super(builder);
    }
 
    public StemBlock getStem() {

@@ -16,19 +16,19 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class LeatherHorseArmorLayer extends LayerRenderer<HorseEntity, HorseModel<HorseEntity>> {
-   private final HorseModel<HorseEntity> model = new HorseModel<>(0.1F);
+   private final HorseModel<HorseEntity> field_215341_a = new HorseModel<>(0.1F);
 
    public LeatherHorseArmorLayer(IEntityRenderer<HorseEntity, HorseModel<HorseEntity>> p_i50937_1_) {
       super(p_i50937_1_);
    }
 
-   public void render(MatrixStack p_225628_1_, IRenderTypeBuffer p_225628_2_, int p_225628_3_, HorseEntity p_225628_4_, float p_225628_5_, float p_225628_6_, float p_225628_7_, float p_225628_8_, float p_225628_9_, float p_225628_10_) {
-      ItemStack itemstack = p_225628_4_.getArmor();
+   public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, HorseEntity entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
+      ItemStack itemstack = entitylivingbaseIn.func_213803_dV();
       if (itemstack.getItem() instanceof HorseArmorItem) {
          HorseArmorItem horsearmoritem = (HorseArmorItem)itemstack.getItem();
-         this.getParentModel().copyPropertiesTo(this.model);
-         this.model.prepareMobModel(p_225628_4_, p_225628_5_, p_225628_6_, p_225628_7_);
-         this.model.setupAnim(p_225628_4_, p_225628_5_, p_225628_6_, p_225628_8_, p_225628_9_, p_225628_10_);
+         this.getEntityModel().copyModelAttributesTo(this.field_215341_a);
+         this.field_215341_a.setLivingAnimations(entitylivingbaseIn, limbSwing, limbSwingAmount, partialTicks);
+         this.field_215341_a.setRotationAngles(entitylivingbaseIn, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
          float f;
          float f1;
          float f2;
@@ -43,8 +43,8 @@ public class LeatherHorseArmorLayer extends LayerRenderer<HorseEntity, HorseMode
             f2 = 1.0F;
          }
 
-         IVertexBuilder ivertexbuilder = p_225628_2_.getBuffer(RenderType.entityCutoutNoCull(horsearmoritem.getTexture()));
-         this.model.renderToBuffer(p_225628_1_, ivertexbuilder, p_225628_3_, OverlayTexture.NO_OVERLAY, f, f1, f2, 1.0F);
+         IVertexBuilder ivertexbuilder = bufferIn.getBuffer(RenderType.getEntityCutoutNoCull(horsearmoritem.getArmorTexture()));
+         this.field_215341_a.render(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, f, f1, f2, 1.0F);
       }
    }
 }

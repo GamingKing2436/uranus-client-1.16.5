@@ -45,7 +45,7 @@ public class TypeReferences {
    public static final TypeReference ENTITY_NAME = () -> {
       return "entity_name";
    };
-   public static final TypeReference ENTITY_TREE = () -> {
+   public static final TypeReference ENTITY_TYPE = () -> {
       return "entity_tree";
    };
    public static final TypeReference ENTITY = () -> {

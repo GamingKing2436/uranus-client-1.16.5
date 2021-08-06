@@ -13,7 +13,7 @@ public class V1800 extends NamespacedSchema {
       super(p_i50419_1_, p_i50419_2_);
    }
 
-   protected static void registerMob(Schema p_219873_0_, Map<String, Supplier<TypeTemplate>> p_219873_1_, String p_219873_2_) {
+   protected static void func_219873_a(Schema p_219873_0_, Map<String, Supplier<TypeTemplate>> p_219873_1_, String p_219873_2_) {
       p_219873_0_.register(p_219873_1_, p_219873_2_, () -> {
          return V0100.equipment(p_219873_0_);
       });
@@ -21,7 +21,7 @@ public class V1800 extends NamespacedSchema {
 
    public Map<String, Supplier<TypeTemplate>> registerEntities(Schema p_registerEntities_1_) {
       Map<String, Supplier<TypeTemplate>> map = super.registerEntities(p_registerEntities_1_);
-      registerMob(p_registerEntities_1_, map, "minecraft:panda");
+      func_219873_a(p_registerEntities_1_, map, "minecraft:panda");
       p_registerEntities_1_.register(map, "minecraft:pillager", (p_219875_1_) -> {
          return DSL.optionalFields("Inventory", DSL.list(TypeReferences.ITEM_STACK.in(p_registerEntities_1_)), V0100.equipment(p_registerEntities_1_));
       });

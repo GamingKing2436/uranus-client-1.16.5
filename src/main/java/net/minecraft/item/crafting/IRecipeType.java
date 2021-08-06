@@ -15,15 +15,15 @@ public interface IRecipeType<T extends IRecipe<?>> {
    IRecipeType<StonecuttingRecipe> STONECUTTING = register("stonecutting");
    IRecipeType<SmithingRecipe> SMITHING = register("smithing");
 
-   static <T extends IRecipe<?>> IRecipeType<T> register(final String p_222147_0_) {
-      return Registry.register(Registry.RECIPE_TYPE, new ResourceLocation(p_222147_0_), new IRecipeType<T>() {
+   static <T extends IRecipe<?>> IRecipeType<T> register(final String key) {
+      return Registry.register(Registry.RECIPE_TYPE, new ResourceLocation(key), new IRecipeType<T>() {
          public String toString() {
-            return p_222147_0_;
+            return key;
          }
       });
    }
 
-   default <C extends IInventory> Optional<T> tryMatch(IRecipe<C> p_222148_1_, World p_222148_2_, C p_222148_3_) {
-      return p_222148_1_.matches(p_222148_3_, p_222148_2_) ? Optional.of((T)p_222148_1_) : Optional.empty();
+   default <C extends IInventory> Optional<T> matches(IRecipe<C> recipe, World worldIn, C inv) {
+      return recipe.matches(inv, worldIn) ? Optional.of((T)recipe) : Optional.empty();
    }
 }

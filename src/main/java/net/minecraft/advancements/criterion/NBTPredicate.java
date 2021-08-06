@@ -20,35 +20,35 @@ public class NBTPredicate {
    @Nullable
    private final CompoundNBT tag;
 
-   public NBTPredicate(@Nullable CompoundNBT p_i47536_1_) {
-      this.tag = p_i47536_1_;
+   public NBTPredicate(@Nullable CompoundNBT tag) {
+      this.tag = tag;
    }
 
-   public boolean matches(ItemStack p_193478_1_) {
-      return this == ANY ? true : this.matches(p_193478_1_.getTag());
+   public boolean test(ItemStack item) {
+      return this == ANY ? true : this.test(item.getTag());
    }
 
-   public boolean matches(Entity p_193475_1_) {
-      return this == ANY ? true : this.matches(getEntityTagToCompare(p_193475_1_));
+   public boolean test(Entity entityIn) {
+      return this == ANY ? true : this.test(writeToNBTWithSelectedItem(entityIn));
    }
 
-   public boolean matches(@Nullable INBT p_193477_1_) {
-      if (p_193477_1_ == null) {
+   public boolean test(@Nullable INBT nbt) {
+      if (nbt == null) {
          return this == ANY;
       } else {
-         return this.tag == null || NBTUtil.compareNbt(this.tag, p_193477_1_, true);
+         return this.tag == null || NBTUtil.areNBTEquals(this.tag, nbt, true);
       }
    }
 
-   public JsonElement serializeToJson() {
+   public JsonElement serialize() {
       return (JsonElement)(this != ANY && this.tag != null ? new JsonPrimitive(this.tag.toString()) : JsonNull.INSTANCE);
    }
 
-   public static NBTPredicate fromJson(@Nullable JsonElement p_193476_0_) {
-      if (p_193476_0_ != null && !p_193476_0_.isJsonNull()) {
+   public static NBTPredicate deserialize(@Nullable JsonElement json) {
+      if (json != null && !json.isJsonNull()) {
          CompoundNBT compoundnbt;
          try {
-            compoundnbt = JsonToNBT.parseTag(JSONUtils.convertToString(p_193476_0_, "nbt"));
+            compoundnbt = JsonToNBT.getTagFromJson(JSONUtils.getString(json, "nbt"));
          } catch (CommandSyntaxException commandsyntaxexception) {
             throw new JsonSyntaxException("Invalid nbt tag: " + commandsyntaxexception.getMessage());
          }
@@ -59,12 +59,12 @@ public class NBTPredicate {
       }
    }
 
-   public static CompoundNBT getEntityTagToCompare(Entity p_196981_0_) {
-      CompoundNBT compoundnbt = p_196981_0_.saveWithoutId(new CompoundNBT());
-      if (p_196981_0_ instanceof PlayerEntity) {
-         ItemStack itemstack = ((PlayerEntity)p_196981_0_).inventory.getSelected();
+   public static CompoundNBT writeToNBTWithSelectedItem(Entity entityIn) {
+      CompoundNBT compoundnbt = entityIn.writeWithoutTypeId(new CompoundNBT());
+      if (entityIn instanceof PlayerEntity) {
+         ItemStack itemstack = ((PlayerEntity)entityIn).inventory.getCurrentItem();
          if (!itemstack.isEmpty()) {
-            compoundnbt.put("SelectedItem", itemstack.save(new CompoundNBT()));
+            compoundnbt.put("SelectedItem", itemstack.write(new CompoundNBT()));
          }
       }
 

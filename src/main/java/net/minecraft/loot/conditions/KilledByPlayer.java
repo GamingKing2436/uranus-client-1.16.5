@@ -17,19 +17,19 @@ public class KilledByPlayer implements ILootCondition {
    private KilledByPlayer() {
    }
 
-   public LootConditionType getType() {
+   public LootConditionType func_230419_b_() {
       return LootConditionManager.KILLED_BY_PLAYER;
    }
 
-   public Set<LootParameter<?>> getReferencedContextParams() {
+   public Set<LootParameter<?>> getRequiredParameters() {
       return ImmutableSet.of(LootParameters.LAST_DAMAGE_PLAYER);
    }
 
    public boolean test(LootContext p_test_1_) {
-      return p_test_1_.hasParam(LootParameters.LAST_DAMAGE_PLAYER);
+      return p_test_1_.has(LootParameters.LAST_DAMAGE_PLAYER);
    }
 
-   public static ILootCondition.IBuilder killedByPlayer() {
+   public static ILootCondition.IBuilder builder() {
       return () -> {
          return INSTANCE;
       };

@@ -12,47 +12,47 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class SoundEventAccessor implements ISoundEventAccessor<Sound> {
-   private final List<ISoundEventAccessor<Sound>> list = Lists.newArrayList();
-   private final Random random = new Random();
+   private final List<ISoundEventAccessor<Sound>> accessorList = Lists.newArrayList();
+   private final Random rnd = new Random();
    private final ResourceLocation location;
    @Nullable
    private final ITextComponent subtitle;
 
-   public SoundEventAccessor(ResourceLocation p_i46521_1_, @Nullable String p_i46521_2_) {
-      this.location = p_i46521_1_;
-      this.subtitle = p_i46521_2_ == null ? null : new TranslationTextComponent(p_i46521_2_);
+   public SoundEventAccessor(ResourceLocation locationIn, @Nullable String subtitleIn) {
+      this.location = locationIn;
+      this.subtitle = subtitleIn == null ? null : new TranslationTextComponent(subtitleIn);
    }
 
    public int getWeight() {
       int i = 0;
 
-      for(ISoundEventAccessor<Sound> isoundeventaccessor : this.list) {
+      for(ISoundEventAccessor<Sound> isoundeventaccessor : this.accessorList) {
          i += isoundeventaccessor.getWeight();
       }
 
       return i;
    }
 
-   public Sound getSound() {
+   public Sound cloneEntry() {
       int i = this.getWeight();
-      if (!this.list.isEmpty() && i != 0) {
-         int j = this.random.nextInt(i);
+      if (!this.accessorList.isEmpty() && i != 0) {
+         int j = this.rnd.nextInt(i);
 
-         for(ISoundEventAccessor<Sound> isoundeventaccessor : this.list) {
+         for(ISoundEventAccessor<Sound> isoundeventaccessor : this.accessorList) {
             j -= isoundeventaccessor.getWeight();
             if (j < 0) {
-               return isoundeventaccessor.getSound();
+               return isoundeventaccessor.cloneEntry();
             }
          }
 
-         return SoundHandler.EMPTY_SOUND;
+         return SoundHandler.MISSING_SOUND;
       } else {
-         return SoundHandler.EMPTY_SOUND;
+         return SoundHandler.MISSING_SOUND;
       }
    }
 
-   public void addSound(ISoundEventAccessor<Sound> p_188715_1_) {
-      this.list.add(p_188715_1_);
+   public void addSound(ISoundEventAccessor<Sound> accessor) {
+      this.accessorList.add(accessor);
    }
 
    @Nullable
@@ -60,9 +60,9 @@ public class SoundEventAccessor implements ISoundEventAccessor<Sound> {
       return this.subtitle;
    }
 
-   public void preloadIfRequired(SoundEngine p_217867_1_) {
-      for(ISoundEventAccessor<Sound> isoundeventaccessor : this.list) {
-         isoundeventaccessor.preloadIfRequired(p_217867_1_);
+   public void enqueuePreload(SoundEngine engine) {
+      for(ISoundEventAccessor<Sound> isoundeventaccessor : this.accessorList) {
+         isoundeventaccessor.enqueuePreload(engine);
       }
 
    }

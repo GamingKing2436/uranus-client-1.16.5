@@ -17,25 +17,25 @@ import org.apache.commons.lang3.Validate;
 @OnlyIn(Dist.CLIENT)
 public class SoundListSerializer implements JsonDeserializer<SoundList> {
    public SoundList deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
-      JsonObject jsonobject = JSONUtils.convertToJsonObject(p_deserialize_1_, "entry");
-      boolean flag = JSONUtils.getAsBoolean(jsonobject, "replace", false);
-      String s = JSONUtils.getAsString(jsonobject, "subtitle", (String)null);
-      List<Sound> list = this.getSounds(jsonobject);
+      JsonObject jsonobject = JSONUtils.getJsonObject(p_deserialize_1_, "entry");
+      boolean flag = JSONUtils.getBoolean(jsonobject, "replace", false);
+      String s = JSONUtils.getString(jsonobject, "subtitle", (String)null);
+      List<Sound> list = this.deserializeSounds(jsonobject);
       return new SoundList(list, flag, s);
    }
 
-   private List<Sound> getSounds(JsonObject p_188733_1_) {
+   private List<Sound> deserializeSounds(JsonObject object) {
       List<Sound> list = Lists.newArrayList();
-      if (p_188733_1_.has("sounds")) {
-         JsonArray jsonarray = JSONUtils.getAsJsonArray(p_188733_1_, "sounds");
+      if (object.has("sounds")) {
+         JsonArray jsonarray = JSONUtils.getJsonArray(object, "sounds");
 
          for(int i = 0; i < jsonarray.size(); ++i) {
             JsonElement jsonelement = jsonarray.get(i);
-            if (JSONUtils.isStringValue(jsonelement)) {
-               String s = JSONUtils.convertToString(jsonelement, "sound");
+            if (JSONUtils.isString(jsonelement)) {
+               String s = JSONUtils.getString(jsonelement, "sound");
                list.add(new Sound(s, 1.0F, 1.0F, 1, Sound.Type.FILE, false, false, 16));
             } else {
-               list.add(this.getSound(JSONUtils.convertToJsonObject(jsonelement, "sound")));
+               list.add(this.deserializeSound(JSONUtils.getJsonObject(jsonelement, "sound")));
             }
          }
       }
@@ -43,25 +43,25 @@ public class SoundListSerializer implements JsonDeserializer<SoundList> {
       return list;
    }
 
-   private Sound getSound(JsonObject p_188734_1_) {
-      String s = JSONUtils.getAsString(p_188734_1_, "name");
-      Sound.Type sound$type = this.getType(p_188734_1_, Sound.Type.FILE);
-      float f = JSONUtils.getAsFloat(p_188734_1_, "volume", 1.0F);
+   private Sound deserializeSound(JsonObject object) {
+      String s = JSONUtils.getString(object, "name");
+      Sound.Type sound$type = this.deserializeType(object, Sound.Type.FILE);
+      float f = JSONUtils.getFloat(object, "volume", 1.0F);
       Validate.isTrue(f > 0.0F, "Invalid volume");
-      float f1 = JSONUtils.getAsFloat(p_188734_1_, "pitch", 1.0F);
+      float f1 = JSONUtils.getFloat(object, "pitch", 1.0F);
       Validate.isTrue(f1 > 0.0F, "Invalid pitch");
-      int i = JSONUtils.getAsInt(p_188734_1_, "weight", 1);
+      int i = JSONUtils.getInt(object, "weight", 1);
       Validate.isTrue(i > 0, "Invalid weight");
-      boolean flag = JSONUtils.getAsBoolean(p_188734_1_, "preload", false);
-      boolean flag1 = JSONUtils.getAsBoolean(p_188734_1_, "stream", false);
-      int j = JSONUtils.getAsInt(p_188734_1_, "attenuation_distance", 16);
+      boolean flag = JSONUtils.getBoolean(object, "preload", false);
+      boolean flag1 = JSONUtils.getBoolean(object, "stream", false);
+      int j = JSONUtils.getInt(object, "attenuation_distance", 16);
       return new Sound(s, f, f1, i, sound$type, flag1, flag, j);
    }
 
-   private Sound.Type getType(JsonObject p_188732_1_, Sound.Type p_188732_2_) {
-      Sound.Type sound$type = p_188732_2_;
-      if (p_188732_1_.has("type")) {
-         sound$type = Sound.Type.getByName(JSONUtils.getAsString(p_188732_1_, "type"));
+   private Sound.Type deserializeType(JsonObject object, Sound.Type defaultValue) {
+      Sound.Type sound$type = defaultValue;
+      if (object.has("type")) {
+         sound$type = Sound.Type.getByName(JSONUtils.getString(object, "type"));
          Validate.notNull(sound$type, "Invalid type");
       }
 

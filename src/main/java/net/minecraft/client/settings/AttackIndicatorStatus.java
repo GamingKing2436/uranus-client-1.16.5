@@ -16,22 +16,22 @@ public enum AttackIndicatorStatus {
       return new AttackIndicatorStatus[p_216750_0_];
    });
    private final int id;
-   private final String key;
+   private final String resourceKey;
 
-   private AttackIndicatorStatus(int p_i51168_3_, String p_i51168_4_) {
-      this.id = p_i51168_3_;
-      this.key = p_i51168_4_;
+   private AttackIndicatorStatus(int id, String keyIn) {
+      this.id = id;
+      this.resourceKey = keyIn;
    }
 
    public int getId() {
       return this.id;
    }
 
-   public String getKey() {
-      return this.key;
+   public String getResourceKey() {
+      return this.resourceKey;
    }
 
-   public static AttackIndicatorStatus byId(int p_216749_0_) {
-      return BY_ID[MathHelper.positiveModulo(p_216749_0_, BY_ID.length)];
+   public static AttackIndicatorStatus byId(int id) {
+      return BY_ID[MathHelper.normalizeAngle(id, BY_ID.length)];
    }
 }

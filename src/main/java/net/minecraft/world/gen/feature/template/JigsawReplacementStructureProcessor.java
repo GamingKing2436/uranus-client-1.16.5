@@ -12,16 +12,16 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorldReader;
 
 public class JigsawReplacementStructureProcessor extends StructureProcessor {
-   public static final Codec<JigsawReplacementStructureProcessor> CODEC;
+   public static final Codec<JigsawReplacementStructureProcessor> field_237085_a_;
    public static final JigsawReplacementStructureProcessor INSTANCE = new JigsawReplacementStructureProcessor();
 
    private JigsawReplacementStructureProcessor() {
    }
 
    @Nullable
-   public Template.BlockInfo processBlock(IWorldReader p_230386_1_, BlockPos p_230386_2_, BlockPos p_230386_3_, Template.BlockInfo p_230386_4_, Template.BlockInfo p_230386_5_, PlacementSettings p_230386_6_) {
+   public Template.BlockInfo func_230386_a_(IWorldReader p_230386_1_, BlockPos p_230386_2_, BlockPos p_230386_3_, Template.BlockInfo p_230386_4_, Template.BlockInfo p_230386_5_, PlacementSettings p_230386_6_) {
       BlockState blockstate = p_230386_5_.state;
-      if (blockstate.is(Blocks.JIGSAW)) {
+      if (blockstate.isIn(Blocks.JIGSAW)) {
          String s = p_230386_5_.nbt.getString("final_state");
          BlockStateParser blockstateparser = new BlockStateParser(new StringReader(s), false);
 
@@ -31,7 +31,7 @@ public class JigsawReplacementStructureProcessor extends StructureProcessor {
             throw new RuntimeException(commandsyntaxexception);
          }
 
-         return blockstateparser.getState().is(Blocks.STRUCTURE_VOID) ? null : new Template.BlockInfo(p_230386_5_.pos, blockstateparser.getState(), (CompoundNBT)null);
+         return blockstateparser.getState().isIn(Blocks.STRUCTURE_VOID) ? null : new Template.BlockInfo(p_230386_5_.pos, blockstateparser.getState(), (CompoundNBT)null);
       } else {
          return p_230386_5_;
       }
@@ -42,7 +42,7 @@ public class JigsawReplacementStructureProcessor extends StructureProcessor {
    }
 
    static {
-      CODEC = Codec.unit(() -> {
+      field_237085_a_ = Codec.unit(() -> {
          return INSTANCE;
       });
    }

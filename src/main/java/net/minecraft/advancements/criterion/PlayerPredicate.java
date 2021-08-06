@@ -30,53 +30,53 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.world.GameType;
 
 public class PlayerPredicate {
-   public static final PlayerPredicate ANY = (new PlayerPredicate.Default()).build();
+   public static final PlayerPredicate ANY = (new PlayerPredicate.Default()).create();
    private final MinMaxBounds.IntBound level;
-   private final GameType gameType;
+   private final GameType gamemode;
    private final Map<Stat<?>, MinMaxBounds.IntBound> stats;
    private final Object2BooleanMap<ResourceLocation> recipes;
    private final Map<ResourceLocation, PlayerPredicate.IAdvancementPredicate> advancements;
 
-   private static PlayerPredicate.IAdvancementPredicate advancementPredicateFromJson(JsonElement p_227004_0_) {
-      if (p_227004_0_.isJsonPrimitive()) {
-         boolean flag = p_227004_0_.getAsBoolean();
+   private static PlayerPredicate.IAdvancementPredicate deserializeAdvancementPredicate(JsonElement element) {
+      if (element.isJsonPrimitive()) {
+         boolean flag = element.getAsBoolean();
          return new PlayerPredicate.CompletedAdvancementPredicate(flag);
       } else {
          Object2BooleanMap<String> object2booleanmap = new Object2BooleanOpenHashMap<>();
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(p_227004_0_, "criterion data");
+         JsonObject jsonobject = JSONUtils.getJsonObject(element, "criterion data");
          jsonobject.entrySet().forEach((p_227003_1_) -> {
-            boolean flag1 = JSONUtils.convertToBoolean(p_227003_1_.getValue(), "criterion test");
+            boolean flag1 = JSONUtils.getBoolean(p_227003_1_.getValue(), "criterion test");
             object2booleanmap.put(p_227003_1_.getKey(), flag1);
          });
          return new PlayerPredicate.CriteriaPredicate(object2booleanmap);
       }
    }
 
-   private PlayerPredicate(MinMaxBounds.IntBound p_i225770_1_, GameType p_i225770_2_, Map<Stat<?>, MinMaxBounds.IntBound> p_i225770_3_, Object2BooleanMap<ResourceLocation> p_i225770_4_, Map<ResourceLocation, PlayerPredicate.IAdvancementPredicate> p_i225770_5_) {
-      this.level = p_i225770_1_;
-      this.gameType = p_i225770_2_;
-      this.stats = p_i225770_3_;
-      this.recipes = p_i225770_4_;
-      this.advancements = p_i225770_5_;
+   private PlayerPredicate(MinMaxBounds.IntBound level, GameType gamemode, Map<Stat<?>, MinMaxBounds.IntBound> stats, Object2BooleanMap<ResourceLocation> recipes, Map<ResourceLocation, PlayerPredicate.IAdvancementPredicate> advancements) {
+      this.level = level;
+      this.gamemode = gamemode;
+      this.stats = stats;
+      this.recipes = recipes;
+      this.advancements = advancements;
    }
 
-   public boolean matches(Entity p_226998_1_) {
+   public boolean test(Entity player) {
       if (this == ANY) {
          return true;
-      } else if (!(p_226998_1_ instanceof ServerPlayerEntity)) {
+      } else if (!(player instanceof ServerPlayerEntity)) {
          return false;
       } else {
-         ServerPlayerEntity serverplayerentity = (ServerPlayerEntity)p_226998_1_;
-         if (!this.level.matches(serverplayerentity.experienceLevel)) {
+         ServerPlayerEntity serverplayerentity = (ServerPlayerEntity)player;
+         if (!this.level.test(serverplayerentity.experienceLevel)) {
             return false;
-         } else if (this.gameType != GameType.NOT_SET && this.gameType != serverplayerentity.gameMode.getGameModeForPlayer()) {
+         } else if (this.gamemode != GameType.NOT_SET && this.gamemode != serverplayerentity.interactionManager.getGameType()) {
             return false;
          } else {
             StatisticsManager statisticsmanager = serverplayerentity.getStats();
 
             for(Entry<Stat<?>, MinMaxBounds.IntBound> entry : this.stats.entrySet()) {
                int i = statisticsmanager.getValue(entry.getKey());
-               if (!entry.getValue().matches(i)) {
+               if (!entry.getValue().test(i)) {
                   return false;
                }
             }
@@ -84,18 +84,18 @@ public class PlayerPredicate {
             RecipeBook recipebook = serverplayerentity.getRecipeBook();
 
             for(it.unimi.dsi.fastutil.objects.Object2BooleanMap.Entry<ResourceLocation> entry2 : this.recipes.object2BooleanEntrySet()) {
-               if (recipebook.contains(entry2.getKey()) != entry2.getBooleanValue()) {
+               if (recipebook.isUnlocked(entry2.getKey()) != entry2.getBooleanValue()) {
                   return false;
                }
             }
 
             if (!this.advancements.isEmpty()) {
                PlayerAdvancements playeradvancements = serverplayerentity.getAdvancements();
-               AdvancementManager advancementmanager = serverplayerentity.getServer().getAdvancements();
+               AdvancementManager advancementmanager = serverplayerentity.getServer().getAdvancementManager();
 
                for(Entry<ResourceLocation, PlayerPredicate.IAdvancementPredicate> entry1 : this.advancements.entrySet()) {
                   Advancement advancement = advancementmanager.getAdvancement(entry1.getKey());
-                  if (advancement == null || !entry1.getValue().test(playeradvancements.getOrStartProgress(advancement))) {
+                  if (advancement == null || !entry1.getValue().test(playeradvancements.getProgress(advancement))) {
                      return false;
                   }
                }
@@ -106,24 +106,24 @@ public class PlayerPredicate {
       }
    }
 
-   public static PlayerPredicate fromJson(@Nullable JsonElement p_227000_0_) {
-      if (p_227000_0_ != null && !p_227000_0_.isJsonNull()) {
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(p_227000_0_, "player");
+   public static PlayerPredicate deserialize(@Nullable JsonElement element) {
+      if (element != null && !element.isJsonNull()) {
+         JsonObject jsonobject = JSONUtils.getJsonObject(element, "player");
          MinMaxBounds.IntBound minmaxbounds$intbound = MinMaxBounds.IntBound.fromJson(jsonobject.get("level"));
-         String s = JSONUtils.getAsString(jsonobject, "gamemode", "");
-         GameType gametype = GameType.byName(s, GameType.NOT_SET);
+         String s = JSONUtils.getString(jsonobject, "gamemode", "");
+         GameType gametype = GameType.parseGameTypeWithDefault(s, GameType.NOT_SET);
          Map<Stat<?>, MinMaxBounds.IntBound> map = Maps.newHashMap();
-         JsonArray jsonarray = JSONUtils.getAsJsonArray(jsonobject, "stats", (JsonArray)null);
+         JsonArray jsonarray = JSONUtils.getJsonArray(jsonobject, "stats", (JsonArray)null);
          if (jsonarray != null) {
             for(JsonElement jsonelement : jsonarray) {
-               JsonObject jsonobject1 = JSONUtils.convertToJsonObject(jsonelement, "stats entry");
-               ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getAsString(jsonobject1, "type"));
-               StatType<?> stattype = Registry.STAT_TYPE.get(resourcelocation);
+               JsonObject jsonobject1 = JSONUtils.getJsonObject(jsonelement, "stats entry");
+               ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getString(jsonobject1, "type"));
+               StatType<?> stattype = Registry.STATS.getOrDefault(resourcelocation);
                if (stattype == null) {
                   throw new JsonParseException("Invalid stat type: " + resourcelocation);
                }
 
-               ResourceLocation resourcelocation1 = new ResourceLocation(JSONUtils.getAsString(jsonobject1, "stat"));
+               ResourceLocation resourcelocation1 = new ResourceLocation(JSONUtils.getString(jsonobject1, "stat"));
                Stat<?> stat = getStat(stattype, resourcelocation1);
                MinMaxBounds.IntBound minmaxbounds$intbound1 = MinMaxBounds.IntBound.fromJson(jsonobject1.get("value"));
                map.put(stat, minmaxbounds$intbound1);
@@ -131,20 +131,20 @@ public class PlayerPredicate {
          }
 
          Object2BooleanMap<ResourceLocation> object2booleanmap = new Object2BooleanOpenHashMap<>();
-         JsonObject jsonobject2 = JSONUtils.getAsJsonObject(jsonobject, "recipes", new JsonObject());
+         JsonObject jsonobject2 = JSONUtils.getJsonObject(jsonobject, "recipes", new JsonObject());
 
          for(Entry<String, JsonElement> entry : jsonobject2.entrySet()) {
             ResourceLocation resourcelocation2 = new ResourceLocation(entry.getKey());
-            boolean flag = JSONUtils.convertToBoolean(entry.getValue(), "recipe present");
+            boolean flag = JSONUtils.getBoolean(entry.getValue(), "recipe present");
             object2booleanmap.put(resourcelocation2, flag);
          }
 
          Map<ResourceLocation, PlayerPredicate.IAdvancementPredicate> map1 = Maps.newHashMap();
-         JsonObject jsonobject3 = JSONUtils.getAsJsonObject(jsonobject, "advancements", new JsonObject());
+         JsonObject jsonobject3 = JSONUtils.getJsonObject(jsonobject, "advancements", new JsonObject());
 
          for(Entry<String, JsonElement> entry1 : jsonobject3.entrySet()) {
             ResourceLocation resourcelocation3 = new ResourceLocation(entry1.getKey());
-            PlayerPredicate.IAdvancementPredicate playerpredicate$iadvancementpredicate = advancementPredicateFromJson(entry1.getValue());
+            PlayerPredicate.IAdvancementPredicate playerpredicate$iadvancementpredicate = deserializeAdvancementPredicate(entry1.getValue());
             map1.put(resourcelocation3, playerpredicate$iadvancementpredicate);
          }
 
@@ -154,37 +154,37 @@ public class PlayerPredicate {
       }
    }
 
-   private static <T> Stat<T> getStat(StatType<T> p_226997_0_, ResourceLocation p_226997_1_) {
-      Registry<T> registry = p_226997_0_.getRegistry();
-      T t = registry.get(p_226997_1_);
+   private static <T> Stat<T> getStat(StatType<T> type, ResourceLocation identifier) {
+      Registry<T> registry = type.getRegistry();
+      T t = registry.getOrDefault(identifier);
       if (t == null) {
-         throw new JsonParseException("Unknown object " + p_226997_1_ + " for stat type " + Registry.STAT_TYPE.getKey(p_226997_0_));
+         throw new JsonParseException("Unknown object " + identifier + " for stat type " + Registry.STATS.getKey(type));
       } else {
-         return p_226997_0_.get(t);
+         return type.get(t);
       }
    }
 
-   private static <T> ResourceLocation getStatValueId(Stat<T> p_226996_0_) {
-      return p_226996_0_.getType().getRegistry().getKey(p_226996_0_.getValue());
+   private static <T> ResourceLocation getRegistryKeyForStat(Stat<T> stat) {
+      return stat.getType().getRegistry().getKey(stat.getValue());
    }
 
-   public JsonElement serializeToJson() {
+   public JsonElement serialize() {
       if (this == ANY) {
          return JsonNull.INSTANCE;
       } else {
          JsonObject jsonobject = new JsonObject();
-         jsonobject.add("level", this.level.serializeToJson());
-         if (this.gameType != GameType.NOT_SET) {
-            jsonobject.addProperty("gamemode", this.gameType.getName());
+         jsonobject.add("level", this.level.serialize());
+         if (this.gamemode != GameType.NOT_SET) {
+            jsonobject.addProperty("gamemode", this.gamemode.getName());
          }
 
          if (!this.stats.isEmpty()) {
             JsonArray jsonarray = new JsonArray();
             this.stats.forEach((p_226999_1_, p_226999_2_) -> {
                JsonObject jsonobject3 = new JsonObject();
-               jsonobject3.addProperty("type", Registry.STAT_TYPE.getKey(p_226999_1_.getType()).toString());
-               jsonobject3.addProperty("stat", getStatValueId(p_226999_1_).toString());
-               jsonobject3.add("value", p_226999_2_.serializeToJson());
+               jsonobject3.addProperty("type", Registry.STATS.getKey(p_226999_1_.getType()).toString());
+               jsonobject3.addProperty("stat", getRegistryKeyForStat(p_226999_1_).toString());
+               jsonobject3.add("value", p_226999_2_.serialize());
                jsonarray.add(jsonobject3);
             });
             jsonobject.add("stats", jsonarray);
@@ -201,7 +201,7 @@ public class PlayerPredicate {
          if (!this.advancements.isEmpty()) {
             JsonObject jsonobject2 = new JsonObject();
             this.advancements.forEach((p_227001_1_, p_227001_2_) -> {
-               jsonobject2.add(p_227001_1_.toString(), p_227001_2_.toJson());
+               jsonobject2.add(p_227001_1_.toString(), p_227001_2_.serialize());
             });
             jsonobject.add("advancements", jsonobject2);
          }
@@ -211,38 +211,38 @@ public class PlayerPredicate {
    }
 
    static class CompletedAdvancementPredicate implements PlayerPredicate.IAdvancementPredicate {
-      private final boolean state;
+      private final boolean completion;
 
-      public CompletedAdvancementPredicate(boolean p_i225773_1_) {
-         this.state = p_i225773_1_;
+      public CompletedAdvancementPredicate(boolean completion) {
+         this.completion = completion;
       }
 
-      public JsonElement toJson() {
-         return new JsonPrimitive(this.state);
+      public JsonElement serialize() {
+         return new JsonPrimitive(this.completion);
       }
 
       public boolean test(AdvancementProgress p_test_1_) {
-         return p_test_1_.isDone() == this.state;
+         return p_test_1_.isDone() == this.completion;
       }
    }
 
    static class CriteriaPredicate implements PlayerPredicate.IAdvancementPredicate {
-      private final Object2BooleanMap<String> criterions;
+      private final Object2BooleanMap<String> completion;
 
-      public CriteriaPredicate(Object2BooleanMap<String> p_i225772_1_) {
-         this.criterions = p_i225772_1_;
+      public CriteriaPredicate(Object2BooleanMap<String> completion) {
+         this.completion = completion;
       }
 
-      public JsonElement toJson() {
+      public JsonElement serialize() {
          JsonObject jsonobject = new JsonObject();
-         this.criterions.forEach(jsonobject::addProperty);
+         this.completion.forEach(jsonobject::addProperty);
          return jsonobject;
       }
 
       public boolean test(AdvancementProgress p_test_1_) {
-         for(it.unimi.dsi.fastutil.objects.Object2BooleanMap.Entry<String> entry : this.criterions.object2BooleanEntrySet()) {
-            CriterionProgress criterionprogress = p_test_1_.getCriterion(entry.getKey());
-            if (criterionprogress == null || criterionprogress.isDone() != entry.getBooleanValue()) {
+         for(it.unimi.dsi.fastutil.objects.Object2BooleanMap.Entry<String> entry : this.completion.object2BooleanEntrySet()) {
+            CriterionProgress criterionprogress = p_test_1_.getCriterionProgress(entry.getKey());
+            if (criterionprogress == null || criterionprogress.isObtained() != entry.getBooleanValue()) {
                return false;
             }
          }
@@ -252,18 +252,18 @@ public class PlayerPredicate {
    }
 
    public static class Default {
-      private MinMaxBounds.IntBound level = MinMaxBounds.IntBound.ANY;
+      private MinMaxBounds.IntBound level = MinMaxBounds.IntBound.UNBOUNDED;
       private GameType gameType = GameType.NOT_SET;
-      private final Map<Stat<?>, MinMaxBounds.IntBound> stats = Maps.newHashMap();
+      private final Map<Stat<?>, MinMaxBounds.IntBound> statValues = Maps.newHashMap();
       private final Object2BooleanMap<ResourceLocation> recipes = new Object2BooleanOpenHashMap<>();
       private final Map<ResourceLocation, PlayerPredicate.IAdvancementPredicate> advancements = Maps.newHashMap();
 
-      public PlayerPredicate build() {
-         return new PlayerPredicate(this.level, this.gameType, this.stats, this.recipes, this.advancements);
+      public PlayerPredicate create() {
+         return new PlayerPredicate(this.level, this.gameType, this.statValues, this.recipes, this.advancements);
       }
    }
 
    interface IAdvancementPredicate extends Predicate<AdvancementProgress> {
-      JsonElement toJson();
+      JsonElement serialize();
    }
 }

@@ -12,13 +12,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ChestedHorseRenderer<T extends AbstractChestedHorseEntity> extends AbstractHorseRenderer<T, HorseArmorChestsModel<T>> {
-   private static final Map<EntityType<?>, ResourceLocation> MAP = Maps.newHashMap(ImmutableMap.of(EntityType.DONKEY, new ResourceLocation("textures/entity/horse/donkey.png"), EntityType.MULE, new ResourceLocation("textures/entity/horse/mule.png")));
+   private static final Map<EntityType<?>, ResourceLocation> field_195635_a = Maps.newHashMap(ImmutableMap.of(EntityType.DONKEY, new ResourceLocation("textures/entity/horse/donkey.png"), EntityType.MULE, new ResourceLocation("textures/entity/horse/mule.png")));
 
-   public ChestedHorseRenderer(EntityRendererManager p_i48144_1_, float p_i48144_2_) {
-      super(p_i48144_1_, new HorseArmorChestsModel<>(0.0F), p_i48144_2_);
+   public ChestedHorseRenderer(EntityRendererManager renderManagerIn, float scaleIn) {
+      super(renderManagerIn, new HorseArmorChestsModel<>(0.0F), scaleIn);
    }
 
-   public ResourceLocation getTextureLocation(T p_110775_1_) {
-      return MAP.get(p_110775_1_.getType());
+   public ResourceLocation getEntityTexture(T entity) {
+      return field_195635_a.get(entity.getType());
    }
 }

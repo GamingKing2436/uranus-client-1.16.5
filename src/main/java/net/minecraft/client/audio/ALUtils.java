@@ -13,8 +13,8 @@ import org.lwjgl.openal.ALC10;
 public class ALUtils {
    private static final Logger LOGGER = LogManager.getLogger();
 
-   private static String alErrorToString(int p_216482_0_) {
-      switch(p_216482_0_) {
+   private static String toALErrorString(int rawValue) {
+      switch(rawValue) {
       case 40961:
          return "Invalid name parameter.";
       case 40962:
@@ -30,18 +30,18 @@ public class ALUtils {
       }
    }
 
-   static boolean checkALError(String p_216483_0_) {
+   static boolean checkALError(String where) {
       int i = AL10.alGetError();
       if (i != 0) {
-         LOGGER.error("{}: {}", p_216483_0_, alErrorToString(i));
+         LOGGER.error("{}: {}", where, toALErrorString(i));
          return true;
       } else {
          return false;
       }
    }
 
-   private static String alcErrorToString(int p_216480_0_) {
-      switch(p_216480_0_) {
+   private static String toALCErrorString(int errorCode) {
+      switch(errorCode) {
       case 40961:
          return "Invalid device.";
       case 40962:
@@ -57,20 +57,20 @@ public class ALUtils {
       }
    }
 
-   static boolean checkALCError(long p_216481_0_, String p_216481_2_) {
-      int i = ALC10.alcGetError(p_216481_0_);
+   static boolean checkALCError(long deviceHandle, String where) {
+      int i = ALC10.alcGetError(deviceHandle);
       if (i != 0) {
-         LOGGER.error("{}{}: {}", p_216481_2_, p_216481_0_, alcErrorToString(i));
+         LOGGER.error("{}{}: {}", where, deviceHandle, toALCErrorString(i));
          return true;
       } else {
          return false;
       }
    }
 
-   static int audioFormatToOpenAl(AudioFormat p_216479_0_) {
-      Encoding encoding = p_216479_0_.getEncoding();
-      int i = p_216479_0_.getChannels();
-      int j = p_216479_0_.getSampleSizeInBits();
+   static int getFormat(AudioFormat audioFormat) {
+      Encoding encoding = audioFormat.getEncoding();
+      int i = audioFormat.getChannels();
+      int j = audioFormat.getSampleSizeInBits();
       if (encoding.equals(Encoding.PCM_UNSIGNED) || encoding.equals(Encoding.PCM_SIGNED)) {
          if (i == 1) {
             if (j == 8) {
@@ -91,6 +91,6 @@ public class ALUtils {
          }
       }
 
-      throw new IllegalArgumentException("Invalid audio format: " + p_216479_0_);
+      throw new IllegalArgumentException("Invalid audio format: " + audioFormat);
    }
 }

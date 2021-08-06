@@ -22,10 +22,10 @@ public class JunglePyramidStructure extends Structure<NoFeatureConfig> {
          super(p_i225807_1_, p_i225807_2_, p_i225807_3_, p_i225807_4_, p_i225807_5_, p_i225807_6_);
       }
 
-      public void generatePieces(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
-         JunglePyramidPiece junglepyramidpiece = new JunglePyramidPiece(this.random, p_230364_4_ * 16, p_230364_5_ * 16);
-         this.pieces.add(junglepyramidpiece);
-         this.calculateBoundingBox();
+      public void func_230364_a_(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
+         JunglePyramidPiece junglepyramidpiece = new JunglePyramidPiece(this.rand, p_230364_4_ * 16, p_230364_5_ * 16);
+         this.components.add(junglepyramidpiece);
+         this.recalculateStructureSize();
       }
    }
 }

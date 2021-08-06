@@ -8,7 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IEntityRenderer<T extends Entity, M extends EntityModel<T>> {
-   M getModel();
+   M getEntityModel();
 
-   ResourceLocation getTextureLocation(T p_110775_1_);
+   ResourceLocation getEntityTexture(T entity);
 }

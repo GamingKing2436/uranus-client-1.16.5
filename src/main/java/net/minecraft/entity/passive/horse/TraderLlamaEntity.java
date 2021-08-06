@@ -33,19 +33,19 @@ public class TraderLlamaEntity extends LlamaEntity {
       return true;
    }
 
-   protected LlamaEntity makeBabyLlama() {
-      return EntityType.TRADER_LLAMA.create(this.level);
+   protected LlamaEntity createChild() {
+      return EntityType.TRADER_LLAMA.create(this.world);
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      p_213281_1_.putInt("DespawnDelay", this.despawnDelay);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      compound.putInt("DespawnDelay", this.despawnDelay);
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      if (p_70037_1_.contains("DespawnDelay", 99)) {
-         this.despawnDelay = p_70037_1_.getInt("DespawnDelay");
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      if (compound.contains("DespawnDelay", 99)) {
+         this.despawnDelay = compound.getInt("DespawnDelay");
       }
 
    }
@@ -56,26 +56,26 @@ public class TraderLlamaEntity extends LlamaEntity {
       this.targetSelector.addGoal(1, new TraderLlamaEntity.FollowTraderGoal(this));
    }
 
-   protected void doPlayerRide(PlayerEntity p_110237_1_) {
+   protected void mountTo(PlayerEntity player) {
       Entity entity = this.getLeashHolder();
       if (!(entity instanceof WanderingTraderEntity)) {
-         super.doPlayerRide(p_110237_1_);
+         super.mountTo(player);
       }
    }
 
-   public void aiStep() {
-      super.aiStep();
-      if (!this.level.isClientSide) {
-         this.maybeDespawn();
+   public void livingTick() {
+      super.livingTick();
+      if (!this.world.isRemote) {
+         this.tryDespawn();
       }
 
    }
 
-   private void maybeDespawn() {
+   private void tryDespawn() {
       if (this.canDespawn()) {
-         this.despawnDelay = this.isLeashedToWanderingTrader() ? ((WanderingTraderEntity)this.getLeashHolder()).getDespawnDelay() - 1 : this.despawnDelay - 1;
+         this.despawnDelay = this.isLeashedToTrader() ? ((WanderingTraderEntity)this.getLeashHolder()).getDespawnDelay() - 1 : this.despawnDelay - 1;
          if (this.despawnDelay <= 0) {
-            this.dropLeash(true, false);
+            this.clearLeashed(true, false);
             this.remove();
          }
 
@@ -83,65 +83,65 @@ public class TraderLlamaEntity extends LlamaEntity {
    }
 
    private boolean canDespawn() {
-      return !this.isTamed() && !this.isLeashedToSomethingOtherThanTheWanderingTrader() && !this.hasOnePlayerPassenger();
+      return !this.isTame() && !this.isLeashedToStranger() && !this.isOnePlayerRiding();
    }
 
-   private boolean isLeashedToWanderingTrader() {
+   private boolean isLeashedToTrader() {
       return this.getLeashHolder() instanceof WanderingTraderEntity;
    }
 
-   private boolean isLeashedToSomethingOtherThanTheWanderingTrader() {
-      return this.isLeashed() && !this.isLeashedToWanderingTrader();
+   private boolean isLeashedToStranger() {
+      return this.getLeashed() && !this.isLeashedToTrader();
    }
 
    @Nullable
-   public ILivingEntityData finalizeSpawn(IServerWorld p_213386_1_, DifficultyInstance p_213386_2_, SpawnReason p_213386_3_, @Nullable ILivingEntityData p_213386_4_, @Nullable CompoundNBT p_213386_5_) {
-      if (p_213386_3_ == SpawnReason.EVENT) {
-         this.setAge(0);
+   public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+      if (reason == SpawnReason.EVENT) {
+         this.setGrowingAge(0);
       }
 
-      if (p_213386_4_ == null) {
-         p_213386_4_ = new AgeableEntity.AgeableData(false);
+      if (spawnDataIn == null) {
+         spawnDataIn = new AgeableEntity.AgeableData(false);
       }
 
-      return super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, p_213386_4_, p_213386_5_);
+      return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
    }
 
    public class FollowTraderGoal extends TargetGoal {
-      private final LlamaEntity llama;
-      private LivingEntity ownerLastHurtBy;
-      private int timestamp;
+      private final LlamaEntity field_220800_b;
+      private LivingEntity field_220801_c;
+      private int field_220802_d;
 
       public FollowTraderGoal(LlamaEntity p_i50458_2_) {
          super(p_i50458_2_, false);
-         this.llama = p_i50458_2_;
-         this.setFlags(EnumSet.of(Goal.Flag.TARGET));
+         this.field_220800_b = p_i50458_2_;
+         this.setMutexFlags(EnumSet.of(Goal.Flag.TARGET));
       }
 
-      public boolean canUse() {
-         if (!this.llama.isLeashed()) {
+      public boolean shouldExecute() {
+         if (!this.field_220800_b.getLeashed()) {
             return false;
          } else {
-            Entity entity = this.llama.getLeashHolder();
+            Entity entity = this.field_220800_b.getLeashHolder();
             if (!(entity instanceof WanderingTraderEntity)) {
                return false;
             } else {
                WanderingTraderEntity wanderingtraderentity = (WanderingTraderEntity)entity;
-               this.ownerLastHurtBy = wanderingtraderentity.getLastHurtByMob();
-               int i = wanderingtraderentity.getLastHurtByMobTimestamp();
-               return i != this.timestamp && this.canAttack(this.ownerLastHurtBy, EntityPredicate.DEFAULT);
+               this.field_220801_c = wanderingtraderentity.getRevengeTarget();
+               int i = wanderingtraderentity.getRevengeTimer();
+               return i != this.field_220802_d && this.isSuitableTarget(this.field_220801_c, EntityPredicate.DEFAULT);
             }
          }
       }
 
-      public void start() {
-         this.mob.setTarget(this.ownerLastHurtBy);
-         Entity entity = this.llama.getLeashHolder();
+      public void startExecuting() {
+         this.goalOwner.setAttackTarget(this.field_220801_c);
+         Entity entity = this.field_220800_b.getLeashHolder();
          if (entity instanceof WanderingTraderEntity) {
-            this.timestamp = ((WanderingTraderEntity)entity).getLastHurtByMobTimestamp();
+            this.field_220802_d = ((WanderingTraderEntity)entity).getRevengeTimer();
          }
 
-         super.start();
+         super.startExecuting();
       }
    }
 }

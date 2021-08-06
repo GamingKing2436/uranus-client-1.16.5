@@ -8,17 +8,17 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class HoglinRenderer extends MobRenderer<HoglinEntity, BoarModel<HoglinEntity>> {
-   private static final ResourceLocation HOGLIN_LOCATION = new ResourceLocation("textures/entity/hoglin/hoglin.png");
+   private static final ResourceLocation field_239382_a_ = new ResourceLocation("textures/entity/hoglin/hoglin.png");
 
    public HoglinRenderer(EntityRendererManager p_i232470_1_) {
       super(p_i232470_1_, new BoarModel<>(), 0.7F);
    }
 
-   public ResourceLocation getTextureLocation(HoglinEntity p_110775_1_) {
-      return HOGLIN_LOCATION;
+   public ResourceLocation getEntityTexture(HoglinEntity entity) {
+      return field_239382_a_;
    }
 
-   protected boolean isShaking(HoglinEntity p_230495_1_) {
-      return p_230495_1_.isConverting();
+   protected boolean func_230495_a_(HoglinEntity p_230495_1_) {
+      return p_230495_1_.func_234364_eK_();
    }
 }

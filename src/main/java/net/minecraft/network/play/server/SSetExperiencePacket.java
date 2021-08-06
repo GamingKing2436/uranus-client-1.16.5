@@ -8,38 +8,38 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SSetExperiencePacket implements IPacket<IClientPlayNetHandler> {
-   private float experienceProgress;
+   private float experienceBar;
    private int totalExperience;
-   private int experienceLevel;
+   private int level;
 
    public SSetExperiencePacket() {
    }
 
-   public SSetExperiencePacket(float p_i46912_1_, int p_i46912_2_, int p_i46912_3_) {
-      this.experienceProgress = p_i46912_1_;
-      this.totalExperience = p_i46912_2_;
-      this.experienceLevel = p_i46912_3_;
+   public SSetExperiencePacket(float experienceBarIn, int totalExperienceIn, int levelIn) {
+      this.experienceBar = experienceBarIn;
+      this.totalExperience = totalExperienceIn;
+      this.level = levelIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.experienceProgress = p_148837_1_.readFloat();
-      this.experienceLevel = p_148837_1_.readVarInt();
-      this.totalExperience = p_148837_1_.readVarInt();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.experienceBar = buf.readFloat();
+      this.level = buf.readVarInt();
+      this.totalExperience = buf.readVarInt();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeFloat(this.experienceProgress);
-      p_148840_1_.writeVarInt(this.experienceLevel);
-      p_148840_1_.writeVarInt(this.totalExperience);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeFloat(this.experienceBar);
+      buf.writeVarInt(this.level);
+      buf.writeVarInt(this.totalExperience);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleSetExperience(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleSetExperience(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getExperienceProgress() {
-      return this.experienceProgress;
+   public float getExperienceBar() {
+      return this.experienceBar;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -48,7 +48,7 @@ public class SSetExperiencePacket implements IPacket<IClientPlayNetHandler> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getExperienceLevel() {
-      return this.experienceLevel;
+   public int getLevel() {
+      return this.level;
    }
 }

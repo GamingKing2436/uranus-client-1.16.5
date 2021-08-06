@@ -13,19 +13,19 @@ public enum StructureMode implements IStringSerializable {
    DATA("data");
 
    private final String name;
-   private final ITextComponent displayName;
+   private final ITextComponent field_242702_f;
 
-   private StructureMode(String p_i49330_3_) {
-      this.name = p_i49330_3_;
-      this.displayName = new TranslationTextComponent("structure_block.mode_info." + p_i49330_3_);
+   private StructureMode(String name) {
+      this.name = name;
+      this.field_242702_f = new TranslationTextComponent("structure_block.mode_info." + name);
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ITextComponent getDisplayName() {
-      return this.displayName;
+   public ITextComponent func_242703_b() {
+      return this.field_242702_f;
    }
 }

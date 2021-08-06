@@ -18,20 +18,20 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class OperationArgument implements ArgumentType<OperationArgument.IOperation> {
    private static final Collection<String> EXAMPLES = Arrays.asList("=", ">", "<");
-   private static final SimpleCommandExceptionType ERROR_INVALID_OPERATION = new SimpleCommandExceptionType(new TranslationTextComponent("arguments.operation.invalid"));
-   private static final SimpleCommandExceptionType ERROR_DIVIDE_BY_ZERO = new SimpleCommandExceptionType(new TranslationTextComponent("arguments.operation.div0"));
+   private static final SimpleCommandExceptionType OPERATION_INVALID = new SimpleCommandExceptionType(new TranslationTextComponent("arguments.operation.invalid"));
+   private static final SimpleCommandExceptionType OPERATION_DIVIDE_BY_ZERO = new SimpleCommandExceptionType(new TranslationTextComponent("arguments.operation.div0"));
 
    public static OperationArgument operation() {
       return new OperationArgument();
    }
 
-   public static OperationArgument.IOperation getOperation(CommandContext<CommandSource> p_197179_0_, String p_197179_1_) throws CommandSyntaxException {
-      return p_197179_0_.getArgument(p_197179_1_, OperationArgument.IOperation.class);
+   public static OperationArgument.IOperation getOperation(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      return context.getArgument(name, OperationArgument.IOperation.class);
    }
 
    public OperationArgument.IOperation parse(StringReader p_parse_1_) throws CommandSyntaxException {
       if (!p_parse_1_.canRead()) {
-         throw ERROR_INVALID_OPERATION.create();
+         throw OPERATION_INVALID.create();
       } else {
          int i = p_parse_1_.getCursor();
 
@@ -39,7 +39,7 @@ public class OperationArgument implements ArgumentType<OperationArgument.IOperat
             p_parse_1_.skip();
          }
 
-         return getOperation(p_parse_1_.getString().substring(i, p_parse_1_.getCursor()));
+         return parseOperation(p_parse_1_.getString().substring(i, p_parse_1_.getCursor()));
       }
    }
 
@@ -51,16 +51,16 @@ public class OperationArgument implements ArgumentType<OperationArgument.IOperat
       return EXAMPLES;
    }
 
-   private static OperationArgument.IOperation getOperation(String p_197177_0_) throws CommandSyntaxException {
-      return (p_197177_0_.equals("><") ? (p_197175_0_, p_197175_1_) -> {
-         int i = p_197175_0_.getScore();
-         p_197175_0_.setScore(p_197175_1_.getScore());
-         p_197175_1_.setScore(i);
-      } : getSimpleOperation(p_197177_0_));
+   private static OperationArgument.IOperation parseOperation(String name) throws CommandSyntaxException {
+      return (name.equals("><") ? (p_197175_0_, p_197175_1_) -> {
+         int i = p_197175_0_.getScorePoints();
+         p_197175_0_.setScorePoints(p_197175_1_.getScorePoints());
+         p_197175_1_.setScorePoints(i);
+      } : parseOperation0(name));
    }
 
-   private static OperationArgument.IIntOperation getSimpleOperation(String p_197182_0_) throws CommandSyntaxException {
-      switch(p_197182_0_) {
+   private static OperationArgument.IIntOperation parseOperation0(String name) throws CommandSyntaxException {
+      switch(name) {
       case "=":
          return (p_197174_0_, p_197174_1_) -> {
             return p_197174_1_;
@@ -80,7 +80,7 @@ public class OperationArgument implements ArgumentType<OperationArgument.IOperat
       case "/=":
          return (p_197178_0_, p_197178_1_) -> {
             if (p_197178_1_ == 0) {
-               throw ERROR_DIVIDE_BY_ZERO.create();
+               throw OPERATION_DIVIDE_BY_ZERO.create();
             } else {
                return MathHelper.intFloorDiv(p_197178_0_, p_197178_1_);
             }
@@ -88,9 +88,9 @@ public class OperationArgument implements ArgumentType<OperationArgument.IOperat
       case "%=":
          return (p_197181_0_, p_197181_1_) -> {
             if (p_197181_1_ == 0) {
-               throw ERROR_DIVIDE_BY_ZERO.create();
+               throw OPERATION_DIVIDE_BY_ZERO.create();
             } else {
-               return MathHelper.positiveModulo(p_197181_0_, p_197181_1_);
+               return MathHelper.normalizeAngle(p_197181_0_, p_197181_1_);
             }
          };
       case "<":
@@ -98,7 +98,7 @@ public class OperationArgument implements ArgumentType<OperationArgument.IOperat
       case ">":
          return Math::max;
       default:
-         throw ERROR_INVALID_OPERATION.create();
+         throw OPERATION_INVALID.create();
       }
    }
 
@@ -107,7 +107,7 @@ public class OperationArgument implements ArgumentType<OperationArgument.IOperat
       int apply(int p_apply_1_, int p_apply_2_) throws CommandSyntaxException;
 
       default void apply(Score p_apply_1_, Score p_apply_2_) throws CommandSyntaxException {
-         p_apply_1_.setScore(this.apply(p_apply_1_.getScore(), p_apply_2_.getScore()));
+         p_apply_1_.setScorePoints(this.apply(p_apply_1_.getScorePoints(), p_apply_2_.getScorePoints()));
       }
    }
 

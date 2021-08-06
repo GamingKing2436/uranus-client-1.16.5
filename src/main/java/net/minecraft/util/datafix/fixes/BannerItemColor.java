@@ -17,13 +17,13 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class BannerItemColor extends DataFix {
-   public BannerItemColor(Schema p_i49645_1_, boolean p_i49645_2_) {
-      super(p_i49645_1_, p_i49645_2_);
+   public BannerItemColor(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
       Type<?> type = this.getInputSchema().getType(TypeReferences.ITEM_STACK);
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
       OpticFinder<?> opticfinder1 = type.findField("tag");
       OpticFinder<?> opticfinder2 = opticfinder1.type().findField("BlockEntityTag");
       return this.fixTypeEverywhereTyped("ItemBannerColorFix", type, (p_207466_3_) -> {

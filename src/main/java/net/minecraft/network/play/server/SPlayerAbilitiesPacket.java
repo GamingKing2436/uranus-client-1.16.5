@@ -10,59 +10,59 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SPlayerAbilitiesPacket implements IPacket<IClientPlayNetHandler> {
    private boolean invulnerable;
-   private boolean isFlying;
-   private boolean canFly;
-   private boolean instabuild;
-   private float flyingSpeed;
-   private float walkingSpeed;
+   private boolean flying;
+   private boolean allowFlying;
+   private boolean creativeMode;
+   private float flySpeed;
+   private float walkSpeed;
 
    public SPlayerAbilitiesPacket() {
    }
 
-   public SPlayerAbilitiesPacket(PlayerAbilities p_i46933_1_) {
-      this.invulnerable = p_i46933_1_.invulnerable;
-      this.isFlying = p_i46933_1_.flying;
-      this.canFly = p_i46933_1_.mayfly;
-      this.instabuild = p_i46933_1_.instabuild;
-      this.flyingSpeed = p_i46933_1_.getFlyingSpeed();
-      this.walkingSpeed = p_i46933_1_.getWalkingSpeed();
+   public SPlayerAbilitiesPacket(PlayerAbilities capabilities) {
+      this.invulnerable = capabilities.disableDamage;
+      this.flying = capabilities.isFlying;
+      this.allowFlying = capabilities.allowFlying;
+      this.creativeMode = capabilities.isCreativeMode;
+      this.flySpeed = capabilities.getFlySpeed();
+      this.walkSpeed = capabilities.getWalkSpeed();
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      byte b0 = p_148837_1_.readByte();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      byte b0 = buf.readByte();
       this.invulnerable = (b0 & 1) != 0;
-      this.isFlying = (b0 & 2) != 0;
-      this.canFly = (b0 & 4) != 0;
-      this.instabuild = (b0 & 8) != 0;
-      this.flyingSpeed = p_148837_1_.readFloat();
-      this.walkingSpeed = p_148837_1_.readFloat();
+      this.flying = (b0 & 2) != 0;
+      this.allowFlying = (b0 & 4) != 0;
+      this.creativeMode = (b0 & 8) != 0;
+      this.flySpeed = buf.readFloat();
+      this.walkSpeed = buf.readFloat();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
+   public void writePacketData(PacketBuffer buf) throws IOException {
       byte b0 = 0;
       if (this.invulnerable) {
          b0 = (byte)(b0 | 1);
       }
 
-      if (this.isFlying) {
+      if (this.flying) {
          b0 = (byte)(b0 | 2);
       }
 
-      if (this.canFly) {
+      if (this.allowFlying) {
          b0 = (byte)(b0 | 4);
       }
 
-      if (this.instabuild) {
+      if (this.creativeMode) {
          b0 = (byte)(b0 | 8);
       }
 
-      p_148840_1_.writeByte(b0);
-      p_148840_1_.writeFloat(this.flyingSpeed);
-      p_148840_1_.writeFloat(this.walkingSpeed);
+      buf.writeByte(b0);
+      buf.writeFloat(this.flySpeed);
+      buf.writeFloat(this.walkSpeed);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handlePlayerAbilities(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handlePlayerAbilities(this);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -72,26 +72,26 @@ public class SPlayerAbilitiesPacket implements IPacket<IClientPlayNetHandler> {
 
    @OnlyIn(Dist.CLIENT)
    public boolean isFlying() {
-      return this.isFlying;
+      return this.flying;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canFly() {
-      return this.canFly;
+   public boolean isAllowFlying() {
+      return this.allowFlying;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canInstabuild() {
-      return this.instabuild;
+   public boolean isCreativeMode() {
+      return this.creativeMode;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getFlyingSpeed() {
-      return this.flyingSpeed;
+   public float getFlySpeed() {
+      return this.flySpeed;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getWalkingSpeed() {
-      return this.walkingSpeed;
+   public float getWalkSpeed() {
+      return this.walkSpeed;
    }
 }

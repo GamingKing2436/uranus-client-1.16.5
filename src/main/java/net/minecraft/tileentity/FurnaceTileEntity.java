@@ -16,7 +16,7 @@ public class FurnaceTileEntity extends AbstractFurnaceTileEntity {
       return new TranslationTextComponent("container.furnace");
    }
 
-   protected Container createMenu(int p_213906_1_, PlayerInventory p_213906_2_) {
-      return new FurnaceContainer(p_213906_1_, p_213906_2_, this, this.dataAccess);
+   protected Container createMenu(int id, PlayerInventory player) {
+      return new FurnaceContainer(id, player, this, this.furnaceData);
    }
 }

@@ -13,14 +13,14 @@ public abstract class FlowersFeature<U extends IFeatureConfig> extends Feature<U
       super(p_i231922_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, U p_241855_5_) {
-      BlockState blockstate = this.getRandomFlower(p_241855_3_, p_241855_4_, p_241855_5_);
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, U config) {
+      BlockState blockstate = this.getFlowerToPlace(rand, pos, config);
       int i = 0;
 
-      for(int j = 0; j < this.getCount(p_241855_5_); ++j) {
-         BlockPos blockpos = this.getPos(p_241855_3_, p_241855_4_, p_241855_5_);
-         if (p_241855_1_.isEmptyBlock(blockpos) && blockpos.getY() < 255 && blockstate.canSurvive(p_241855_1_, blockpos) && this.isValid(p_241855_1_, blockpos, p_241855_5_)) {
-            p_241855_1_.setBlock(blockpos, blockstate, 2);
+      for(int j = 0; j < this.getFlowerCount(config); ++j) {
+         BlockPos blockpos = this.getNearbyPos(rand, pos, config);
+         if (reader.isAirBlock(blockpos) && blockpos.getY() < 255 && blockstate.isValidPosition(reader, blockpos) && this.isValidPosition(reader, blockpos, config)) {
+            reader.setBlockState(blockpos, blockstate, 2);
             ++i;
          }
       }
@@ -28,11 +28,11 @@ public abstract class FlowersFeature<U extends IFeatureConfig> extends Feature<U
       return i > 0;
    }
 
-   public abstract boolean isValid(IWorld p_225559_1_, BlockPos p_225559_2_, U p_225559_3_);
+   public abstract boolean isValidPosition(IWorld world, BlockPos pos, U config);
 
-   public abstract int getCount(U p_225560_1_);
+   public abstract int getFlowerCount(U config);
 
-   public abstract BlockPos getPos(Random p_225561_1_, BlockPos p_225561_2_, U p_225561_3_);
+   public abstract BlockPos getNearbyPos(Random rand, BlockPos pos, U config);
 
-   public abstract BlockState getRandomFlower(Random p_225562_1_, BlockPos p_225562_2_, U p_225562_3_);
+   public abstract BlockState getFlowerToPlace(Random rand, BlockPos pos, U confgi);
 }

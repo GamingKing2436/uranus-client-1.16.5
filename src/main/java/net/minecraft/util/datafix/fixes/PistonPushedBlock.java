@@ -9,8 +9,8 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class PistonPushedBlock extends NamedEntityFix {
-   public PistonPushedBlock(Schema p_i49686_1_, boolean p_i49686_2_) {
-      super(p_i49686_1_, p_i49686_2_, "BlockEntityBlockStateFix", TypeReferences.BLOCK_ENTITY, "minecraft:piston");
+   public PistonPushedBlock(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "BlockEntityBlockStateFix", TypeReferences.BLOCK_ENTITY, "minecraft:piston");
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
@@ -22,7 +22,7 @@ public class PistonPushedBlock extends NamedEntityFix {
       dynamic = dynamic.remove("blockId");
       int j = dynamic.get("blockData").asInt(0) & 15;
       dynamic = dynamic.remove("blockData");
-      Dynamic<?> dynamic1 = BlockStateFlatteningMap.getTag(i << 4 | j);
+      Dynamic<?> dynamic1 = BlockStateFlatteningMap.getFixedNBTForID(i << 4 | j);
       Typed<?> typed = type.pointTyped(p_207419_1_.getOps()).orElseThrow(() -> {
          return new IllegalStateException("Could not create new piston block entity.");
       });

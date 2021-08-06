@@ -27,39 +27,39 @@ public class SetLore extends LootFunction {
    private final boolean replace;
    private final List<ITextComponent> lore;
    @Nullable
-   private final LootContext.EntityTarget resolutionContext;
+   private final LootContext.EntityTarget field_215947_d;
 
-   public SetLore(ILootCondition[] p_i51220_1_, boolean p_i51220_2_, List<ITextComponent> p_i51220_3_, @Nullable LootContext.EntityTarget p_i51220_4_) {
+   public SetLore(ILootCondition[] p_i51220_1_, boolean replace, List<ITextComponent> lore, @Nullable LootContext.EntityTarget p_i51220_4_) {
       super(p_i51220_1_);
-      this.replace = p_i51220_2_;
-      this.lore = ImmutableList.copyOf(p_i51220_3_);
-      this.resolutionContext = p_i51220_4_;
+      this.replace = replace;
+      this.lore = ImmutableList.copyOf(lore);
+      this.field_215947_d = p_i51220_4_;
    }
 
-   public LootFunctionType getType() {
+   public LootFunctionType getFunctionType() {
       return LootFunctionManager.SET_LORE;
    }
 
-   public Set<LootParameter<?>> getReferencedContextParams() {
-      return this.resolutionContext != null ? ImmutableSet.of(this.resolutionContext.getParam()) : ImmutableSet.of();
+   public Set<LootParameter<?>> getRequiredParameters() {
+      return this.field_215947_d != null ? ImmutableSet.of(this.field_215947_d.getParameter()) : ImmutableSet.of();
    }
 
-   public ItemStack run(ItemStack p_215859_1_, LootContext p_215859_2_) {
-      ListNBT listnbt = this.getLoreTag(p_215859_1_, !this.lore.isEmpty());
+   public ItemStack doApply(ItemStack stack, LootContext context) {
+      ListNBT listnbt = this.func_215942_a(stack, !this.lore.isEmpty());
       if (listnbt != null) {
          if (this.replace) {
             listnbt.clear();
          }
 
-         UnaryOperator<ITextComponent> unaryoperator = SetName.createResolver(p_215859_2_, this.resolutionContext);
+         UnaryOperator<ITextComponent> unaryoperator = SetName.func_215936_a(context, this.field_215947_d);
          this.lore.stream().map(unaryoperator).map(ITextComponent.Serializer::toJson).map(StringNBT::valueOf).forEach(listnbt::add);
       }
 
-      return p_215859_1_;
+      return stack;
    }
 
    @Nullable
-   private ListNBT getLoreTag(ItemStack p_215942_1_, boolean p_215942_2_) {
+   private ListNBT func_215942_a(ItemStack p_215942_1_, boolean p_215942_2_) {
       CompoundNBT compoundnbt;
       if (p_215942_1_.hasTag()) {
          compoundnbt = p_215942_1_.getTag();
@@ -106,17 +106,17 @@ public class SetLore extends LootFunction {
          }
 
          p_230424_1_.add("lore", jsonarray);
-         if (p_230424_2_.resolutionContext != null) {
-            p_230424_1_.add("entity", p_230424_3_.serialize(p_230424_2_.resolutionContext));
+         if (p_230424_2_.field_215947_d != null) {
+            p_230424_1_.add("entity", p_230424_3_.serialize(p_230424_2_.field_215947_d));
          }
 
       }
 
-      public SetLore deserialize(JsonObject p_186530_1_, JsonDeserializationContext p_186530_2_, ILootCondition[] p_186530_3_) {
-         boolean flag = JSONUtils.getAsBoolean(p_186530_1_, "replace", false);
-         List<ITextComponent> list = Streams.stream(JSONUtils.getAsJsonArray(p_186530_1_, "lore")).map(ITextComponent.Serializer::fromJson).collect(ImmutableList.toImmutableList());
-         LootContext.EntityTarget lootcontext$entitytarget = JSONUtils.getAsObject(p_186530_1_, "entity", (LootContext.EntityTarget)null, p_186530_2_, LootContext.EntityTarget.class);
-         return new SetLore(p_186530_3_, flag, list, lootcontext$entitytarget);
+      public SetLore deserialize(JsonObject object, JsonDeserializationContext deserializationContext, ILootCondition[] conditionsIn) {
+         boolean flag = JSONUtils.getBoolean(object, "replace", false);
+         List<ITextComponent> list = Streams.stream(JSONUtils.getJsonArray(object, "lore")).map(ITextComponent.Serializer::getComponentFromJson).collect(ImmutableList.toImmutableList());
+         LootContext.EntityTarget lootcontext$entitytarget = JSONUtils.deserializeClass(object, "entity", (LootContext.EntityTarget)null, deserializationContext, LootContext.EntityTarget.class);
+         return new SetLore(conditionsIn, flag, list, lootcontext$entitytarget);
       }
    }
 }

@@ -4,14 +4,14 @@ public class ColumnPos {
    public final int x;
    public final int z;
 
-   public ColumnPos(int p_i50710_1_, int p_i50710_2_) {
-      this.x = p_i50710_1_;
-      this.z = p_i50710_2_;
+   public ColumnPos(int x, int z) {
+      this.x = x;
+      this.z = z;
    }
 
-   public ColumnPos(BlockPos p_i50711_1_) {
-      this.x = p_i50711_1_.getX();
-      this.z = p_i50711_1_.getZ();
+   public ColumnPos(BlockPos pos) {
+      this.x = pos.getX();
+      this.z = pos.getZ();
    }
 
    public String toString() {

@@ -10,33 +10,33 @@ import net.minecraft.util.Rotation;
 public class RotatedPillarBlock extends Block {
    public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
 
-   public RotatedPillarBlock(AbstractBlock.Properties p_i48339_1_) {
-      super(p_i48339_1_);
-      this.registerDefaultState(this.defaultBlockState().setValue(AXIS, Direction.Axis.Y));
+   public RotatedPillarBlock(AbstractBlock.Properties properties) {
+      super(properties);
+      this.setDefaultState(this.getDefaultState().with(AXIS, Direction.Axis.Y));
    }
 
-   public BlockState rotate(BlockState p_185499_1_, Rotation p_185499_2_) {
-      switch(p_185499_2_) {
+   public BlockState rotate(BlockState state, Rotation rot) {
+      switch(rot) {
       case COUNTERCLOCKWISE_90:
       case CLOCKWISE_90:
-         switch((Direction.Axis)p_185499_1_.getValue(AXIS)) {
+         switch((Direction.Axis)state.get(AXIS)) {
          case X:
-            return p_185499_1_.setValue(AXIS, Direction.Axis.Z);
+            return state.with(AXIS, Direction.Axis.Z);
          case Z:
-            return p_185499_1_.setValue(AXIS, Direction.Axis.X);
+            return state.with(AXIS, Direction.Axis.X);
          default:
-            return p_185499_1_;
+            return state;
          }
       default:
-         return p_185499_1_;
+         return state;
       }
    }
 
-   protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> p_206840_1_) {
-      p_206840_1_.add(AXIS);
+   protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+      builder.add(AXIS);
    }
 
-   public BlockState getStateForPlacement(BlockItemUseContext p_196258_1_) {
-      return this.defaultBlockState().setValue(AXIS, p_196258_1_.getClickedFace().getAxis());
+   public BlockState getStateForPlacement(BlockItemUseContext context) {
+      return this.getDefaultState().with(AXIS, context.getFace().getAxis());
    }
 }

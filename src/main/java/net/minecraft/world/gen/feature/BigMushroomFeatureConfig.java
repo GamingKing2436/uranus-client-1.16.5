@@ -18,9 +18,9 @@ public class BigMushroomFeatureConfig implements IFeatureConfig {
    public final BlockStateProvider stemProvider;
    public final int foliageRadius;
 
-   public BigMushroomFeatureConfig(BlockStateProvider p_i225832_1_, BlockStateProvider p_i225832_2_, int p_i225832_3_) {
-      this.capProvider = p_i225832_1_;
-      this.stemProvider = p_i225832_2_;
-      this.foliageRadius = p_i225832_3_;
+   public BigMushroomFeatureConfig(BlockStateProvider capProvider, BlockStateProvider stemProvider, int foliageRadius) {
+      this.capProvider = capProvider;
+      this.stemProvider = stemProvider;
+      this.foliageRadius = foliageRadius;
    }
 }

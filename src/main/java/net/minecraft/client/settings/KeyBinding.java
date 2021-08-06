@@ -16,10 +16,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class KeyBinding implements Comparable<KeyBinding> {
-   private static final Map<String, KeyBinding> ALL = Maps.newHashMap();
-   private static final Map<InputMappings.Input, KeyBinding> MAP = Maps.newHashMap();
-   private static final Set<String> CATEGORIES = Sets.newHashSet();
-   private static final Map<String, Integer> CATEGORY_SORT_ORDER = Util.make(Maps.newHashMap(), (p_205215_0_) -> {
+   private static final Map<String, KeyBinding> KEYBIND_ARRAY = Maps.newHashMap();
+   private static final Map<InputMappings.Input, KeyBinding> HASH = Maps.newHashMap();
+   private static final Set<String> KEYBIND_SET = Sets.newHashSet();
+   private static final Map<String, Integer> CATEGORY_ORDER = Util.make(Maps.newHashMap(), (p_205215_0_) -> {
       p_205215_0_.put("key.categories.movement", 1);
       p_205215_0_.put("key.categories.gameplay", 2);
       p_205215_0_.put("key.categories.inventory", 3);
@@ -28,146 +28,146 @@ public class KeyBinding implements Comparable<KeyBinding> {
       p_205215_0_.put("key.categories.ui", 6);
       p_205215_0_.put("key.categories.misc", 7);
    });
-   private final String name;
-   private final InputMappings.Input defaultKey;
-   private final String category;
-   private InputMappings.Input key;
-   private boolean isDown;
-   private int clickCount;
+   private final String keyDescription;
+   private final InputMappings.Input keyCodeDefault;
+   private final String keyCategory;
+   private InputMappings.Input keyCode;
+   private boolean pressed;
+   private int pressTime;
 
-   public static void click(InputMappings.Input p_197981_0_) {
-      KeyBinding keybinding = MAP.get(p_197981_0_);
+   public static void onTick(InputMappings.Input key) {
+      KeyBinding keybinding = HASH.get(key);
       if (keybinding != null) {
-         ++keybinding.clickCount;
+         ++keybinding.pressTime;
       }
 
    }
 
-   public static void set(InputMappings.Input p_197980_0_, boolean p_197980_1_) {
-      KeyBinding keybinding = MAP.get(p_197980_0_);
+   public static void setKeyBindState(InputMappings.Input key, boolean held) {
+      KeyBinding keybinding = HASH.get(key);
       if (keybinding != null) {
-         keybinding.setDown(p_197980_1_);
+         keybinding.setPressed(held);
       }
 
    }
 
-   public static void setAll() {
-      for(KeyBinding keybinding : ALL.values()) {
-         if (keybinding.key.getType() == InputMappings.Type.KEYSYM && keybinding.key.getValue() != InputMappings.UNKNOWN.getValue()) {
-            keybinding.setDown(InputMappings.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), keybinding.key.getValue()));
+   public static void updateKeyBindState() {
+      for(KeyBinding keybinding : KEYBIND_ARRAY.values()) {
+         if (keybinding.keyCode.getType() == InputMappings.Type.KEYSYM && keybinding.keyCode.getKeyCode() != InputMappings.INPUT_INVALID.getKeyCode()) {
+            keybinding.setPressed(InputMappings.isKeyDown(Minecraft.getInstance().getMainWindow().getHandle(), keybinding.keyCode.getKeyCode()));
          }
       }
 
    }
 
-   public static void releaseAll() {
-      for(KeyBinding keybinding : ALL.values()) {
-         keybinding.release();
+   public static void unPressAllKeys() {
+      for(KeyBinding keybinding : KEYBIND_ARRAY.values()) {
+         keybinding.unpressKey();
       }
 
    }
 
-   public static void resetMapping() {
-      MAP.clear();
+   public static void resetKeyBindingArrayAndHash() {
+      HASH.clear();
 
-      for(KeyBinding keybinding : ALL.values()) {
-         MAP.put(keybinding.key, keybinding);
+      for(KeyBinding keybinding : KEYBIND_ARRAY.values()) {
+         HASH.put(keybinding.keyCode, keybinding);
       }
 
    }
 
-   public KeyBinding(String p_i45001_1_, int p_i45001_2_, String p_i45001_3_) {
-      this(p_i45001_1_, InputMappings.Type.KEYSYM, p_i45001_2_, p_i45001_3_);
+   public KeyBinding(String description, int keyCode, String category) {
+      this(description, InputMappings.Type.KEYSYM, keyCode, category);
    }
 
-   public KeyBinding(String p_i47675_1_, InputMappings.Type p_i47675_2_, int p_i47675_3_, String p_i47675_4_) {
-      this.name = p_i47675_1_;
-      this.key = p_i47675_2_.getOrCreate(p_i47675_3_);
-      this.defaultKey = this.key;
-      this.category = p_i47675_4_;
-      ALL.put(p_i47675_1_, this);
-      MAP.put(this.key, this);
-      CATEGORIES.add(p_i47675_4_);
+   public KeyBinding(String description, InputMappings.Type type, int code, String category) {
+      this.keyDescription = description;
+      this.keyCode = type.getOrMakeInput(code);
+      this.keyCodeDefault = this.keyCode;
+      this.keyCategory = category;
+      KEYBIND_ARRAY.put(description, this);
+      HASH.put(this.keyCode, this);
+      KEYBIND_SET.add(category);
    }
 
-   public boolean isDown() {
-      return this.isDown;
+   public boolean isKeyDown() {
+      return this.pressed;
    }
 
-   public String getCategory() {
-      return this.category;
+   public String getKeyCategory() {
+      return this.keyCategory;
    }
 
-   public boolean consumeClick() {
-      if (this.clickCount == 0) {
+   public boolean isPressed() {
+      if (this.pressTime == 0) {
          return false;
       } else {
-         --this.clickCount;
+         --this.pressTime;
          return true;
       }
    }
 
-   private void release() {
-      this.clickCount = 0;
-      this.setDown(false);
+   private void unpressKey() {
+      this.pressTime = 0;
+      this.setPressed(false);
    }
 
-   public String getName() {
-      return this.name;
+   public String getKeyDescription() {
+      return this.keyDescription;
    }
 
-   public InputMappings.Input getDefaultKey() {
-      return this.defaultKey;
+   public InputMappings.Input getDefault() {
+      return this.keyCodeDefault;
    }
 
-   public void setKey(InputMappings.Input p_197979_1_) {
-      this.key = p_197979_1_;
+   public void bind(InputMappings.Input key) {
+      this.keyCode = key;
    }
 
    public int compareTo(KeyBinding p_compareTo_1_) {
-      return this.category.equals(p_compareTo_1_.category) ? I18n.get(this.name).compareTo(I18n.get(p_compareTo_1_.name)) : CATEGORY_SORT_ORDER.get(this.category).compareTo(CATEGORY_SORT_ORDER.get(p_compareTo_1_.category));
+      return this.keyCategory.equals(p_compareTo_1_.keyCategory) ? I18n.format(this.keyDescription).compareTo(I18n.format(p_compareTo_1_.keyDescription)) : CATEGORY_ORDER.get(this.keyCategory).compareTo(CATEGORY_ORDER.get(p_compareTo_1_.keyCategory));
    }
 
-   public static Supplier<ITextComponent> createNameSupplier(String p_193626_0_) {
-      KeyBinding keybinding = ALL.get(p_193626_0_);
+   public static Supplier<ITextComponent> getDisplayString(String key) {
+      KeyBinding keybinding = KEYBIND_ARRAY.get(key);
       return keybinding == null ? () -> {
-         return new TranslationTextComponent(p_193626_0_);
-      } : keybinding::getTranslatedKeyMessage;
+         return new TranslationTextComponent(key);
+      } : keybinding::func_238171_j_;
    }
 
-   public boolean same(KeyBinding p_197983_1_) {
-      return this.key.equals(p_197983_1_.key);
+   public boolean conflicts(KeyBinding binding) {
+      return this.keyCode.equals(binding.keyCode);
    }
 
-   public boolean isUnbound() {
-      return this.key.equals(InputMappings.UNKNOWN);
+   public boolean isInvalid() {
+      return this.keyCode.equals(InputMappings.INPUT_INVALID);
    }
 
-   public boolean matches(int p_197976_1_, int p_197976_2_) {
-      if (p_197976_1_ == InputMappings.UNKNOWN.getValue()) {
-         return this.key.getType() == InputMappings.Type.SCANCODE && this.key.getValue() == p_197976_2_;
+   public boolean matchesKey(int keysym, int scancode) {
+      if (keysym == InputMappings.INPUT_INVALID.getKeyCode()) {
+         return this.keyCode.getType() == InputMappings.Type.SCANCODE && this.keyCode.getKeyCode() == scancode;
       } else {
-         return this.key.getType() == InputMappings.Type.KEYSYM && this.key.getValue() == p_197976_1_;
+         return this.keyCode.getType() == InputMappings.Type.KEYSYM && this.keyCode.getKeyCode() == keysym;
       }
    }
 
-   public boolean matchesMouse(int p_197984_1_) {
-      return this.key.getType() == InputMappings.Type.MOUSE && this.key.getValue() == p_197984_1_;
+   public boolean matchesMouseKey(int key) {
+      return this.keyCode.getType() == InputMappings.Type.MOUSE && this.keyCode.getKeyCode() == key;
    }
 
-   public ITextComponent getTranslatedKeyMessage() {
-      return this.key.getDisplayName();
+   public ITextComponent func_238171_j_() {
+      return this.keyCode.func_237520_d_();
    }
 
    public boolean isDefault() {
-      return this.key.equals(this.defaultKey);
+      return this.keyCode.equals(this.keyCodeDefault);
    }
 
-   public String saveString() {
-      return this.key.getName();
+   public String getTranslationKey() {
+      return this.keyCode.getTranslationKey();
    }
 
-   public void setDown(boolean p_225593_1_) {
-      this.isDown = p_225593_1_;
+   public void setPressed(boolean valueIn) {
+      this.pressed = valueIn;
    }
 }

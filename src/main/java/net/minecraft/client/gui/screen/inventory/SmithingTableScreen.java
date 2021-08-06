@@ -11,16 +11,16 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class SmithingTableScreen extends AbstractRepairScreen<SmithingTableContainer> {
-   private static final ResourceLocation SMITHING_LOCATION = new ResourceLocation("textures/gui/container/smithing.png");
+   private static final ResourceLocation GUI_TEXTURE = new ResourceLocation("textures/gui/container/smithing.png");
 
-   public SmithingTableScreen(SmithingTableContainer p_i232294_1_, PlayerInventory p_i232294_2_, ITextComponent p_i232294_3_) {
-      super(p_i232294_1_, p_i232294_2_, p_i232294_3_, SMITHING_LOCATION);
-      this.titleLabelX = 60;
-      this.titleLabelY = 18;
+   public SmithingTableScreen(SmithingTableContainer container, PlayerInventory playerInventory, ITextComponent title) {
+      super(container, playerInventory, title, GUI_TEXTURE);
+      this.titleX = 60;
+      this.titleY = 18;
    }
 
-   protected void renderLabels(MatrixStack p_230451_1_, int p_230451_2_, int p_230451_3_) {
+   protected void drawGuiContainerForegroundLayer(MatrixStack matrixStack, int x, int y) {
       RenderSystem.disableBlend();
-      super.renderLabels(p_230451_1_, p_230451_2_, p_230451_3_);
+      super.drawGuiContainerForegroundLayer(matrixStack, x, y);
    }
 }

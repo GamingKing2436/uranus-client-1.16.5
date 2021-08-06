@@ -11,162 +11,162 @@ import net.minecraft.world.GameType;
 import net.minecraft.world.border.WorldBorder;
 
 public class DerivedWorldInfo implements IServerWorldInfo {
-   private final IServerConfiguration worldData;
-   private final IServerWorldInfo wrapped;
+   private final IServerConfiguration configuration;
+   private final IServerWorldInfo delegate;
 
-   public DerivedWorldInfo(IServerConfiguration p_i232150_1_, IServerWorldInfo p_i232150_2_) {
-      this.worldData = p_i232150_1_;
-      this.wrapped = p_i232150_2_;
+   public DerivedWorldInfo(IServerConfiguration configuration, IServerWorldInfo delegate) {
+      this.configuration = configuration;
+      this.delegate = delegate;
    }
 
-   public int getXSpawn() {
-      return this.wrapped.getXSpawn();
+   public int getSpawnX() {
+      return this.delegate.getSpawnX();
    }
 
-   public int getYSpawn() {
-      return this.wrapped.getYSpawn();
+   public int getSpawnY() {
+      return this.delegate.getSpawnY();
    }
 
-   public int getZSpawn() {
-      return this.wrapped.getZSpawn();
+   public int getSpawnZ() {
+      return this.delegate.getSpawnZ();
    }
 
    public float getSpawnAngle() {
-      return this.wrapped.getSpawnAngle();
+      return this.delegate.getSpawnAngle();
    }
 
    public long getGameTime() {
-      return this.wrapped.getGameTime();
+      return this.delegate.getGameTime();
    }
 
    public long getDayTime() {
-      return this.wrapped.getDayTime();
+      return this.delegate.getDayTime();
    }
 
-   public String getLevelName() {
-      return this.worldData.getLevelName();
+   public String getWorldName() {
+      return this.configuration.getWorldName();
    }
 
    public int getClearWeatherTime() {
-      return this.wrapped.getClearWeatherTime();
+      return this.delegate.getClearWeatherTime();
    }
 
-   public void setClearWeatherTime(int p_230391_1_) {
+   public void setClearWeatherTime(int time) {
    }
 
    public boolean isThundering() {
-      return this.wrapped.isThundering();
+      return this.delegate.isThundering();
    }
 
    public int getThunderTime() {
-      return this.wrapped.getThunderTime();
+      return this.delegate.getThunderTime();
    }
 
    public boolean isRaining() {
-      return this.wrapped.isRaining();
+      return this.delegate.isRaining();
    }
 
    public int getRainTime() {
-      return this.wrapped.getRainTime();
+      return this.delegate.getRainTime();
    }
 
    public GameType getGameType() {
-      return this.worldData.getGameType();
+      return this.configuration.getGameType();
    }
 
-   public void setXSpawn(int p_76058_1_) {
+   public void setSpawnX(int x) {
    }
 
-   public void setYSpawn(int p_76056_1_) {
+   public void setSpawnY(int y) {
    }
 
-   public void setZSpawn(int p_76087_1_) {
+   public void setSpawnZ(int z) {
    }
 
-   public void setSpawnAngle(float p_241859_1_) {
+   public void setSpawnAngle(float angle) {
    }
 
-   public void setGameTime(long p_82572_1_) {
+   public void setGameTime(long time) {
    }
 
-   public void setDayTime(long p_76068_1_) {
+   public void setDayTime(long time) {
    }
 
-   public void setSpawn(BlockPos p_176143_1_, float p_176143_2_) {
+   public void setSpawn(BlockPos spawnPoint, float angle) {
    }
 
-   public void setThundering(boolean p_76069_1_) {
+   public void setThundering(boolean thunderingIn) {
    }
 
-   public void setThunderTime(int p_76090_1_) {
+   public void setThunderTime(int time) {
    }
 
-   public void setRaining(boolean p_76084_1_) {
+   public void setRaining(boolean isRaining) {
    }
 
-   public void setRainTime(int p_76080_1_) {
+   public void setRainTime(int time) {
    }
 
-   public void setGameType(GameType p_230392_1_) {
+   public void setGameType(GameType type) {
    }
 
    public boolean isHardcore() {
-      return this.worldData.isHardcore();
+      return this.configuration.isHardcore();
    }
 
-   public boolean getAllowCommands() {
-      return this.worldData.getAllowCommands();
+   public boolean areCommandsAllowed() {
+      return this.configuration.areCommandsAllowed();
    }
 
    public boolean isInitialized() {
-      return this.wrapped.isInitialized();
+      return this.delegate.isInitialized();
    }
 
-   public void setInitialized(boolean p_76091_1_) {
+   public void setInitialized(boolean initializedIn) {
    }
 
-   public GameRules getGameRules() {
-      return this.worldData.getGameRules();
+   public GameRules getGameRulesInstance() {
+      return this.configuration.getGameRulesInstance();
    }
 
-   public WorldBorder.Serializer getWorldBorder() {
-      return this.wrapped.getWorldBorder();
+   public WorldBorder.Serializer getWorldBorderSerializer() {
+      return this.delegate.getWorldBorderSerializer();
    }
 
-   public void setWorldBorder(WorldBorder.Serializer p_230393_1_) {
+   public void setWorldBorderSerializer(WorldBorder.Serializer serializer) {
    }
 
    public Difficulty getDifficulty() {
-      return this.worldData.getDifficulty();
+      return this.configuration.getDifficulty();
    }
 
    public boolean isDifficultyLocked() {
-      return this.worldData.isDifficultyLocked();
+      return this.configuration.isDifficultyLocked();
    }
 
    public TimerCallbackManager<MinecraftServer> getScheduledEvents() {
-      return this.wrapped.getScheduledEvents();
+      return this.delegate.getScheduledEvents();
    }
 
    public int getWanderingTraderSpawnDelay() {
       return 0;
    }
 
-   public void setWanderingTraderSpawnDelay(int p_230396_1_) {
+   public void setWanderingTraderSpawnDelay(int delay) {
    }
 
    public int getWanderingTraderSpawnChance() {
       return 0;
    }
 
-   public void setWanderingTraderSpawnChance(int p_230397_1_) {
+   public void setWanderingTraderSpawnChance(int chance) {
    }
 
-   public void setWanderingTraderId(UUID p_230394_1_) {
+   public void setWanderingTraderID(UUID id) {
    }
 
-   public void fillCrashReportCategory(CrashReportCategory p_85118_1_) {
-      p_85118_1_.setDetail("Derived", true);
-      this.wrapped.fillCrashReportCategory(p_85118_1_);
+   public void addToCrashReport(CrashReportCategory category) {
+      category.addDetail("Derived", true);
+      this.delegate.addToCrashReport(category);
    }
 }

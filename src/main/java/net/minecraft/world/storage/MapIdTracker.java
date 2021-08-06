@@ -6,36 +6,36 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap.Entry;
 import net.minecraft.nbt.CompoundNBT;
 
 public class MapIdTracker extends WorldSavedData {
-   private final Object2IntMap<String> usedAuxIds = new Object2IntOpenHashMap<>();
+   private final Object2IntMap<String> usedIds = new Object2IntOpenHashMap<>();
 
    public MapIdTracker() {
       super("idcounts");
-      this.usedAuxIds.defaultReturnValue(-1);
+      this.usedIds.defaultReturnValue(-1);
    }
 
-   public void load(CompoundNBT p_76184_1_) {
-      this.usedAuxIds.clear();
+   public void read(CompoundNBT nbt) {
+      this.usedIds.clear();
 
-      for(String s : p_76184_1_.getAllKeys()) {
-         if (p_76184_1_.contains(s, 99)) {
-            this.usedAuxIds.put(s, p_76184_1_.getInt(s));
+      for(String s : nbt.keySet()) {
+         if (nbt.contains(s, 99)) {
+            this.usedIds.put(s, nbt.getInt(s));
          }
       }
 
    }
 
-   public CompoundNBT save(CompoundNBT p_189551_1_) {
-      for(Entry<String> entry : this.usedAuxIds.object2IntEntrySet()) {
-         p_189551_1_.putInt(entry.getKey(), entry.getIntValue());
+   public CompoundNBT write(CompoundNBT compound) {
+      for(Entry<String> entry : this.usedIds.object2IntEntrySet()) {
+         compound.putInt(entry.getKey(), entry.getIntValue());
       }
 
-      return p_189551_1_;
+      return compound;
    }
 
-   public int getFreeAuxValueForMap() {
-      int i = this.usedAuxIds.getInt("map") + 1;
-      this.usedAuxIds.put("map", i);
-      this.setDirty();
+   public int getNextId() {
+      int i = this.usedIds.getInt("map") + 1;
+      this.usedIds.put("map", i);
+      this.markDirty();
       return i;
    }
 }

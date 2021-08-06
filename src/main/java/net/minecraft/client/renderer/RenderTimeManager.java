@@ -7,19 +7,19 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class RenderTimeManager {
    private final long[] values;
    private int count;
-   private int cursor;
+   private int index;
 
-   public RenderTimeManager(int p_i225998_1_) {
-      this.values = new long[p_i225998_1_];
+   public RenderTimeManager(int sizeIn) {
+      this.values = new long[sizeIn];
    }
 
-   public long registerValueAndGetMean(long p_228732_1_) {
+   public long nextValue(long valueIn) {
       if (this.count < this.values.length) {
          ++this.count;
       }
 
-      this.values[this.cursor] = p_228732_1_;
-      this.cursor = (this.cursor + 1) % this.values.length;
+      this.values[this.index] = valueIn;
+      this.index = (this.index + 1) % this.values.length;
       long i = Long.MAX_VALUE;
       long j = Long.MIN_VALUE;
       long k = 0L;

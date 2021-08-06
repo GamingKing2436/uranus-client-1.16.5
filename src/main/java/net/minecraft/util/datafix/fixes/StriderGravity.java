@@ -11,11 +11,11 @@ public class StriderGravity extends NamedEntityFix {
       super(p_i231466_1_, p_i231466_2_, "StriderGravityFix", TypeReferences.ENTITY, "minecraft:strider");
    }
 
-   public Dynamic<?> fixTag(Dynamic<?> p_233403_1_) {
+   public Dynamic<?> func_233403_a_(Dynamic<?> p_233403_1_) {
       return p_233403_1_.get("NoGravity").asBoolean(false) ? p_233403_1_.set("NoGravity", p_233403_1_.createBoolean(false)) : p_233403_1_;
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
-      return p_207419_1_.update(DSL.remainderFinder(), this::fixTag);
+      return p_207419_1_.update(DSL.remainderFinder(), this::func_233403_a_);
    }
 }

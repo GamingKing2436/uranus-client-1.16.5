@@ -14,7 +14,7 @@ public class CUpdateCommandBlockPacket implements IPacket<IServerPlayNetHandler>
    private String command;
    private boolean trackOutput;
    private boolean conditional;
-   private boolean automatic;
+   private boolean auto;
    private CommandBlockTileEntity.Mode mode;
 
    public CUpdateCommandBlockPacket() {
@@ -26,24 +26,24 @@ public class CUpdateCommandBlockPacket implements IPacket<IServerPlayNetHandler>
       this.command = p_i49543_2_;
       this.trackOutput = p_i49543_4_;
       this.conditional = p_i49543_5_;
-      this.automatic = p_i49543_6_;
+      this.auto = p_i49543_6_;
       this.mode = p_i49543_3_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.pos = p_148837_1_.readBlockPos();
-      this.command = p_148837_1_.readUtf(32767);
-      this.mode = p_148837_1_.readEnum(CommandBlockTileEntity.Mode.class);
-      int i = p_148837_1_.readByte();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.pos = buf.readBlockPos();
+      this.command = buf.readString(32767);
+      this.mode = buf.readEnumValue(CommandBlockTileEntity.Mode.class);
+      int i = buf.readByte();
       this.trackOutput = (i & 1) != 0;
       this.conditional = (i & 2) != 0;
-      this.automatic = (i & 4) != 0;
+      this.auto = (i & 4) != 0;
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeBlockPos(this.pos);
-      p_148840_1_.writeUtf(this.command);
-      p_148840_1_.writeEnum(this.mode);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeBlockPos(this.pos);
+      buf.writeString(this.command);
+      buf.writeEnumValue(this.mode);
       int i = 0;
       if (this.trackOutput) {
          i |= 1;
@@ -53,15 +53,15 @@ public class CUpdateCommandBlockPacket implements IPacket<IServerPlayNetHandler>
          i |= 2;
       }
 
-      if (this.automatic) {
+      if (this.auto) {
          i |= 4;
       }
 
-      p_148840_1_.writeByte(i);
+      buf.writeByte(i);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleSetCommandBlock(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processUpdateCommandBlock(this);
    }
 
    public BlockPos getPos() {
@@ -72,7 +72,7 @@ public class CUpdateCommandBlockPacket implements IPacket<IServerPlayNetHandler>
       return this.command;
    }
 
-   public boolean isTrackOutput() {
+   public boolean shouldTrackOutput() {
       return this.trackOutput;
    }
 
@@ -80,8 +80,8 @@ public class CUpdateCommandBlockPacket implements IPacket<IServerPlayNetHandler>
       return this.conditional;
    }
 
-   public boolean isAutomatic() {
-      return this.automatic;
+   public boolean isAuto() {
+      return this.auto;
    }
 
    public CommandBlockTileEntity.Mode getMode() {

@@ -6,7 +6,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class Tessellator {
-   private final BufferBuilder builder;
+   private final BufferBuilder buffer;
    private static final Tessellator INSTANCE = new Tessellator();
 
    public static Tessellator getInstance() {
@@ -14,20 +14,20 @@ public class Tessellator {
       return INSTANCE;
    }
 
-   public Tessellator(int p_i1250_1_) {
-      this.builder = new BufferBuilder(p_i1250_1_);
+   public Tessellator(int bufferSize) {
+      this.buffer = new BufferBuilder(bufferSize);
    }
 
    public Tessellator() {
       this(2097152);
    }
 
-   public void end() {
-      this.builder.end();
-      WorldVertexBufferUploader.end(this.builder);
+   public void draw() {
+      this.buffer.finishDrawing();
+      WorldVertexBufferUploader.draw(this.buffer);
    }
 
-   public BufferBuilder getBuilder() {
-      return this.builder;
+   public BufferBuilder getBuffer() {
+      return this.buffer;
    }
 }

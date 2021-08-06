@@ -6,38 +6,38 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.passive.TameableEntity;
 
 public class OwnerHurtTargetGoal extends TargetGoal {
-   private final TameableEntity tameAnimal;
-   private LivingEntity ownerLastHurt;
+   private final TameableEntity tameable;
+   private LivingEntity attacker;
    private int timestamp;
 
-   public OwnerHurtTargetGoal(TameableEntity p_i1668_1_) {
-      super(p_i1668_1_, false);
-      this.tameAnimal = p_i1668_1_;
-      this.setFlags(EnumSet.of(Goal.Flag.TARGET));
+   public OwnerHurtTargetGoal(TameableEntity theEntityTameableIn) {
+      super(theEntityTameableIn, false);
+      this.tameable = theEntityTameableIn;
+      this.setMutexFlags(EnumSet.of(Goal.Flag.TARGET));
    }
 
-   public boolean canUse() {
-      if (this.tameAnimal.isTame() && !this.tameAnimal.isOrderedToSit()) {
-         LivingEntity livingentity = this.tameAnimal.getOwner();
+   public boolean shouldExecute() {
+      if (this.tameable.isTamed() && !this.tameable.isSitting()) {
+         LivingEntity livingentity = this.tameable.getOwner();
          if (livingentity == null) {
             return false;
          } else {
-            this.ownerLastHurt = livingentity.getLastHurtMob();
-            int i = livingentity.getLastHurtMobTimestamp();
-            return i != this.timestamp && this.canAttack(this.ownerLastHurt, EntityPredicate.DEFAULT) && this.tameAnimal.wantsToAttack(this.ownerLastHurt, livingentity);
+            this.attacker = livingentity.getLastAttackedEntity();
+            int i = livingentity.getLastAttackedEntityTime();
+            return i != this.timestamp && this.isSuitableTarget(this.attacker, EntityPredicate.DEFAULT) && this.tameable.shouldAttackEntity(this.attacker, livingentity);
          }
       } else {
          return false;
       }
    }
 
-   public void start() {
-      this.mob.setTarget(this.ownerLastHurt);
-      LivingEntity livingentity = this.tameAnimal.getOwner();
+   public void startExecuting() {
+      this.goalOwner.setAttackTarget(this.attacker);
+      LivingEntity livingentity = this.tameable.getOwner();
       if (livingentity != null) {
-         this.timestamp = livingentity.getLastHurtMobTimestamp();
+         this.timestamp = livingentity.getLastAttackedEntityTime();
       }
 
-      super.start();
+      super.startExecuting();
    }
 }

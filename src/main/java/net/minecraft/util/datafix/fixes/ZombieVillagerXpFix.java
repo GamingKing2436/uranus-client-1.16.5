@@ -16,7 +16,7 @@ public class ZombieVillagerXpFix extends NamedEntityFix {
          Optional<Number> optional = p_222993_0_.get("Xp").asNumber().result();
          if (!optional.isPresent()) {
             int i = p_222993_0_.get("VillagerData").get("level").asInt(1);
-            return p_222993_0_.set("Xp", p_222993_0_.createInt(VillagerLevelAndXpFix.getMinXpPerLevel(i)));
+            return p_222993_0_.set("Xp", p_222993_0_.createInt(VillagerLevelAndXpFix.func_223001_a(i)));
          } else {
             return p_222993_0_;
          }

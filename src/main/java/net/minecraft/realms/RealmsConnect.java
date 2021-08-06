@@ -20,74 +20,74 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class RealmsConnect {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final Screen onlineScreen;
-   private volatile boolean aborted;
-   private NetworkManager connection;
+   private static final Logger field_230719_a_ = LogManager.getLogger();
+   private final Screen field_230720_b_;
+   private volatile boolean field_230721_c_;
+   private NetworkManager field_230722_d_;
 
    public RealmsConnect(Screen p_i232500_1_) {
-      this.onlineScreen = p_i232500_1_;
+      this.field_230720_b_ = p_i232500_1_;
    }
 
-   public void connect(final RealmsServer p_244798_1_, final String p_244798_2_, final int p_244798_3_) {
+   public void func_244798_a(final RealmsServer p_244798_1_, final String p_244798_2_, final int p_244798_3_) {
       final Minecraft minecraft = Minecraft.getInstance();
       minecraft.setConnectedToRealms(true);
-      RealmsNarratorHelper.now(I18n.get("mco.connect.success"));
+      RealmsNarratorHelper.func_239550_a_(I18n.format("mco.connect.success"));
       (new Thread("Realms-connect-task") {
          public void run() {
             InetAddress inetaddress = null;
 
             try {
                inetaddress = InetAddress.getByName(p_244798_2_);
-               if (RealmsConnect.this.aborted) {
+               if (RealmsConnect.this.field_230721_c_) {
                   return;
                }
 
-               RealmsConnect.this.connection = NetworkManager.connectToServer(inetaddress, p_244798_3_, minecraft.options.useNativeTransport());
-               if (RealmsConnect.this.aborted) {
+               RealmsConnect.this.field_230722_d_ = NetworkManager.createNetworkManagerAndConnect(inetaddress, p_244798_3_, minecraft.gameSettings.isUsingNativeTransport());
+               if (RealmsConnect.this.field_230721_c_) {
                   return;
                }
 
-               RealmsConnect.this.connection.setListener(new ClientLoginNetHandler(RealmsConnect.this.connection, minecraft, RealmsConnect.this.onlineScreen, (p_209500_0_) -> {
+               RealmsConnect.this.field_230722_d_.setNetHandler(new ClientLoginNetHandler(RealmsConnect.this.field_230722_d_, minecraft, RealmsConnect.this.field_230720_b_, (p_209500_0_) -> {
                }));
-               if (RealmsConnect.this.aborted) {
+               if (RealmsConnect.this.field_230721_c_) {
                   return;
                }
 
-               RealmsConnect.this.connection.send(new CHandshakePacket(p_244798_2_, p_244798_3_, ProtocolType.LOGIN));
-               if (RealmsConnect.this.aborted) {
+               RealmsConnect.this.field_230722_d_.sendPacket(new CHandshakePacket(p_244798_2_, p_244798_3_, ProtocolType.LOGIN));
+               if (RealmsConnect.this.field_230721_c_) {
                   return;
                }
 
-               RealmsConnect.this.connection.send(new CLoginStartPacket(minecraft.getUser().getGameProfile()));
-               minecraft.setCurrentServer(p_244798_1_.toServerData(p_244798_2_));
+               RealmsConnect.this.field_230722_d_.sendPacket(new CLoginStartPacket(minecraft.getSession().getProfile()));
+               minecraft.setServerData(p_244798_1_.func_244783_d(p_244798_2_));
             } catch (UnknownHostException unknownhostexception) {
-               minecraft.getClientPackSource().clearServerPack();
-               if (RealmsConnect.this.aborted) {
+               minecraft.getPackFinder().clearResourcePack();
+               if (RealmsConnect.this.field_230721_c_) {
                   return;
                }
 
-               RealmsConnect.LOGGER.error("Couldn't connect to world", (Throwable)unknownhostexception);
-               DisconnectedRealmsScreen disconnectedrealmsscreen = new DisconnectedRealmsScreen(RealmsConnect.this.onlineScreen, DialogTexts.CONNECT_FAILED, new TranslationTextComponent("disconnect.genericReason", "Unknown host '" + p_244798_2_ + "'"));
+               RealmsConnect.field_230719_a_.error("Couldn't connect to world", (Throwable)unknownhostexception);
+               DisconnectedRealmsScreen disconnectedrealmsscreen = new DisconnectedRealmsScreen(RealmsConnect.this.field_230720_b_, DialogTexts.CONNECTION_FAILED, new TranslationTextComponent("disconnect.genericReason", "Unknown host '" + p_244798_2_ + "'"));
                minecraft.execute(() -> {
-                  minecraft.setScreen(disconnectedrealmsscreen);
+                  minecraft.displayGuiScreen(disconnectedrealmsscreen);
                });
             } catch (Exception exception) {
-               minecraft.getClientPackSource().clearServerPack();
-               if (RealmsConnect.this.aborted) {
+               minecraft.getPackFinder().clearResourcePack();
+               if (RealmsConnect.this.field_230721_c_) {
                   return;
                }
 
-               RealmsConnect.LOGGER.error("Couldn't connect to world", (Throwable)exception);
+               RealmsConnect.field_230719_a_.error("Couldn't connect to world", (Throwable)exception);
                String s = exception.toString();
                if (inetaddress != null) {
                   String s1 = inetaddress + ":" + p_244798_3_;
                   s = s.replaceAll(s1, "");
                }
 
-               DisconnectedRealmsScreen disconnectedrealmsscreen1 = new DisconnectedRealmsScreen(RealmsConnect.this.onlineScreen, DialogTexts.CONNECT_FAILED, new TranslationTextComponent("disconnect.genericReason", s));
+               DisconnectedRealmsScreen disconnectedrealmsscreen1 = new DisconnectedRealmsScreen(RealmsConnect.this.field_230720_b_, DialogTexts.CONNECTION_FAILED, new TranslationTextComponent("disconnect.genericReason", s));
                minecraft.execute(() -> {
-                  minecraft.setScreen(disconnectedrealmsscreen1);
+                  minecraft.displayGuiScreen(disconnectedrealmsscreen1);
                });
             }
 
@@ -95,21 +95,21 @@ public class RealmsConnect {
       }).start();
    }
 
-   public void abort() {
-      this.aborted = true;
-      if (this.connection != null && this.connection.isConnected()) {
-         this.connection.disconnect(new TranslationTextComponent("disconnect.genericReason"));
-         this.connection.handleDisconnection();
+   public void func_231396_a_() {
+      this.field_230721_c_ = true;
+      if (this.field_230722_d_ != null && this.field_230722_d_.isChannelOpen()) {
+         this.field_230722_d_.closeChannel(new TranslationTextComponent("disconnect.genericReason"));
+         this.field_230722_d_.handleDisconnection();
       }
 
    }
 
-   public void tick() {
-      if (this.connection != null) {
-         if (this.connection.isConnected()) {
-            this.connection.tick();
+   public void func_231398_b_() {
+      if (this.field_230722_d_ != null) {
+         if (this.field_230722_d_.isChannelOpen()) {
+            this.field_230722_d_.tick();
          } else {
-            this.connection.handleDisconnection();
+            this.field_230722_d_.handleDisconnection();
          }
       }
 

@@ -27,14 +27,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class Splashes extends ReloadListener<List<String>> {
    private static final ResourceLocation SPLASHES_LOCATION = new ResourceLocation("texts/splashes.txt");
    private static final Random RANDOM = new Random();
-   private final List<String> splashes = Lists.newArrayList();
-   private final Session user;
+   private final List<String> possibleSplashes = Lists.newArrayList();
+   private final Session gameSession;
 
-   public Splashes(Session p_i50906_1_) {
-      this.user = p_i50906_1_;
+   public Splashes(Session gameSessionIn) {
+      this.gameSession = gameSessionIn;
    }
 
-   protected List<String> prepare(IResourceManager p_212854_1_, IProfiler p_212854_2_) {
+   protected List<String> prepare(IResourceManager resourceManagerIn, IProfiler profilerIn) {
       try (
          IResource iresource = Minecraft.getInstance().getResourceManager().getResource(SPLASHES_LOCATION);
          BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(iresource.getInputStream(), StandardCharsets.UTF_8));
@@ -47,13 +47,13 @@ public class Splashes extends ReloadListener<List<String>> {
       }
    }
 
-   protected void apply(List<String> p_212853_1_, IResourceManager p_212853_2_, IProfiler p_212853_3_) {
-      this.splashes.clear();
-      this.splashes.addAll(p_212853_1_);
+   protected void apply(List<String> objectIn, IResourceManager resourceManagerIn, IProfiler profilerIn) {
+      this.possibleSplashes.clear();
+      this.possibleSplashes.addAll(objectIn);
    }
 
    @Nullable
-   public String getSplash() {
+   public String getSplashText() {
       Calendar calendar = Calendar.getInstance();
       calendar.setTime(new Date());
       if (calendar.get(2) + 1 == 12 && calendar.get(5) == 24) {
@@ -62,10 +62,10 @@ public class Splashes extends ReloadListener<List<String>> {
          return "Happy new year!";
       } else if (calendar.get(2) + 1 == 10 && calendar.get(5) == 31) {
          return "OOoooOOOoooo! Spooky!";
-      } else if (this.splashes.isEmpty()) {
+      } else if (this.possibleSplashes.isEmpty()) {
          return null;
       } else {
-         return this.user != null && RANDOM.nextInt(this.splashes.size()) == 42 ? this.user.getName().toUpperCase(Locale.ROOT) + " IS YOU" : this.splashes.get(RANDOM.nextInt(this.splashes.size()));
+         return this.gameSession != null && RANDOM.nextInt(this.possibleSplashes.size()) == 42 ? this.gameSession.getUsername().toUpperCase(Locale.ROOT) + " IS YOU" : this.possibleSplashes.get(RANDOM.nextInt(this.possibleSplashes.size()));
       }
    }
 }

@@ -8,17 +8,17 @@ public class Rotations {
    protected final float y;
    protected final float z;
 
-   public Rotations(float p_i46009_1_, float p_i46009_2_, float p_i46009_3_) {
-      this.x = !Float.isInfinite(p_i46009_1_) && !Float.isNaN(p_i46009_1_) ? p_i46009_1_ % 360.0F : 0.0F;
-      this.y = !Float.isInfinite(p_i46009_2_) && !Float.isNaN(p_i46009_2_) ? p_i46009_2_ % 360.0F : 0.0F;
-      this.z = !Float.isInfinite(p_i46009_3_) && !Float.isNaN(p_i46009_3_) ? p_i46009_3_ % 360.0F : 0.0F;
+   public Rotations(float x, float y, float z) {
+      this.x = !Float.isInfinite(x) && !Float.isNaN(x) ? x % 360.0F : 0.0F;
+      this.y = !Float.isInfinite(y) && !Float.isNaN(y) ? y % 360.0F : 0.0F;
+      this.z = !Float.isInfinite(z) && !Float.isNaN(z) ? z % 360.0F : 0.0F;
    }
 
-   public Rotations(ListNBT p_i46010_1_) {
-      this(p_i46010_1_.getFloat(0), p_i46010_1_.getFloat(1), p_i46010_1_.getFloat(2));
+   public Rotations(ListNBT nbt) {
+      this(nbt.getFloat(0), nbt.getFloat(1), nbt.getFloat(2));
    }
 
-   public ListNBT save() {
+   public ListNBT writeToNBT() {
       ListNBT listnbt = new ListNBT();
       listnbt.add(FloatNBT.valueOf(this.x));
       listnbt.add(FloatNBT.valueOf(this.y));

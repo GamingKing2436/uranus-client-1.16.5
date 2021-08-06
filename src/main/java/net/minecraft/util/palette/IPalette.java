@@ -8,19 +8,19 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IPalette<T> {
-   int idFor(T p_186041_1_);
+   int idFor(T state);
 
-   boolean maybeHas(Predicate<T> p_230341_1_);
+   boolean func_230341_a_(Predicate<T> p_230341_1_);
 
    @Nullable
-   T valueFor(int p_186039_1_);
+   T get(int indexKey);
 
    @OnlyIn(Dist.CLIENT)
-   void read(PacketBuffer p_186038_1_);
+   void read(PacketBuffer buf);
 
-   void write(PacketBuffer p_186037_1_);
+   void write(PacketBuffer buf);
 
    int getSerializedSize();
 
-   void read(ListNBT p_196968_1_);
+   void read(ListNBT nbt);
 }

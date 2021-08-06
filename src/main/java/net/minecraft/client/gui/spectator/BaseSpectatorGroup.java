@@ -11,7 +11,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BaseSpectatorGroup implements ISpectatorMenuView {
-   private static final ITextComponent PROMPT_TEXT = new TranslationTextComponent("spectatorMenu.root.prompt");
+   private static final ITextComponent field_243476_a = new TranslationTextComponent("spectatorMenu.root.prompt");
    private final List<ISpectatorMenuObject> items = Lists.newArrayList();
 
    public BaseSpectatorGroup() {
@@ -24,6 +24,6 @@ public class BaseSpectatorGroup implements ISpectatorMenuView {
    }
 
    public ITextComponent getPrompt() {
-      return PROMPT_TEXT;
+      return field_243476_a;
    }
 }

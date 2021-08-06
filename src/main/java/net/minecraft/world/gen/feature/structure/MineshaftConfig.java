@@ -5,10 +5,10 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.world.gen.feature.IFeatureConfig;
 
 public class MineshaftConfig implements IFeatureConfig {
-   public static final Codec<MineshaftConfig> CODEC = RecordCodecBuilder.create((p_236543_0_) -> {
+   public static final Codec<MineshaftConfig> field_236541_a_ = RecordCodecBuilder.create((p_236543_0_) -> {
       return p_236543_0_.group(Codec.floatRange(0.0F, 1.0F).fieldOf("probability").forGetter((p_236544_0_) -> {
          return p_236544_0_.probability;
-      }), MineshaftStructure.Type.CODEC.fieldOf("type").forGetter((p_236542_0_) -> {
+      }), MineshaftStructure.Type.field_236324_c_.fieldOf("type").forGetter((p_236542_0_) -> {
          return p_236542_0_.type;
       })).apply(p_236543_0_, MineshaftConfig::new);
    });

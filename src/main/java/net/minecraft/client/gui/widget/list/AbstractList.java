@@ -39,28 +39,28 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
    protected int headerHeight;
    private boolean scrolling;
    private E selected;
-   private boolean renderBackground = true;
-   private boolean renderTopAndBottom = true;
+   private boolean field_244603_t = true;
+   private boolean field_244604_u = true;
 
-   public AbstractList(Minecraft p_i51146_1_, int p_i51146_2_, int p_i51146_3_, int p_i51146_4_, int p_i51146_5_, int p_i51146_6_) {
-      this.minecraft = p_i51146_1_;
-      this.width = p_i51146_2_;
-      this.height = p_i51146_3_;
-      this.y0 = p_i51146_4_;
-      this.y1 = p_i51146_5_;
-      this.itemHeight = p_i51146_6_;
+   public AbstractList(Minecraft mcIn, int widthIn, int heightIn, int topIn, int bottomIn, int itemHeightIn) {
+      this.minecraft = mcIn;
+      this.width = widthIn;
+      this.height = heightIn;
+      this.y0 = topIn;
+      this.y1 = bottomIn;
+      this.itemHeight = itemHeightIn;
       this.x0 = 0;
-      this.x1 = p_i51146_2_;
+      this.x1 = widthIn;
    }
 
-   public void setRenderSelection(boolean p_230943_1_) {
-      this.renderSelection = p_230943_1_;
+   public void setRenderSelection(boolean value) {
+      this.renderSelection = value;
    }
 
-   protected void setRenderHeader(boolean p_230944_1_, int p_230944_2_) {
-      this.renderHeader = p_230944_1_;
-      this.headerHeight = p_230944_2_;
-      if (!p_230944_1_) {
+   protected void setRenderHeader(boolean value, int height) {
+      this.renderHeader = value;
+      this.headerHeight = height;
+      if (!value) {
          this.headerHeight = 0;
       }
 
@@ -75,24 +75,24 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
       return this.selected;
    }
 
-   public void setSelected(@Nullable E p_241215_1_) {
-      this.selected = p_241215_1_;
+   public void setSelected(@Nullable E entry) {
+      this.selected = entry;
    }
 
-   public void setRenderBackground(boolean p_244605_1_) {
-      this.renderBackground = p_244605_1_;
+   public void func_244605_b(boolean p_244605_1_) {
+      this.field_244603_t = p_244605_1_;
    }
 
-   public void setRenderTopAndBottom(boolean p_244606_1_) {
-      this.renderTopAndBottom = p_244606_1_;
+   public void func_244606_c(boolean p_244606_1_) {
+      this.field_244604_u = p_244606_1_;
    }
 
    @Nullable
-   public E getFocused() {
-      return (E)(super.getFocused());
+   public E getListener() {
+      return (E)(super.getListener());
    }
 
-   public final List<E> children() {
+   public final List<E> getEventListeners() {
       return this.children;
    }
 
@@ -100,26 +100,26 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
       this.children.clear();
    }
 
-   protected void replaceEntries(Collection<E> p_230942_1_) {
+   protected void replaceEntries(Collection<E> entries) {
       this.children.clear();
-      this.children.addAll(p_230942_1_);
+      this.children.addAll(entries);
    }
 
-   protected E getEntry(int p_230953_1_) {
-      return this.children().get(p_230953_1_);
+   protected E getEntry(int index) {
+      return this.getEventListeners().get(index);
    }
 
-   protected int addEntry(E p_230513_1_) {
-      this.children.add(p_230513_1_);
+   protected int addEntry(E entry) {
+      this.children.add(entry);
       return this.children.size() - 1;
    }
 
    protected int getItemCount() {
-      return this.children().size();
+      return this.getEventListeners().size();
    }
 
-   protected boolean isSelectedItem(int p_230957_1_) {
-      return Objects.equals(this.getSelected(), this.children().get(p_230957_1_));
+   protected boolean isSelectedItem(int index) {
+      return Objects.equals(this.getSelected(), this.getEventListeners().get(index));
    }
 
    @Nullable
@@ -130,7 +130,7 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
       int l = j + i;
       int i1 = MathHelper.floor(p_230933_3_ - (double)this.y0) - this.headerHeight + (int)this.getScrollAmount() - 4;
       int j1 = i1 / this.itemHeight;
-      return (E)(p_230933_1_ < (double)this.getScrollbarPosition() && p_230933_1_ >= (double)k && p_230933_1_ <= (double)l && j1 >= 0 && i1 >= 0 && j1 < this.getItemCount() ? this.children().get(j1) : null);
+      return (E)(p_230933_1_ < (double)this.getScrollbarPosition() && p_230933_1_ >= (double)k && p_230933_1_ <= (double)l && j1 >= 0 && i1 >= 0 && j1 < this.getItemCount() ? this.getEventListeners().get(j1) : null);
    }
 
    public void updateSize(int p_230940_1_, int p_230940_2_, int p_230940_3_, int p_230940_4_) {
@@ -163,47 +163,47 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
    protected void renderDecorations(MatrixStack p_230447_1_, int p_230447_2_, int p_230447_3_) {
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.renderBackground(p_230430_1_);
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.renderBackground(matrixStack);
       int i = this.getScrollbarPosition();
       int j = i + 6;
       Tessellator tessellator = Tessellator.getInstance();
-      BufferBuilder bufferbuilder = tessellator.getBuilder();
-      if (this.renderBackground) {
-         this.minecraft.getTextureManager().bind(AbstractGui.BACKGROUND_LOCATION);
+      BufferBuilder bufferbuilder = tessellator.getBuffer();
+      if (this.field_244603_t) {
+         this.minecraft.getTextureManager().bindTexture(AbstractGui.BACKGROUND_LOCATION);
          RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
          float f = 32.0F;
          bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-         bufferbuilder.vertex((double)this.x0, (double)this.y1, 0.0D).uv((float)this.x0 / 32.0F, (float)(this.y1 + (int)this.getScrollAmount()) / 32.0F).color(32, 32, 32, 255).endVertex();
-         bufferbuilder.vertex((double)this.x1, (double)this.y1, 0.0D).uv((float)this.x1 / 32.0F, (float)(this.y1 + (int)this.getScrollAmount()) / 32.0F).color(32, 32, 32, 255).endVertex();
-         bufferbuilder.vertex((double)this.x1, (double)this.y0, 0.0D).uv((float)this.x1 / 32.0F, (float)(this.y0 + (int)this.getScrollAmount()) / 32.0F).color(32, 32, 32, 255).endVertex();
-         bufferbuilder.vertex((double)this.x0, (double)this.y0, 0.0D).uv((float)this.x0 / 32.0F, (float)(this.y0 + (int)this.getScrollAmount()) / 32.0F).color(32, 32, 32, 255).endVertex();
-         tessellator.end();
+         bufferbuilder.pos((double)this.x0, (double)this.y1, 0.0D).tex((float)this.x0 / 32.0F, (float)(this.y1 + (int)this.getScrollAmount()) / 32.0F).color(32, 32, 32, 255).endVertex();
+         bufferbuilder.pos((double)this.x1, (double)this.y1, 0.0D).tex((float)this.x1 / 32.0F, (float)(this.y1 + (int)this.getScrollAmount()) / 32.0F).color(32, 32, 32, 255).endVertex();
+         bufferbuilder.pos((double)this.x1, (double)this.y0, 0.0D).tex((float)this.x1 / 32.0F, (float)(this.y0 + (int)this.getScrollAmount()) / 32.0F).color(32, 32, 32, 255).endVertex();
+         bufferbuilder.pos((double)this.x0, (double)this.y0, 0.0D).tex((float)this.x0 / 32.0F, (float)(this.y0 + (int)this.getScrollAmount()) / 32.0F).color(32, 32, 32, 255).endVertex();
+         tessellator.draw();
       }
 
       int j1 = this.getRowLeft();
       int k = this.y0 + 4 - (int)this.getScrollAmount();
       if (this.renderHeader) {
-         this.renderHeader(p_230430_1_, j1, k, tessellator);
+         this.renderHeader(matrixStack, j1, k, tessellator);
       }
 
-      this.renderList(p_230430_1_, j1, k, p_230430_2_, p_230430_3_, p_230430_4_);
-      if (this.renderTopAndBottom) {
-         this.minecraft.getTextureManager().bind(AbstractGui.BACKGROUND_LOCATION);
+      this.renderList(matrixStack, j1, k, mouseX, mouseY, partialTicks);
+      if (this.field_244604_u) {
+         this.minecraft.getTextureManager().bindTexture(AbstractGui.BACKGROUND_LOCATION);
          RenderSystem.enableDepthTest();
          RenderSystem.depthFunc(519);
          float f1 = 32.0F;
          int l = -100;
          bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-         bufferbuilder.vertex((double)this.x0, (double)this.y0, -100.0D).uv(0.0F, (float)this.y0 / 32.0F).color(64, 64, 64, 255).endVertex();
-         bufferbuilder.vertex((double)(this.x0 + this.width), (double)this.y0, -100.0D).uv((float)this.width / 32.0F, (float)this.y0 / 32.0F).color(64, 64, 64, 255).endVertex();
-         bufferbuilder.vertex((double)(this.x0 + this.width), 0.0D, -100.0D).uv((float)this.width / 32.0F, 0.0F).color(64, 64, 64, 255).endVertex();
-         bufferbuilder.vertex((double)this.x0, 0.0D, -100.0D).uv(0.0F, 0.0F).color(64, 64, 64, 255).endVertex();
-         bufferbuilder.vertex((double)this.x0, (double)this.height, -100.0D).uv(0.0F, (float)this.height / 32.0F).color(64, 64, 64, 255).endVertex();
-         bufferbuilder.vertex((double)(this.x0 + this.width), (double)this.height, -100.0D).uv((float)this.width / 32.0F, (float)this.height / 32.0F).color(64, 64, 64, 255).endVertex();
-         bufferbuilder.vertex((double)(this.x0 + this.width), (double)this.y1, -100.0D).uv((float)this.width / 32.0F, (float)this.y1 / 32.0F).color(64, 64, 64, 255).endVertex();
-         bufferbuilder.vertex((double)this.x0, (double)this.y1, -100.0D).uv(0.0F, (float)this.y1 / 32.0F).color(64, 64, 64, 255).endVertex();
-         tessellator.end();
+         bufferbuilder.pos((double)this.x0, (double)this.y0, -100.0D).tex(0.0F, (float)this.y0 / 32.0F).color(64, 64, 64, 255).endVertex();
+         bufferbuilder.pos((double)(this.x0 + this.width), (double)this.y0, -100.0D).tex((float)this.width / 32.0F, (float)this.y0 / 32.0F).color(64, 64, 64, 255).endVertex();
+         bufferbuilder.pos((double)(this.x0 + this.width), 0.0D, -100.0D).tex((float)this.width / 32.0F, 0.0F).color(64, 64, 64, 255).endVertex();
+         bufferbuilder.pos((double)this.x0, 0.0D, -100.0D).tex(0.0F, 0.0F).color(64, 64, 64, 255).endVertex();
+         bufferbuilder.pos((double)this.x0, (double)this.height, -100.0D).tex(0.0F, (float)this.height / 32.0F).color(64, 64, 64, 255).endVertex();
+         bufferbuilder.pos((double)(this.x0 + this.width), (double)this.height, -100.0D).tex((float)this.width / 32.0F, (float)this.height / 32.0F).color(64, 64, 64, 255).endVertex();
+         bufferbuilder.pos((double)(this.x0 + this.width), (double)this.y1, -100.0D).tex((float)this.width / 32.0F, (float)this.y1 / 32.0F).color(64, 64, 64, 255).endVertex();
+         bufferbuilder.pos((double)this.x0, (double)this.y1, -100.0D).tex(0.0F, (float)this.y1 / 32.0F).color(64, 64, 64, 255).endVertex();
+         tessellator.draw();
          RenderSystem.depthFunc(515);
          RenderSystem.disableDepthTest();
          RenderSystem.enableBlend();
@@ -213,15 +213,15 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
          RenderSystem.disableTexture();
          int i1 = 4;
          bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-         bufferbuilder.vertex((double)this.x0, (double)(this.y0 + 4), 0.0D).uv(0.0F, 1.0F).color(0, 0, 0, 0).endVertex();
-         bufferbuilder.vertex((double)this.x1, (double)(this.y0 + 4), 0.0D).uv(1.0F, 1.0F).color(0, 0, 0, 0).endVertex();
-         bufferbuilder.vertex((double)this.x1, (double)this.y0, 0.0D).uv(1.0F, 0.0F).color(0, 0, 0, 255).endVertex();
-         bufferbuilder.vertex((double)this.x0, (double)this.y0, 0.0D).uv(0.0F, 0.0F).color(0, 0, 0, 255).endVertex();
-         bufferbuilder.vertex((double)this.x0, (double)this.y1, 0.0D).uv(0.0F, 1.0F).color(0, 0, 0, 255).endVertex();
-         bufferbuilder.vertex((double)this.x1, (double)this.y1, 0.0D).uv(1.0F, 1.0F).color(0, 0, 0, 255).endVertex();
-         bufferbuilder.vertex((double)this.x1, (double)(this.y1 - 4), 0.0D).uv(1.0F, 0.0F).color(0, 0, 0, 0).endVertex();
-         bufferbuilder.vertex((double)this.x0, (double)(this.y1 - 4), 0.0D).uv(0.0F, 0.0F).color(0, 0, 0, 0).endVertex();
-         tessellator.end();
+         bufferbuilder.pos((double)this.x0, (double)(this.y0 + 4), 0.0D).tex(0.0F, 1.0F).color(0, 0, 0, 0).endVertex();
+         bufferbuilder.pos((double)this.x1, (double)(this.y0 + 4), 0.0D).tex(1.0F, 1.0F).color(0, 0, 0, 0).endVertex();
+         bufferbuilder.pos((double)this.x1, (double)this.y0, 0.0D).tex(1.0F, 0.0F).color(0, 0, 0, 255).endVertex();
+         bufferbuilder.pos((double)this.x0, (double)this.y0, 0.0D).tex(0.0F, 0.0F).color(0, 0, 0, 255).endVertex();
+         bufferbuilder.pos((double)this.x0, (double)this.y1, 0.0D).tex(0.0F, 1.0F).color(0, 0, 0, 255).endVertex();
+         bufferbuilder.pos((double)this.x1, (double)this.y1, 0.0D).tex(1.0F, 1.0F).color(0, 0, 0, 255).endVertex();
+         bufferbuilder.pos((double)this.x1, (double)(this.y1 - 4), 0.0D).tex(1.0F, 0.0F).color(0, 0, 0, 0).endVertex();
+         bufferbuilder.pos((double)this.x0, (double)(this.y1 - 4), 0.0D).tex(0.0F, 0.0F).color(0, 0, 0, 0).endVertex();
+         tessellator.draw();
       }
 
       int k1 = this.getMaxScroll();
@@ -235,22 +235,22 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
          }
 
          bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-         bufferbuilder.vertex((double)i, (double)this.y1, 0.0D).uv(0.0F, 1.0F).color(0, 0, 0, 255).endVertex();
-         bufferbuilder.vertex((double)j, (double)this.y1, 0.0D).uv(1.0F, 1.0F).color(0, 0, 0, 255).endVertex();
-         bufferbuilder.vertex((double)j, (double)this.y0, 0.0D).uv(1.0F, 0.0F).color(0, 0, 0, 255).endVertex();
-         bufferbuilder.vertex((double)i, (double)this.y0, 0.0D).uv(0.0F, 0.0F).color(0, 0, 0, 255).endVertex();
-         bufferbuilder.vertex((double)i, (double)(i2 + l1), 0.0D).uv(0.0F, 1.0F).color(128, 128, 128, 255).endVertex();
-         bufferbuilder.vertex((double)j, (double)(i2 + l1), 0.0D).uv(1.0F, 1.0F).color(128, 128, 128, 255).endVertex();
-         bufferbuilder.vertex((double)j, (double)i2, 0.0D).uv(1.0F, 0.0F).color(128, 128, 128, 255).endVertex();
-         bufferbuilder.vertex((double)i, (double)i2, 0.0D).uv(0.0F, 0.0F).color(128, 128, 128, 255).endVertex();
-         bufferbuilder.vertex((double)i, (double)(i2 + l1 - 1), 0.0D).uv(0.0F, 1.0F).color(192, 192, 192, 255).endVertex();
-         bufferbuilder.vertex((double)(j - 1), (double)(i2 + l1 - 1), 0.0D).uv(1.0F, 1.0F).color(192, 192, 192, 255).endVertex();
-         bufferbuilder.vertex((double)(j - 1), (double)i2, 0.0D).uv(1.0F, 0.0F).color(192, 192, 192, 255).endVertex();
-         bufferbuilder.vertex((double)i, (double)i2, 0.0D).uv(0.0F, 0.0F).color(192, 192, 192, 255).endVertex();
-         tessellator.end();
+         bufferbuilder.pos((double)i, (double)this.y1, 0.0D).tex(0.0F, 1.0F).color(0, 0, 0, 255).endVertex();
+         bufferbuilder.pos((double)j, (double)this.y1, 0.0D).tex(1.0F, 1.0F).color(0, 0, 0, 255).endVertex();
+         bufferbuilder.pos((double)j, (double)this.y0, 0.0D).tex(1.0F, 0.0F).color(0, 0, 0, 255).endVertex();
+         bufferbuilder.pos((double)i, (double)this.y0, 0.0D).tex(0.0F, 0.0F).color(0, 0, 0, 255).endVertex();
+         bufferbuilder.pos((double)i, (double)(i2 + l1), 0.0D).tex(0.0F, 1.0F).color(128, 128, 128, 255).endVertex();
+         bufferbuilder.pos((double)j, (double)(i2 + l1), 0.0D).tex(1.0F, 1.0F).color(128, 128, 128, 255).endVertex();
+         bufferbuilder.pos((double)j, (double)i2, 0.0D).tex(1.0F, 0.0F).color(128, 128, 128, 255).endVertex();
+         bufferbuilder.pos((double)i, (double)i2, 0.0D).tex(0.0F, 0.0F).color(128, 128, 128, 255).endVertex();
+         bufferbuilder.pos((double)i, (double)(i2 + l1 - 1), 0.0D).tex(0.0F, 1.0F).color(192, 192, 192, 255).endVertex();
+         bufferbuilder.pos((double)(j - 1), (double)(i2 + l1 - 1), 0.0D).tex(1.0F, 1.0F).color(192, 192, 192, 255).endVertex();
+         bufferbuilder.pos((double)(j - 1), (double)i2, 0.0D).tex(1.0F, 0.0F).color(192, 192, 192, 255).endVertex();
+         bufferbuilder.pos((double)i, (double)i2, 0.0D).tex(0.0F, 0.0F).color(192, 192, 192, 255).endVertex();
+         tessellator.draw();
       }
 
-      this.renderDecorations(p_230430_1_, p_230430_2_, p_230430_3_);
+      this.renderDecorations(matrixStack, mouseX, mouseY);
       RenderSystem.enableTexture();
       RenderSystem.shadeModel(7424);
       RenderSystem.enableAlphaTest();
@@ -258,11 +258,11 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
    }
 
    protected void centerScrollOn(E p_230951_1_) {
-      this.setScrollAmount((double)(this.children().indexOf(p_230951_1_) * this.itemHeight + this.itemHeight / 2 - (this.y1 - this.y0) / 2));
+      this.setScrollAmount((double)(this.getEventListeners().indexOf(p_230951_1_) * this.itemHeight + this.itemHeight / 2 - (this.y1 - this.y0) / 2));
    }
 
    protected void ensureVisible(E p_230954_1_) {
-      int i = this.getRowTop(this.children().indexOf(p_230954_1_));
+      int i = this.getRowTop(this.getEventListeners().indexOf(p_230954_1_));
       int j = i - this.y0 - 4 - this.itemHeight;
       if (j < 0) {
          this.scroll(j);
@@ -299,20 +299,20 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
       return this.width / 2 + 124;
    }
 
-   public boolean mouseClicked(double p_231044_1_, double p_231044_3_, int p_231044_5_) {
-      this.updateScrollingState(p_231044_1_, p_231044_3_, p_231044_5_);
-      if (!this.isMouseOver(p_231044_1_, p_231044_3_)) {
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      this.updateScrollingState(mouseX, mouseY, button);
+      if (!this.isMouseOver(mouseX, mouseY)) {
          return false;
       } else {
-         E e = this.getEntryAtPosition(p_231044_1_, p_231044_3_);
+         E e = this.getEntryAtPosition(mouseX, mouseY);
          if (e != null) {
-            if (e.mouseClicked(p_231044_1_, p_231044_3_, p_231044_5_)) {
-               this.setFocused(e);
+            if (e.mouseClicked(mouseX, mouseY, button)) {
+               this.setListener(e);
                this.setDragging(true);
                return true;
             }
-         } else if (p_231044_5_ == 0) {
-            this.clickedHeader((int)(p_231044_1_ - (double)(this.x0 + this.width / 2 - this.getRowWidth() / 2)), (int)(p_231044_3_ - (double)this.y0) + (int)this.getScrollAmount() - 4);
+         } else if (button == 0) {
+            this.clickedHeader((int)(mouseX - (double)(this.x0 + this.width / 2 - this.getRowWidth() / 2)), (int)(mouseY - (double)this.y0) + (int)this.getScrollAmount() - 4);
             return true;
          }
 
@@ -320,28 +320,28 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
       }
    }
 
-   public boolean mouseReleased(double p_231048_1_, double p_231048_3_, int p_231048_5_) {
-      if (this.getFocused() != null) {
-         this.getFocused().mouseReleased(p_231048_1_, p_231048_3_, p_231048_5_);
+   public boolean mouseReleased(double mouseX, double mouseY, int button) {
+      if (this.getListener() != null) {
+         this.getListener().mouseReleased(mouseX, mouseY, button);
       }
 
       return false;
    }
 
-   public boolean mouseDragged(double p_231045_1_, double p_231045_3_, int p_231045_5_, double p_231045_6_, double p_231045_8_) {
-      if (super.mouseDragged(p_231045_1_, p_231045_3_, p_231045_5_, p_231045_6_, p_231045_8_)) {
+   public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+      if (super.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
          return true;
-      } else if (p_231045_5_ == 0 && this.scrolling) {
-         if (p_231045_3_ < (double)this.y0) {
+      } else if (button == 0 && this.scrolling) {
+         if (mouseY < (double)this.y0) {
             this.setScrollAmount(0.0D);
-         } else if (p_231045_3_ > (double)this.y1) {
+         } else if (mouseY > (double)this.y1) {
             this.setScrollAmount((double)this.getMaxScroll());
          } else {
             double d0 = (double)Math.max(1, this.getMaxScroll());
             int i = this.y1 - this.y0;
             int j = MathHelper.clamp((int)((float)(i * i) / (float)this.getMaxPosition()), 32, i - 8);
             double d1 = Math.max(1.0D, d0 / (double)(i - j));
-            this.setScrollAmount(this.getScrollAmount() + p_231045_8_ * d1);
+            this.setScrollAmount(this.getScrollAmount() + dragY * d1);
          }
 
          return true;
@@ -350,18 +350,18 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
       }
    }
 
-   public boolean mouseScrolled(double p_231043_1_, double p_231043_3_, double p_231043_5_) {
-      this.setScrollAmount(this.getScrollAmount() - p_231043_5_ * (double)this.itemHeight / 2.0D);
+   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+      this.setScrollAmount(this.getScrollAmount() - delta * (double)this.itemHeight / 2.0D);
       return true;
    }
 
-   public boolean keyPressed(int p_231046_1_, int p_231046_2_, int p_231046_3_) {
-      if (super.keyPressed(p_231046_1_, p_231046_2_, p_231046_3_)) {
+   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+      if (super.keyPressed(keyCode, scanCode, modifiers)) {
          return true;
-      } else if (p_231046_1_ == 264) {
+      } else if (keyCode == 264) {
          this.moveSelection(AbstractList.Ordering.DOWN);
          return true;
-      } else if (p_231046_1_ == 265) {
+      } else if (keyCode == 265) {
          this.moveSelection(AbstractList.Ordering.UP);
          return true;
       } else {
@@ -370,12 +370,12 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
    }
 
    protected void moveSelection(AbstractList.Ordering p_241219_1_) {
-      this.moveSelection(p_241219_1_, (p_241573_0_) -> {
+      this.func_241572_a_(p_241219_1_, (p_241573_0_) -> {
          return true;
       });
    }
 
-   protected void refreshSelection() {
+   protected void func_241574_n_() {
       E e = this.getSelected();
       if (e != null) {
          this.setSelected(e);
@@ -384,10 +384,10 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
 
    }
 
-   protected void moveSelection(AbstractList.Ordering p_241572_1_, Predicate<E> p_241572_2_) {
+   protected void func_241572_a_(AbstractList.Ordering p_241572_1_, Predicate<E> p_241572_2_) {
       int i = p_241572_1_ == AbstractList.Ordering.UP ? -1 : 1;
-      if (!this.children().isEmpty()) {
-         int j = this.children().indexOf(this.getSelected());
+      if (!this.getEventListeners().isEmpty()) {
+         int j = this.getEventListeners().indexOf(this.getSelected());
 
          while(true) {
             int k = MathHelper.clamp(j + i, 0, this.getItemCount() - 1);
@@ -395,7 +395,7 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
                break;
             }
 
-            E e = this.children().get(k);
+            E e = this.getEventListeners().get(k);
             if (p_241572_2_.test(e)) {
                this.setSelected(e);
                this.ensureVisible(e);
@@ -408,14 +408,14 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
 
    }
 
-   public boolean isMouseOver(double p_231047_1_, double p_231047_3_) {
-      return p_231047_3_ >= (double)this.y0 && p_231047_3_ <= (double)this.y1 && p_231047_1_ >= (double)this.x0 && p_231047_1_ <= (double)this.x1;
+   public boolean isMouseOver(double mouseX, double mouseY) {
+      return mouseY >= (double)this.y0 && mouseY <= (double)this.y1 && mouseX >= (double)this.x0 && mouseX <= (double)this.x1;
    }
 
    protected void renderList(MatrixStack p_238478_1_, int p_238478_2_, int p_238478_3_, int p_238478_4_, int p_238478_5_, float p_238478_6_) {
       int i = this.getItemCount();
       Tessellator tessellator = Tessellator.getInstance();
-      BufferBuilder bufferbuilder = tessellator.getBuilder();
+      BufferBuilder bufferbuilder = tessellator.getBuffer();
 
       for(int j = 0; j < i; ++j) {
          int k = this.getRowTop(j);
@@ -432,18 +432,18 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
                float f = this.isFocused() ? 1.0F : 0.5F;
                RenderSystem.color4f(f, f, f, 1.0F);
                bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
-               bufferbuilder.vertex((double)l1, (double)(i1 + j1 + 2), 0.0D).endVertex();
-               bufferbuilder.vertex((double)i2, (double)(i1 + j1 + 2), 0.0D).endVertex();
-               bufferbuilder.vertex((double)i2, (double)(i1 - 2), 0.0D).endVertex();
-               bufferbuilder.vertex((double)l1, (double)(i1 - 2), 0.0D).endVertex();
-               tessellator.end();
+               bufferbuilder.pos((double)l1, (double)(i1 + j1 + 2), 0.0D).endVertex();
+               bufferbuilder.pos((double)i2, (double)(i1 + j1 + 2), 0.0D).endVertex();
+               bufferbuilder.pos((double)i2, (double)(i1 - 2), 0.0D).endVertex();
+               bufferbuilder.pos((double)l1, (double)(i1 - 2), 0.0D).endVertex();
+               tessellator.draw();
                RenderSystem.color4f(0.0F, 0.0F, 0.0F, 1.0F);
                bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
-               bufferbuilder.vertex((double)(l1 + 1), (double)(i1 + j1 + 1), 0.0D).endVertex();
-               bufferbuilder.vertex((double)(i2 - 1), (double)(i1 + j1 + 1), 0.0D).endVertex();
-               bufferbuilder.vertex((double)(i2 - 1), (double)(i1 - 1), 0.0D).endVertex();
-               bufferbuilder.vertex((double)(l1 + 1), (double)(i1 - 1), 0.0D).endVertex();
-               tessellator.end();
+               bufferbuilder.pos((double)(l1 + 1), (double)(i1 + j1 + 1), 0.0D).endVertex();
+               bufferbuilder.pos((double)(i2 - 1), (double)(i1 + j1 + 1), 0.0D).endVertex();
+               bufferbuilder.pos((double)(i2 - 1), (double)(i1 - 1), 0.0D).endVertex();
+               bufferbuilder.pos((double)(l1 + 1), (double)(i1 - 1), 0.0D).endVertex();
+               tessellator.draw();
                RenderSystem.enableTexture();
             }
 
@@ -458,7 +458,7 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
       return this.x0 + this.width / 2 - this.getRowWidth() / 2 + 2;
    }
 
-   public int getRowRight() {
+   public int func_244736_r() {
       return this.getRowLeft() + this.getRowWidth();
    }
 
@@ -488,7 +488,7 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
       return flag;
    }
 
-   private void bindEntryToSelf(AbstractList.AbstractListEntry<E> p_238480_1_) {
+   private void func_238480_f_(AbstractList.AbstractListEntry<E> p_238480_1_) {
       p_238480_1_.list = this;
    }
 
@@ -499,8 +499,8 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
 
       public abstract void render(MatrixStack p_230432_1_, int p_230432_2_, int p_230432_3_, int p_230432_4_, int p_230432_5_, int p_230432_6_, int p_230432_7_, int p_230432_8_, boolean p_230432_9_, float p_230432_10_);
 
-      public boolean isMouseOver(double p_231047_1_, double p_231047_3_) {
-         return Objects.equals(this.list.getEntryAtPosition(p_231047_1_, p_231047_3_), this);
+      public boolean isMouseOver(double mouseX, double mouseY) {
+         return Objects.equals(this.list.getEntryAtPosition(mouseX, mouseY), this);
       }
    }
 
@@ -512,32 +512,32 @@ public abstract class AbstractList<E extends AbstractList.AbstractListEntry<E>> 
 
    @OnlyIn(Dist.CLIENT)
    class SimpleArrayList extends java.util.AbstractList<E> {
-      private final List<E> delegate = Lists.newArrayList();
+      private final List<E> field_216871_b = Lists.newArrayList();
 
       private SimpleArrayList() {
       }
 
       public E get(int p_get_1_) {
-         return this.delegate.get(p_get_1_);
+         return this.field_216871_b.get(p_get_1_);
       }
 
       public int size() {
-         return this.delegate.size();
+         return this.field_216871_b.size();
       }
 
       public E set(int p_set_1_, E p_set_2_) {
-         E e = this.delegate.set(p_set_1_, p_set_2_);
-         AbstractList.this.bindEntryToSelf(p_set_2_);
+         E e = this.field_216871_b.set(p_set_1_, p_set_2_);
+         AbstractList.this.func_238480_f_(p_set_2_);
          return e;
       }
 
       public void add(int p_add_1_, E p_add_2_) {
-         this.delegate.add(p_add_1_, p_add_2_);
-         AbstractList.this.bindEntryToSelf(p_add_2_);
+         this.field_216871_b.add(p_add_1_, p_add_2_);
+         AbstractList.this.func_238480_f_(p_add_2_);
       }
 
       public E remove(int p_remove_1_) {
-         return this.delegate.remove(p_remove_1_);
+         return this.field_216871_b.remove(p_remove_1_);
       }
    }
 }

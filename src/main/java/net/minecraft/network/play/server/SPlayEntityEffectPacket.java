@@ -12,61 +12,61 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class SPlayEntityEffectPacket implements IPacket<IClientPlayNetHandler> {
    private int entityId;
    private byte effectId;
-   private byte effectAmplifier;
-   private int effectDurationTicks;
+   private byte amplifier;
+   private int duration;
    private byte flags;
 
    public SPlayEntityEffectPacket() {
    }
 
-   public SPlayEntityEffectPacket(int p_i46891_1_, EffectInstance p_i46891_2_) {
-      this.entityId = p_i46891_1_;
-      this.effectId = (byte)(Effect.getId(p_i46891_2_.getEffect()) & 255);
-      this.effectAmplifier = (byte)(p_i46891_2_.getAmplifier() & 255);
-      if (p_i46891_2_.getDuration() > 32767) {
-         this.effectDurationTicks = 32767;
+   public SPlayEntityEffectPacket(int entityIdIn, EffectInstance effect) {
+      this.entityId = entityIdIn;
+      this.effectId = (byte)(Effect.getId(effect.getPotion()) & 255);
+      this.amplifier = (byte)(effect.getAmplifier() & 255);
+      if (effect.getDuration() > 32767) {
+         this.duration = 32767;
       } else {
-         this.effectDurationTicks = p_i46891_2_.getDuration();
+         this.duration = effect.getDuration();
       }
 
       this.flags = 0;
-      if (p_i46891_2_.isAmbient()) {
+      if (effect.isAmbient()) {
          this.flags = (byte)(this.flags | 1);
       }
 
-      if (p_i46891_2_.isVisible()) {
+      if (effect.doesShowParticles()) {
          this.flags = (byte)(this.flags | 2);
       }
 
-      if (p_i46891_2_.showIcon()) {
+      if (effect.isShowIcon()) {
          this.flags = (byte)(this.flags | 4);
       }
 
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.entityId = p_148837_1_.readVarInt();
-      this.effectId = p_148837_1_.readByte();
-      this.effectAmplifier = p_148837_1_.readByte();
-      this.effectDurationTicks = p_148837_1_.readVarInt();
-      this.flags = p_148837_1_.readByte();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.entityId = buf.readVarInt();
+      this.effectId = buf.readByte();
+      this.amplifier = buf.readByte();
+      this.duration = buf.readVarInt();
+      this.flags = buf.readByte();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.entityId);
-      p_148840_1_.writeByte(this.effectId);
-      p_148840_1_.writeByte(this.effectAmplifier);
-      p_148840_1_.writeVarInt(this.effectDurationTicks);
-      p_148840_1_.writeByte(this.flags);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.entityId);
+      buf.writeByte(this.effectId);
+      buf.writeByte(this.amplifier);
+      buf.writeVarInt(this.duration);
+      buf.writeByte(this.flags);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean isSuperLongDuration() {
-      return this.effectDurationTicks == 32767;
+   public boolean isMaxDuration() {
+      return this.duration == 32767;
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleUpdateMobEffect(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleEntityEffect(this);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -80,27 +80,27 @@ public class SPlayEntityEffectPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public byte getEffectAmplifier() {
-      return this.effectAmplifier;
+   public byte getAmplifier() {
+      return this.amplifier;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getEffectDurationTicks() {
-      return this.effectDurationTicks;
+   public int getDuration() {
+      return this.duration;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean isEffectVisible() {
+   public boolean doesShowParticles() {
       return (this.flags & 2) == 2;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean isEffectAmbient() {
+   public boolean getIsAmbient() {
       return (this.flags & 1) == 1;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean effectShowsIcon() {
+   public boolean shouldShowIcon() {
       return (this.flags & 4) == 4;
    }
 }

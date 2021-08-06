@@ -8,29 +8,29 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class SetVisibility {
-   private static final int FACINGS = Direction.values().length;
-   private final BitSet data = new BitSet(FACINGS * FACINGS);
+   private static final int COUNT_FACES = Direction.values().length;
+   private final BitSet bitSet = new BitSet(COUNT_FACES * COUNT_FACES);
 
-   public void add(Set<Direction> p_178620_1_) {
-      for(Direction direction : p_178620_1_) {
-         for(Direction direction1 : p_178620_1_) {
-            this.set(direction, direction1, true);
+   public void setManyVisible(Set<Direction> facing) {
+      for(Direction direction : facing) {
+         for(Direction direction1 : facing) {
+            this.setVisible(direction, direction1, true);
          }
       }
 
    }
 
-   public void set(Direction p_178619_1_, Direction p_178619_2_, boolean p_178619_3_) {
-      this.data.set(p_178619_1_.ordinal() + p_178619_2_.ordinal() * FACINGS, p_178619_3_);
-      this.data.set(p_178619_2_.ordinal() + p_178619_1_.ordinal() * FACINGS, p_178619_3_);
+   public void setVisible(Direction facing, Direction facing2, boolean value) {
+      this.bitSet.set(facing.ordinal() + facing2.ordinal() * COUNT_FACES, value);
+      this.bitSet.set(facing2.ordinal() + facing.ordinal() * COUNT_FACES, value);
    }
 
-   public void setAll(boolean p_178618_1_) {
-      this.data.set(0, this.data.size(), p_178618_1_);
+   public void setAllVisible(boolean visible) {
+      this.bitSet.set(0, this.bitSet.size(), visible);
    }
 
-   public boolean visibilityBetween(Direction p_178621_1_, Direction p_178621_2_) {
-      return this.data.get(p_178621_1_.ordinal() + p_178621_2_.ordinal() * FACINGS);
+   public boolean isVisible(Direction facing, Direction facing2) {
+      return this.bitSet.get(facing.ordinal() + facing2.ordinal() * COUNT_FACES);
    }
 
    public String toString() {
@@ -50,7 +50,7 @@ public class SetVisibility {
             if (direction2 == direction1) {
                stringbuilder.append("  ");
             } else {
-               boolean flag = this.visibilityBetween(direction2, direction1);
+               boolean flag = this.isVisible(direction2, direction1);
                stringbuilder.append(' ').append((char)(flag ? 'Y' : 'n'));
             }
          }

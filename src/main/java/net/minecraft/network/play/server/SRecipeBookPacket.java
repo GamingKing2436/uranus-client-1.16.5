@@ -16,8 +16,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class SRecipeBookPacket implements IPacket<IClientPlayNetHandler> {
    private SRecipeBookPacket.State state;
    private List<ResourceLocation> recipes;
-   private List<ResourceLocation> toHighlight;
-   private RecipeBookStatus bookSettings;
+   private List<ResourceLocation> displayedRecipes;
+   private RecipeBookStatus field_244301_d;
 
    public SRecipeBookPacket() {
    }
@@ -25,49 +25,49 @@ public class SRecipeBookPacket implements IPacket<IClientPlayNetHandler> {
    public SRecipeBookPacket(SRecipeBookPacket.State p_i242083_1_, Collection<ResourceLocation> p_i242083_2_, Collection<ResourceLocation> p_i242083_3_, RecipeBookStatus p_i242083_4_) {
       this.state = p_i242083_1_;
       this.recipes = ImmutableList.copyOf(p_i242083_2_);
-      this.toHighlight = ImmutableList.copyOf(p_i242083_3_);
-      this.bookSettings = p_i242083_4_;
+      this.displayedRecipes = ImmutableList.copyOf(p_i242083_3_);
+      this.field_244301_d = p_i242083_4_;
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleAddOrRemoveRecipes(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleRecipeBook(this);
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.state = p_148837_1_.readEnum(SRecipeBookPacket.State.class);
-      this.bookSettings = RecipeBookStatus.read(p_148837_1_);
-      int i = p_148837_1_.readVarInt();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.state = buf.readEnumValue(SRecipeBookPacket.State.class);
+      this.field_244301_d = RecipeBookStatus.func_242157_a(buf);
+      int i = buf.readVarInt();
       this.recipes = Lists.newArrayList();
 
       for(int j = 0; j < i; ++j) {
-         this.recipes.add(p_148837_1_.readResourceLocation());
+         this.recipes.add(buf.readResourceLocation());
       }
 
       if (this.state == SRecipeBookPacket.State.INIT) {
-         i = p_148837_1_.readVarInt();
-         this.toHighlight = Lists.newArrayList();
+         i = buf.readVarInt();
+         this.displayedRecipes = Lists.newArrayList();
 
          for(int k = 0; k < i; ++k) {
-            this.toHighlight.add(p_148837_1_.readResourceLocation());
+            this.displayedRecipes.add(buf.readResourceLocation());
          }
       }
 
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeEnum(this.state);
-      this.bookSettings.write(p_148840_1_);
-      p_148840_1_.writeVarInt(this.recipes.size());
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeEnumValue(this.state);
+      this.field_244301_d.func_242161_b(buf);
+      buf.writeVarInt(this.recipes.size());
 
       for(ResourceLocation resourcelocation : this.recipes) {
-         p_148840_1_.writeResourceLocation(resourcelocation);
+         buf.writeResourceLocation(resourcelocation);
       }
 
       if (this.state == SRecipeBookPacket.State.INIT) {
-         p_148840_1_.writeVarInt(this.toHighlight.size());
+         buf.writeVarInt(this.displayedRecipes.size());
 
-         for(ResourceLocation resourcelocation1 : this.toHighlight) {
-            p_148840_1_.writeResourceLocation(resourcelocation1);
+         for(ResourceLocation resourcelocation1 : this.displayedRecipes) {
+            buf.writeResourceLocation(resourcelocation1);
          }
       }
 
@@ -79,13 +79,13 @@ public class SRecipeBookPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public List<ResourceLocation> getHighlights() {
-      return this.toHighlight;
+   public List<ResourceLocation> getDisplayedRecipes() {
+      return this.displayedRecipes;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public RecipeBookStatus getBookSettings() {
-      return this.bookSettings;
+   public RecipeBookStatus func_244302_d() {
+      return this.field_244301_d;
    }
 
    @OnlyIn(Dist.CLIENT)

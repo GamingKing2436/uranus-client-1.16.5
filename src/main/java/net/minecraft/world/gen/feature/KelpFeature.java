@@ -15,33 +15,33 @@ public class KelpFeature extends Feature<NoFeatureConfig> {
       super(p_i231967_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, NoFeatureConfig p_241855_5_) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, NoFeatureConfig config) {
       int i = 0;
-      int j = p_241855_1_.getHeight(Heightmap.Type.OCEAN_FLOOR, p_241855_4_.getX(), p_241855_4_.getZ());
-      BlockPos blockpos = new BlockPos(p_241855_4_.getX(), j, p_241855_4_.getZ());
-      if (p_241855_1_.getBlockState(blockpos).is(Blocks.WATER)) {
-         BlockState blockstate = Blocks.KELP.defaultBlockState();
-         BlockState blockstate1 = Blocks.KELP_PLANT.defaultBlockState();
-         int k = 1 + p_241855_3_.nextInt(10);
+      int j = reader.getHeight(Heightmap.Type.OCEAN_FLOOR, pos.getX(), pos.getZ());
+      BlockPos blockpos = new BlockPos(pos.getX(), j, pos.getZ());
+      if (reader.getBlockState(blockpos).isIn(Blocks.WATER)) {
+         BlockState blockstate = Blocks.KELP.getDefaultState();
+         BlockState blockstate1 = Blocks.KELP_PLANT.getDefaultState();
+         int k = 1 + rand.nextInt(10);
 
          for(int l = 0; l <= k; ++l) {
-            if (p_241855_1_.getBlockState(blockpos).is(Blocks.WATER) && p_241855_1_.getBlockState(blockpos.above()).is(Blocks.WATER) && blockstate1.canSurvive(p_241855_1_, blockpos)) {
+            if (reader.getBlockState(blockpos).isIn(Blocks.WATER) && reader.getBlockState(blockpos.up()).isIn(Blocks.WATER) && blockstate1.isValidPosition(reader, blockpos)) {
                if (l == k) {
-                  p_241855_1_.setBlock(blockpos, blockstate.setValue(KelpTopBlock.AGE, Integer.valueOf(p_241855_3_.nextInt(4) + 20)), 2);
+                  reader.setBlockState(blockpos, blockstate.with(KelpTopBlock.AGE, Integer.valueOf(rand.nextInt(4) + 20)), 2);
                   ++i;
                } else {
-                  p_241855_1_.setBlock(blockpos, blockstate1, 2);
+                  reader.setBlockState(blockpos, blockstate1, 2);
                }
             } else if (l > 0) {
-               BlockPos blockpos1 = blockpos.below();
-               if (blockstate.canSurvive(p_241855_1_, blockpos1) && !p_241855_1_.getBlockState(blockpos1.below()).is(Blocks.KELP)) {
-                  p_241855_1_.setBlock(blockpos1, blockstate.setValue(KelpTopBlock.AGE, Integer.valueOf(p_241855_3_.nextInt(4) + 20)), 2);
+               BlockPos blockpos1 = blockpos.down();
+               if (blockstate.isValidPosition(reader, blockpos1) && !reader.getBlockState(blockpos1.down()).isIn(Blocks.KELP)) {
+                  reader.setBlockState(blockpos1, blockstate.with(KelpTopBlock.AGE, Integer.valueOf(rand.nextInt(4) + 20)), 2);
                   ++i;
                }
                break;
             }
 
-            blockpos = blockpos.above();
+            blockpos = blockpos.up();
          }
       }
 

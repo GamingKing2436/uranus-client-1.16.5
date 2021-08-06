@@ -20,29 +20,29 @@ import net.minecraft.world.server.ServerWorld;
 
 public class BlockPosArgument implements ArgumentType<ILocationArgument> {
    private static final Collection<String> EXAMPLES = Arrays.asList("0 0 0", "~ ~ ~", "^ ^ ^", "^1 ^ ^-5", "~0.5 ~1 ~-5");
-   public static final SimpleCommandExceptionType ERROR_NOT_LOADED = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos.unloaded"));
-   public static final SimpleCommandExceptionType ERROR_OUT_OF_WORLD = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos.outofworld"));
+   public static final SimpleCommandExceptionType POS_UNLOADED = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos.unloaded"));
+   public static final SimpleCommandExceptionType POS_OUT_OF_WORLD = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos.outofworld"));
 
    public static BlockPosArgument blockPos() {
       return new BlockPosArgument();
    }
 
-   public static BlockPos getLoadedBlockPos(CommandContext<CommandSource> p_197273_0_, String p_197273_1_) throws CommandSyntaxException {
-      BlockPos blockpos = p_197273_0_.getArgument(p_197273_1_, ILocationArgument.class).getBlockPos(p_197273_0_.getSource());
-      if (!p_197273_0_.getSource().getLevel().hasChunkAt(blockpos)) {
-         throw ERROR_NOT_LOADED.create();
+   public static BlockPos getLoadedBlockPos(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      BlockPos blockpos = context.getArgument(name, ILocationArgument.class).getBlockPos(context.getSource());
+      if (!context.getSource().getWorld().isBlockLoaded(blockpos)) {
+         throw POS_UNLOADED.create();
       } else {
-         p_197273_0_.getSource().getLevel();
-         if (!ServerWorld.isInWorldBounds(blockpos)) {
-            throw ERROR_OUT_OF_WORLD.create();
+         context.getSource().getWorld();
+         if (!ServerWorld.isValid(blockpos)) {
+            throw POS_OUT_OF_WORLD.create();
          } else {
             return blockpos;
          }
       }
    }
 
-   public static BlockPos getOrLoadBlockPos(CommandContext<CommandSource> p_197274_0_, String p_197274_1_) throws CommandSyntaxException {
-      return p_197274_0_.getArgument(p_197274_1_, ILocationArgument.class).getBlockPos(p_197274_0_.getSource());
+   public static BlockPos getBlockPos(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      return context.getArgument(name, ILocationArgument.class).getBlockPos(context.getSource());
    }
 
    public ILocationArgument parse(StringReader p_parse_1_) throws CommandSyntaxException {
@@ -58,10 +58,10 @@ public class BlockPosArgument implements ArgumentType<ILocationArgument> {
          if (!s.isEmpty() && s.charAt(0) == '^') {
             collection = Collections.singleton(ISuggestionProvider.Coordinates.DEFAULT_LOCAL);
          } else {
-            collection = ((ISuggestionProvider)p_listSuggestions_1_.getSource()).getRelevantCoordinates();
+            collection = ((ISuggestionProvider)p_listSuggestions_1_.getSource()).func_217294_q();
          }
 
-         return ISuggestionProvider.suggestCoordinates(s, collection, p_listSuggestions_2_, Commands.createValidator(this::parse));
+         return ISuggestionProvider.func_209000_a(s, collection, p_listSuggestions_2_, Commands.predicate(this::parse));
       }
    }
 

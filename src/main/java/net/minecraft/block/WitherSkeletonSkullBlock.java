@@ -28,50 +28,50 @@ public class WitherSkeletonSkullBlock extends SkullBlock {
    @Nullable
    private static BlockPattern witherPatternBase;
 
-   protected WitherSkeletonSkullBlock(AbstractBlock.Properties p_i48293_1_) {
-      super(SkullBlock.Types.WITHER_SKELETON, p_i48293_1_);
+   protected WitherSkeletonSkullBlock(AbstractBlock.Properties properties) {
+      super(SkullBlock.Types.WITHER_SKELETON, properties);
    }
 
-   public void setPlacedBy(World p_180633_1_, BlockPos p_180633_2_, BlockState p_180633_3_, @Nullable LivingEntity p_180633_4_, ItemStack p_180633_5_) {
-      super.setPlacedBy(p_180633_1_, p_180633_2_, p_180633_3_, p_180633_4_, p_180633_5_);
-      TileEntity tileentity = p_180633_1_.getBlockEntity(p_180633_2_);
+   public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+      super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+      TileEntity tileentity = worldIn.getTileEntity(pos);
       if (tileentity instanceof SkullTileEntity) {
-         checkSpawn(p_180633_1_, p_180633_2_, (SkullTileEntity)tileentity);
+         checkWitherSpawn(worldIn, pos, (SkullTileEntity)tileentity);
       }
 
    }
 
-   public static void checkSpawn(World p_196298_0_, BlockPos p_196298_1_, SkullTileEntity p_196298_2_) {
-      if (!p_196298_0_.isClientSide) {
-         BlockState blockstate = p_196298_2_.getBlockState();
-         boolean flag = blockstate.is(Blocks.WITHER_SKELETON_SKULL) || blockstate.is(Blocks.WITHER_SKELETON_WALL_SKULL);
-         if (flag && p_196298_1_.getY() >= 0 && p_196298_0_.getDifficulty() != Difficulty.PEACEFUL) {
+   public static void checkWitherSpawn(World worldIn, BlockPos pos, SkullTileEntity tileEntity) {
+      if (!worldIn.isRemote) {
+         BlockState blockstate = tileEntity.getBlockState();
+         boolean flag = blockstate.isIn(Blocks.WITHER_SKELETON_SKULL) || blockstate.isIn(Blocks.WITHER_SKELETON_WALL_SKULL);
+         if (flag && pos.getY() >= 0 && worldIn.getDifficulty() != Difficulty.PEACEFUL) {
             BlockPattern blockpattern = getOrCreateWitherFull();
-            BlockPattern.PatternHelper blockpattern$patternhelper = blockpattern.find(p_196298_0_, p_196298_1_);
+            BlockPattern.PatternHelper blockpattern$patternhelper = blockpattern.match(worldIn, pos);
             if (blockpattern$patternhelper != null) {
-               for(int i = 0; i < blockpattern.getWidth(); ++i) {
-                  for(int j = 0; j < blockpattern.getHeight(); ++j) {
-                     CachedBlockInfo cachedblockinfo = blockpattern$patternhelper.getBlock(i, j, 0);
-                     p_196298_0_.setBlock(cachedblockinfo.getPos(), Blocks.AIR.defaultBlockState(), 2);
-                     p_196298_0_.levelEvent(2001, cachedblockinfo.getPos(), Block.getId(cachedblockinfo.getState()));
+               for(int i = 0; i < blockpattern.getPalmLength(); ++i) {
+                  for(int j = 0; j < blockpattern.getThumbLength(); ++j) {
+                     CachedBlockInfo cachedblockinfo = blockpattern$patternhelper.translateOffset(i, j, 0);
+                     worldIn.setBlockState(cachedblockinfo.getPos(), Blocks.AIR.getDefaultState(), 2);
+                     worldIn.playEvent(2001, cachedblockinfo.getPos(), Block.getStateId(cachedblockinfo.getBlockState()));
                   }
                }
 
-               WitherEntity witherentity = EntityType.WITHER.create(p_196298_0_);
-               BlockPos blockpos = blockpattern$patternhelper.getBlock(1, 2, 0).getPos();
-               witherentity.moveTo((double)blockpos.getX() + 0.5D, (double)blockpos.getY() + 0.55D, (double)blockpos.getZ() + 0.5D, blockpattern$patternhelper.getForwards().getAxis() == Direction.Axis.X ? 0.0F : 90.0F, 0.0F);
-               witherentity.yBodyRot = blockpattern$patternhelper.getForwards().getAxis() == Direction.Axis.X ? 0.0F : 90.0F;
-               witherentity.makeInvulnerable();
+               WitherEntity witherentity = EntityType.WITHER.create(worldIn);
+               BlockPos blockpos = blockpattern$patternhelper.translateOffset(1, 2, 0).getPos();
+               witherentity.setLocationAndAngles((double)blockpos.getX() + 0.5D, (double)blockpos.getY() + 0.55D, (double)blockpos.getZ() + 0.5D, blockpattern$patternhelper.getForwards().getAxis() == Direction.Axis.X ? 0.0F : 90.0F, 0.0F);
+               witherentity.renderYawOffset = blockpattern$patternhelper.getForwards().getAxis() == Direction.Axis.X ? 0.0F : 90.0F;
+               witherentity.ignite();
 
-               for(ServerPlayerEntity serverplayerentity : p_196298_0_.getEntitiesOfClass(ServerPlayerEntity.class, witherentity.getBoundingBox().inflate(50.0D))) {
+               for(ServerPlayerEntity serverplayerentity : worldIn.getEntitiesWithinAABB(ServerPlayerEntity.class, witherentity.getBoundingBox().grow(50.0D))) {
                   CriteriaTriggers.SUMMONED_ENTITY.trigger(serverplayerentity, witherentity);
                }
 
-               p_196298_0_.addFreshEntity(witherentity);
+               worldIn.addEntity(witherentity);
 
-               for(int k = 0; k < blockpattern.getWidth(); ++k) {
-                  for(int l = 0; l < blockpattern.getHeight(); ++l) {
-                     p_196298_0_.blockUpdated(blockpattern$patternhelper.getBlock(k, l, 0).getPos(), Blocks.AIR);
+               for(int k = 0; k < blockpattern.getPalmLength(); ++k) {
+                  for(int l = 0; l < blockpattern.getThumbLength(); ++l) {
+                     worldIn.func_230547_a_(blockpattern$patternhelper.translateOffset(k, l, 0).getPos(), Blocks.AIR);
                   }
                }
 
@@ -80,9 +80,9 @@ public class WitherSkeletonSkullBlock extends SkullBlock {
       }
    }
 
-   public static boolean canSpawnMob(World p_196299_0_, BlockPos p_196299_1_, ItemStack p_196299_2_) {
-      if (p_196299_2_.getItem() == Items.WITHER_SKELETON_SKULL && p_196299_1_.getY() >= 2 && p_196299_0_.getDifficulty() != Difficulty.PEACEFUL && !p_196299_0_.isClientSide) {
-         return getOrCreateWitherBase().find(p_196299_0_, p_196299_1_) != null;
+   public static boolean canSpawnMob(World world, BlockPos pos, ItemStack stack) {
+      if (stack.getItem() == Items.WITHER_SKELETON_SKULL && pos.getY() >= 2 && world.getDifficulty() != Difficulty.PEACEFUL && !world.isRemote) {
+         return getOrCreateWitherBase().match(world, pos) != null;
       } else {
          return false;
       }
@@ -91,7 +91,7 @@ public class WitherSkeletonSkullBlock extends SkullBlock {
    private static BlockPattern getOrCreateWitherFull() {
       if (witherPatternFull == null) {
          witherPatternFull = BlockPatternBuilder.start().aisle("^^^", "###", "~#~").where('#', (p_235639_0_) -> {
-            return p_235639_0_.getState().is(BlockTags.WITHER_SUMMON_BASE_BLOCKS);
+            return p_235639_0_.getBlockState().isIn(BlockTags.WITHER_SUMMON_BASE_BLOCKS);
          }).where('^', CachedBlockInfo.hasState(BlockStateMatcher.forBlock(Blocks.WITHER_SKELETON_SKULL).or(BlockStateMatcher.forBlock(Blocks.WITHER_SKELETON_WALL_SKULL)))).where('~', CachedBlockInfo.hasState(BlockMaterialMatcher.forMaterial(Material.AIR))).build();
       }
 
@@ -101,7 +101,7 @@ public class WitherSkeletonSkullBlock extends SkullBlock {
    private static BlockPattern getOrCreateWitherBase() {
       if (witherPatternBase == null) {
          witherPatternBase = BlockPatternBuilder.start().aisle("   ", "###", "~#~").where('#', (p_235638_0_) -> {
-            return p_235638_0_.getState().is(BlockTags.WITHER_SUMMON_BASE_BLOCKS);
+            return p_235638_0_.getBlockState().isIn(BlockTags.WITHER_SUMMON_BASE_BLOCKS);
          }).where('~', CachedBlockInfo.hasState(BlockMaterialMatcher.forMaterial(Material.AIR))).build();
       }
 

@@ -13,24 +13,24 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class BannerPatternItem extends Item {
-   private final BannerPattern bannerPattern;
+   private final BannerPattern pattern;
 
-   public BannerPatternItem(BannerPattern p_i50057_1_, Item.Properties p_i50057_2_) {
-      super(p_i50057_2_);
-      this.bannerPattern = p_i50057_1_;
+   public BannerPatternItem(BannerPattern pattern, Item.Properties builder) {
+      super(builder);
+      this.pattern = pattern;
    }
 
    public BannerPattern getBannerPattern() {
-      return this.bannerPattern;
+      return this.pattern;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void appendHoverText(ItemStack p_77624_1_, @Nullable World p_77624_2_, List<ITextComponent> p_77624_3_, ITooltipFlag p_77624_4_) {
-      p_77624_3_.add(this.getDisplayName().withStyle(TextFormatting.GRAY));
+   public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+      tooltip.add(this.func_219981_d_().mergeStyle(TextFormatting.GRAY));
    }
 
    @OnlyIn(Dist.CLIENT)
-   public IFormattableTextComponent getDisplayName() {
-      return new TranslationTextComponent(this.getDescriptionId() + ".desc");
+   public IFormattableTextComponent func_219981_d_() {
+      return new TranslationTextComponent(this.getTranslationKey() + ".desc");
    }
 }

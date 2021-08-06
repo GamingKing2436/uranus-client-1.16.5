@@ -17,9 +17,9 @@ public class DataGenerator {
    private final Path outputFolder;
    private final List<IDataProvider> providers = Lists.newArrayList();
 
-   public DataGenerator(Path p_i48266_1_, Collection<Path> p_i48266_2_) {
-      this.outputFolder = p_i48266_1_;
-      this.inputFolders = p_i48266_2_;
+   public DataGenerator(Path output, Collection<Path> input) {
+      this.outputFolder = output;
+      this.inputFolders = input;
    }
 
    public Collection<Path> getInputFolders() {
@@ -32,28 +32,28 @@ public class DataGenerator {
 
    public void run() throws IOException {
       DirectoryCache directorycache = new DirectoryCache(this.outputFolder, "cache");
-      directorycache.keep(this.getOutputFolder().resolve("version.json"));
+      directorycache.addProtectedPath(this.getOutputFolder().resolve("version.json"));
       Stopwatch stopwatch = Stopwatch.createStarted();
       Stopwatch stopwatch1 = Stopwatch.createUnstarted();
 
       for(IDataProvider idataprovider : this.providers) {
          LOGGER.info("Starting provider: {}", (Object)idataprovider.getName());
          stopwatch1.start();
-         idataprovider.run(directorycache);
+         idataprovider.act(directorycache);
          stopwatch1.stop();
          LOGGER.info("{} finished after {} ms", idataprovider.getName(), stopwatch1.elapsed(TimeUnit.MILLISECONDS));
          stopwatch1.reset();
       }
 
       LOGGER.info("All providers took: {} ms", (long)stopwatch.elapsed(TimeUnit.MILLISECONDS));
-      directorycache.purgeStaleAndWrite();
+      directorycache.writeCache();
    }
 
-   public void addProvider(IDataProvider p_200390_1_) {
-      this.providers.add(p_200390_1_);
+   public void addProvider(IDataProvider provider) {
+      this.providers.add(provider);
    }
 
    static {
-      Bootstrap.bootStrap();
+      Bootstrap.register();
    }
 }

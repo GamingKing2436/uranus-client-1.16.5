@@ -7,8 +7,8 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Dynamic;
 
 public abstract class EntityRenameHelper extends EntityRename {
-   public EntityRenameHelper(String p_i49714_1_, Schema p_i49714_2_, boolean p_i49714_3_) {
-      super(p_i49714_1_, p_i49714_2_, p_i49714_3_);
+   public EntityRenameHelper(String name, Schema outputSchema, boolean changesType) {
+      super(name, outputSchema, changesType);
    }
 
    protected Pair<String, Typed<?>> fix(String p_209149_1_, Typed<?> p_209149_2_) {
@@ -16,5 +16,5 @@ public abstract class EntityRenameHelper extends EntityRename {
       return Pair.of(pair.getFirst(), p_209149_2_.set(DSL.remainderFinder(), pair.getSecond()));
    }
 
-   protected abstract Pair<String, Dynamic<?>> getNewNameAndTag(String p_209758_1_, Dynamic<?> p_209758_2_);
+   protected abstract Pair<String, Dynamic<?>> getNewNameAndTag(String name, Dynamic<?> tag);
 }

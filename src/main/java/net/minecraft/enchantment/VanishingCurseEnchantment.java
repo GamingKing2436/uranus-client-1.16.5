@@ -3,15 +3,15 @@ package net.minecraft.enchantment;
 import net.minecraft.inventory.EquipmentSlotType;
 
 public class VanishingCurseEnchantment extends Enchantment {
-   public VanishingCurseEnchantment(Enchantment.Rarity p_i47252_1_, EquipmentSlotType... p_i47252_2_) {
-      super(p_i47252_1_, EnchantmentType.VANISHABLE, p_i47252_2_);
+   public VanishingCurseEnchantment(Enchantment.Rarity rarityIn, EquipmentSlotType... slots) {
+      super(rarityIn, EnchantmentType.VANISHABLE, slots);
    }
 
-   public int getMinCost(int p_77321_1_) {
+   public int getMinEnchantability(int enchantmentLevel) {
       return 25;
    }
 
-   public int getMaxCost(int p_223551_1_) {
+   public int getMaxEnchantability(int enchantmentLevel) {
       return 50;
    }
 
@@ -19,7 +19,7 @@ public class VanishingCurseEnchantment extends Enchantment {
       return 1;
    }
 
-   public boolean isTreasureOnly() {
+   public boolean isTreasureEnchantment() {
       return true;
    }
 

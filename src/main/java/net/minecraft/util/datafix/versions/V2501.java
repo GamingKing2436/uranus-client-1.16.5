@@ -13,7 +13,7 @@ public class V2501 extends NamespacedSchema {
       super(p_i231472_1_, p_i231472_2_);
    }
 
-   private static void registerFurnace(Schema p_233461_0_, Map<String, Supplier<TypeTemplate>> p_233461_1_, String p_233461_2_) {
+   private static void func_233461_a_(Schema p_233461_0_, Map<String, Supplier<TypeTemplate>> p_233461_1_, String p_233461_2_) {
       p_233461_0_.register(p_233461_1_, p_233461_2_, () -> {
          return DSL.optionalFields("Items", DSL.list(TypeReferences.ITEM_STACK.in(p_233461_0_)), "RecipesUsed", DSL.compoundList(TypeReferences.RECIPE.in(p_233461_0_), DSL.constType(DSL.intType())));
       });
@@ -21,9 +21,9 @@ public class V2501 extends NamespacedSchema {
 
    public Map<String, Supplier<TypeTemplate>> registerBlockEntities(Schema p_registerBlockEntities_1_) {
       Map<String, Supplier<TypeTemplate>> map = super.registerBlockEntities(p_registerBlockEntities_1_);
-      registerFurnace(p_registerBlockEntities_1_, map, "minecraft:furnace");
-      registerFurnace(p_registerBlockEntities_1_, map, "minecraft:smoker");
-      registerFurnace(p_registerBlockEntities_1_, map, "minecraft:blast_furnace");
+      func_233461_a_(p_registerBlockEntities_1_, map, "minecraft:furnace");
+      func_233461_a_(p_registerBlockEntities_1_, map, "minecraft:smoker");
+      func_233461_a_(p_registerBlockEntities_1_, map, "minecraft:blast_furnace");
       return map;
    }
 }

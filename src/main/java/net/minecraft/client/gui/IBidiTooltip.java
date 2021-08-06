@@ -8,5 +8,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IBidiTooltip {
-   Optional<List<IReorderingProcessor>> getTooltip();
+   Optional<List<IReorderingProcessor>> func_241867_d();
 }

@@ -87,102 +87,102 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
    private final ClientRecipeBook recipeBook;
    private final List<IAmbientSoundHandler> ambientSoundHandlers = Lists.newArrayList();
    private int permissionLevel = 0;
-   private double xLast;
-   private double yLast1;
-   private double zLast;
-   private float yRotLast;
-   private float xRotLast;
-   private boolean lastOnGround;
-   private boolean crouching;
-   private boolean wasShiftKeyDown;
-   private boolean wasSprinting;
-   private int positionReminder;
-   private boolean flashOnSetHealth;
+   private double lastReportedPosX;
+   private double lastReportedPosY;
+   private double lastReportedPosZ;
+   private float lastReportedYaw;
+   private float lastReportedPitch;
+   private boolean prevOnGround;
+   private boolean isCrouching;
+   private boolean clientSneakState;
+   private boolean serverSprintState;
+   private int positionUpdateTicks;
+   private boolean hasValidHealth;
    private String serverBrand;
-   public MovementInput input;
-   protected final Minecraft minecraft;
-   protected int sprintTriggerTime;
-   public int sprintTime;
-   public float yBob;
-   public float xBob;
-   public float yBobO;
-   public float xBobO;
-   private int jumpRidingTicks;
-   private float jumpRidingScale;
-   public float portalTime;
-   public float oPortalTime;
-   private boolean startedUsingItem;
-   private Hand usingItemHand;
-   private boolean handsBusy;
+   public MovementInput movementInput;
+   protected final Minecraft mc;
+   protected int sprintToggleTimer;
+   public int sprintingTicksLeft;
+   public float renderArmYaw;
+   public float renderArmPitch;
+   public float prevRenderArmYaw;
+   public float prevRenderArmPitch;
+   private int horseJumpPowerCounter;
+   private float horseJumpPower;
+   public float timeInPortal;
+   public float prevTimeInPortal;
+   private boolean handActive;
+   private Hand activeHand;
+   private boolean rowingBoat;
    private boolean autoJumpEnabled = true;
    private int autoJumpTime;
    private boolean wasFallFlying;
-   private int waterVisionTime;
+   private int counterInWater;
    private boolean showDeathScreen = true;
 
-   public ClientPlayerEntity(Minecraft p_i232461_1_, ClientWorld p_i232461_2_, ClientPlayNetHandler p_i232461_3_, StatisticsManager p_i232461_4_, ClientRecipeBook p_i232461_5_, boolean p_i232461_6_, boolean p_i232461_7_) {
-      super(p_i232461_2_, p_i232461_3_.getLocalGameProfile());
-      this.minecraft = p_i232461_1_;
-      this.connection = p_i232461_3_;
-      this.stats = p_i232461_4_;
-      this.recipeBook = p_i232461_5_;
-      this.wasShiftKeyDown = p_i232461_6_;
-      this.wasSprinting = p_i232461_7_;
-      this.ambientSoundHandlers.add(new UnderwaterAmbientSoundHandler(this, p_i232461_1_.getSoundManager()));
+   public ClientPlayerEntity(Minecraft mc, ClientWorld world, ClientPlayNetHandler connection, StatisticsManager stats, ClientRecipeBook recipeBook, boolean clientSneakState, boolean clientSprintState) {
+      super(world, connection.getGameProfile());
+      this.mc = mc;
+      this.connection = connection;
+      this.stats = stats;
+      this.recipeBook = recipeBook;
+      this.clientSneakState = clientSneakState;
+      this.serverSprintState = clientSprintState;
+      this.ambientSoundHandlers.add(new UnderwaterAmbientSoundHandler(this, mc.getSoundHandler()));
       this.ambientSoundHandlers.add(new BubbleColumnAmbientSoundHandler(this));
-      this.ambientSoundHandlers.add(new BiomeSoundHandler(this, p_i232461_1_.getSoundManager(), p_i232461_2_.getBiomeManager()));
+      this.ambientSoundHandlers.add(new BiomeSoundHandler(this, mc.getSoundHandler(), world.getBiomeManager()));
    }
 
-   public boolean hurt(DamageSource p_70097_1_, float p_70097_2_) {
+   public boolean attackEntityFrom(DamageSource source, float amount) {
       return false;
    }
 
-   public void heal(float p_70691_1_) {
+   public void heal(float healAmount) {
    }
 
-   public boolean startRiding(Entity p_184205_1_, boolean p_184205_2_) {
-      if (!super.startRiding(p_184205_1_, p_184205_2_)) {
+   public boolean startRiding(Entity entityIn, boolean force) {
+      if (!super.startRiding(entityIn, force)) {
          return false;
       } else {
-         if (p_184205_1_ instanceof AbstractMinecartEntity) {
-            this.minecraft.getSoundManager().play(new RidingMinecartTickableSound(this, (AbstractMinecartEntity)p_184205_1_));
+         if (entityIn instanceof AbstractMinecartEntity) {
+            this.mc.getSoundHandler().play(new RidingMinecartTickableSound(this, (AbstractMinecartEntity)entityIn));
          }
 
-         if (p_184205_1_ instanceof BoatEntity) {
-            this.yRotO = p_184205_1_.yRot;
-            this.yRot = p_184205_1_.yRot;
-            this.setYHeadRot(p_184205_1_.yRot);
+         if (entityIn instanceof BoatEntity) {
+            this.prevRotationYaw = entityIn.rotationYaw;
+            this.rotationYaw = entityIn.rotationYaw;
+            this.setRotationYawHead(entityIn.rotationYaw);
          }
 
          return true;
       }
    }
 
-   public void removeVehicle() {
-      super.removeVehicle();
-      this.handsBusy = false;
+   public void dismount() {
+      super.dismount();
+      this.rowingBoat = false;
    }
 
-   public float getViewXRot(float p_195050_1_) {
-      return this.xRot;
+   public float getPitch(float partialTicks) {
+      return this.rotationPitch;
    }
 
-   public float getViewYRot(float p_195046_1_) {
-      return this.isPassenger() ? super.getViewYRot(p_195046_1_) : this.yRot;
+   public float getYaw(float partialTicks) {
+      return this.isPassenger() ? super.getYaw(partialTicks) : this.rotationYaw;
    }
 
    public void tick() {
-      if (this.level.hasChunkAt(new BlockPos(this.getX(), 0.0D, this.getZ()))) {
+      if (this.world.isBlockLoaded(new BlockPos(this.getPosX(), 0.0D, this.getPosZ()))) {
          super.tick();
          if (this.isPassenger()) {
-            this.connection.send(new CPlayerPacket.RotationPacket(this.yRot, this.xRot, this.onGround));
-            this.connection.send(new CInputPacket(this.xxa, this.zza, this.input.jumping, this.input.shiftKeyDown));
-            Entity entity = this.getRootVehicle();
-            if (entity != this && entity.isControlledByLocalInstance()) {
-               this.connection.send(new CMoveVehiclePacket(entity));
+            this.connection.sendPacket(new CPlayerPacket.RotationPacket(this.rotationYaw, this.rotationPitch, this.onGround));
+            this.connection.sendPacket(new CInputPacket(this.moveStrafing, this.moveForward, this.movementInput.jump, this.movementInput.sneaking));
+            Entity entity = this.getLowestRidingEntity();
+            if (entity != this && entity.canPassengerSteer()) {
+               this.connection.sendPacket(new CMoveVehiclePacket(entity));
             }
          } else {
-            this.sendPosition();
+            this.onUpdateWalkingPlayer();
          }
 
          for(IAmbientSoundHandler iambientsoundhandler : this.ambientSoundHandlers) {
@@ -192,161 +192,161 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
       }
    }
 
-   public float getCurrentMood() {
+   public float getDarknessAmbience() {
       for(IAmbientSoundHandler iambientsoundhandler : this.ambientSoundHandlers) {
          if (iambientsoundhandler instanceof BiomeSoundHandler) {
-            return ((BiomeSoundHandler)iambientsoundhandler).getMoodiness();
+            return ((BiomeSoundHandler)iambientsoundhandler).getDarknessAmbienceChance();
          }
       }
 
       return 0.0F;
    }
 
-   private void sendPosition() {
+   private void onUpdateWalkingPlayer() {
       boolean flag = this.isSprinting();
-      if (flag != this.wasSprinting) {
+      if (flag != this.serverSprintState) {
          CEntityActionPacket.Action centityactionpacket$action = flag ? CEntityActionPacket.Action.START_SPRINTING : CEntityActionPacket.Action.STOP_SPRINTING;
-         this.connection.send(new CEntityActionPacket(this, centityactionpacket$action));
-         this.wasSprinting = flag;
+         this.connection.sendPacket(new CEntityActionPacket(this, centityactionpacket$action));
+         this.serverSprintState = flag;
       }
 
-      boolean flag3 = this.isShiftKeyDown();
-      if (flag3 != this.wasShiftKeyDown) {
+      boolean flag3 = this.isSneaking();
+      if (flag3 != this.clientSneakState) {
          CEntityActionPacket.Action centityactionpacket$action1 = flag3 ? CEntityActionPacket.Action.PRESS_SHIFT_KEY : CEntityActionPacket.Action.RELEASE_SHIFT_KEY;
-         this.connection.send(new CEntityActionPacket(this, centityactionpacket$action1));
-         this.wasShiftKeyDown = flag3;
+         this.connection.sendPacket(new CEntityActionPacket(this, centityactionpacket$action1));
+         this.clientSneakState = flag3;
       }
 
-      if (this.isControlledCamera()) {
-         double d4 = this.getX() - this.xLast;
-         double d0 = this.getY() - this.yLast1;
-         double d1 = this.getZ() - this.zLast;
-         double d2 = (double)(this.yRot - this.yRotLast);
-         double d3 = (double)(this.xRot - this.xRotLast);
-         ++this.positionReminder;
-         boolean flag1 = d4 * d4 + d0 * d0 + d1 * d1 > 9.0E-4D || this.positionReminder >= 20;
+      if (this.isCurrentViewEntity()) {
+         double d4 = this.getPosX() - this.lastReportedPosX;
+         double d0 = this.getPosY() - this.lastReportedPosY;
+         double d1 = this.getPosZ() - this.lastReportedPosZ;
+         double d2 = (double)(this.rotationYaw - this.lastReportedYaw);
+         double d3 = (double)(this.rotationPitch - this.lastReportedPitch);
+         ++this.positionUpdateTicks;
+         boolean flag1 = d4 * d4 + d0 * d0 + d1 * d1 > 9.0E-4D || this.positionUpdateTicks >= 20;
          boolean flag2 = d2 != 0.0D || d3 != 0.0D;
          if (this.isPassenger()) {
-            Vector3d vector3d = this.getDeltaMovement();
-            this.connection.send(new CPlayerPacket.PositionRotationPacket(vector3d.x, -999.0D, vector3d.z, this.yRot, this.xRot, this.onGround));
+            Vector3d vector3d = this.getMotion();
+            this.connection.sendPacket(new CPlayerPacket.PositionRotationPacket(vector3d.x, -999.0D, vector3d.z, this.rotationYaw, this.rotationPitch, this.onGround));
             flag1 = false;
          } else if (flag1 && flag2) {
-            this.connection.send(new CPlayerPacket.PositionRotationPacket(this.getX(), this.getY(), this.getZ(), this.yRot, this.xRot, this.onGround));
+            this.connection.sendPacket(new CPlayerPacket.PositionRotationPacket(this.getPosX(), this.getPosY(), this.getPosZ(), this.rotationYaw, this.rotationPitch, this.onGround));
          } else if (flag1) {
-            this.connection.send(new CPlayerPacket.PositionPacket(this.getX(), this.getY(), this.getZ(), this.onGround));
+            this.connection.sendPacket(new CPlayerPacket.PositionPacket(this.getPosX(), this.getPosY(), this.getPosZ(), this.onGround));
          } else if (flag2) {
-            this.connection.send(new CPlayerPacket.RotationPacket(this.yRot, this.xRot, this.onGround));
-         } else if (this.lastOnGround != this.onGround) {
-            this.connection.send(new CPlayerPacket(this.onGround));
+            this.connection.sendPacket(new CPlayerPacket.RotationPacket(this.rotationYaw, this.rotationPitch, this.onGround));
+         } else if (this.prevOnGround != this.onGround) {
+            this.connection.sendPacket(new CPlayerPacket(this.onGround));
          }
 
          if (flag1) {
-            this.xLast = this.getX();
-            this.yLast1 = this.getY();
-            this.zLast = this.getZ();
-            this.positionReminder = 0;
+            this.lastReportedPosX = this.getPosX();
+            this.lastReportedPosY = this.getPosY();
+            this.lastReportedPosZ = this.getPosZ();
+            this.positionUpdateTicks = 0;
          }
 
          if (flag2) {
-            this.yRotLast = this.yRot;
-            this.xRotLast = this.xRot;
+            this.lastReportedYaw = this.rotationYaw;
+            this.lastReportedPitch = this.rotationPitch;
          }
 
-         this.lastOnGround = this.onGround;
-         this.autoJumpEnabled = this.minecraft.options.autoJump;
+         this.prevOnGround = this.onGround;
+         this.autoJumpEnabled = this.mc.gameSettings.autoJump;
       }
 
    }
 
    public boolean drop(boolean p_225609_1_) {
       CPlayerDiggingPacket.Action cplayerdiggingpacket$action = p_225609_1_ ? CPlayerDiggingPacket.Action.DROP_ALL_ITEMS : CPlayerDiggingPacket.Action.DROP_ITEM;
-      this.connection.send(new CPlayerDiggingPacket(cplayerdiggingpacket$action, BlockPos.ZERO, Direction.DOWN));
-      return this.inventory.removeItem(this.inventory.selected, p_225609_1_ && !this.inventory.getSelected().isEmpty() ? this.inventory.getSelected().getCount() : 1) != ItemStack.EMPTY;
+      this.connection.sendPacket(new CPlayerDiggingPacket(cplayerdiggingpacket$action, BlockPos.ZERO, Direction.DOWN));
+      return this.inventory.decrStackSize(this.inventory.currentItem, p_225609_1_ && !this.inventory.getCurrentItem().isEmpty() ? this.inventory.getCurrentItem().getCount() : 1) != ItemStack.EMPTY;
    }
 
-   public void chat(String p_71165_1_) {
-      this.connection.send(new CChatMessagePacket(p_71165_1_));
+   public void sendChatMessage(String message) {
+      this.connection.sendPacket(new CChatMessagePacket(message));
    }
 
-   public void swing(Hand p_184609_1_) {
-      super.swing(p_184609_1_);
-      this.connection.send(new CAnimateHandPacket(p_184609_1_));
+   public void swingArm(Hand hand) {
+      super.swingArm(hand);
+      this.connection.sendPacket(new CAnimateHandPacket(hand));
    }
 
-   public void respawn() {
-      this.connection.send(new CClientStatusPacket(CClientStatusPacket.State.PERFORM_RESPAWN));
+   public void respawnPlayer() {
+      this.connection.sendPacket(new CClientStatusPacket(CClientStatusPacket.State.PERFORM_RESPAWN));
    }
 
-   protected void actuallyHurt(DamageSource p_70665_1_, float p_70665_2_) {
-      if (!this.isInvulnerableTo(p_70665_1_)) {
-         this.setHealth(this.getHealth() - p_70665_2_);
+   protected void damageEntity(DamageSource damageSrc, float damageAmount) {
+      if (!this.isInvulnerableTo(damageSrc)) {
+         this.setHealth(this.getHealth() - damageAmount);
       }
    }
 
-   public void closeContainer() {
-      this.connection.send(new CCloseWindowPacket(this.containerMenu.containerId));
-      this.clientSideCloseContainer();
+   public void closeScreen() {
+      this.connection.sendPacket(new CCloseWindowPacket(this.openContainer.windowId));
+      this.closeScreenAndDropStack();
    }
 
-   public void clientSideCloseContainer() {
-      this.inventory.setCarried(ItemStack.EMPTY);
-      super.closeContainer();
-      this.minecraft.setScreen((Screen)null);
+   public void closeScreenAndDropStack() {
+      this.inventory.setItemStack(ItemStack.EMPTY);
+      super.closeScreen();
+      this.mc.displayGuiScreen((Screen)null);
    }
 
-   public void hurtTo(float p_71150_1_) {
-      if (this.flashOnSetHealth) {
-         float f = this.getHealth() - p_71150_1_;
+   public void setPlayerSPHealth(float health) {
+      if (this.hasValidHealth) {
+         float f = this.getHealth() - health;
          if (f <= 0.0F) {
-            this.setHealth(p_71150_1_);
+            this.setHealth(health);
             if (f < 0.0F) {
-               this.invulnerableTime = 10;
+               this.hurtResistantTime = 10;
             }
          } else {
-            this.lastHurt = f;
+            this.lastDamage = f;
             this.setHealth(this.getHealth());
-            this.invulnerableTime = 20;
-            this.actuallyHurt(DamageSource.GENERIC, f);
-            this.hurtDuration = 10;
-            this.hurtTime = this.hurtDuration;
+            this.hurtResistantTime = 20;
+            this.damageEntity(DamageSource.GENERIC, f);
+            this.maxHurtTime = 10;
+            this.hurtTime = this.maxHurtTime;
          }
       } else {
-         this.setHealth(p_71150_1_);
-         this.flashOnSetHealth = true;
+         this.setHealth(health);
+         this.hasValidHealth = true;
       }
 
    }
 
-   public void onUpdateAbilities() {
-      this.connection.send(new CPlayerAbilitiesPacket(this.abilities));
+   public void sendPlayerAbilities() {
+      this.connection.sendPacket(new CPlayerAbilitiesPacket(this.abilities));
    }
 
-   public boolean isLocalPlayer() {
+   public boolean isUser() {
       return true;
    }
 
-   public boolean isSuppressingSlidingDownLadder() {
-      return !this.abilities.flying && super.isSuppressingSlidingDownLadder();
+   public boolean hasStoppedClimbing() {
+      return !this.abilities.isFlying && super.hasStoppedClimbing();
    }
 
-   public boolean canSpawnSprintParticle() {
-      return !this.abilities.flying && super.canSpawnSprintParticle();
+   public boolean shouldSpawnRunningEffects() {
+      return !this.abilities.isFlying && super.shouldSpawnRunningEffects();
    }
 
-   public boolean canSpawnSoulSpeedParticle() {
-      return !this.abilities.flying && super.canSpawnSoulSpeedParticle();
+   public boolean getMovementSpeed() {
+      return !this.abilities.isFlying && super.getMovementSpeed();
    }
 
-   protected void sendRidingJump() {
-      this.connection.send(new CEntityActionPacket(this, CEntityActionPacket.Action.START_RIDING_JUMP, MathHelper.floor(this.getJumpRidingScale() * 100.0F)));
+   protected void sendHorseJump() {
+      this.connection.sendPacket(new CEntityActionPacket(this, CEntityActionPacket.Action.START_RIDING_JUMP, MathHelper.floor(this.getHorseJumpPower() * 100.0F)));
    }
 
-   public void sendOpenInventory() {
-      this.connection.send(new CEntityActionPacket(this, CEntityActionPacket.Action.OPEN_INVENTORY));
+   public void sendHorseInventory() {
+      this.connection.sendPacket(new CEntityActionPacket(this, CEntityActionPacket.Action.OPEN_INVENTORY));
    }
 
-   public void setServerBrand(String p_175158_1_) {
-      this.serverBrand = p_175158_1_;
+   public void setServerBrand(String brand) {
+      this.serverBrand = brand;
    }
 
    public String getServerBrand() {
@@ -361,10 +361,10 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
       return this.recipeBook;
    }
 
-   public void removeRecipeHighlight(IRecipe<?> p_193103_1_) {
-      if (this.recipeBook.willHighlight(p_193103_1_)) {
-         this.recipeBook.removeHighlight(p_193103_1_);
-         this.connection.send(new CMarkRecipeSeenPacket(p_193103_1_));
+   public void removeRecipeHighlight(IRecipe<?> recipe) {
+      if (this.recipeBook.isNew(recipe)) {
+         this.recipeBook.markSeen(recipe);
+         this.connection.sendPacket(new CMarkRecipeSeenPacket(recipe));
       }
 
    }
@@ -373,271 +373,271 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
       return this.permissionLevel;
    }
 
-   public void setPermissionLevel(int p_184839_1_) {
-      this.permissionLevel = p_184839_1_;
+   public void setPermissionLevel(int permissionLevel) {
+      this.permissionLevel = permissionLevel;
    }
 
-   public void displayClientMessage(ITextComponent p_146105_1_, boolean p_146105_2_) {
-      if (p_146105_2_) {
-         this.minecraft.gui.setOverlayMessage(p_146105_1_, false);
+   public void sendStatusMessage(ITextComponent chatComponent, boolean actionBar) {
+      if (actionBar) {
+         this.mc.ingameGUI.setOverlayMessage(chatComponent, false);
       } else {
-         this.minecraft.gui.getChat().addMessage(p_146105_1_);
+         this.mc.ingameGUI.getChatGUI().printChatMessage(chatComponent);
       }
 
    }
 
-   private void moveTowardsClosestSpace(double p_244389_1_, double p_244389_3_) {
-      BlockPos blockpos = new BlockPos(p_244389_1_, this.getY(), p_244389_3_);
-      if (this.suffocatesAt(blockpos)) {
-         double d0 = p_244389_1_ - (double)blockpos.getX();
-         double d1 = p_244389_3_ - (double)blockpos.getZ();
+   private void setPlayerOffsetMotion(double x, double z) {
+      BlockPos blockpos = new BlockPos(x, this.getPosY(), z);
+      if (this.shouldBlockPushPlayer(blockpos)) {
+         double d0 = x - (double)blockpos.getX();
+         double d1 = z - (double)blockpos.getZ();
          Direction direction = null;
          double d2 = Double.MAX_VALUE;
          Direction[] adirection = new Direction[]{Direction.WEST, Direction.EAST, Direction.NORTH, Direction.SOUTH};
 
          for(Direction direction1 : adirection) {
-            double d3 = direction1.getAxis().choose(d0, 0.0D, d1);
+            double d3 = direction1.getAxis().getCoordinate(d0, 0.0D, d1);
             double d4 = direction1.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1.0D - d3 : d3;
-            if (d4 < d2 && !this.suffocatesAt(blockpos.relative(direction1))) {
+            if (d4 < d2 && !this.shouldBlockPushPlayer(blockpos.offset(direction1))) {
                d2 = d4;
                direction = direction1;
             }
          }
 
          if (direction != null) {
-            Vector3d vector3d = this.getDeltaMovement();
+            Vector3d vector3d = this.getMotion();
             if (direction.getAxis() == Direction.Axis.X) {
-               this.setDeltaMovement(0.1D * (double)direction.getStepX(), vector3d.y, vector3d.z);
+               this.setMotion(0.1D * (double)direction.getXOffset(), vector3d.y, vector3d.z);
             } else {
-               this.setDeltaMovement(vector3d.x, vector3d.y, 0.1D * (double)direction.getStepZ());
+               this.setMotion(vector3d.x, vector3d.y, 0.1D * (double)direction.getZOffset());
             }
          }
 
       }
    }
 
-   private boolean suffocatesAt(BlockPos p_205027_1_) {
+   private boolean shouldBlockPushPlayer(BlockPos pos) {
       AxisAlignedBB axisalignedbb = this.getBoundingBox();
-      AxisAlignedBB axisalignedbb1 = (new AxisAlignedBB((double)p_205027_1_.getX(), axisalignedbb.minY, (double)p_205027_1_.getZ(), (double)p_205027_1_.getX() + 1.0D, axisalignedbb.maxY, (double)p_205027_1_.getZ() + 1.0D)).deflate(1.0E-7D);
-      return !this.level.noBlockCollision(this, axisalignedbb1, (p_243494_1_, p_243494_2_) -> {
-         return p_243494_1_.isSuffocating(this.level, p_243494_2_);
+      AxisAlignedBB axisalignedbb1 = (new AxisAlignedBB((double)pos.getX(), axisalignedbb.minY, (double)pos.getZ(), (double)pos.getX() + 1.0D, axisalignedbb.maxY, (double)pos.getZ() + 1.0D)).shrink(1.0E-7D);
+      return !this.world.func_242405_a(this, axisalignedbb1, (p_243494_1_, p_243494_2_) -> {
+         return p_243494_1_.isSuffocating(this.world, p_243494_2_);
       });
    }
 
-   public void setSprinting(boolean p_70031_1_) {
-      super.setSprinting(p_70031_1_);
-      this.sprintTime = 0;
+   public void setSprinting(boolean sprinting) {
+      super.setSprinting(sprinting);
+      this.sprintingTicksLeft = 0;
    }
 
-   public void setExperienceValues(float p_71152_1_, int p_71152_2_, int p_71152_3_) {
-      this.experienceProgress = p_71152_1_;
-      this.totalExperience = p_71152_2_;
-      this.experienceLevel = p_71152_3_;
+   public void setXPStats(float currentXP, int maxXP, int level) {
+      this.experience = currentXP;
+      this.experienceTotal = maxXP;
+      this.experienceLevel = level;
    }
 
-   public void sendMessage(ITextComponent p_145747_1_, UUID p_145747_2_) {
-      this.minecraft.gui.getChat().addMessage(p_145747_1_);
+   public void sendMessage(ITextComponent component, UUID senderUUID) {
+      this.mc.ingameGUI.getChatGUI().printChatMessage(component);
    }
 
-   public void handleEntityEvent(byte p_70103_1_) {
-      if (p_70103_1_ >= 24 && p_70103_1_ <= 28) {
-         this.setPermissionLevel(p_70103_1_ - 24);
+   public void handleStatusUpdate(byte id) {
+      if (id >= 24 && id <= 28) {
+         this.setPermissionLevel(id - 24);
       } else {
-         super.handleEntityEvent(p_70103_1_);
+         super.handleStatusUpdate(id);
       }
 
    }
 
-   public void setShowDeathScreen(boolean p_228355_1_) {
-      this.showDeathScreen = p_228355_1_;
+   public void setShowDeathScreen(boolean show) {
+      this.showDeathScreen = show;
    }
 
-   public boolean shouldShowDeathScreen() {
+   public boolean isShowDeathScreen() {
       return this.showDeathScreen;
    }
 
-   public void playSound(SoundEvent p_184185_1_, float p_184185_2_, float p_184185_3_) {
-      this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), p_184185_1_, this.getSoundSource(), p_184185_2_, p_184185_3_, false);
+   public void playSound(SoundEvent soundIn, float volume, float pitch) {
+      this.world.playSound(this.getPosX(), this.getPosY(), this.getPosZ(), soundIn, this.getSoundCategory(), volume, pitch, false);
    }
 
-   public void playNotifySound(SoundEvent p_213823_1_, SoundCategory p_213823_2_, float p_213823_3_, float p_213823_4_) {
-      this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), p_213823_1_, p_213823_2_, p_213823_3_, p_213823_4_, false);
+   public void playSound(SoundEvent p_213823_1_, SoundCategory p_213823_2_, float p_213823_3_, float p_213823_4_) {
+      this.world.playSound(this.getPosX(), this.getPosY(), this.getPosZ(), p_213823_1_, p_213823_2_, p_213823_3_, p_213823_4_, false);
    }
 
-   public boolean isEffectiveAi() {
+   public boolean isServerWorld() {
       return true;
    }
 
-   public void startUsingItem(Hand p_184598_1_) {
-      ItemStack itemstack = this.getItemInHand(p_184598_1_);
-      if (!itemstack.isEmpty() && !this.isUsingItem()) {
-         super.startUsingItem(p_184598_1_);
-         this.startedUsingItem = true;
-         this.usingItemHand = p_184598_1_;
+   public void setActiveHand(Hand hand) {
+      ItemStack itemstack = this.getHeldItem(hand);
+      if (!itemstack.isEmpty() && !this.isHandActive()) {
+         super.setActiveHand(hand);
+         this.handActive = true;
+         this.activeHand = hand;
       }
    }
 
-   public boolean isUsingItem() {
-      return this.startedUsingItem;
+   public boolean isHandActive() {
+      return this.handActive;
    }
 
-   public void stopUsingItem() {
-      super.stopUsingItem();
-      this.startedUsingItem = false;
+   public void resetActiveHand() {
+      super.resetActiveHand();
+      this.handActive = false;
    }
 
-   public Hand getUsedItemHand() {
-      return this.usingItemHand;
+   public Hand getActiveHand() {
+      return this.activeHand;
    }
 
-   public void onSyncedDataUpdated(DataParameter<?> p_184206_1_) {
-      super.onSyncedDataUpdated(p_184206_1_);
-      if (DATA_LIVING_ENTITY_FLAGS.equals(p_184206_1_)) {
-         boolean flag = (this.entityData.get(DATA_LIVING_ENTITY_FLAGS) & 1) > 0;
-         Hand hand = (this.entityData.get(DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? Hand.OFF_HAND : Hand.MAIN_HAND;
-         if (flag && !this.startedUsingItem) {
-            this.startUsingItem(hand);
-         } else if (!flag && this.startedUsingItem) {
-            this.stopUsingItem();
+   public void notifyDataManagerChange(DataParameter<?> key) {
+      super.notifyDataManagerChange(key);
+      if (LIVING_FLAGS.equals(key)) {
+         boolean flag = (this.dataManager.get(LIVING_FLAGS) & 1) > 0;
+         Hand hand = (this.dataManager.get(LIVING_FLAGS) & 2) > 0 ? Hand.OFF_HAND : Hand.MAIN_HAND;
+         if (flag && !this.handActive) {
+            this.setActiveHand(hand);
+         } else if (!flag && this.handActive) {
+            this.resetActiveHand();
          }
       }
 
-      if (DATA_SHARED_FLAGS_ID.equals(p_184206_1_) && this.isFallFlying() && !this.wasFallFlying) {
-         this.minecraft.getSoundManager().play(new ElytraSound(this));
+      if (FLAGS.equals(key) && this.isElytraFlying() && !this.wasFallFlying) {
+         this.mc.getSoundHandler().play(new ElytraSound(this));
       }
 
    }
 
-   public boolean isRidingJumpable() {
-      Entity entity = this.getVehicle();
+   public boolean isRidingHorse() {
+      Entity entity = this.getRidingEntity();
       return this.isPassenger() && entity instanceof IJumpingMount && ((IJumpingMount)entity).canJump();
    }
 
-   public float getJumpRidingScale() {
-      return this.jumpRidingScale;
+   public float getHorseJumpPower() {
+      return this.horseJumpPower;
    }
 
-   public void openTextEdit(SignTileEntity p_175141_1_) {
-      this.minecraft.setScreen(new EditSignScreen(p_175141_1_));
+   public void openSignEditor(SignTileEntity signTile) {
+      this.mc.displayGuiScreen(new EditSignScreen(signTile));
    }
 
-   public void openMinecartCommandBlock(CommandBlockLogic p_184809_1_) {
-      this.minecraft.setScreen(new EditMinecartCommandBlockScreen(p_184809_1_));
+   public void openMinecartCommandBlock(CommandBlockLogic commandBlock) {
+      this.mc.displayGuiScreen(new EditMinecartCommandBlockScreen(commandBlock));
    }
 
-   public void openCommandBlock(CommandBlockTileEntity p_184824_1_) {
-      this.minecraft.setScreen(new CommandBlockScreen(p_184824_1_));
+   public void openCommandBlock(CommandBlockTileEntity commandBlock) {
+      this.mc.displayGuiScreen(new CommandBlockScreen(commandBlock));
    }
 
-   public void openStructureBlock(StructureBlockTileEntity p_189807_1_) {
-      this.minecraft.setScreen(new EditStructureScreen(p_189807_1_));
+   public void openStructureBlock(StructureBlockTileEntity structure) {
+      this.mc.displayGuiScreen(new EditStructureScreen(structure));
    }
 
-   public void openJigsawBlock(JigsawTileEntity p_213826_1_) {
-      this.minecraft.setScreen(new JigsawScreen(p_213826_1_));
+   public void openJigsaw(JigsawTileEntity p_213826_1_) {
+      this.mc.displayGuiScreen(new JigsawScreen(p_213826_1_));
    }
 
-   public void openItemGui(ItemStack p_184814_1_, Hand p_184814_2_) {
-      Item item = p_184814_1_.getItem();
+   public void openBook(ItemStack stack, Hand hand) {
+      Item item = stack.getItem();
       if (item == Items.WRITABLE_BOOK) {
-         this.minecraft.setScreen(new EditBookScreen(this, p_184814_1_, p_184814_2_));
+         this.mc.displayGuiScreen(new EditBookScreen(this, stack, hand));
       }
 
    }
 
-   public void crit(Entity p_71009_1_) {
-      this.minecraft.particleEngine.createTrackingEmitter(p_71009_1_, ParticleTypes.CRIT);
+   public void onCriticalHit(Entity entityHit) {
+      this.mc.particles.addParticleEmitter(entityHit, ParticleTypes.CRIT);
    }
 
-   public void magicCrit(Entity p_71047_1_) {
-      this.minecraft.particleEngine.createTrackingEmitter(p_71047_1_, ParticleTypes.ENCHANTED_HIT);
+   public void onEnchantmentCritical(Entity entityHit) {
+      this.mc.particles.addParticleEmitter(entityHit, ParticleTypes.ENCHANTED_HIT);
    }
 
-   public boolean isShiftKeyDown() {
-      return this.input != null && this.input.shiftKeyDown;
+   public boolean isSneaking() {
+      return this.movementInput != null && this.movementInput.sneaking;
    }
 
    public boolean isCrouching() {
-      return this.crouching;
+      return this.isCrouching;
    }
 
-   public boolean isMovingSlowly() {
-      return this.isCrouching() || this.isVisuallyCrawling();
+   public boolean isForcedDown() {
+      return this.isCrouching() || this.isVisuallySwimming();
    }
 
-   public void serverAiStep() {
-      super.serverAiStep();
-      if (this.isControlledCamera()) {
-         this.xxa = this.input.leftImpulse;
-         this.zza = this.input.forwardImpulse;
-         this.jumping = this.input.jumping;
-         this.yBobO = this.yBob;
-         this.xBobO = this.xBob;
-         this.xBob = (float)((double)this.xBob + (double)(this.xRot - this.xBob) * 0.5D);
-         this.yBob = (float)((double)this.yBob + (double)(this.yRot - this.yBob) * 0.5D);
+   public void updateEntityActionState() {
+      super.updateEntityActionState();
+      if (this.isCurrentViewEntity()) {
+         this.moveStrafing = this.movementInput.moveStrafe;
+         this.moveForward = this.movementInput.moveForward;
+         this.isJumping = this.movementInput.jump;
+         this.prevRenderArmYaw = this.renderArmYaw;
+         this.prevRenderArmPitch = this.renderArmPitch;
+         this.renderArmPitch = (float)((double)this.renderArmPitch + (double)(this.rotationPitch - this.renderArmPitch) * 0.5D);
+         this.renderArmYaw = (float)((double)this.renderArmYaw + (double)(this.rotationYaw - this.renderArmYaw) * 0.5D);
       }
 
    }
 
-   protected boolean isControlledCamera() {
-      return this.minecraft.getCameraEntity() == this;
+   protected boolean isCurrentViewEntity() {
+      return this.mc.getRenderViewEntity() == this;
    }
 
-   public void aiStep() {
-      ++this.sprintTime;
-      if (this.sprintTriggerTime > 0) {
-         --this.sprintTriggerTime;
+   public void livingTick() {
+      ++this.sprintingTicksLeft;
+      if (this.sprintToggleTimer > 0) {
+         --this.sprintToggleTimer;
       }
 
-      this.handleNetherPortalClient();
-      boolean flag = this.input.jumping;
-      boolean flag1 = this.input.shiftKeyDown;
-      boolean flag2 = this.hasEnoughImpulseToStartSprinting();
-      this.crouching = !this.abilities.flying && !this.isSwimming() && this.canEnterPose(Pose.CROUCHING) && (this.isShiftKeyDown() || !this.isSleeping() && !this.canEnterPose(Pose.STANDING));
-      this.input.tick(this.isMovingSlowly());
-      this.minecraft.getTutorial().onInput(this.input);
-      if (this.isUsingItem() && !this.isPassenger()) {
-         this.input.leftImpulse *= 0.2F;
-         this.input.forwardImpulse *= 0.2F;
-         this.sprintTriggerTime = 0;
+      this.handlePortalTeleportation();
+      boolean flag = this.movementInput.jump;
+      boolean flag1 = this.movementInput.sneaking;
+      boolean flag2 = this.isUsingSwimmingAnimation();
+      this.isCrouching = !this.abilities.isFlying && !this.isSwimming() && this.isPoseClear(Pose.CROUCHING) && (this.isSneaking() || !this.isSleeping() && !this.isPoseClear(Pose.STANDING));
+      this.movementInput.tickMovement(this.isForcedDown());
+      this.mc.getTutorial().handleMovement(this.movementInput);
+      if (this.isHandActive() && !this.isPassenger()) {
+         this.movementInput.moveStrafe *= 0.2F;
+         this.movementInput.moveForward *= 0.2F;
+         this.sprintToggleTimer = 0;
       }
 
       boolean flag3 = false;
       if (this.autoJumpTime > 0) {
          --this.autoJumpTime;
          flag3 = true;
-         this.input.jumping = true;
+         this.movementInput.jump = true;
       }
 
-      if (!this.noPhysics) {
-         this.moveTowardsClosestSpace(this.getX() - (double)this.getBbWidth() * 0.35D, this.getZ() + (double)this.getBbWidth() * 0.35D);
-         this.moveTowardsClosestSpace(this.getX() - (double)this.getBbWidth() * 0.35D, this.getZ() - (double)this.getBbWidth() * 0.35D);
-         this.moveTowardsClosestSpace(this.getX() + (double)this.getBbWidth() * 0.35D, this.getZ() - (double)this.getBbWidth() * 0.35D);
-         this.moveTowardsClosestSpace(this.getX() + (double)this.getBbWidth() * 0.35D, this.getZ() + (double)this.getBbWidth() * 0.35D);
+      if (!this.noClip) {
+         this.setPlayerOffsetMotion(this.getPosX() - (double)this.getWidth() * 0.35D, this.getPosZ() + (double)this.getWidth() * 0.35D);
+         this.setPlayerOffsetMotion(this.getPosX() - (double)this.getWidth() * 0.35D, this.getPosZ() - (double)this.getWidth() * 0.35D);
+         this.setPlayerOffsetMotion(this.getPosX() + (double)this.getWidth() * 0.35D, this.getPosZ() - (double)this.getWidth() * 0.35D);
+         this.setPlayerOffsetMotion(this.getPosX() + (double)this.getWidth() * 0.35D, this.getPosZ() + (double)this.getWidth() * 0.35D);
       }
 
       if (flag1) {
-         this.sprintTriggerTime = 0;
+         this.sprintToggleTimer = 0;
       }
 
-      boolean flag4 = (float)this.getFoodData().getFoodLevel() > 6.0F || this.abilities.mayfly;
-      if ((this.onGround || this.isUnderWater()) && !flag1 && !flag2 && this.hasEnoughImpulseToStartSprinting() && !this.isSprinting() && flag4 && !this.isUsingItem() && !this.hasEffect(Effects.BLINDNESS)) {
-         if (this.sprintTriggerTime <= 0 && !this.minecraft.options.keySprint.isDown()) {
-            this.sprintTriggerTime = 7;
+      boolean flag4 = (float)this.getFoodStats().getFoodLevel() > 6.0F || this.abilities.allowFlying;
+      if ((this.onGround || this.canSwim()) && !flag1 && !flag2 && this.isUsingSwimmingAnimation() && !this.isSprinting() && flag4 && !this.isHandActive() && !this.isPotionActive(Effects.BLINDNESS)) {
+         if (this.sprintToggleTimer <= 0 && !this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+            this.sprintToggleTimer = 7;
          } else {
             this.setSprinting(true);
          }
       }
 
-      if (!this.isSprinting() && (!this.isInWater() || this.isUnderWater()) && this.hasEnoughImpulseToStartSprinting() && flag4 && !this.isUsingItem() && !this.hasEffect(Effects.BLINDNESS) && this.minecraft.options.keySprint.isDown()) {
+      if (!this.isSprinting() && (!this.isInWater() || this.canSwim()) && this.isUsingSwimmingAnimation() && flag4 && !this.isHandActive() && !this.isPotionActive(Effects.BLINDNESS) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
          this.setSprinting(true);
       }
 
       if (this.isSprinting()) {
-         boolean flag5 = !this.input.hasForwardImpulse() || !flag4;
-         boolean flag6 = flag5 || this.horizontalCollision || this.isInWater() && !this.isUnderWater();
+         boolean flag5 = !this.movementInput.isMovingForward() || !flag4;
+         boolean flag6 = flag5 || this.collidedHorizontally || this.isInWater() && !this.canSwim();
          if (this.isSwimming()) {
-            if (!this.onGround && !this.input.shiftKeyDown && flag5 || !this.isInWater()) {
+            if (!this.onGround && !this.movementInput.sneaking && flag5 || !this.isInWater()) {
                this.setSprinting(false);
             }
          } else if (flag6) {
@@ -646,186 +646,186 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
       }
 
       boolean flag7 = false;
-      if (this.abilities.mayfly) {
-         if (this.minecraft.gameMode.isAlwaysFlying()) {
-            if (!this.abilities.flying) {
-               this.abilities.flying = true;
+      if (this.abilities.allowFlying) {
+         if (this.mc.playerController.isSpectatorMode()) {
+            if (!this.abilities.isFlying) {
+               this.abilities.isFlying = true;
                flag7 = true;
-               this.onUpdateAbilities();
+               this.sendPlayerAbilities();
             }
-         } else if (!flag && this.input.jumping && !flag3) {
-            if (this.jumpTriggerTime == 0) {
-               this.jumpTriggerTime = 7;
+         } else if (!flag && this.movementInput.jump && !flag3) {
+            if (this.flyToggleTimer == 0) {
+               this.flyToggleTimer = 7;
             } else if (!this.isSwimming()) {
-               this.abilities.flying = !this.abilities.flying;
+               this.abilities.isFlying = !this.abilities.isFlying;
                flag7 = true;
-               this.onUpdateAbilities();
-               this.jumpTriggerTime = 0;
+               this.sendPlayerAbilities();
+               this.flyToggleTimer = 0;
             }
          }
       }
 
-      if (this.input.jumping && !flag7 && !flag && !this.abilities.flying && !this.isPassenger() && !this.onClimbable()) {
-         ItemStack itemstack = this.getItemBySlot(EquipmentSlotType.CHEST);
-         if (itemstack.getItem() == Items.ELYTRA && ElytraItem.isFlyEnabled(itemstack) && this.tryToStartFallFlying()) {
-            this.connection.send(new CEntityActionPacket(this, CEntityActionPacket.Action.START_FALL_FLYING));
+      if (this.movementInput.jump && !flag7 && !flag && !this.abilities.isFlying && !this.isPassenger() && !this.isOnLadder()) {
+         ItemStack itemstack = this.getItemStackFromSlot(EquipmentSlotType.CHEST);
+         if (itemstack.getItem() == Items.ELYTRA && ElytraItem.isUsable(itemstack) && this.tryToStartFallFlying()) {
+            this.connection.sendPacket(new CEntityActionPacket(this, CEntityActionPacket.Action.START_FALL_FLYING));
          }
       }
 
-      this.wasFallFlying = this.isFallFlying();
-      if (this.isInWater() && this.input.shiftKeyDown && this.isAffectedByFluids()) {
-         this.goDownInWater();
+      this.wasFallFlying = this.isElytraFlying();
+      if (this.isInWater() && this.movementInput.sneaking && this.func_241208_cS_()) {
+         this.handleFluidSneak();
       }
 
-      if (this.isEyeInFluid(FluidTags.WATER)) {
+      if (this.areEyesInFluid(FluidTags.WATER)) {
          int i = this.isSpectator() ? 10 : 1;
-         this.waterVisionTime = MathHelper.clamp(this.waterVisionTime + i, 0, 600);
-      } else if (this.waterVisionTime > 0) {
-         this.isEyeInFluid(FluidTags.WATER);
-         this.waterVisionTime = MathHelper.clamp(this.waterVisionTime - 10, 0, 600);
+         this.counterInWater = MathHelper.clamp(this.counterInWater + i, 0, 600);
+      } else if (this.counterInWater > 0) {
+         this.areEyesInFluid(FluidTags.WATER);
+         this.counterInWater = MathHelper.clamp(this.counterInWater - 10, 0, 600);
       }
 
-      if (this.abilities.flying && this.isControlledCamera()) {
+      if (this.abilities.isFlying && this.isCurrentViewEntity()) {
          int j = 0;
-         if (this.input.shiftKeyDown) {
+         if (this.movementInput.sneaking) {
             --j;
          }
 
-         if (this.input.jumping) {
+         if (this.movementInput.jump) {
             ++j;
          }
 
          if (j != 0) {
-            this.setDeltaMovement(this.getDeltaMovement().add(0.0D, (double)((float)j * this.abilities.getFlyingSpeed() * 3.0F), 0.0D));
+            this.setMotion(this.getMotion().add(0.0D, (double)((float)j * this.abilities.getFlySpeed() * 3.0F), 0.0D));
          }
       }
 
-      if (this.isRidingJumpable()) {
-         IJumpingMount ijumpingmount = (IJumpingMount)this.getVehicle();
-         if (this.jumpRidingTicks < 0) {
-            ++this.jumpRidingTicks;
-            if (this.jumpRidingTicks == 0) {
-               this.jumpRidingScale = 0.0F;
+      if (this.isRidingHorse()) {
+         IJumpingMount ijumpingmount = (IJumpingMount)this.getRidingEntity();
+         if (this.horseJumpPowerCounter < 0) {
+            ++this.horseJumpPowerCounter;
+            if (this.horseJumpPowerCounter == 0) {
+               this.horseJumpPower = 0.0F;
             }
          }
 
-         if (flag && !this.input.jumping) {
-            this.jumpRidingTicks = -10;
-            ijumpingmount.onPlayerJump(MathHelper.floor(this.getJumpRidingScale() * 100.0F));
-            this.sendRidingJump();
-         } else if (!flag && this.input.jumping) {
-            this.jumpRidingTicks = 0;
-            this.jumpRidingScale = 0.0F;
+         if (flag && !this.movementInput.jump) {
+            this.horseJumpPowerCounter = -10;
+            ijumpingmount.setJumpPower(MathHelper.floor(this.getHorseJumpPower() * 100.0F));
+            this.sendHorseJump();
+         } else if (!flag && this.movementInput.jump) {
+            this.horseJumpPowerCounter = 0;
+            this.horseJumpPower = 0.0F;
          } else if (flag) {
-            ++this.jumpRidingTicks;
-            if (this.jumpRidingTicks < 10) {
-               this.jumpRidingScale = (float)this.jumpRidingTicks * 0.1F;
+            ++this.horseJumpPowerCounter;
+            if (this.horseJumpPowerCounter < 10) {
+               this.horseJumpPower = (float)this.horseJumpPowerCounter * 0.1F;
             } else {
-               this.jumpRidingScale = 0.8F + 2.0F / (float)(this.jumpRidingTicks - 9) * 0.1F;
+               this.horseJumpPower = 0.8F + 2.0F / (float)(this.horseJumpPowerCounter - 9) * 0.1F;
             }
          }
       } else {
-         this.jumpRidingScale = 0.0F;
+         this.horseJumpPower = 0.0F;
       }
 
-      super.aiStep();
-      if (this.onGround && this.abilities.flying && !this.minecraft.gameMode.isAlwaysFlying()) {
-         this.abilities.flying = false;
-         this.onUpdateAbilities();
+      super.livingTick();
+      if (this.onGround && this.abilities.isFlying && !this.mc.playerController.isSpectatorMode()) {
+         this.abilities.isFlying = false;
+         this.sendPlayerAbilities();
       }
 
    }
 
-   private void handleNetherPortalClient() {
-      this.oPortalTime = this.portalTime;
-      if (this.isInsidePortal) {
-         if (this.minecraft.screen != null && !this.minecraft.screen.isPauseScreen()) {
-            if (this.minecraft.screen instanceof ContainerScreen) {
-               this.closeContainer();
+   private void handlePortalTeleportation() {
+      this.prevTimeInPortal = this.timeInPortal;
+      if (this.inPortal) {
+         if (this.mc.currentScreen != null && !this.mc.currentScreen.isPauseScreen()) {
+            if (this.mc.currentScreen instanceof ContainerScreen) {
+               this.closeScreen();
             }
 
-            this.minecraft.setScreen((Screen)null);
+            this.mc.displayGuiScreen((Screen)null);
          }
 
-         if (this.portalTime == 0.0F) {
-            this.minecraft.getSoundManager().play(SimpleSound.forLocalAmbience(SoundEvents.PORTAL_TRIGGER, this.random.nextFloat() * 0.4F + 0.8F, 0.25F));
+         if (this.timeInPortal == 0.0F) {
+            this.mc.getSoundHandler().play(SimpleSound.ambientWithoutAttenuation(SoundEvents.BLOCK_PORTAL_TRIGGER, this.rand.nextFloat() * 0.4F + 0.8F, 0.25F));
          }
 
-         this.portalTime += 0.0125F;
-         if (this.portalTime >= 1.0F) {
-            this.portalTime = 1.0F;
+         this.timeInPortal += 0.0125F;
+         if (this.timeInPortal >= 1.0F) {
+            this.timeInPortal = 1.0F;
          }
 
-         this.isInsidePortal = false;
-      } else if (this.hasEffect(Effects.CONFUSION) && this.getEffect(Effects.CONFUSION).getDuration() > 60) {
-         this.portalTime += 0.006666667F;
-         if (this.portalTime > 1.0F) {
-            this.portalTime = 1.0F;
+         this.inPortal = false;
+      } else if (this.isPotionActive(Effects.NAUSEA) && this.getActivePotionEffect(Effects.NAUSEA).getDuration() > 60) {
+         this.timeInPortal += 0.006666667F;
+         if (this.timeInPortal > 1.0F) {
+            this.timeInPortal = 1.0F;
          }
       } else {
-         if (this.portalTime > 0.0F) {
-            this.portalTime -= 0.05F;
+         if (this.timeInPortal > 0.0F) {
+            this.timeInPortal -= 0.05F;
          }
 
-         if (this.portalTime < 0.0F) {
-            this.portalTime = 0.0F;
+         if (this.timeInPortal < 0.0F) {
+            this.timeInPortal = 0.0F;
          }
       }
 
-      this.processPortalCooldown();
+      this.decrementTimeUntilPortal();
    }
 
-   public void rideTick() {
-      super.rideTick();
-      this.handsBusy = false;
-      if (this.getVehicle() instanceof BoatEntity) {
-         BoatEntity boatentity = (BoatEntity)this.getVehicle();
-         boatentity.setInput(this.input.left, this.input.right, this.input.up, this.input.down);
-         this.handsBusy |= this.input.left || this.input.right || this.input.up || this.input.down;
+   public void updateRidden() {
+      super.updateRidden();
+      this.rowingBoat = false;
+      if (this.getRidingEntity() instanceof BoatEntity) {
+         BoatEntity boatentity = (BoatEntity)this.getRidingEntity();
+         boatentity.updateInputs(this.movementInput.leftKeyDown, this.movementInput.rightKeyDown, this.movementInput.forwardKeyDown, this.movementInput.backKeyDown);
+         this.rowingBoat |= this.movementInput.leftKeyDown || this.movementInput.rightKeyDown || this.movementInput.forwardKeyDown || this.movementInput.backKeyDown;
       }
 
    }
 
-   public boolean isHandsBusy() {
-      return this.handsBusy;
+   public boolean isRowingBoat() {
+      return this.rowingBoat;
    }
 
    @Nullable
-   public EffectInstance removeEffectNoUpdate(@Nullable Effect p_184596_1_) {
-      if (p_184596_1_ == Effects.CONFUSION) {
-         this.oPortalTime = 0.0F;
-         this.portalTime = 0.0F;
+   public EffectInstance removeActivePotionEffect(@Nullable Effect potioneffectin) {
+      if (potioneffectin == Effects.NAUSEA) {
+         this.prevTimeInPortal = 0.0F;
+         this.timeInPortal = 0.0F;
       }
 
-      return super.removeEffectNoUpdate(p_184596_1_);
+      return super.removeActivePotionEffect(potioneffectin);
    }
 
-   public void move(MoverType p_213315_1_, Vector3d p_213315_2_) {
-      double d0 = this.getX();
-      double d1 = this.getZ();
-      super.move(p_213315_1_, p_213315_2_);
-      this.updateAutoJump((float)(this.getX() - d0), (float)(this.getZ() - d1));
+   public void move(MoverType typeIn, Vector3d pos) {
+      double d0 = this.getPosX();
+      double d1 = this.getPosZ();
+      super.move(typeIn, pos);
+      this.updateAutoJump((float)(this.getPosX() - d0), (float)(this.getPosZ() - d1));
    }
 
    public boolean isAutoJumpEnabled() {
       return this.autoJumpEnabled;
    }
 
-   protected void updateAutoJump(float p_189810_1_, float p_189810_2_) {
+   protected void updateAutoJump(float movementX, float movementZ) {
       if (this.canAutoJump()) {
-         Vector3d vector3d = this.position();
-         Vector3d vector3d1 = vector3d.add((double)p_189810_1_, 0.0D, (double)p_189810_2_);
-         Vector3d vector3d2 = new Vector3d((double)p_189810_1_, 0.0D, (double)p_189810_2_);
-         float f = this.getSpeed();
-         float f1 = (float)vector3d2.lengthSqr();
+         Vector3d vector3d = this.getPositionVec();
+         Vector3d vector3d1 = vector3d.add((double)movementX, 0.0D, (double)movementZ);
+         Vector3d vector3d2 = new Vector3d((double)movementX, 0.0D, (double)movementZ);
+         float f = this.getAIMoveSpeed();
+         float f1 = (float)vector3d2.lengthSquared();
          if (f1 <= 0.001F) {
-            Vector2f vector2f = this.input.getMoveVector();
+            Vector2f vector2f = this.movementInput.getMoveVector();
             float f2 = f * vector2f.x;
             float f3 = f * vector2f.y;
-            float f4 = MathHelper.sin(this.yRot * ((float)Math.PI / 180F));
-            float f5 = MathHelper.cos(this.yRot * ((float)Math.PI / 180F));
+            float f4 = MathHelper.sin(this.rotationYaw * ((float)Math.PI / 180F));
+            float f5 = MathHelper.cos(this.rotationYaw * ((float)Math.PI / 180F));
             vector3d2 = new Vector3d((double)(f2 * f5 - f3 * f4), vector3d2.y, (double)(f3 * f5 + f2 * f4));
-            f1 = (float)vector3d2.lengthSqr();
+            f1 = (float)vector3d2.lengthSquared();
             if (f1 <= 0.001F) {
                return;
             }
@@ -836,36 +836,36 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
          Vector3d vector3d13 = this.getForward();
          float f13 = (float)(vector3d13.x * vector3d12.x + vector3d13.z * vector3d12.z);
          if (!(f13 < -0.15F)) {
-            ISelectionContext iselectioncontext = ISelectionContext.of(this);
-            BlockPos blockpos = new BlockPos(this.getX(), this.getBoundingBox().maxY, this.getZ());
-            BlockState blockstate = this.level.getBlockState(blockpos);
-            if (blockstate.getCollisionShape(this.level, blockpos, iselectioncontext).isEmpty()) {
-               blockpos = blockpos.above();
-               BlockState blockstate1 = this.level.getBlockState(blockpos);
-               if (blockstate1.getCollisionShape(this.level, blockpos, iselectioncontext).isEmpty()) {
+            ISelectionContext iselectioncontext = ISelectionContext.forEntity(this);
+            BlockPos blockpos = new BlockPos(this.getPosX(), this.getBoundingBox().maxY, this.getPosZ());
+            BlockState blockstate = this.world.getBlockState(blockpos);
+            if (blockstate.getCollisionShape(this.world, blockpos, iselectioncontext).isEmpty()) {
+               blockpos = blockpos.up();
+               BlockState blockstate1 = this.world.getBlockState(blockpos);
+               if (blockstate1.getCollisionShape(this.world, blockpos, iselectioncontext).isEmpty()) {
                   float f6 = 7.0F;
                   float f7 = 1.2F;
-                  if (this.hasEffect(Effects.JUMP)) {
-                     f7 += (float)(this.getEffect(Effects.JUMP).getAmplifier() + 1) * 0.75F;
+                  if (this.isPotionActive(Effects.JUMP_BOOST)) {
+                     f7 += (float)(this.getActivePotionEffect(Effects.JUMP_BOOST).getAmplifier() + 1) * 0.75F;
                   }
 
                   float f8 = Math.max(f * 7.0F, 1.0F / f12);
                   Vector3d vector3d4 = vector3d1.add(vector3d12.scale((double)f8));
-                  float f9 = this.getBbWidth();
-                  float f10 = this.getBbHeight();
-                  AxisAlignedBB axisalignedbb = (new AxisAlignedBB(vector3d, vector3d4.add(0.0D, (double)f10, 0.0D))).inflate((double)f9, 0.0D, (double)f9);
+                  float f9 = this.getWidth();
+                  float f10 = this.getHeight();
+                  AxisAlignedBB axisalignedbb = (new AxisAlignedBB(vector3d, vector3d4.add(0.0D, (double)f10, 0.0D))).grow((double)f9, 0.0D, (double)f9);
                   Vector3d lvt_19_1_ = vector3d.add(0.0D, (double)0.51F, 0.0D);
                   vector3d4 = vector3d4.add(0.0D, (double)0.51F, 0.0D);
-                  Vector3d vector3d5 = vector3d12.cross(new Vector3d(0.0D, 1.0D, 0.0D));
+                  Vector3d vector3d5 = vector3d12.crossProduct(new Vector3d(0.0D, 1.0D, 0.0D));
                   Vector3d vector3d6 = vector3d5.scale((double)(f9 * 0.5F));
                   Vector3d vector3d7 = lvt_19_1_.subtract(vector3d6);
                   Vector3d vector3d8 = vector3d4.subtract(vector3d6);
                   Vector3d vector3d9 = lvt_19_1_.add(vector3d6);
                   Vector3d vector3d10 = vector3d4.add(vector3d6);
-                  Iterator<AxisAlignedBB> iterator = this.level.getCollisions(this, axisalignedbb, (p_239205_0_) -> {
+                  Iterator<AxisAlignedBB> iterator = this.world.func_234867_d_(this, axisalignedbb, (p_239205_0_) -> {
                      return true;
                   }).flatMap((p_212329_0_) -> {
-                     return p_212329_0_.toAabbs().stream();
+                     return p_212329_0_.toBoundingBoxList().stream();
                   }).iterator();
                   float f11 = Float.MIN_VALUE;
 
@@ -877,20 +877,20 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
                         BlockPos blockpos1 = new BlockPos(vector3d11);
 
                         for(int i = 1; (float)i < f7; ++i) {
-                           BlockPos blockpos2 = blockpos1.above(i);
-                           BlockState blockstate2 = this.level.getBlockState(blockpos2);
+                           BlockPos blockpos2 = blockpos1.up(i);
+                           BlockState blockstate2 = this.world.getBlockState(blockpos2);
                            VoxelShape voxelshape;
-                           if (!(voxelshape = blockstate2.getCollisionShape(this.level, blockpos2, iselectioncontext)).isEmpty()) {
-                              f11 = (float)voxelshape.max(Direction.Axis.Y) + (float)blockpos2.getY();
-                              if ((double)f11 - this.getY() > (double)f7) {
+                           if (!(voxelshape = blockstate2.getCollisionShape(this.world, blockpos2, iselectioncontext)).isEmpty()) {
+                              f11 = (float)voxelshape.getEnd(Direction.Axis.Y) + (float)blockpos2.getY();
+                              if ((double)f11 - this.getPosY() > (double)f7) {
                                  return;
                               }
                            }
 
                            if (i > 1) {
-                              blockpos = blockpos.above();
-                              BlockState blockstate3 = this.level.getBlockState(blockpos);
-                              if (!blockstate3.getCollisionShape(this.level, blockpos, iselectioncontext).isEmpty()) {
+                              blockpos = blockpos.up();
+                              BlockState blockstate3 = this.world.getBlockState(blockpos);
+                              if (!blockstate3.getCollisionShape(this.world, blockpos, iselectioncontext).isEmpty()) {
                                  return;
                               }
                            }
@@ -900,7 +900,7 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
                   }
 
                   if (f11 != Float.MIN_VALUE) {
-                     float f14 = (float)((double)f11 - this.getY());
+                     float f14 = (float)((double)f11 - this.getPosY());
                      if (!(f14 <= 0.5F) && !(f14 > f7)) {
                         this.autoJumpTime = 1;
                      }
@@ -912,67 +912,67 @@ public class ClientPlayerEntity extends AbstractClientPlayerEntity {
    }
 
    private boolean canAutoJump() {
-      return this.isAutoJumpEnabled() && this.autoJumpTime <= 0 && this.onGround && !this.isStayingOnGroundSurface() && !this.isPassenger() && this.isMoving() && (double)this.getBlockJumpFactor() >= 1.0D;
+      return this.isAutoJumpEnabled() && this.autoJumpTime <= 0 && this.onGround && !this.isStayingOnGroundSurface() && !this.isPassenger() && this.isMoving() && (double)this.getJumpFactor() >= 1.0D;
    }
 
    private boolean isMoving() {
-      Vector2f vector2f = this.input.getMoveVector();
+      Vector2f vector2f = this.movementInput.getMoveVector();
       return vector2f.x != 0.0F || vector2f.y != 0.0F;
    }
 
-   private boolean hasEnoughImpulseToStartSprinting() {
+   private boolean isUsingSwimmingAnimation() {
       double d0 = 0.8D;
-      return this.isUnderWater() ? this.input.hasForwardImpulse() : (double)this.input.forwardImpulse >= 0.8D;
+      return this.canSwim() ? this.movementInput.isMovingForward() : (double)this.movementInput.moveForward >= 0.8D;
    }
 
-   public float getWaterVision() {
-      if (!this.isEyeInFluid(FluidTags.WATER)) {
+   public float getWaterBrightness() {
+      if (!this.areEyesInFluid(FluidTags.WATER)) {
          return 0.0F;
       } else {
          float f = 600.0F;
          float f1 = 100.0F;
-         if ((float)this.waterVisionTime >= 600.0F) {
+         if ((float)this.counterInWater >= 600.0F) {
             return 1.0F;
          } else {
-            float f2 = MathHelper.clamp((float)this.waterVisionTime / 100.0F, 0.0F, 1.0F);
-            float f3 = (float)this.waterVisionTime < 100.0F ? 0.0F : MathHelper.clamp(((float)this.waterVisionTime - 100.0F) / 500.0F, 0.0F, 1.0F);
+            float f2 = MathHelper.clamp((float)this.counterInWater / 100.0F, 0.0F, 1.0F);
+            float f3 = (float)this.counterInWater < 100.0F ? 0.0F : MathHelper.clamp(((float)this.counterInWater - 100.0F) / 500.0F, 0.0F, 1.0F);
             return f2 * 0.6F + f3 * 0.39999998F;
          }
       }
    }
 
-   public boolean isUnderWater() {
-      return this.wasUnderwater;
+   public boolean canSwim() {
+      return this.eyesInWaterPlayer;
    }
 
-   protected boolean updateIsUnderwater() {
-      boolean flag = this.wasUnderwater;
-      boolean flag1 = super.updateIsUnderwater();
+   protected boolean updateEyesInWaterPlayer() {
+      boolean flag = this.eyesInWaterPlayer;
+      boolean flag1 = super.updateEyesInWaterPlayer();
       if (this.isSpectator()) {
-         return this.wasUnderwater;
+         return this.eyesInWaterPlayer;
       } else {
          if (!flag && flag1) {
-            this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMBIENT_UNDERWATER_ENTER, SoundCategory.AMBIENT, 1.0F, 1.0F, false);
-            this.minecraft.getSoundManager().play(new UnderwaterAmbientSounds.UnderWaterSound(this));
+            this.world.playSound(this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.AMBIENT_UNDERWATER_ENTER, SoundCategory.AMBIENT, 1.0F, 1.0F, false);
+            this.mc.getSoundHandler().play(new UnderwaterAmbientSounds.UnderWaterSound(this));
          }
 
          if (flag && !flag1) {
-            this.level.playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.AMBIENT_UNDERWATER_EXIT, SoundCategory.AMBIENT, 1.0F, 1.0F, false);
+            this.world.playSound(this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.AMBIENT_UNDERWATER_EXIT, SoundCategory.AMBIENT, 1.0F, 1.0F, false);
          }
 
-         return this.wasUnderwater;
+         return this.eyesInWaterPlayer;
       }
    }
 
-   public Vector3d getRopeHoldPosition(float p_241843_1_) {
-      if (this.minecraft.options.getCameraType().isFirstPerson()) {
-         float f = MathHelper.lerp(p_241843_1_ * 0.5F, this.yRot, this.yRotO) * ((float)Math.PI / 180F);
-         float f1 = MathHelper.lerp(p_241843_1_ * 0.5F, this.xRot, this.xRotO) * ((float)Math.PI / 180F);
-         double d0 = this.getMainArm() == HandSide.RIGHT ? -1.0D : 1.0D;
+   public Vector3d getLeashPosition(float partialTicks) {
+      if (this.mc.gameSettings.getPointOfView().func_243192_a()) {
+         float f = MathHelper.lerp(partialTicks * 0.5F, this.rotationYaw, this.prevRotationYaw) * ((float)Math.PI / 180F);
+         float f1 = MathHelper.lerp(partialTicks * 0.5F, this.rotationPitch, this.prevRotationPitch) * ((float)Math.PI / 180F);
+         double d0 = this.getPrimaryHand() == HandSide.RIGHT ? -1.0D : 1.0D;
          Vector3d vector3d = new Vector3d(0.39D * d0, -0.6D, 0.3D);
-         return vector3d.xRot(-f1).yRot(-f).add(this.getEyePosition(p_241843_1_));
+         return vector3d.rotatePitch(-f1).rotateYaw(-f).add(this.getEyePosition(partialTicks));
       } else {
-         return super.getRopeHoldPosition(p_241843_1_);
+         return super.getLeashPosition(partialTicks);
       }
    }
 }

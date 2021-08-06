@@ -7,18 +7,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class TickableSound extends LocatableSound implements ITickableSound {
-   private boolean stopped;
+   private boolean donePlaying;
 
-   protected TickableSound(SoundEvent p_i46532_1_, SoundCategory p_i46532_2_) {
-      super(p_i46532_1_, p_i46532_2_);
+   protected TickableSound(SoundEvent soundIn, SoundCategory categoryIn) {
+      super(soundIn, categoryIn);
    }
 
-   public boolean isStopped() {
-      return this.stopped;
+   public boolean isDonePlaying() {
+      return this.donePlaying;
    }
 
-   protected final void stop() {
-      this.stopped = true;
-      this.looping = false;
+   protected final void finishPlaying() {
+      this.donePlaying = true;
+      this.repeat = false;
    }
 }

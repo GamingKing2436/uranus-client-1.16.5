@@ -15,30 +15,30 @@ public class CoralTreeFeature extends CoralFeature {
       super(p_i231942_1_);
    }
 
-   protected boolean placeFeature(IWorld p_204623_1_, Random p_204623_2_, BlockPos p_204623_3_, BlockState p_204623_4_) {
-      BlockPos.Mutable blockpos$mutable = p_204623_3_.mutable();
+   protected boolean func_204623_a(IWorld p_204623_1_, Random p_204623_2_, BlockPos p_204623_3_, BlockState p_204623_4_) {
+      BlockPos.Mutable blockpos$mutable = p_204623_3_.toMutable();
       int i = p_204623_2_.nextInt(3) + 1;
 
       for(int j = 0; j < i; ++j) {
-         if (!this.placeCoralBlock(p_204623_1_, p_204623_2_, blockpos$mutable, p_204623_4_)) {
+         if (!this.func_204624_b(p_204623_1_, p_204623_2_, blockpos$mutable, p_204623_4_)) {
             return true;
          }
 
          blockpos$mutable.move(Direction.UP);
       }
 
-      BlockPos blockpos = blockpos$mutable.immutable();
+      BlockPos blockpos = blockpos$mutable.toImmutable();
       int k = p_204623_2_.nextInt(3) + 2;
       List<Direction> list = Lists.newArrayList(Direction.Plane.HORIZONTAL);
       Collections.shuffle(list, p_204623_2_);
 
       for(Direction direction : list.subList(0, k)) {
-         blockpos$mutable.set(blockpos);
+         blockpos$mutable.setPos(blockpos);
          blockpos$mutable.move(direction);
          int l = p_204623_2_.nextInt(5) + 2;
          int i1 = 0;
 
-         for(int j1 = 0; j1 < l && this.placeCoralBlock(p_204623_1_, p_204623_2_, blockpos$mutable, p_204623_4_); ++j1) {
+         for(int j1 = 0; j1 < l && this.func_204624_b(p_204623_1_, p_204623_2_, blockpos$mutable, p_204623_4_); ++j1) {
             ++i1;
             blockpos$mutable.move(Direction.UP);
             if (j1 == 0 || i1 >= 2 && p_204623_2_.nextFloat() < 0.25F) {

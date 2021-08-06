@@ -21,37 +21,37 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ElytraLayer<T extends LivingEntity, M extends EntityModel<T>> extends LayerRenderer<T, M> {
-   private static final ResourceLocation WINGS_LOCATION = new ResourceLocation("textures/entity/elytra.png");
-   private final ElytraModel<T> elytraModel = new ElytraModel<>();
+   private static final ResourceLocation TEXTURE_ELYTRA = new ResourceLocation("textures/entity/elytra.png");
+   private final ElytraModel<T> modelElytra = new ElytraModel<>();
 
-   public ElytraLayer(IEntityRenderer<T, M> p_i50942_1_) {
-      super(p_i50942_1_);
+   public ElytraLayer(IEntityRenderer<T, M> rendererIn) {
+      super(rendererIn);
    }
 
-   public void render(MatrixStack p_225628_1_, IRenderTypeBuffer p_225628_2_, int p_225628_3_, T p_225628_4_, float p_225628_5_, float p_225628_6_, float p_225628_7_, float p_225628_8_, float p_225628_9_, float p_225628_10_) {
-      ItemStack itemstack = p_225628_4_.getItemBySlot(EquipmentSlotType.CHEST);
+   public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, T entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
+      ItemStack itemstack = entitylivingbaseIn.getItemStackFromSlot(EquipmentSlotType.CHEST);
       if (itemstack.getItem() == Items.ELYTRA) {
          ResourceLocation resourcelocation;
-         if (p_225628_4_ instanceof AbstractClientPlayerEntity) {
-            AbstractClientPlayerEntity abstractclientplayerentity = (AbstractClientPlayerEntity)p_225628_4_;
-            if (abstractclientplayerentity.isElytraLoaded() && abstractclientplayerentity.getElytraTextureLocation() != null) {
-               resourcelocation = abstractclientplayerentity.getElytraTextureLocation();
-            } else if (abstractclientplayerentity.isCapeLoaded() && abstractclientplayerentity.getCloakTextureLocation() != null && abstractclientplayerentity.isModelPartShown(PlayerModelPart.CAPE)) {
-               resourcelocation = abstractclientplayerentity.getCloakTextureLocation();
+         if (entitylivingbaseIn instanceof AbstractClientPlayerEntity) {
+            AbstractClientPlayerEntity abstractclientplayerentity = (AbstractClientPlayerEntity)entitylivingbaseIn;
+            if (abstractclientplayerentity.isPlayerInfoSet() && abstractclientplayerentity.getLocationElytra() != null) {
+               resourcelocation = abstractclientplayerentity.getLocationElytra();
+            } else if (abstractclientplayerentity.hasPlayerInfo() && abstractclientplayerentity.getLocationCape() != null && abstractclientplayerentity.isWearing(PlayerModelPart.CAPE)) {
+               resourcelocation = abstractclientplayerentity.getLocationCape();
             } else {
-               resourcelocation = WINGS_LOCATION;
+               resourcelocation = TEXTURE_ELYTRA;
             }
          } else {
-            resourcelocation = WINGS_LOCATION;
+            resourcelocation = TEXTURE_ELYTRA;
          }
 
-         p_225628_1_.pushPose();
-         p_225628_1_.translate(0.0D, 0.0D, 0.125D);
-         this.getParentModel().copyPropertiesTo(this.elytraModel);
-         this.elytraModel.setupAnim(p_225628_4_, p_225628_5_, p_225628_6_, p_225628_8_, p_225628_9_, p_225628_10_);
-         IVertexBuilder ivertexbuilder = ItemRenderer.getArmorFoilBuffer(p_225628_2_, RenderType.armorCutoutNoCull(resourcelocation), false, itemstack.hasFoil());
-         this.elytraModel.renderToBuffer(p_225628_1_, ivertexbuilder, p_225628_3_, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
-         p_225628_1_.popPose();
+         matrixStackIn.push();
+         matrixStackIn.translate(0.0D, 0.0D, 0.125D);
+         this.getEntityModel().copyModelAttributesTo(this.modelElytra);
+         this.modelElytra.setRotationAngles(entitylivingbaseIn, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+         IVertexBuilder ivertexbuilder = ItemRenderer.getArmorVertexBuilder(bufferIn, RenderType.getArmorCutoutNoCull(resourcelocation), false, itemstack.hasEffect());
+         this.modelElytra.render(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+         matrixStackIn.pop();
       }
    }
 }

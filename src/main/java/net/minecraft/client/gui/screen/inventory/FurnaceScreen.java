@@ -10,9 +10,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class FurnaceScreen extends AbstractFurnaceScreen<FurnaceContainer> {
-   private static final ResourceLocation TEXTURE = new ResourceLocation("textures/gui/container/furnace.png");
+   private static final ResourceLocation FURNACE_GUI_TEXTURES = new ResourceLocation("textures/gui/container/furnace.png");
 
-   public FurnaceScreen(FurnaceContainer p_i51089_1_, PlayerInventory p_i51089_2_, ITextComponent p_i51089_3_) {
-      super(p_i51089_1_, new FurnaceRecipeGui(), p_i51089_2_, p_i51089_3_, TEXTURE);
+   public FurnaceScreen(FurnaceContainer container, PlayerInventory playerInventory, ITextComponent title) {
+      super(container, new FurnaceRecipeGui(), playerInventory, title, FURNACE_GUI_TEXTURES);
    }
 }

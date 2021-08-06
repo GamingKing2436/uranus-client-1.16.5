@@ -15,147 +15,147 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ChunkSection {
-   private static final IPalette<BlockState> GLOBAL_BLOCKSTATE_PALETTE = new IdentityPalette<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState());
-   private final int bottomBlockY;
-   private short nonEmptyBlockCount;
-   private short tickingBlockCount;
-   private short tickingFluidCount;
-   private final PalettedContainer<BlockState> states;
+   private static final IPalette<BlockState> REGISTRY_PALETTE = new IdentityPalette<>(Block.BLOCK_STATE_IDS, Blocks.AIR.getDefaultState());
+   private final int yBase;
+   private short blockRefCount;
+   private short blockTickRefCount;
+   private short fluidRefCount;
+   private final PalettedContainer<BlockState> data;
 
-   public ChunkSection(int p_i49943_1_) {
-      this(p_i49943_1_, (short)0, (short)0, (short)0);
+   public ChunkSection(int yBaseIn) {
+      this(yBaseIn, (short)0, (short)0, (short)0);
    }
 
-   public ChunkSection(int p_i49944_1_, short p_i49944_2_, short p_i49944_3_, short p_i49944_4_) {
-      this.bottomBlockY = p_i49944_1_;
-      this.nonEmptyBlockCount = p_i49944_2_;
-      this.tickingBlockCount = p_i49944_3_;
-      this.tickingFluidCount = p_i49944_4_;
-      this.states = new PalettedContainer<>(GLOBAL_BLOCKSTATE_PALETTE, Block.BLOCK_STATE_REGISTRY, NBTUtil::readBlockState, NBTUtil::writeBlockState, Blocks.AIR.defaultBlockState());
+   public ChunkSection(int yBaseIn, short blockRefCountIn, short blockTickRefCountIn, short fluidRefCountIn) {
+      this.yBase = yBaseIn;
+      this.blockRefCount = blockRefCountIn;
+      this.blockTickRefCount = blockTickRefCountIn;
+      this.fluidRefCount = fluidRefCountIn;
+      this.data = new PalettedContainer<>(REGISTRY_PALETTE, Block.BLOCK_STATE_IDS, NBTUtil::readBlockState, NBTUtil::writeBlockState, Blocks.AIR.getDefaultState());
    }
 
-   public BlockState getBlockState(int p_177485_1_, int p_177485_2_, int p_177485_3_) {
-      return this.states.get(p_177485_1_, p_177485_2_, p_177485_3_);
+   public BlockState getBlockState(int x, int y, int z) {
+      return this.data.get(x, y, z);
    }
 
-   public FluidState getFluidState(int p_206914_1_, int p_206914_2_, int p_206914_3_) {
-      return this.states.get(p_206914_1_, p_206914_2_, p_206914_3_).getFluidState();
+   public FluidState getFluidState(int x, int y, int z) {
+      return this.data.get(x, y, z).getFluidState();
    }
 
-   public void acquire() {
-      this.states.acquire();
+   public void lock() {
+      this.data.lock();
    }
 
-   public void release() {
-      this.states.release();
+   public void unlock() {
+      this.data.unlock();
    }
 
-   public BlockState setBlockState(int p_222629_1_, int p_222629_2_, int p_222629_3_, BlockState p_222629_4_) {
-      return this.setBlockState(p_222629_1_, p_222629_2_, p_222629_3_, p_222629_4_, true);
+   public BlockState setBlockState(int x, int y, int z, BlockState blockStateIn) {
+      return this.setBlockState(x, y, z, blockStateIn, true);
    }
 
-   public BlockState setBlockState(int p_177484_1_, int p_177484_2_, int p_177484_3_, BlockState p_177484_4_, boolean p_177484_5_) {
+   public BlockState setBlockState(int x, int y, int z, BlockState state, boolean useLocks) {
       BlockState blockstate;
-      if (p_177484_5_) {
-         blockstate = this.states.getAndSet(p_177484_1_, p_177484_2_, p_177484_3_, p_177484_4_);
+      if (useLocks) {
+         blockstate = this.data.lockedSwap(x, y, z, state);
       } else {
-         blockstate = this.states.getAndSetUnchecked(p_177484_1_, p_177484_2_, p_177484_3_, p_177484_4_);
+         blockstate = this.data.swap(x, y, z, state);
       }
 
       FluidState fluidstate = blockstate.getFluidState();
-      FluidState fluidstate1 = p_177484_4_.getFluidState();
+      FluidState fluidstate1 = state.getFluidState();
       if (!blockstate.isAir()) {
-         --this.nonEmptyBlockCount;
-         if (blockstate.isRandomlyTicking()) {
-            --this.tickingBlockCount;
+         --this.blockRefCount;
+         if (blockstate.ticksRandomly()) {
+            --this.blockTickRefCount;
          }
       }
 
       if (!fluidstate.isEmpty()) {
-         --this.tickingFluidCount;
+         --this.fluidRefCount;
       }
 
-      if (!p_177484_4_.isAir()) {
-         ++this.nonEmptyBlockCount;
-         if (p_177484_4_.isRandomlyTicking()) {
-            ++this.tickingBlockCount;
+      if (!state.isAir()) {
+         ++this.blockRefCount;
+         if (state.ticksRandomly()) {
+            ++this.blockTickRefCount;
          }
       }
 
       if (!fluidstate1.isEmpty()) {
-         ++this.tickingFluidCount;
+         ++this.fluidRefCount;
       }
 
       return blockstate;
    }
 
    public boolean isEmpty() {
-      return this.nonEmptyBlockCount == 0;
+      return this.blockRefCount == 0;
    }
 
-   public static boolean isEmpty(@Nullable ChunkSection p_222628_0_) {
-      return p_222628_0_ == Chunk.EMPTY_SECTION || p_222628_0_.isEmpty();
+   public static boolean isEmpty(@Nullable ChunkSection section) {
+      return section == Chunk.EMPTY_SECTION || section.isEmpty();
    }
 
-   public boolean isRandomlyTicking() {
-      return this.isRandomlyTickingBlocks() || this.isRandomlyTickingFluids();
+   public boolean needsRandomTickAny() {
+      return this.needsRandomTick() || this.needsRandomTickFluid();
    }
 
-   public boolean isRandomlyTickingBlocks() {
-      return this.tickingBlockCount > 0;
+   public boolean needsRandomTick() {
+      return this.blockTickRefCount > 0;
    }
 
-   public boolean isRandomlyTickingFluids() {
-      return this.tickingFluidCount > 0;
+   public boolean needsRandomTickFluid() {
+      return this.fluidRefCount > 0;
    }
 
-   public int bottomBlockY() {
-      return this.bottomBlockY;
+   public int getYLocation() {
+      return this.yBase;
    }
 
-   public void recalcBlockCounts() {
-      this.nonEmptyBlockCount = 0;
-      this.tickingBlockCount = 0;
-      this.tickingFluidCount = 0;
-      this.states.count((p_225496_1_, p_225496_2_) -> {
+   public void recalculateRefCounts() {
+      this.blockRefCount = 0;
+      this.blockTickRefCount = 0;
+      this.fluidRefCount = 0;
+      this.data.count((p_225496_1_, p_225496_2_) -> {
          FluidState fluidstate = p_225496_1_.getFluidState();
          if (!p_225496_1_.isAir()) {
-            this.nonEmptyBlockCount = (short)(this.nonEmptyBlockCount + p_225496_2_);
-            if (p_225496_1_.isRandomlyTicking()) {
-               this.tickingBlockCount = (short)(this.tickingBlockCount + p_225496_2_);
+            this.blockRefCount = (short)(this.blockRefCount + p_225496_2_);
+            if (p_225496_1_.ticksRandomly()) {
+               this.blockTickRefCount = (short)(this.blockTickRefCount + p_225496_2_);
             }
          }
 
          if (!fluidstate.isEmpty()) {
-            this.nonEmptyBlockCount = (short)(this.nonEmptyBlockCount + p_225496_2_);
-            if (fluidstate.isRandomlyTicking()) {
-               this.tickingFluidCount = (short)(this.tickingFluidCount + p_225496_2_);
+            this.blockRefCount = (short)(this.blockRefCount + p_225496_2_);
+            if (fluidstate.ticksRandomly()) {
+               this.fluidRefCount = (short)(this.fluidRefCount + p_225496_2_);
             }
          }
 
       });
    }
 
-   public PalettedContainer<BlockState> getStates() {
-      return this.states;
+   public PalettedContainer<BlockState> getData() {
+      return this.data;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void read(PacketBuffer p_222634_1_) {
-      this.nonEmptyBlockCount = p_222634_1_.readShort();
-      this.states.read(p_222634_1_);
+   public void read(PacketBuffer packetBufferIn) {
+      this.blockRefCount = packetBufferIn.readShort();
+      this.data.read(packetBufferIn);
    }
 
-   public void write(PacketBuffer p_222630_1_) {
-      p_222630_1_.writeShort(this.nonEmptyBlockCount);
-      this.states.write(p_222630_1_);
+   public void write(PacketBuffer packetBufferIn) {
+      packetBufferIn.writeShort(this.blockRefCount);
+      this.data.write(packetBufferIn);
    }
 
-   public int getSerializedSize() {
-      return 2 + this.states.getSerializedSize();
+   public int getSize() {
+      return 2 + this.data.getSerializedSize();
    }
 
-   public boolean maybeHas(Predicate<BlockState> p_235962_1_) {
-      return this.states.maybeHas(p_235962_1_);
+   public boolean isValidPOIState(Predicate<BlockState> predicate) {
+      return this.data.func_235963_a_(predicate);
    }
 }

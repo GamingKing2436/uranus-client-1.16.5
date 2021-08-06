@@ -40,9 +40,9 @@ import net.minecraft.world.server.ServerWorld;
 public class EvokerEntity extends SpellcastingIllagerEntity {
    private SheepEntity wololoTarget;
 
-   public EvokerEntity(EntityType<? extends EvokerEntity> p_i50207_1_, World p_i50207_2_) {
-      super(p_i50207_1_, p_i50207_2_);
-      this.xpReward = 10;
+   public EvokerEntity(EntityType<? extends EvokerEntity> type, World worldIn) {
+      super(type, worldIn);
+      this.experienceValue = 10;
    }
 
    protected void registerGoals() {
@@ -56,66 +56,66 @@ public class EvokerEntity extends SpellcastingIllagerEntity {
       this.goalSelector.addGoal(8, new RandomWalkingGoal(this, 0.6D));
       this.goalSelector.addGoal(9, new LookAtGoal(this, PlayerEntity.class, 3.0F, 1.0F));
       this.goalSelector.addGoal(10, new LookAtGoal(this, MobEntity.class, 8.0F));
-      this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, AbstractRaiderEntity.class)).setAlertOthers());
+      this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, AbstractRaiderEntity.class)).setCallsForHelp());
       this.targetSelector.addGoal(2, (new NearestAttackableTargetGoal<>(this, PlayerEntity.class, true)).setUnseenMemoryTicks(300));
       this.targetSelector.addGoal(3, (new NearestAttackableTargetGoal<>(this, AbstractVillagerEntity.class, false)).setUnseenMemoryTicks(300));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolemEntity.class, false));
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return MonsterEntity.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.5D).add(Attributes.FOLLOW_RANGE, 12.0D).add(Attributes.MAX_HEALTH, 24.0D);
+   public static AttributeModifierMap.MutableAttribute func_234289_eI_() {
+      return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.5D).createMutableAttribute(Attributes.FOLLOW_RANGE, 12.0D).createMutableAttribute(Attributes.MAX_HEALTH, 24.0D);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
+   protected void registerData() {
+      super.registerData();
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
    }
 
-   public SoundEvent getCelebrateSound() {
-      return SoundEvents.EVOKER_CELEBRATE;
+   public SoundEvent getRaidLossSound() {
+      return SoundEvents.ENTITY_EVOKER_CELEBRATE;
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
    }
 
-   protected void customServerAiStep() {
-      super.customServerAiStep();
+   protected void updateAITasks() {
+      super.updateAITasks();
    }
 
-   public boolean isAlliedTo(Entity p_184191_1_) {
-      if (p_184191_1_ == null) {
+   public boolean isOnSameTeam(Entity entityIn) {
+      if (entityIn == null) {
          return false;
-      } else if (p_184191_1_ == this) {
+      } else if (entityIn == this) {
          return true;
-      } else if (super.isAlliedTo(p_184191_1_)) {
+      } else if (super.isOnSameTeam(entityIn)) {
          return true;
-      } else if (p_184191_1_ instanceof VexEntity) {
-         return this.isAlliedTo(((VexEntity)p_184191_1_).getOwner());
-      } else if (p_184191_1_ instanceof LivingEntity && ((LivingEntity)p_184191_1_).getMobType() == CreatureAttribute.ILLAGER) {
-         return this.getTeam() == null && p_184191_1_.getTeam() == null;
+      } else if (entityIn instanceof VexEntity) {
+         return this.isOnSameTeam(((VexEntity)entityIn).getOwner());
+      } else if (entityIn instanceof LivingEntity && ((LivingEntity)entityIn).getCreatureAttribute() == CreatureAttribute.ILLAGER) {
+         return this.getTeam() == null && entityIn.getTeam() == null;
       } else {
          return false;
       }
    }
 
    protected SoundEvent getAmbientSound() {
-      return SoundEvents.EVOKER_AMBIENT;
+      return SoundEvents.ENTITY_EVOKER_AMBIENT;
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.EVOKER_DEATH;
+      return SoundEvents.ENTITY_EVOKER_DEATH;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.EVOKER_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_EVOKER_HURT;
    }
 
-   private void setWololoTarget(@Nullable SheepEntity p_190748_1_) {
-      this.wololoTarget = p_190748_1_;
+   private void setWololoTarget(@Nullable SheepEntity wololoTargetIn) {
+      this.wololoTarget = wololoTargetIn;
    }
 
    @Nullable
@@ -123,11 +123,11 @@ public class EvokerEntity extends SpellcastingIllagerEntity {
       return this.wololoTarget;
    }
 
-   protected SoundEvent getCastingSoundEvent() {
-      return SoundEvents.EVOKER_CAST_SPELL;
+   protected SoundEvent getSpellSound() {
+      return SoundEvents.ENTITY_EVOKER_CAST_SPELL;
    }
 
-   public void applyRaidBuffs(int p_213660_1_, boolean p_213660_2_) {
+   public void applyWaveBonus(int wave, boolean p_213660_2_) {
    }
 
    class AttackSpellGoal extends SpellcastingIllagerEntity.UseSpellGoal {
@@ -142,45 +142,45 @@ public class EvokerEntity extends SpellcastingIllagerEntity {
          return 100;
       }
 
-      protected void performSpellCasting() {
-         LivingEntity livingentity = EvokerEntity.this.getTarget();
-         double d0 = Math.min(livingentity.getY(), EvokerEntity.this.getY());
-         double d1 = Math.max(livingentity.getY(), EvokerEntity.this.getY()) + 1.0D;
-         float f = (float)MathHelper.atan2(livingentity.getZ() - EvokerEntity.this.getZ(), livingentity.getX() - EvokerEntity.this.getX());
-         if (EvokerEntity.this.distanceToSqr(livingentity) < 9.0D) {
+      protected void castSpell() {
+         LivingEntity livingentity = EvokerEntity.this.getAttackTarget();
+         double d0 = Math.min(livingentity.getPosY(), EvokerEntity.this.getPosY());
+         double d1 = Math.max(livingentity.getPosY(), EvokerEntity.this.getPosY()) + 1.0D;
+         float f = (float)MathHelper.atan2(livingentity.getPosZ() - EvokerEntity.this.getPosZ(), livingentity.getPosX() - EvokerEntity.this.getPosX());
+         if (EvokerEntity.this.getDistanceSq(livingentity) < 9.0D) {
             for(int i = 0; i < 5; ++i) {
                float f1 = f + (float)i * (float)Math.PI * 0.4F;
-               this.createSpellEntity(EvokerEntity.this.getX() + (double)MathHelper.cos(f1) * 1.5D, EvokerEntity.this.getZ() + (double)MathHelper.sin(f1) * 1.5D, d0, d1, f1, 0);
+               this.spawnFangs(EvokerEntity.this.getPosX() + (double)MathHelper.cos(f1) * 1.5D, EvokerEntity.this.getPosZ() + (double)MathHelper.sin(f1) * 1.5D, d0, d1, f1, 0);
             }
 
             for(int k = 0; k < 8; ++k) {
                float f2 = f + (float)k * (float)Math.PI * 2.0F / 8.0F + 1.2566371F;
-               this.createSpellEntity(EvokerEntity.this.getX() + (double)MathHelper.cos(f2) * 2.5D, EvokerEntity.this.getZ() + (double)MathHelper.sin(f2) * 2.5D, d0, d1, f2, 3);
+               this.spawnFangs(EvokerEntity.this.getPosX() + (double)MathHelper.cos(f2) * 2.5D, EvokerEntity.this.getPosZ() + (double)MathHelper.sin(f2) * 2.5D, d0, d1, f2, 3);
             }
          } else {
             for(int l = 0; l < 16; ++l) {
                double d2 = 1.25D * (double)(l + 1);
                int j = 1 * l;
-               this.createSpellEntity(EvokerEntity.this.getX() + (double)MathHelper.cos(f) * d2, EvokerEntity.this.getZ() + (double)MathHelper.sin(f) * d2, d0, d1, f, j);
+               this.spawnFangs(EvokerEntity.this.getPosX() + (double)MathHelper.cos(f) * d2, EvokerEntity.this.getPosZ() + (double)MathHelper.sin(f) * d2, d0, d1, f, j);
             }
          }
 
       }
 
-      private void createSpellEntity(double p_190876_1_, double p_190876_3_, double p_190876_5_, double p_190876_7_, float p_190876_9_, int p_190876_10_) {
+      private void spawnFangs(double p_190876_1_, double p_190876_3_, double p_190876_5_, double p_190876_7_, float p_190876_9_, int p_190876_10_) {
          BlockPos blockpos = new BlockPos(p_190876_1_, p_190876_7_, p_190876_3_);
          boolean flag = false;
          double d0 = 0.0D;
 
          do {
-            BlockPos blockpos1 = blockpos.below();
-            BlockState blockstate = EvokerEntity.this.level.getBlockState(blockpos1);
-            if (blockstate.isFaceSturdy(EvokerEntity.this.level, blockpos1, Direction.UP)) {
-               if (!EvokerEntity.this.level.isEmptyBlock(blockpos)) {
-                  BlockState blockstate1 = EvokerEntity.this.level.getBlockState(blockpos);
-                  VoxelShape voxelshape = blockstate1.getCollisionShape(EvokerEntity.this.level, blockpos);
+            BlockPos blockpos1 = blockpos.down();
+            BlockState blockstate = EvokerEntity.this.world.getBlockState(blockpos1);
+            if (blockstate.isSolidSide(EvokerEntity.this.world, blockpos1, Direction.UP)) {
+               if (!EvokerEntity.this.world.isAirBlock(blockpos)) {
+                  BlockState blockstate1 = EvokerEntity.this.world.getBlockState(blockpos);
+                  VoxelShape voxelshape = blockstate1.getCollisionShape(EvokerEntity.this.world, blockpos);
                   if (!voxelshape.isEmpty()) {
-                     d0 = voxelshape.max(Direction.Axis.Y);
+                     d0 = voxelshape.getEnd(Direction.Axis.Y);
                   }
                }
 
@@ -188,20 +188,20 @@ public class EvokerEntity extends SpellcastingIllagerEntity {
                break;
             }
 
-            blockpos = blockpos.below();
+            blockpos = blockpos.down();
          } while(blockpos.getY() >= MathHelper.floor(p_190876_5_) - 1);
 
          if (flag) {
-            EvokerEntity.this.level.addFreshEntity(new EvokerFangsEntity(EvokerEntity.this.level, p_190876_1_, (double)blockpos.getY() + d0, p_190876_3_, p_190876_9_, p_190876_10_, EvokerEntity.this));
+            EvokerEntity.this.world.addEntity(new EvokerFangsEntity(EvokerEntity.this.world, p_190876_1_, (double)blockpos.getY() + d0, p_190876_3_, p_190876_9_, p_190876_10_, EvokerEntity.this));
          }
 
       }
 
       protected SoundEvent getSpellPrepareSound() {
-         return SoundEvents.EVOKER_PREPARE_ATTACK;
+         return SoundEvents.ENTITY_EVOKER_PREPARE_ATTACK;
       }
 
-      protected SpellcastingIllagerEntity.SpellType getSpell() {
+      protected SpellcastingIllagerEntity.SpellType getSpellType() {
          return SpellcastingIllagerEntity.SpellType.FANGS;
       }
    }
@@ -211,27 +211,27 @@ public class EvokerEntity extends SpellcastingIllagerEntity {
       }
 
       public void tick() {
-         if (EvokerEntity.this.getTarget() != null) {
-            EvokerEntity.this.getLookControl().setLookAt(EvokerEntity.this.getTarget(), (float)EvokerEntity.this.getMaxHeadYRot(), (float)EvokerEntity.this.getMaxHeadXRot());
+         if (EvokerEntity.this.getAttackTarget() != null) {
+            EvokerEntity.this.getLookController().setLookPositionWithEntity(EvokerEntity.this.getAttackTarget(), (float)EvokerEntity.this.getHorizontalFaceSpeed(), (float)EvokerEntity.this.getVerticalFaceSpeed());
          } else if (EvokerEntity.this.getWololoTarget() != null) {
-            EvokerEntity.this.getLookControl().setLookAt(EvokerEntity.this.getWololoTarget(), (float)EvokerEntity.this.getMaxHeadYRot(), (float)EvokerEntity.this.getMaxHeadXRot());
+            EvokerEntity.this.getLookController().setLookPositionWithEntity(EvokerEntity.this.getWololoTarget(), (float)EvokerEntity.this.getHorizontalFaceSpeed(), (float)EvokerEntity.this.getVerticalFaceSpeed());
          }
 
       }
    }
 
    class SummonSpellGoal extends SpellcastingIllagerEntity.UseSpellGoal {
-      private final EntityPredicate vexCountTargeting = (new EntityPredicate()).range(16.0D).allowUnseeable().ignoreInvisibilityTesting().allowInvulnerable().allowSameTeam();
+      private final EntityPredicate field_220843_e = (new EntityPredicate()).setDistance(16.0D).setLineOfSiteRequired().setUseInvisibilityCheck().allowInvulnerable().allowFriendlyFire();
 
       private SummonSpellGoal() {
       }
 
-      public boolean canUse() {
-         if (!super.canUse()) {
+      public boolean shouldExecute() {
+         if (!super.shouldExecute()) {
             return false;
          } else {
-            int i = EvokerEntity.this.level.getNearbyEntities(VexEntity.class, this.vexCountTargeting, EvokerEntity.this, EvokerEntity.this.getBoundingBox().inflate(16.0D)).size();
-            return EvokerEntity.this.random.nextInt(8) + 1 > i;
+            int i = EvokerEntity.this.world.getTargettableEntitiesWithinAABB(VexEntity.class, this.field_220843_e, EvokerEntity.this, EvokerEntity.this.getBoundingBox().grow(16.0D)).size();
+            return EvokerEntity.this.rand.nextInt(8) + 1 > i;
          }
       }
 
@@ -243,69 +243,69 @@ public class EvokerEntity extends SpellcastingIllagerEntity {
          return 340;
       }
 
-      protected void performSpellCasting() {
-         ServerWorld serverworld = (ServerWorld)EvokerEntity.this.level;
+      protected void castSpell() {
+         ServerWorld serverworld = (ServerWorld)EvokerEntity.this.world;
 
          for(int i = 0; i < 3; ++i) {
-            BlockPos blockpos = EvokerEntity.this.blockPosition().offset(-2 + EvokerEntity.this.random.nextInt(5), 1, -2 + EvokerEntity.this.random.nextInt(5));
-            VexEntity vexentity = EntityType.VEX.create(EvokerEntity.this.level);
-            vexentity.moveTo(blockpos, 0.0F, 0.0F);
-            vexentity.finalizeSpawn(serverworld, EvokerEntity.this.level.getCurrentDifficultyAt(blockpos), SpawnReason.MOB_SUMMONED, (ILivingEntityData)null, (CompoundNBT)null);
+            BlockPos blockpos = EvokerEntity.this.getPosition().add(-2 + EvokerEntity.this.rand.nextInt(5), 1, -2 + EvokerEntity.this.rand.nextInt(5));
+            VexEntity vexentity = EntityType.VEX.create(EvokerEntity.this.world);
+            vexentity.moveToBlockPosAndAngles(blockpos, 0.0F, 0.0F);
+            vexentity.onInitialSpawn(serverworld, EvokerEntity.this.world.getDifficultyForLocation(blockpos), SpawnReason.MOB_SUMMONED, (ILivingEntityData)null, (CompoundNBT)null);
             vexentity.setOwner(EvokerEntity.this);
             vexentity.setBoundOrigin(blockpos);
-            vexentity.setLimitedLife(20 * (30 + EvokerEntity.this.random.nextInt(90)));
-            serverworld.addFreshEntityWithPassengers(vexentity);
+            vexentity.setLimitedLife(20 * (30 + EvokerEntity.this.rand.nextInt(90)));
+            serverworld.func_242417_l(vexentity);
          }
 
       }
 
       protected SoundEvent getSpellPrepareSound() {
-         return SoundEvents.EVOKER_PREPARE_SUMMON;
+         return SoundEvents.ENTITY_EVOKER_PREPARE_SUMMON;
       }
 
-      protected SpellcastingIllagerEntity.SpellType getSpell() {
+      protected SpellcastingIllagerEntity.SpellType getSpellType() {
          return SpellcastingIllagerEntity.SpellType.SUMMON_VEX;
       }
    }
 
    public class WololoSpellGoal extends SpellcastingIllagerEntity.UseSpellGoal {
-      private final EntityPredicate wololoTargeting = (new EntityPredicate()).range(16.0D).allowInvulnerable().selector((p_220844_0_) -> {
-         return ((SheepEntity)p_220844_0_).getColor() == DyeColor.BLUE;
+      private final EntityPredicate wololoTargetFlags = (new EntityPredicate()).setDistance(16.0D).allowInvulnerable().setCustomPredicate((p_220844_0_) -> {
+         return ((SheepEntity)p_220844_0_).getFleeceColor() == DyeColor.BLUE;
       });
 
-      public boolean canUse() {
-         if (EvokerEntity.this.getTarget() != null) {
+      public boolean shouldExecute() {
+         if (EvokerEntity.this.getAttackTarget() != null) {
             return false;
-         } else if (EvokerEntity.this.isCastingSpell()) {
+         } else if (EvokerEntity.this.isSpellcasting()) {
             return false;
-         } else if (EvokerEntity.this.tickCount < this.nextAttackTickCount) {
+         } else if (EvokerEntity.this.ticksExisted < this.spellCooldown) {
             return false;
-         } else if (!EvokerEntity.this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+         } else if (!EvokerEntity.this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
             return false;
          } else {
-            List<SheepEntity> list = EvokerEntity.this.level.getNearbyEntities(SheepEntity.class, this.wololoTargeting, EvokerEntity.this, EvokerEntity.this.getBoundingBox().inflate(16.0D, 4.0D, 16.0D));
+            List<SheepEntity> list = EvokerEntity.this.world.getTargettableEntitiesWithinAABB(SheepEntity.class, this.wololoTargetFlags, EvokerEntity.this, EvokerEntity.this.getBoundingBox().grow(16.0D, 4.0D, 16.0D));
             if (list.isEmpty()) {
                return false;
             } else {
-               EvokerEntity.this.setWololoTarget(list.get(EvokerEntity.this.random.nextInt(list.size())));
+               EvokerEntity.this.setWololoTarget(list.get(EvokerEntity.this.rand.nextInt(list.size())));
                return true;
             }
          }
       }
 
-      public boolean canContinueToUse() {
-         return EvokerEntity.this.getWololoTarget() != null && this.attackWarmupDelay > 0;
+      public boolean shouldContinueExecuting() {
+         return EvokerEntity.this.getWololoTarget() != null && this.spellWarmup > 0;
       }
 
-      public void stop() {
-         super.stop();
+      public void resetTask() {
+         super.resetTask();
          EvokerEntity.this.setWololoTarget((SheepEntity)null);
       }
 
-      protected void performSpellCasting() {
+      protected void castSpell() {
          SheepEntity sheepentity = EvokerEntity.this.getWololoTarget();
          if (sheepentity != null && sheepentity.isAlive()) {
-            sheepentity.setColor(DyeColor.RED);
+            sheepentity.setFleeceColor(DyeColor.RED);
          }
 
       }
@@ -323,10 +323,10 @@ public class EvokerEntity extends SpellcastingIllagerEntity {
       }
 
       protected SoundEvent getSpellPrepareSound() {
-         return SoundEvents.EVOKER_PREPARE_WOLOLO;
+         return SoundEvents.ENTITY_EVOKER_PREPARE_WOLOLO;
       }
 
-      protected SpellcastingIllagerEntity.SpellType getSpell() {
+      protected SpellcastingIllagerEntity.SpellType getSpellType() {
          return SpellcastingIllagerEntity.SpellType.WOLOLO;
       }
    }

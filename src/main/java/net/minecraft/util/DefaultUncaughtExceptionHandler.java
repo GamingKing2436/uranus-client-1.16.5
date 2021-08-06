@@ -6,8 +6,8 @@ import org.apache.logging.log4j.Logger;
 public class DefaultUncaughtExceptionHandler implements UncaughtExceptionHandler {
    private final Logger logger;
 
-   public DefaultUncaughtExceptionHandler(Logger p_i48772_1_) {
-      this.logger = p_i48772_1_;
+   public DefaultUncaughtExceptionHandler(Logger logger) {
+      this.logger = logger;
    }
 
    public void uncaughtException(Thread p_uncaughtException_1_, Throwable p_uncaughtException_2_) {

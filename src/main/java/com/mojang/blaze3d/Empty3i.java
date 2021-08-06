@@ -9,12 +9,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class Empty3i {
-   private final List<ConcurrentLinkedQueue<IRenderCall>> renderCalls = ImmutableList.of(new ConcurrentLinkedQueue<>(), new ConcurrentLinkedQueue<>(), new ConcurrentLinkedQueue<>(), new ConcurrentLinkedQueue<>());
-   private volatile int recordingBuffer;
-   private volatile int processedBuffer;
-   private volatile int renderingBuffer;
+   private final List<ConcurrentLinkedQueue<IRenderCall>> linkedRenderCalls = ImmutableList.of(new ConcurrentLinkedQueue<>(), new ConcurrentLinkedQueue<>(), new ConcurrentLinkedQueue<>(), new ConcurrentLinkedQueue<>());
+   private volatile int x;
+   private volatile int y;
+   private volatile int z;
 
    public Empty3i() {
-      this.recordingBuffer = this.processedBuffer = this.renderingBuffer + 1;
+      this.x = this.y = this.z + 1;
    }
 }

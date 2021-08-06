@@ -6,17 +6,17 @@ import net.minecraft.util.JSONUtils;
 import net.minecraft.util.text.ITextComponent;
 
 public class PackMetadataSectionSerializer implements IMetadataSectionSerializer<PackMetadataSection> {
-   public PackMetadataSection fromJson(JsonObject p_195812_1_) {
-      ITextComponent itextcomponent = ITextComponent.Serializer.fromJson(p_195812_1_.get("description"));
+   public PackMetadataSection deserialize(JsonObject json) {
+      ITextComponent itextcomponent = ITextComponent.Serializer.getComponentFromJson(json.get("description"));
       if (itextcomponent == null) {
          throw new JsonParseException("Invalid/missing description!");
       } else {
-         int i = JSONUtils.getAsInt(p_195812_1_, "pack_format");
+         int i = JSONUtils.getInt(json, "pack_format");
          return new PackMetadataSection(itextcomponent, i);
       }
    }
 
-   public String getMetadataSectionName() {
+   public String getSectionName() {
       return "pack";
    }
 }

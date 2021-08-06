@@ -5,7 +5,7 @@ import net.minecraft.loot.ConditionArraySerializer;
 import net.minecraft.util.ResourceLocation;
 
 public interface ICriterionInstance {
-   ResourceLocation getCriterion();
+   ResourceLocation getId();
 
-   JsonObject serializeToJson(ConditionArraySerializer p_230240_1_);
+   JsonObject serialize(ConditionArraySerializer conditions);
 }

@@ -13,22 +13,22 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class OptionSlider extends GameSettingsSlider implements IBidiTooltip {
    private final SliderPercentageOption option;
 
-   public OptionSlider(GameSettings p_i51129_1_, int p_i51129_2_, int p_i51129_3_, int p_i51129_4_, int p_i51129_5_, SliderPercentageOption p_i51129_6_) {
-      super(p_i51129_1_, p_i51129_2_, p_i51129_3_, p_i51129_4_, p_i51129_5_, (double)((float)p_i51129_6_.toPct(p_i51129_6_.get(p_i51129_1_))));
-      this.option = p_i51129_6_;
-      this.updateMessage();
+   public OptionSlider(GameSettings settings, int xIn, int yIn, int widthIn, int heightIn, SliderPercentageOption optionIn) {
+      super(settings, xIn, yIn, widthIn, heightIn, (double)((float)optionIn.normalizeValue(optionIn.get(settings))));
+      this.option = optionIn;
+      this.func_230979_b_();
    }
 
-   protected void applyValue() {
-      this.option.set(this.options, this.option.toValue(this.value));
-      this.options.save();
+   protected void func_230972_a_() {
+      this.option.set(this.settings, this.option.denormalizeValue(this.sliderValue));
+      this.settings.saveOptions();
    }
 
-   protected void updateMessage() {
-      this.setMessage(this.option.getMessage(this.options));
+   protected void func_230979_b_() {
+      this.setMessage(this.option.func_238334_c_(this.settings));
    }
 
-   public Optional<List<IReorderingProcessor>> getTooltip() {
-      return this.option.getTooltip();
+   public Optional<List<IReorderingProcessor>> func_241867_d() {
+      return this.option.getOptionValues();
    }
 }

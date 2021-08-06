@@ -20,7 +20,7 @@ public class EndermiteModel<T extends Entity> extends SegmentedModel<T> {
       for(int i = 0; i < this.bodyParts.length; ++i) {
          this.bodyParts[i] = new ModelRenderer(this, BODY_TEXS[i][0], BODY_TEXS[i][1]);
          this.bodyParts[i].addBox((float)BODY_SIZES[i][0] * -0.5F, 0.0F, (float)BODY_SIZES[i][2] * -0.5F, (float)BODY_SIZES[i][0], (float)BODY_SIZES[i][1], (float)BODY_SIZES[i][2]);
-         this.bodyParts[i].setPos(0.0F, (float)(24 - BODY_SIZES[i][1]), f);
+         this.bodyParts[i].setRotationPoint(0.0F, (float)(24 - BODY_SIZES[i][1]), f);
          if (i < this.bodyParts.length - 1) {
             f += (float)(BODY_SIZES[i][2] + BODY_SIZES[i + 1][2]) * 0.5F;
          }
@@ -28,14 +28,14 @@ public class EndermiteModel<T extends Entity> extends SegmentedModel<T> {
 
    }
 
-   public Iterable<ModelRenderer> parts() {
+   public Iterable<ModelRenderer> getParts() {
       return Arrays.asList(this.bodyParts);
    }
 
-   public void setupAnim(T p_225597_1_, float p_225597_2_, float p_225597_3_, float p_225597_4_, float p_225597_5_, float p_225597_6_) {
+   public void setRotationAngles(T entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
       for(int i = 0; i < this.bodyParts.length; ++i) {
-         this.bodyParts[i].yRot = MathHelper.cos(p_225597_4_ * 0.9F + (float)i * 0.15F * (float)Math.PI) * (float)Math.PI * 0.01F * (float)(1 + Math.abs(i - 2));
-         this.bodyParts[i].x = MathHelper.sin(p_225597_4_ * 0.9F + (float)i * 0.15F * (float)Math.PI) * (float)Math.PI * 0.1F * (float)Math.abs(i - 2);
+         this.bodyParts[i].rotateAngleY = MathHelper.cos(ageInTicks * 0.9F + (float)i * 0.15F * (float)Math.PI) * (float)Math.PI * 0.01F * (float)(1 + Math.abs(i - 2));
+         this.bodyParts[i].rotationPointX = MathHelper.sin(ageInTicks * 0.9F + (float)i * 0.15F * (float)Math.PI) * (float)Math.PI * 0.1F * (float)Math.abs(i - 2);
       }
 
    }

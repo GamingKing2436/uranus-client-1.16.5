@@ -8,8 +8,8 @@ import java.util.stream.Stream;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class BlockStateFlattenVillageCrops extends DataFix {
-   public BlockStateFlattenVillageCrops(Schema p_i49617_1_, boolean p_i49617_2_) {
-      super(p_i49617_1_, p_i49617_2_);
+   public BlockStateFlattenVillageCrops(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
@@ -48,6 +48,6 @@ public class BlockStateFlattenVillageCrops extends DataFix {
    }
 
    private static <T> Dynamic<T> updateCrop(Dynamic<T> p_209676_0_, String p_209676_1_) {
-      return p_209676_0_.get(p_209676_1_).asNumber().result().isPresent() ? p_209676_0_.set(p_209676_1_, BlockStateFlatteningMap.getTag(p_209676_0_.get(p_209676_1_).asInt(0) << 4)) : p_209676_0_;
+      return p_209676_0_.get(p_209676_1_).asNumber().result().isPresent() ? p_209676_0_.set(p_209676_1_, BlockStateFlatteningMap.getFixedNBTForID(p_209676_0_.get(p_209676_1_).asInt(0) << 4)) : p_209676_0_;
    }
 }

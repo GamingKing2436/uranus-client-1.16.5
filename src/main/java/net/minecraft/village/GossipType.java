@@ -22,16 +22,16 @@ public enum GossipType {
       return p_220930_0_.id;
    }, Function.identity()));
 
-   private GossipType(String p_i50307_3_, int p_i50307_4_, int p_i50307_5_, int p_i50307_6_, int p_i50307_7_) {
-      this.id = p_i50307_3_;
-      this.weight = p_i50307_4_;
-      this.max = p_i50307_5_;
-      this.decayPerDay = p_i50307_6_;
-      this.decayPerTransfer = p_i50307_7_;
+   private GossipType(String id, int weight, int max, int decayPerDay, int decayPerTransfer) {
+      this.id = id;
+      this.weight = weight;
+      this.max = max;
+      this.decayPerDay = decayPerDay;
+      this.decayPerTransfer = decayPerTransfer;
    }
 
    @Nullable
-   public static GossipType byId(String p_220929_0_) {
-      return BY_ID.get(p_220929_0_);
+   public static GossipType byId(String id) {
+      return BY_ID.get(id);
    }
 }

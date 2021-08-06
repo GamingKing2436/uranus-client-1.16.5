@@ -52,41 +52,41 @@ public class ShulkerBoxBlock extends ContainerBlock {
    @Nullable
    private final DyeColor color;
 
-   public ShulkerBoxBlock(@Nullable DyeColor p_i48334_1_, AbstractBlock.Properties p_i48334_2_) {
-      super(p_i48334_2_);
-      this.color = p_i48334_1_;
-      this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.UP));
+   public ShulkerBoxBlock(@Nullable DyeColor color, AbstractBlock.Properties properties) {
+      super(properties);
+      this.color = color;
+      this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.UP));
    }
 
-   public TileEntity newBlockEntity(IBlockReader p_196283_1_) {
+   public TileEntity createNewTileEntity(IBlockReader worldIn) {
       return new ShulkerBoxTileEntity(this.color);
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.ENTITYBLOCK_ANIMATED;
    }
 
-   public ActionResultType use(BlockState p_225533_1_, World p_225533_2_, BlockPos p_225533_3_, PlayerEntity p_225533_4_, Hand p_225533_5_, BlockRayTraceResult p_225533_6_) {
-      if (p_225533_2_.isClientSide) {
+   public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+      if (worldIn.isRemote) {
          return ActionResultType.SUCCESS;
-      } else if (p_225533_4_.isSpectator()) {
+      } else if (player.isSpectator()) {
          return ActionResultType.CONSUME;
       } else {
-         TileEntity tileentity = p_225533_2_.getBlockEntity(p_225533_3_);
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof ShulkerBoxTileEntity) {
             ShulkerBoxTileEntity shulkerboxtileentity = (ShulkerBoxTileEntity)tileentity;
             boolean flag;
             if (shulkerboxtileentity.getAnimationStatus() == ShulkerBoxTileEntity.AnimationStatus.CLOSED) {
-               Direction direction = p_225533_1_.getValue(FACING);
-               flag = p_225533_2_.noCollision(ShulkerAABBHelper.openBoundingBox(p_225533_3_, direction));
+               Direction direction = state.get(FACING);
+               flag = worldIn.hasNoCollisions(ShulkerAABBHelper.getOpenedCollisionBox(pos, direction));
             } else {
                flag = true;
             }
 
             if (flag) {
-               p_225533_4_.openMenu(shulkerboxtileentity);
-               p_225533_4_.awardStat(Stats.OPEN_SHULKER_BOX);
-               PiglinTasks.angerNearbyPiglins(p_225533_4_, true);
+               player.openContainer(shulkerboxtileentity);
+               player.addStat(Stats.OPEN_SHULKER_BOX);
+               PiglinTasks.func_234478_a_(player, true);
             }
 
             return ActionResultType.CONSUME;
@@ -96,83 +96,83 @@ public class ShulkerBoxBlock extends ContainerBlock {
       }
    }
 
-   public BlockState getStateForPlacement(BlockItemUseContext p_196258_1_) {
-      return this.defaultBlockState().setValue(FACING, p_196258_1_.getClickedFace());
+   public BlockState getStateForPlacement(BlockItemUseContext context) {
+      return this.getDefaultState().with(FACING, context.getFace());
    }
 
-   protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> p_206840_1_) {
-      p_206840_1_.add(FACING);
+   protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+      builder.add(FACING);
    }
 
-   public void playerWillDestroy(World p_176208_1_, BlockPos p_176208_2_, BlockState p_176208_3_, PlayerEntity p_176208_4_) {
-      TileEntity tileentity = p_176208_1_.getBlockEntity(p_176208_2_);
+   public void onBlockHarvested(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
+      TileEntity tileentity = worldIn.getTileEntity(pos);
       if (tileentity instanceof ShulkerBoxTileEntity) {
          ShulkerBoxTileEntity shulkerboxtileentity = (ShulkerBoxTileEntity)tileentity;
-         if (!p_176208_1_.isClientSide && p_176208_4_.isCreative() && !shulkerboxtileentity.isEmpty()) {
+         if (!worldIn.isRemote && player.isCreative() && !shulkerboxtileentity.isEmpty()) {
             ItemStack itemstack = getColoredItemStack(this.getColor());
-            CompoundNBT compoundnbt = shulkerboxtileentity.saveToTag(new CompoundNBT());
+            CompoundNBT compoundnbt = shulkerboxtileentity.saveToNbt(new CompoundNBT());
             if (!compoundnbt.isEmpty()) {
-               itemstack.addTagElement("BlockEntityTag", compoundnbt);
+               itemstack.setTagInfo("BlockEntityTag", compoundnbt);
             }
 
             if (shulkerboxtileentity.hasCustomName()) {
-               itemstack.setHoverName(shulkerboxtileentity.getCustomName());
+               itemstack.setDisplayName(shulkerboxtileentity.getCustomName());
             }
 
-            ItemEntity itementity = new ItemEntity(p_176208_1_, (double)p_176208_2_.getX() + 0.5D, (double)p_176208_2_.getY() + 0.5D, (double)p_176208_2_.getZ() + 0.5D, itemstack);
-            itementity.setDefaultPickUpDelay();
-            p_176208_1_.addFreshEntity(itementity);
+            ItemEntity itementity = new ItemEntity(worldIn, (double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, itemstack);
+            itementity.setDefaultPickupDelay();
+            worldIn.addEntity(itementity);
          } else {
-            shulkerboxtileentity.unpackLootTable(p_176208_4_);
+            shulkerboxtileentity.fillWithLoot(player);
          }
       }
 
-      super.playerWillDestroy(p_176208_1_, p_176208_2_, p_176208_3_, p_176208_4_);
+      super.onBlockHarvested(worldIn, pos, state, player);
    }
 
-   public List<ItemStack> getDrops(BlockState p_220076_1_, LootContext.Builder p_220076_2_) {
-      TileEntity tileentity = p_220076_2_.getOptionalParameter(LootParameters.BLOCK_ENTITY);
+   public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
+      TileEntity tileentity = builder.get(LootParameters.BLOCK_ENTITY);
       if (tileentity instanceof ShulkerBoxTileEntity) {
          ShulkerBoxTileEntity shulkerboxtileentity = (ShulkerBoxTileEntity)tileentity;
-         p_220076_2_ = p_220076_2_.withDynamicDrop(CONTENTS, (p_220168_1_, p_220168_2_) -> {
-            for(int i = 0; i < shulkerboxtileentity.getContainerSize(); ++i) {
-               p_220168_2_.accept(shulkerboxtileentity.getItem(i));
+         builder = builder.withDynamicDrop(CONTENTS, (p_220168_1_, p_220168_2_) -> {
+            for(int i = 0; i < shulkerboxtileentity.getSizeInventory(); ++i) {
+               p_220168_2_.accept(shulkerboxtileentity.getStackInSlot(i));
             }
 
          });
       }
 
-      return super.getDrops(p_220076_1_, p_220076_2_);
+      return super.getDrops(state, builder);
    }
 
-   public void setPlacedBy(World p_180633_1_, BlockPos p_180633_2_, BlockState p_180633_3_, LivingEntity p_180633_4_, ItemStack p_180633_5_) {
-      if (p_180633_5_.hasCustomHoverName()) {
-         TileEntity tileentity = p_180633_1_.getBlockEntity(p_180633_2_);
+   public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+      if (stack.hasDisplayName()) {
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof ShulkerBoxTileEntity) {
-            ((ShulkerBoxTileEntity)tileentity).setCustomName(p_180633_5_.getHoverName());
+            ((ShulkerBoxTileEntity)tileentity).setCustomName(stack.getDisplayName());
          }
       }
 
    }
 
-   public void onRemove(BlockState p_196243_1_, World p_196243_2_, BlockPos p_196243_3_, BlockState p_196243_4_, boolean p_196243_5_) {
-      if (!p_196243_1_.is(p_196243_4_.getBlock())) {
-         TileEntity tileentity = p_196243_2_.getBlockEntity(p_196243_3_);
+   public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
+      if (!state.isIn(newState.getBlock())) {
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof ShulkerBoxTileEntity) {
-            p_196243_2_.updateNeighbourForOutputSignal(p_196243_3_, p_196243_1_.getBlock());
+            worldIn.updateComparatorOutputLevel(pos, state.getBlock());
          }
 
-         super.onRemove(p_196243_1_, p_196243_2_, p_196243_3_, p_196243_4_, p_196243_5_);
+         super.onReplaced(state, worldIn, pos, newState, isMoving);
       }
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void appendHoverText(ItemStack p_190948_1_, @Nullable IBlockReader p_190948_2_, List<ITextComponent> p_190948_3_, ITooltipFlag p_190948_4_) {
-      super.appendHoverText(p_190948_1_, p_190948_2_, p_190948_3_, p_190948_4_);
-      CompoundNBT compoundnbt = p_190948_1_.getTagElement("BlockEntityTag");
+   public void addInformation(ItemStack stack, @Nullable IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+      super.addInformation(stack, worldIn, tooltip, flagIn);
+      CompoundNBT compoundnbt = stack.getChildTag("BlockEntityTag");
       if (compoundnbt != null) {
          if (compoundnbt.contains("LootTable", 8)) {
-            p_190948_3_.add(new StringTextComponent("???????"));
+            tooltip.add(new StringTextComponent("???????"));
          }
 
          if (compoundnbt.contains("Items", 9)) {
@@ -186,45 +186,45 @@ public class ShulkerBoxBlock extends ContainerBlock {
                   ++j;
                   if (i <= 4) {
                      ++i;
-                     IFormattableTextComponent iformattabletextcomponent = itemstack.getHoverName().copy();
-                     iformattabletextcomponent.append(" x").append(String.valueOf(itemstack.getCount()));
-                     p_190948_3_.add(iformattabletextcomponent);
+                     IFormattableTextComponent iformattabletextcomponent = itemstack.getDisplayName().deepCopy();
+                     iformattabletextcomponent.appendString(" x").appendString(String.valueOf(itemstack.getCount()));
+                     tooltip.add(iformattabletextcomponent);
                   }
                }
             }
 
             if (j - i > 0) {
-               p_190948_3_.add((new TranslationTextComponent("container.shulkerBox.more", j - i)).withStyle(TextFormatting.ITALIC));
+               tooltip.add((new TranslationTextComponent("container.shulkerBox.more", j - i)).mergeStyle(TextFormatting.ITALIC));
             }
          }
       }
 
    }
 
-   public PushReaction getPistonPushReaction(BlockState p_149656_1_) {
+   public PushReaction getPushReaction(BlockState state) {
       return PushReaction.DESTROY;
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
-      TileEntity tileentity = p_220053_2_.getBlockEntity(p_220053_3_);
-      return tileentity instanceof ShulkerBoxTileEntity ? VoxelShapes.create(((ShulkerBoxTileEntity)tileentity).getBoundingBox(p_220053_1_)) : VoxelShapes.block();
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
+      TileEntity tileentity = worldIn.getTileEntity(pos);
+      return tileentity instanceof ShulkerBoxTileEntity ? VoxelShapes.create(((ShulkerBoxTileEntity)tileentity).getBoundingBox(state)) : VoxelShapes.fullCube();
    }
 
-   public boolean hasAnalogOutputSignal(BlockState p_149740_1_) {
+   public boolean hasComparatorInputOverride(BlockState state) {
       return true;
    }
 
-   public int getAnalogOutputSignal(BlockState p_180641_1_, World p_180641_2_, BlockPos p_180641_3_) {
-      return Container.getRedstoneSignalFromContainer((IInventory)p_180641_2_.getBlockEntity(p_180641_3_));
+   public int getComparatorInputOverride(BlockState blockState, World worldIn, BlockPos pos) {
+      return Container.calcRedstoneFromInventory((IInventory)worldIn.getTileEntity(pos));
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack getCloneItemStack(IBlockReader p_185473_1_, BlockPos p_185473_2_, BlockState p_185473_3_) {
-      ItemStack itemstack = super.getCloneItemStack(p_185473_1_, p_185473_2_, p_185473_3_);
-      ShulkerBoxTileEntity shulkerboxtileentity = (ShulkerBoxTileEntity)p_185473_1_.getBlockEntity(p_185473_2_);
-      CompoundNBT compoundnbt = shulkerboxtileentity.saveToTag(new CompoundNBT());
+   public ItemStack getItem(IBlockReader worldIn, BlockPos pos, BlockState state) {
+      ItemStack itemstack = super.getItem(worldIn, pos, state);
+      ShulkerBoxTileEntity shulkerboxtileentity = (ShulkerBoxTileEntity)worldIn.getTileEntity(pos);
+      CompoundNBT compoundnbt = shulkerboxtileentity.saveToNbt(new CompoundNBT());
       if (!compoundnbt.isEmpty()) {
-         itemstack.addTagElement("BlockEntityTag", compoundnbt);
+         itemstack.setTagInfo("BlockEntityTag", compoundnbt);
       }
 
       return itemstack;
@@ -232,21 +232,21 @@ public class ShulkerBoxBlock extends ContainerBlock {
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public static DyeColor getColorFromItem(Item p_190955_0_) {
-      return getColorFromBlock(Block.byItem(p_190955_0_));
+   public static DyeColor getColorFromItem(Item itemIn) {
+      return getColorFromBlock(Block.getBlockFromItem(itemIn));
    }
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public static DyeColor getColorFromBlock(Block p_190954_0_) {
-      return p_190954_0_ instanceof ShulkerBoxBlock ? ((ShulkerBoxBlock)p_190954_0_).getColor() : null;
+   public static DyeColor getColorFromBlock(Block blockIn) {
+      return blockIn instanceof ShulkerBoxBlock ? ((ShulkerBoxBlock)blockIn).getColor() : null;
    }
 
-   public static Block getBlockByColor(@Nullable DyeColor p_190952_0_) {
-      if (p_190952_0_ == null) {
+   public static Block getBlockByColor(@Nullable DyeColor colorIn) {
+      if (colorIn == null) {
          return Blocks.SHULKER_BOX;
       } else {
-         switch(p_190952_0_) {
+         switch(colorIn) {
          case WHITE:
             return Blocks.WHITE_SHULKER_BOX;
          case ORANGE:
@@ -289,15 +289,15 @@ public class ShulkerBoxBlock extends ContainerBlock {
       return this.color;
    }
 
-   public static ItemStack getColoredItemStack(@Nullable DyeColor p_190953_0_) {
-      return new ItemStack(getBlockByColor(p_190953_0_));
+   public static ItemStack getColoredItemStack(@Nullable DyeColor colorIn) {
+      return new ItemStack(getBlockByColor(colorIn));
    }
 
-   public BlockState rotate(BlockState p_185499_1_, Rotation p_185499_2_) {
-      return p_185499_1_.setValue(FACING, p_185499_2_.rotate(p_185499_1_.getValue(FACING)));
+   public BlockState rotate(BlockState state, Rotation rot) {
+      return state.with(FACING, rot.rotate(state.get(FACING)));
    }
 
-   public BlockState mirror(BlockState p_185471_1_, Mirror p_185471_2_) {
-      return p_185471_1_.rotate(p_185471_2_.getRotation(p_185471_1_.getValue(FACING)));
+   public BlockState mirror(BlockState state, Mirror mirrorIn) {
+      return state.rotate(mirrorIn.toRotation(state.get(FACING)));
    }
 }

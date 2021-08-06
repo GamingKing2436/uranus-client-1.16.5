@@ -4,17 +4,17 @@ public abstract class NumberNBT implements INBT {
    protected NumberNBT() {
    }
 
-   public abstract long getAsLong();
+   public abstract long getLong();
 
-   public abstract int getAsInt();
+   public abstract int getInt();
 
-   public abstract short getAsShort();
+   public abstract short getShort();
 
-   public abstract byte getAsByte();
+   public abstract byte getByte();
 
-   public abstract double getAsDouble();
+   public abstract double getDouble();
 
-   public abstract float getAsFloat();
+   public abstract float getFloat();
 
    public abstract Number getAsNumber();
 }

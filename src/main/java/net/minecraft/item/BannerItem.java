@@ -17,15 +17,15 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.Validate;
 
 public class BannerItem extends WallOrFloorItem {
-   public BannerItem(Block p_i48529_1_, Block p_i48529_2_, Item.Properties p_i48529_3_) {
-      super(p_i48529_1_, p_i48529_2_, p_i48529_3_);
+   public BannerItem(Block p_i48529_1_, Block p_i48529_2_, Item.Properties builder) {
+      super(p_i48529_1_, p_i48529_2_, builder);
       Validate.isInstanceOf(AbstractBannerBlock.class, p_i48529_1_);
       Validate.isInstanceOf(AbstractBannerBlock.class, p_i48529_2_);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static void appendHoverTextFromBannerBlockEntityTag(ItemStack p_185054_0_, List<ITextComponent> p_185054_1_) {
-      CompoundNBT compoundnbt = p_185054_0_.getTagElement("BlockEntityTag");
+   public static void appendHoverTextFromTileEntityTag(ItemStack stack, List<ITextComponent> p_185054_1_) {
+      CompoundNBT compoundnbt = stack.getChildTag("BlockEntityTag");
       if (compoundnbt != null && compoundnbt.contains("Patterns")) {
          ListNBT listnbt = compoundnbt.getList("Patterns", 10);
 
@@ -34,7 +34,7 @@ public class BannerItem extends WallOrFloorItem {
             DyeColor dyecolor = DyeColor.byId(compoundnbt1.getInt("Color"));
             BannerPattern bannerpattern = BannerPattern.byHash(compoundnbt1.getString("Pattern"));
             if (bannerpattern != null) {
-               p_185054_1_.add((new TranslationTextComponent("block.minecraft.banner." + bannerpattern.getFilename() + '.' + dyecolor.getName())).withStyle(TextFormatting.GRAY));
+               p_185054_1_.add((new TranslationTextComponent("block.minecraft.banner." + bannerpattern.getFileName() + '.' + dyecolor.getTranslationKey())).mergeStyle(TextFormatting.GRAY));
             }
          }
 
@@ -46,7 +46,7 @@ public class BannerItem extends WallOrFloorItem {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void appendHoverText(ItemStack p_77624_1_, @Nullable World p_77624_2_, List<ITextComponent> p_77624_3_, ITooltipFlag p_77624_4_) {
-      appendHoverTextFromBannerBlockEntityTag(p_77624_1_, p_77624_3_);
+   public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+      appendHoverTextFromTileEntityTag(stack, tooltip);
    }
 }

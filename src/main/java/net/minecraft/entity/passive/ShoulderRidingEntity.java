@@ -8,15 +8,15 @@ import net.minecraft.world.World;
 public abstract class ShoulderRidingEntity extends TameableEntity {
    private int rideCooldownCounter;
 
-   protected ShoulderRidingEntity(EntityType<? extends ShoulderRidingEntity> p_i48566_1_, World p_i48566_2_) {
-      super(p_i48566_1_, p_i48566_2_);
+   protected ShoulderRidingEntity(EntityType<? extends ShoulderRidingEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
-   public boolean setEntityOnShoulder(ServerPlayerEntity p_213439_1_) {
+   public boolean func_213439_d(ServerPlayerEntity p_213439_1_) {
       CompoundNBT compoundnbt = new CompoundNBT();
-      compoundnbt.putString("id", this.getEncodeId());
-      this.saveWithoutId(compoundnbt);
-      if (p_213439_1_.setEntityOnShoulder(compoundnbt)) {
+      compoundnbt.putString("id", this.getEntityString());
+      this.writeWithoutTypeId(compoundnbt);
+      if (p_213439_1_.addShoulderEntity(compoundnbt)) {
          this.remove();
          return true;
       } else {

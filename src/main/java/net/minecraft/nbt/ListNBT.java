@@ -17,22 +17,22 @@ import net.minecraft.util.text.StringTextComponent;
 
 public class ListNBT extends CollectionNBT<INBT> {
    public static final INBTType<ListNBT> TYPE = new INBTType<ListNBT>() {
-      public ListNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(296L);
-         if (p_225649_2_ > 512) {
+      public ListNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(296L);
+         if (depth > 512) {
             throw new RuntimeException("Tried to read NBT tag with too high complexity, depth > 512");
          } else {
-            byte b0 = p_225649_1_.readByte();
-            int i = p_225649_1_.readInt();
+            byte b0 = input.readByte();
+            int i = input.readInt();
             if (b0 == 0 && i > 0) {
                throw new RuntimeException("Missing type on ListTag");
             } else {
-               p_225649_3_.accountBits(32L * (long)i);
-               INBTType<?> inbttype = NBTTypes.getType(b0);
+               accounter.read(32L * (long)i);
+               INBTType<?> inbttype = NBTTypes.getGetTypeByID(b0);
                List<INBT> list = Lists.newArrayListWithCapacity(i);
 
                for(int j = 0; j < i; ++j) {
-                  list.add(inbttype.load(p_225649_1_, p_225649_2_ + 1, p_225649_3_));
+                  list.add(inbttype.readNBT(input, depth + 1, accounter));
                }
 
                return new ListNBT(list, b0);
@@ -44,35 +44,35 @@ public class ListNBT extends CollectionNBT<INBT> {
          return "LIST";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_List";
       }
    };
-   private static final ByteSet INLINE_ELEMENT_TYPES = new ByteOpenHashSet(Arrays.asList((byte)1, (byte)2, (byte)3, (byte)4, (byte)5, (byte)6));
-   private final List<INBT> list;
-   private byte type;
+   private static final ByteSet typeSet = new ByteOpenHashSet(Arrays.asList((byte)1, (byte)2, (byte)3, (byte)4, (byte)5, (byte)6));
+   private final List<INBT> tagList;
+   private byte tagType;
 
-   private ListNBT(List<INBT> p_i226078_1_, byte p_i226078_2_) {
-      this.list = p_i226078_1_;
-      this.type = p_i226078_2_;
+   private ListNBT(List<INBT> tagList, byte tagType) {
+      this.tagList = tagList;
+      this.tagType = tagType;
    }
 
    public ListNBT() {
       this(Lists.newArrayList(), (byte)0);
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      if (this.list.isEmpty()) {
-         this.type = 0;
+   public void write(DataOutput output) throws IOException {
+      if (this.tagList.isEmpty()) {
+         this.tagType = 0;
       } else {
-         this.type = this.list.get(0).getId();
+         this.tagType = this.tagList.get(0).getId();
       }
 
-      p_74734_1_.writeByte(this.type);
-      p_74734_1_.writeInt(this.list.size());
+      output.writeByte(this.tagType);
+      output.writeInt(this.tagList.size());
 
-      for(INBT inbt : this.list) {
-         inbt.write(p_74734_1_);
+      for(INBT inbt : this.tagList) {
+         inbt.write(output);
       }
 
    }
@@ -88,37 +88,37 @@ public class ListNBT extends CollectionNBT<INBT> {
    public String toString() {
       StringBuilder stringbuilder = new StringBuilder("[");
 
-      for(int i = 0; i < this.list.size(); ++i) {
+      for(int i = 0; i < this.tagList.size(); ++i) {
          if (i != 0) {
             stringbuilder.append(',');
          }
 
-         stringbuilder.append(this.list.get(i));
+         stringbuilder.append(this.tagList.get(i));
       }
 
       return stringbuilder.append(']').toString();
    }
 
-   private void updateTypeAfterRemove() {
-      if (this.list.isEmpty()) {
-         this.type = 0;
+   private void checkEmpty() {
+      if (this.tagList.isEmpty()) {
+         this.tagType = 0;
       }
 
    }
 
    public INBT remove(int p_remove_1_) {
-      INBT inbt = this.list.remove(p_remove_1_);
-      this.updateTypeAfterRemove();
+      INBT inbt = this.tagList.remove(p_remove_1_);
+      this.checkEmpty();
       return inbt;
    }
 
    public boolean isEmpty() {
-      return this.list.isEmpty();
+      return this.tagList.isEmpty();
    }
 
-   public CompoundNBT getCompound(int p_150305_1_) {
-      if (p_150305_1_ >= 0 && p_150305_1_ < this.list.size()) {
-         INBT inbt = this.list.get(p_150305_1_);
+   public CompoundNBT getCompound(int i) {
+      if (i >= 0 && i < this.tagList.size()) {
+         INBT inbt = this.tagList.get(i);
          if (inbt.getId() == 10) {
             return (CompoundNBT)inbt;
          }
@@ -127,9 +127,9 @@ public class ListNBT extends CollectionNBT<INBT> {
       return new CompoundNBT();
    }
 
-   public ListNBT getList(int p_202169_1_) {
-      if (p_202169_1_ >= 0 && p_202169_1_ < this.list.size()) {
-         INBT inbt = this.list.get(p_202169_1_);
+   public ListNBT getList(int iIn) {
+      if (iIn >= 0 && iIn < this.tagList.size()) {
+         INBT inbt = this.tagList.get(iIn);
          if (inbt.getId() == 9) {
             return (ListNBT)inbt;
          }
@@ -138,190 +138,190 @@ public class ListNBT extends CollectionNBT<INBT> {
       return new ListNBT();
    }
 
-   public short getShort(int p_202170_1_) {
-      if (p_202170_1_ >= 0 && p_202170_1_ < this.list.size()) {
-         INBT inbt = this.list.get(p_202170_1_);
+   public short getShort(int iIn) {
+      if (iIn >= 0 && iIn < this.tagList.size()) {
+         INBT inbt = this.tagList.get(iIn);
          if (inbt.getId() == 2) {
-            return ((ShortNBT)inbt).getAsShort();
+            return ((ShortNBT)inbt).getShort();
          }
       }
 
       return 0;
    }
 
-   public int getInt(int p_186858_1_) {
-      if (p_186858_1_ >= 0 && p_186858_1_ < this.list.size()) {
-         INBT inbt = this.list.get(p_186858_1_);
+   public int getInt(int iIn) {
+      if (iIn >= 0 && iIn < this.tagList.size()) {
+         INBT inbt = this.tagList.get(iIn);
          if (inbt.getId() == 3) {
-            return ((IntNBT)inbt).getAsInt();
+            return ((IntNBT)inbt).getInt();
          }
       }
 
       return 0;
    }
 
-   public int[] getIntArray(int p_150306_1_) {
-      if (p_150306_1_ >= 0 && p_150306_1_ < this.list.size()) {
-         INBT inbt = this.list.get(p_150306_1_);
+   public int[] getIntArray(int i) {
+      if (i >= 0 && i < this.tagList.size()) {
+         INBT inbt = this.tagList.get(i);
          if (inbt.getId() == 11) {
-            return ((IntArrayNBT)inbt).getAsIntArray();
+            return ((IntArrayNBT)inbt).getIntArray();
          }
       }
 
       return new int[0];
    }
 
-   public double getDouble(int p_150309_1_) {
-      if (p_150309_1_ >= 0 && p_150309_1_ < this.list.size()) {
-         INBT inbt = this.list.get(p_150309_1_);
+   public double getDouble(int i) {
+      if (i >= 0 && i < this.tagList.size()) {
+         INBT inbt = this.tagList.get(i);
          if (inbt.getId() == 6) {
-            return ((DoubleNBT)inbt).getAsDouble();
+            return ((DoubleNBT)inbt).getDouble();
          }
       }
 
       return 0.0D;
    }
 
-   public float getFloat(int p_150308_1_) {
-      if (p_150308_1_ >= 0 && p_150308_1_ < this.list.size()) {
-         INBT inbt = this.list.get(p_150308_1_);
+   public float getFloat(int i) {
+      if (i >= 0 && i < this.tagList.size()) {
+         INBT inbt = this.tagList.get(i);
          if (inbt.getId() == 5) {
-            return ((FloatNBT)inbt).getAsFloat();
+            return ((FloatNBT)inbt).getFloat();
          }
       }
 
       return 0.0F;
    }
 
-   public String getString(int p_150307_1_) {
-      if (p_150307_1_ >= 0 && p_150307_1_ < this.list.size()) {
-         INBT inbt = this.list.get(p_150307_1_);
-         return inbt.getId() == 8 ? inbt.getAsString() : inbt.toString();
+   public String getString(int i) {
+      if (i >= 0 && i < this.tagList.size()) {
+         INBT inbt = this.tagList.get(i);
+         return inbt.getId() == 8 ? inbt.getString() : inbt.toString();
       } else {
          return "";
       }
    }
 
    public int size() {
-      return this.list.size();
+      return this.tagList.size();
    }
 
    public INBT get(int p_get_1_) {
-      return this.list.get(p_get_1_);
+      return this.tagList.get(p_get_1_);
    }
 
    public INBT set(int p_set_1_, INBT p_set_2_) {
       INBT inbt = this.get(p_set_1_);
-      if (!this.setTag(p_set_1_, p_set_2_)) {
-         throw new UnsupportedOperationException(String.format("Trying to add tag of type %d to list of %d", p_set_2_.getId(), this.type));
+      if (!this.setNBTByIndex(p_set_1_, p_set_2_)) {
+         throw new UnsupportedOperationException(String.format("Trying to add tag of type %d to list of %d", p_set_2_.getId(), this.tagType));
       } else {
          return inbt;
       }
    }
 
    public void add(int p_add_1_, INBT p_add_2_) {
-      if (!this.addTag(p_add_1_, p_add_2_)) {
-         throw new UnsupportedOperationException(String.format("Trying to add tag of type %d to list of %d", p_add_2_.getId(), this.type));
+      if (!this.addNBTByIndex(p_add_1_, p_add_2_)) {
+         throw new UnsupportedOperationException(String.format("Trying to add tag of type %d to list of %d", p_add_2_.getId(), this.tagType));
       }
    }
 
-   public boolean setTag(int p_218659_1_, INBT p_218659_2_) {
-      if (this.updateType(p_218659_2_)) {
-         this.list.set(p_218659_1_, p_218659_2_);
+   public boolean setNBTByIndex(int index, INBT nbt) {
+      if (this.canInsert(nbt)) {
+         this.tagList.set(index, nbt);
          return true;
       } else {
          return false;
       }
    }
 
-   public boolean addTag(int p_218660_1_, INBT p_218660_2_) {
-      if (this.updateType(p_218660_2_)) {
-         this.list.add(p_218660_1_, p_218660_2_);
+   public boolean addNBTByIndex(int index, INBT nbt) {
+      if (this.canInsert(nbt)) {
+         this.tagList.add(index, nbt);
          return true;
       } else {
          return false;
       }
    }
 
-   private boolean updateType(INBT p_218661_1_) {
-      if (p_218661_1_.getId() == 0) {
+   private boolean canInsert(INBT nbt) {
+      if (nbt.getId() == 0) {
          return false;
-      } else if (this.type == 0) {
-         this.type = p_218661_1_.getId();
+      } else if (this.tagType == 0) {
+         this.tagType = nbt.getId();
          return true;
       } else {
-         return this.type == p_218661_1_.getId();
+         return this.tagType == nbt.getId();
       }
    }
 
    public ListNBT copy() {
-      Iterable<INBT> iterable = (Iterable<INBT>)(NBTTypes.getType(this.type).isValue() ? this.list : Iterables.transform(this.list, INBT::copy));
+      Iterable<INBT> iterable = (Iterable<INBT>)(NBTTypes.getGetTypeByID(this.tagType).isPrimitive() ? this.tagList : Iterables.transform(this.tagList, INBT::copy));
       List<INBT> list = Lists.newArrayList(iterable);
-      return new ListNBT(list, this.type);
+      return new ListNBT(list, this.tagType);
    }
 
    public boolean equals(Object p_equals_1_) {
       if (this == p_equals_1_) {
          return true;
       } else {
-         return p_equals_1_ instanceof ListNBT && Objects.equals(this.list, ((ListNBT)p_equals_1_).list);
+         return p_equals_1_ instanceof ListNBT && Objects.equals(this.tagList, ((ListNBT)p_equals_1_).tagList);
       }
    }
 
    public int hashCode() {
-      return this.list.hashCode();
+      return this.tagList.hashCode();
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
       if (this.isEmpty()) {
          return new StringTextComponent("[]");
-      } else if (INLINE_ELEMENT_TYPES.contains(this.type) && this.size() <= 8) {
+      } else if (typeSet.contains(this.tagType) && this.size() <= 8) {
          String s1 = ", ";
          IFormattableTextComponent iformattabletextcomponent2 = new StringTextComponent("[");
 
-         for(int j = 0; j < this.list.size(); ++j) {
+         for(int j = 0; j < this.tagList.size(); ++j) {
             if (j != 0) {
-               iformattabletextcomponent2.append(", ");
+               iformattabletextcomponent2.appendString(", ");
             }
 
-            iformattabletextcomponent2.append(this.list.get(j).getPrettyDisplay());
+            iformattabletextcomponent2.append(this.tagList.get(j).toFormattedComponent());
          }
 
-         iformattabletextcomponent2.append("]");
+         iformattabletextcomponent2.appendString("]");
          return iformattabletextcomponent2;
       } else {
          IFormattableTextComponent iformattabletextcomponent = new StringTextComponent("[");
-         if (!p_199850_1_.isEmpty()) {
-            iformattabletextcomponent.append("\n");
+         if (!indentation.isEmpty()) {
+            iformattabletextcomponent.appendString("\n");
          }
 
          String s = String.valueOf(',');
 
-         for(int i = 0; i < this.list.size(); ++i) {
-            IFormattableTextComponent iformattabletextcomponent1 = new StringTextComponent(Strings.repeat(p_199850_1_, p_199850_2_ + 1));
-            iformattabletextcomponent1.append(this.list.get(i).getPrettyDisplay(p_199850_1_, p_199850_2_ + 1));
-            if (i != this.list.size() - 1) {
-               iformattabletextcomponent1.append(s).append(p_199850_1_.isEmpty() ? " " : "\n");
+         for(int i = 0; i < this.tagList.size(); ++i) {
+            IFormattableTextComponent iformattabletextcomponent1 = new StringTextComponent(Strings.repeat(indentation, indentDepth + 1));
+            iformattabletextcomponent1.append(this.tagList.get(i).toFormattedComponent(indentation, indentDepth + 1));
+            if (i != this.tagList.size() - 1) {
+               iformattabletextcomponent1.appendString(s).appendString(indentation.isEmpty() ? " " : "\n");
             }
 
             iformattabletextcomponent.append(iformattabletextcomponent1);
          }
 
-         if (!p_199850_1_.isEmpty()) {
-            iformattabletextcomponent.append("\n").append(Strings.repeat(p_199850_1_, p_199850_2_));
+         if (!indentation.isEmpty()) {
+            iformattabletextcomponent.appendString("\n").appendString(Strings.repeat(indentation, indentDepth));
          }
 
-         iformattabletextcomponent.append("]");
+         iformattabletextcomponent.appendString("]");
          return iformattabletextcomponent;
       }
    }
 
-   public byte getElementType() {
-      return this.type;
+   public byte getTagType() {
+      return this.tagType;
    }
 
    public void clear() {
-      this.list.clear();
-      this.type = 0;
+      this.tagList.clear();
+      this.tagType = 0;
    }
 }

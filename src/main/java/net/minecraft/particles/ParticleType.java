@@ -5,22 +5,22 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class ParticleType<T extends IParticleData> {
-   private final boolean overrideLimiter;
+   private final boolean alwaysShow;
    private final IParticleData.IDeserializer<T> deserializer;
 
-   protected ParticleType(boolean p_i50792_1_, IParticleData.IDeserializer<T> p_i50792_2_) {
-      this.overrideLimiter = p_i50792_1_;
-      this.deserializer = p_i50792_2_;
+   protected ParticleType(boolean alwaysShow, IParticleData.IDeserializer<T> deserializer) {
+      this.alwaysShow = alwaysShow;
+      this.deserializer = deserializer;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean getOverrideLimiter() {
-      return this.overrideLimiter;
+   public boolean getAlwaysShow() {
+      return this.alwaysShow;
    }
 
    public IParticleData.IDeserializer<T> getDeserializer() {
       return this.deserializer;
    }
 
-   public abstract Codec<T> codec();
+   public abstract Codec<T> func_230522_e_();
 }

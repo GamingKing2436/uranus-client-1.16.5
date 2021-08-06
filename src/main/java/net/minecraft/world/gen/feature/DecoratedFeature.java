@@ -13,10 +13,10 @@ public class DecoratedFeature extends Feature<DecoratedFeatureConfig> {
       super(p_i231943_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, DecoratedFeatureConfig p_241855_5_) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, DecoratedFeatureConfig config) {
       MutableBoolean mutableboolean = new MutableBoolean();
-      p_241855_5_.decorator.getPositions(new WorldDecoratingHelper(p_241855_1_, p_241855_2_), p_241855_3_, p_241855_4_).forEach((p_242772_5_) -> {
-         if (p_241855_5_.feature.get().place(p_241855_1_, p_241855_2_, p_241855_3_, p_242772_5_)) {
+      config.decorator.func_242876_a(new WorldDecoratingHelper(reader, generator), rand, pos).forEach((p_242772_5_) -> {
+         if (config.feature.get().generate(reader, generator, rand, p_242772_5_)) {
             mutableboolean.setTrue();
          }
 

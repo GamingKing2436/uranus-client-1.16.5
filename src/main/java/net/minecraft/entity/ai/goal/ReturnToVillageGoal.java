@@ -10,22 +10,22 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 
 public class ReturnToVillageGoal extends RandomWalkingGoal {
-   public ReturnToVillageGoal(CreatureEntity p_i231548_1_, double p_i231548_2_, boolean p_i231548_4_) {
-      super(p_i231548_1_, p_i231548_2_, 10, p_i231548_4_);
+   public ReturnToVillageGoal(CreatureEntity creature, double speed, boolean p_i231548_4_) {
+      super(creature, speed, 10, p_i231548_4_);
    }
 
-   public boolean canUse() {
-      ServerWorld serverworld = (ServerWorld)this.mob.level;
-      BlockPos blockpos = this.mob.blockPosition();
-      return serverworld.isVillage(blockpos) ? false : super.canUse();
+   public boolean shouldExecute() {
+      ServerWorld serverworld = (ServerWorld)this.creature.world;
+      BlockPos blockpos = this.creature.getPosition();
+      return serverworld.isVillage(blockpos) ? false : super.shouldExecute();
    }
 
    @Nullable
    protected Vector3d getPosition() {
-      ServerWorld serverworld = (ServerWorld)this.mob.level;
-      BlockPos blockpos = this.mob.blockPosition();
-      SectionPos sectionpos = SectionPos.of(blockpos);
-      SectionPos sectionpos1 = BrainUtil.findSectionClosestToVillage(serverworld, sectionpos, 2);
-      return sectionpos1 != sectionpos ? RandomPositionGenerator.getPosTowards(this.mob, 10, 7, Vector3d.atBottomCenterOf(sectionpos1.center())) : null;
+      ServerWorld serverworld = (ServerWorld)this.creature.world;
+      BlockPos blockpos = this.creature.getPosition();
+      SectionPos sectionpos = SectionPos.from(blockpos);
+      SectionPos sectionpos1 = BrainUtil.getClosestVillageSection(serverworld, sectionpos, 2);
+      return sectionpos1 != sectionpos ? RandomPositionGenerator.findRandomTargetBlockTowards(this.creature, 10, 7, Vector3d.copyCenteredHorizontally(sectionpos1.getCenter())) : null;
    }
 }

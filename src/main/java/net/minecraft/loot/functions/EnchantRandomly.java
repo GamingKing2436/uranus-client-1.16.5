@@ -40,21 +40,21 @@ public class EnchantRandomly extends LootFunction {
       this.enchantments = ImmutableList.copyOf(p_i51238_2_);
    }
 
-   public LootFunctionType getType() {
+   public LootFunctionType getFunctionType() {
       return LootFunctionManager.ENCHANT_RANDOMLY;
    }
 
-   public ItemStack run(ItemStack p_215859_1_, LootContext p_215859_2_) {
-      Random random = p_215859_2_.getRandom();
+   public ItemStack doApply(ItemStack stack, LootContext context) {
+      Random random = context.getRandom();
       Enchantment enchantment;
       if (this.enchantments.isEmpty()) {
-         boolean flag = p_215859_1_.getItem() == Items.BOOK;
-         List<Enchantment> list = Registry.ENCHANTMENT.stream().filter(Enchantment::isDiscoverable).filter((p_237421_2_) -> {
-            return flag || p_237421_2_.canEnchant(p_215859_1_);
+         boolean flag = stack.getItem() == Items.BOOK;
+         List<Enchantment> list = Registry.ENCHANTMENT.stream().filter(Enchantment::canGenerateInLoot).filter((p_237421_2_) -> {
+            return flag || p_237421_2_.canApply(stack);
          }).collect(Collectors.toList());
          if (list.isEmpty()) {
-            LOGGER.warn("Couldn't find a compatible enchantment for {}", (Object)p_215859_1_);
-            return p_215859_1_;
+            LOGGER.warn("Couldn't find a compatible enchantment for {}", (Object)stack);
+            return stack;
          }
 
          enchantment = list.get(random.nextInt(list.size()));
@@ -62,41 +62,41 @@ public class EnchantRandomly extends LootFunction {
          enchantment = this.enchantments.get(random.nextInt(this.enchantments.size()));
       }
 
-      return enchantItem(p_215859_1_, enchantment, random);
+      return func_237420_a_(stack, enchantment, random);
    }
 
-   private static ItemStack enchantItem(ItemStack p_237420_0_, Enchantment p_237420_1_, Random p_237420_2_) {
+   private static ItemStack func_237420_a_(ItemStack p_237420_0_, Enchantment p_237420_1_, Random p_237420_2_) {
       int i = MathHelper.nextInt(p_237420_2_, p_237420_1_.getMinLevel(), p_237420_1_.getMaxLevel());
       if (p_237420_0_.getItem() == Items.BOOK) {
          p_237420_0_ = new ItemStack(Items.ENCHANTED_BOOK);
          EnchantedBookItem.addEnchantment(p_237420_0_, new EnchantmentData(p_237420_1_, i));
       } else {
-         p_237420_0_.enchant(p_237420_1_, i);
+         p_237420_0_.addEnchantment(p_237420_1_, i);
       }
 
       return p_237420_0_;
    }
 
-   public static LootFunction.Builder<?> randomApplicableEnchantment() {
-      return simpleBuilder((p_237422_0_) -> {
+   public static LootFunction.Builder<?> func_215900_c() {
+      return builder((p_237422_0_) -> {
          return new EnchantRandomly(p_237422_0_, ImmutableList.of());
       });
    }
 
    public static class Builder extends LootFunction.Builder<EnchantRandomly.Builder> {
-      private final Set<Enchantment> enchantments = Sets.newHashSet();
+      private final Set<Enchantment> field_237423_a_ = Sets.newHashSet();
 
-      protected EnchantRandomly.Builder getThis() {
+      protected EnchantRandomly.Builder doCast() {
          return this;
       }
 
-      public EnchantRandomly.Builder withEnchantment(Enchantment p_237424_1_) {
-         this.enchantments.add(p_237424_1_);
+      public EnchantRandomly.Builder func_237424_a_(Enchantment p_237424_1_) {
+         this.field_237423_a_.add(p_237424_1_);
          return this;
       }
 
       public ILootFunction build() {
-         return new EnchantRandomly(this.getConditions(), this.enchantments);
+         return new EnchantRandomly(this.getConditions(), this.field_237423_a_);
       }
    }
 
@@ -120,11 +120,11 @@ public class EnchantRandomly extends LootFunction {
 
       }
 
-      public EnchantRandomly deserialize(JsonObject p_186530_1_, JsonDeserializationContext p_186530_2_, ILootCondition[] p_186530_3_) {
+      public EnchantRandomly deserialize(JsonObject object, JsonDeserializationContext deserializationContext, ILootCondition[] conditionsIn) {
          List<Enchantment> list = Lists.newArrayList();
-         if (p_186530_1_.has("enchantments")) {
-            for(JsonElement jsonelement : JSONUtils.getAsJsonArray(p_186530_1_, "enchantments")) {
-               String s = JSONUtils.convertToString(jsonelement, "enchantment");
+         if (object.has("enchantments")) {
+            for(JsonElement jsonelement : JSONUtils.getJsonArray(object, "enchantments")) {
+               String s = JSONUtils.getString(jsonelement, "enchantment");
                Enchantment enchantment = Registry.ENCHANTMENT.getOptional(new ResourceLocation(s)).orElseThrow(() -> {
                   return new JsonSyntaxException("Unknown enchantment '" + s + "'");
                });
@@ -132,7 +132,7 @@ public class EnchantRandomly extends LootFunction {
             }
          }
 
-         return new EnchantRandomly(p_186530_3_, list);
+         return new EnchantRandomly(conditionsIn, list);
       }
    }
 }

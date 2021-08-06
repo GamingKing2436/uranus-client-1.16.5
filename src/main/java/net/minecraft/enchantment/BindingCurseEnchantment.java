@@ -3,15 +3,15 @@ package net.minecraft.enchantment;
 import net.minecraft.inventory.EquipmentSlotType;
 
 public class BindingCurseEnchantment extends Enchantment {
-   public BindingCurseEnchantment(Enchantment.Rarity p_i47254_1_, EquipmentSlotType... p_i47254_2_) {
-      super(p_i47254_1_, EnchantmentType.WEARABLE, p_i47254_2_);
+   public BindingCurseEnchantment(Enchantment.Rarity rarityIn, EquipmentSlotType... slots) {
+      super(rarityIn, EnchantmentType.WEARABLE, slots);
    }
 
-   public int getMinCost(int p_77321_1_) {
+   public int getMinEnchantability(int enchantmentLevel) {
       return 25;
    }
 
-   public int getMaxCost(int p_223551_1_) {
+   public int getMaxEnchantability(int enchantmentLevel) {
       return 50;
    }
 
@@ -19,7 +19,7 @@ public class BindingCurseEnchantment extends Enchantment {
       return 1;
    }
 
-   public boolean isTreasureOnly() {
+   public boolean isTreasureEnchantment() {
       return true;
    }
 

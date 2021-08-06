@@ -11,19 +11,19 @@ import org.apache.logging.log4j.Logger;
 
 public class ClientThread extends RConThread {
    private static final Logger LOGGER = LogManager.getLogger();
-   private boolean authed;
-   private final Socket client;
-   private final byte[] buf = new byte[1460];
+   private boolean loggedIn;
+   private final Socket clientSocket;
+   private final byte[] buffer = new byte[1460];
    private final String rconPassword;
-   private final IServer serverInterface;
+   private final IServer field_232651_i_;
 
    ClientThread(IServer p_i50687_1_, String p_i50687_2_, Socket p_i50687_3_) {
       super("RCON Client " + p_i50687_3_.getInetAddress());
-      this.serverInterface = p_i50687_1_;
-      this.client = p_i50687_3_;
+      this.field_232651_i_ = p_i50687_1_;
+      this.clientSocket = p_i50687_3_;
 
       try {
-         this.client.setSoTimeout(0);
+         this.clientSocket.setSoTimeout(0);
       } catch (Exception exception) {
          this.running = false;
       }
@@ -38,49 +38,49 @@ public class ClientThread extends RConThread {
                return;
             }
 
-            BufferedInputStream bufferedinputstream = new BufferedInputStream(this.client.getInputStream());
-            int i = bufferedinputstream.read(this.buf, 0, 1460);
+            BufferedInputStream bufferedinputstream = new BufferedInputStream(this.clientSocket.getInputStream());
+            int i = bufferedinputstream.read(this.buffer, 0, 1460);
             if (10 <= i) {
                int j = 0;
-               int k = RConUtils.intFromByteArray(this.buf, 0, i);
+               int k = RConUtils.getBytesAsLEInt(this.buffer, 0, i);
                if (k != i - 4) {
                   return;
                }
 
                j = j + 4;
-               int l = RConUtils.intFromByteArray(this.buf, j, i);
+               int l = RConUtils.getBytesAsLEInt(this.buffer, j, i);
                j = j + 4;
-               int i1 = RConUtils.intFromByteArray(this.buf, j);
+               int i1 = RConUtils.getRemainingBytesAsLEInt(this.buffer, j);
                j = j + 4;
                switch(i1) {
                case 2:
-                  if (this.authed) {
-                     String s1 = RConUtils.stringFromByteArray(this.buf, j, i);
+                  if (this.loggedIn) {
+                     String s1 = RConUtils.getBytesAsString(this.buffer, j, i);
 
                      try {
-                        this.sendCmdResponse(l, this.serverInterface.runCommand(s1));
+                        this.sendMultipacketResponse(l, this.field_232651_i_.handleRConCommand(s1));
                      } catch (Exception exception) {
-                        this.sendCmdResponse(l, "Error executing: " + s1 + " (" + exception.getMessage() + ")");
+                        this.sendMultipacketResponse(l, "Error executing: " + s1 + " (" + exception.getMessage() + ")");
                      }
                      continue;
                   }
 
-                  this.sendAuthFailure();
+                  this.sendLoginFailedResponse();
                   continue;
                case 3:
-                  String s = RConUtils.stringFromByteArray(this.buf, j, i);
+                  String s = RConUtils.getBytesAsString(this.buffer, j, i);
                   int j1 = j + s.length();
                   if (!s.isEmpty() && s.equals(this.rconPassword)) {
-                     this.authed = true;
-                     this.send(l, 2, "");
+                     this.loggedIn = true;
+                     this.sendResponse(l, 2, "");
                      continue;
                   }
 
-                  this.authed = false;
-                  this.sendAuthFailure();
+                  this.loggedIn = false;
+                  this.sendLoginFailedResponse();
                   continue;
                default:
-                  this.sendCmdResponse(l, String.format("Unknown request %s", Integer.toHexString(i1)));
+                  this.sendMultipacketResponse(l, String.format("Unknown request %s", Integer.toHexString(i1)));
                   continue;
                }
             }
@@ -93,49 +93,49 @@ public class ClientThread extends RConThread {
             return;
          } finally {
             this.closeSocket();
-            LOGGER.info("Thread {} shutting down", (Object)this.name);
+            LOGGER.info("Thread {} shutting down", (Object)this.threadName);
             this.running = false;
          }
       }
 
-   private void send(int p_72654_1_, int p_72654_2_, String p_72654_3_) throws IOException {
+   private void sendResponse(int p_72654_1_, int p_72654_2_, String message) throws IOException {
       ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream(1248);
       DataOutputStream dataoutputstream = new DataOutputStream(bytearrayoutputstream);
-      byte[] abyte = p_72654_3_.getBytes(StandardCharsets.UTF_8);
+      byte[] abyte = message.getBytes(StandardCharsets.UTF_8);
       dataoutputstream.writeInt(Integer.reverseBytes(abyte.length + 10));
       dataoutputstream.writeInt(Integer.reverseBytes(p_72654_1_));
       dataoutputstream.writeInt(Integer.reverseBytes(p_72654_2_));
       dataoutputstream.write(abyte);
       dataoutputstream.write(0);
       dataoutputstream.write(0);
-      this.client.getOutputStream().write(bytearrayoutputstream.toByteArray());
+      this.clientSocket.getOutputStream().write(bytearrayoutputstream.toByteArray());
    }
 
-   private void sendAuthFailure() throws IOException {
-      this.send(-1, 2, "");
+   private void sendLoginFailedResponse() throws IOException {
+      this.sendResponse(-1, 2, "");
    }
 
-   private void sendCmdResponse(int p_72655_1_, String p_72655_2_) throws IOException {
+   private void sendMultipacketResponse(int p_72655_1_, String p_72655_2_) throws IOException {
       int i = p_72655_2_.length();
 
       do {
          int j = 4096 <= i ? 4096 : i;
-         this.send(p_72655_1_, 0, p_72655_2_.substring(0, j));
+         this.sendResponse(p_72655_1_, 0, p_72655_2_.substring(0, j));
          p_72655_2_ = p_72655_2_.substring(j);
          i = p_72655_2_.length();
       } while(0 != i);
 
    }
 
-   public void stop() {
+   public void func_219591_b() {
       this.running = false;
       this.closeSocket();
-      super.stop();
+      super.func_219591_b();
    }
 
    private void closeSocket() {
       try {
-         this.client.close();
+         this.clientSocket.close();
       } catch (IOException ioexception) {
          LOGGER.warn("Failed to close socket", (Throwable)ioexception);
       }

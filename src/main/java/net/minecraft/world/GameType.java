@@ -14,12 +14,12 @@ public enum GameType {
    private final int id;
    private final String name;
 
-   private GameType(int p_i48711_3_, String p_i48711_4_) {
-      this.id = p_i48711_3_;
-      this.name = p_i48711_4_;
+   private GameType(int gameTypeId, String gameTypeName) {
+      this.id = gameTypeId;
+      this.name = gameTypeName;
    }
 
-   public int getId() {
+   public int getID() {
       return this.id;
    }
 
@@ -31,27 +31,27 @@ public enum GameType {
       return new TranslationTextComponent("gameMode." + this.name);
    }
 
-   public void updatePlayerAbilities(PlayerAbilities p_77147_1_) {
+   public void configurePlayerCapabilities(PlayerAbilities capabilities) {
       if (this == CREATIVE) {
-         p_77147_1_.mayfly = true;
-         p_77147_1_.instabuild = true;
-         p_77147_1_.invulnerable = true;
+         capabilities.allowFlying = true;
+         capabilities.isCreativeMode = true;
+         capabilities.disableDamage = true;
       } else if (this == SPECTATOR) {
-         p_77147_1_.mayfly = true;
-         p_77147_1_.instabuild = false;
-         p_77147_1_.invulnerable = true;
-         p_77147_1_.flying = true;
+         capabilities.allowFlying = true;
+         capabilities.isCreativeMode = false;
+         capabilities.disableDamage = true;
+         capabilities.isFlying = true;
       } else {
-         p_77147_1_.mayfly = false;
-         p_77147_1_.instabuild = false;
-         p_77147_1_.invulnerable = false;
-         p_77147_1_.flying = false;
+         capabilities.allowFlying = false;
+         capabilities.isCreativeMode = false;
+         capabilities.disableDamage = false;
+         capabilities.isFlying = false;
       }
 
-      p_77147_1_.mayBuild = !this.isBlockPlacingRestricted();
+      capabilities.allowEdit = !this.hasLimitedInteractions();
    }
 
-   public boolean isBlockPlacingRestricted() {
+   public boolean hasLimitedInteractions() {
       return this == ADVENTURE || this == SPECTATOR;
    }
 
@@ -59,35 +59,35 @@ public enum GameType {
       return this == CREATIVE;
    }
 
-   public boolean isSurvival() {
+   public boolean isSurvivalOrAdventure() {
       return this == SURVIVAL || this == ADVENTURE;
    }
 
-   public static GameType byId(int p_77146_0_) {
-      return byId(p_77146_0_, SURVIVAL);
+   public static GameType getByID(int idIn) {
+      return parseGameTypeWithDefault(idIn, SURVIVAL);
    }
 
-   public static GameType byId(int p_185329_0_, GameType p_185329_1_) {
+   public static GameType parseGameTypeWithDefault(int targetId, GameType fallback) {
       for(GameType gametype : values()) {
-         if (gametype.id == p_185329_0_) {
+         if (gametype.id == targetId) {
             return gametype;
          }
       }
 
-      return p_185329_1_;
+      return fallback;
    }
 
-   public static GameType byName(String p_77142_0_) {
-      return byName(p_77142_0_, SURVIVAL);
+   public static GameType getByName(String gamemodeName) {
+      return parseGameTypeWithDefault(gamemodeName, SURVIVAL);
    }
 
-   public static GameType byName(String p_185328_0_, GameType p_185328_1_) {
+   public static GameType parseGameTypeWithDefault(String targetName, GameType fallback) {
       for(GameType gametype : values()) {
-         if (gametype.name.equals(p_185328_0_)) {
+         if (gametype.name.equals(targetName)) {
             return gametype;
          }
       }
 
-      return p_185328_1_;
+      return fallback;
    }
 }

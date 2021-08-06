@@ -8,20 +8,20 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface ISound {
-   ResourceLocation getLocation();
+   ResourceLocation getSoundLocation();
 
    @Nullable
-   SoundEventAccessor resolve(SoundHandler p_184366_1_);
+   SoundEventAccessor createAccessor(SoundHandler handler);
 
    Sound getSound();
 
-   SoundCategory getSource();
+   SoundCategory getCategory();
 
-   boolean isLooping();
+   boolean canRepeat();
 
-   boolean isRelative();
+   boolean isGlobal();
 
-   int getDelay();
+   int getRepeatDelay();
 
    float getVolume();
 
@@ -33,13 +33,13 @@ public interface ISound {
 
    double getZ();
 
-   ISound.AttenuationType getAttenuation();
+   ISound.AttenuationType getAttenuationType();
 
-   default boolean canStartSilent() {
+   default boolean canBeSilent() {
       return false;
    }
 
-   default boolean canPlaySound() {
+   default boolean shouldPlaySound() {
       return true;
    }
 

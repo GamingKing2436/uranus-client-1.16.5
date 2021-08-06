@@ -24,42 +24,42 @@ public class ScreenShotHelper {
    private static final Logger LOGGER = LogManager.getLogger();
    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
 
-   public static void grab(File p_148260_0_, int p_148260_1_, int p_148260_2_, Framebuffer p_148260_3_, Consumer<ITextComponent> p_148260_4_) {
-      grab(p_148260_0_, (String)null, p_148260_1_, p_148260_2_, p_148260_3_, p_148260_4_);
+   public static void saveScreenshot(File gameDirectory, int width, int height, Framebuffer buffer, Consumer<ITextComponent> messageConsumer) {
+      saveScreenshot(gameDirectory, (String)null, width, height, buffer, messageConsumer);
    }
 
-   public static void grab(File p_148259_0_, @Nullable String p_148259_1_, int p_148259_2_, int p_148259_3_, Framebuffer p_148259_4_, Consumer<ITextComponent> p_148259_5_) {
+   public static void saveScreenshot(File gameDirectory, @Nullable String screenshotName, int width, int height, Framebuffer buffer, Consumer<ITextComponent> messageConsumer) {
       if (!RenderSystem.isOnRenderThread()) {
          RenderSystem.recordRenderCall(() -> {
-            _grab(p_148259_0_, p_148259_1_, p_148259_2_, p_148259_3_, p_148259_4_, p_148259_5_);
+            saveScreenshotRaw(gameDirectory, screenshotName, width, height, buffer, messageConsumer);
          });
       } else {
-         _grab(p_148259_0_, p_148259_1_, p_148259_2_, p_148259_3_, p_148259_4_, p_148259_5_);
+         saveScreenshotRaw(gameDirectory, screenshotName, width, height, buffer, messageConsumer);
       }
 
    }
 
-   private static void _grab(File p_228051_0_, @Nullable String p_228051_1_, int p_228051_2_, int p_228051_3_, Framebuffer p_228051_4_, Consumer<ITextComponent> p_228051_5_) {
-      NativeImage nativeimage = takeScreenshot(p_228051_2_, p_228051_3_, p_228051_4_);
-      File file1 = new File(p_228051_0_, "screenshots");
+   private static void saveScreenshotRaw(File gameDirectory, @Nullable String screenshotName, int width, int height, Framebuffer buffer, Consumer<ITextComponent> messageConsumer) {
+      NativeImage nativeimage = createScreenshot(width, height, buffer);
+      File file1 = new File(gameDirectory, "screenshots");
       file1.mkdir();
       File file2;
-      if (p_228051_1_ == null) {
-         file2 = getFile(file1);
+      if (screenshotName == null) {
+         file2 = getTimestampedPNGFileForDirectory(file1);
       } else {
-         file2 = new File(file1, p_228051_1_);
+         file2 = new File(file1, screenshotName);
       }
 
-      Util.ioPool().execute(() -> {
+      Util.getRenderingService().execute(() -> {
          try {
-            nativeimage.writeToFile(file2);
-            ITextComponent itextcomponent = (new StringTextComponent(file2.getName())).withStyle(TextFormatting.UNDERLINE).withStyle((p_238335_1_) -> {
-               return p_238335_1_.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, file2.getAbsolutePath()));
+            nativeimage.write(file2);
+            ITextComponent itextcomponent = (new StringTextComponent(file2.getName())).mergeStyle(TextFormatting.UNDERLINE).modifyStyle((p_238335_1_) -> {
+               return p_238335_1_.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, file2.getAbsolutePath()));
             });
-            p_228051_5_.accept(new TranslationTextComponent("screenshot.success", itextcomponent));
+            messageConsumer.accept(new TranslationTextComponent("screenshot.success", itextcomponent));
          } catch (Exception exception) {
             LOGGER.warn("Couldn't save screenshot", (Throwable)exception);
-            p_228051_5_.accept(new TranslationTextComponent("screenshot.failure", exception.getMessage()));
+            messageConsumer.accept(new TranslationTextComponent("screenshot.failure", exception.getMessage()));
          } finally {
             nativeimage.close();
          }
@@ -67,22 +67,22 @@ public class ScreenShotHelper {
       });
    }
 
-   public static NativeImage takeScreenshot(int p_198052_0_, int p_198052_1_, Framebuffer p_198052_2_) {
-      p_198052_0_ = p_198052_2_.width;
-      p_198052_1_ = p_198052_2_.height;
-      NativeImage nativeimage = new NativeImage(p_198052_0_, p_198052_1_, false);
-      RenderSystem.bindTexture(p_198052_2_.getColorTextureId());
-      nativeimage.downloadTexture(0, true);
-      nativeimage.flipY();
+   public static NativeImage createScreenshot(int width, int height, Framebuffer framebufferIn) {
+      width = framebufferIn.framebufferTextureWidth;
+      height = framebufferIn.framebufferTextureHeight;
+      NativeImage nativeimage = new NativeImage(width, height, false);
+      RenderSystem.bindTexture(framebufferIn.func_242996_f());
+      nativeimage.downloadFromTexture(0, true);
+      nativeimage.flip();
       return nativeimage;
    }
 
-   private static File getFile(File p_74290_0_) {
+   private static File getTimestampedPNGFileForDirectory(File gameDirectory) {
       String s = DATE_FORMAT.format(new Date());
       int i = 1;
 
       while(true) {
-         File file1 = new File(p_74290_0_, s + (i == 1 ? "" : "_" + i) + ".png");
+         File file1 = new File(gameDirectory, s + (i == 1 ? "" : "_" + i) + ".png");
          if (!file1.exists()) {
             return file1;
          }

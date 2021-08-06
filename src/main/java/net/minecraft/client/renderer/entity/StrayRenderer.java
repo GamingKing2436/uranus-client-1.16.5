@@ -8,14 +8,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class StrayRenderer extends SkeletonRenderer {
-   private static final ResourceLocation STRAY_SKELETON_LOCATION = new ResourceLocation("textures/entity/skeleton/stray.png");
+   private static final ResourceLocation STRAY_SKELETON_TEXTURES = new ResourceLocation("textures/entity/skeleton/stray.png");
 
-   public StrayRenderer(EntityRendererManager p_i47191_1_) {
-      super(p_i47191_1_);
+   public StrayRenderer(EntityRendererManager renderManagerIn) {
+      super(renderManagerIn);
       this.addLayer(new StayClothingLayer<>(this));
    }
 
-   public ResourceLocation getTextureLocation(AbstractSkeletonEntity p_110775_1_) {
-      return STRAY_SKELETON_LOCATION;
+   public ResourceLocation getEntityTexture(AbstractSkeletonEntity entity) {
+      return STRAY_SKELETON_TEXTURES;
    }
 }

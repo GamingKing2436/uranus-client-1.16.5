@@ -8,11 +8,11 @@ import net.minecraft.loot.LootContext;
 import net.minecraft.loot.LootFunctionType;
 
 public interface ILootFunction extends IParameterized, BiFunction<ItemStack, LootContext, ItemStack> {
-   LootFunctionType getType();
+   LootFunctionType getFunctionType();
 
-   static Consumer<ItemStack> decorate(BiFunction<ItemStack, LootContext, ItemStack> p_215858_0_, Consumer<ItemStack> p_215858_1_, LootContext p_215858_2_) {
+   static Consumer<ItemStack> func_215858_a(BiFunction<ItemStack, LootContext, ItemStack> p_215858_0_, Consumer<ItemStack> stackConsumer, LootContext context) {
       return (p_215857_3_) -> {
-         p_215858_1_.accept(p_215858_0_.apply(p_215857_3_, p_215858_2_));
+         stackConsumer.accept(p_215858_0_.apply(p_215857_3_, context));
       };
    }
 

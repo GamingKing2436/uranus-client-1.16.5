@@ -65,61 +65,61 @@ import org.apache.logging.log4j.Logger;
 
 public abstract class World implements IWorld, AutoCloseable {
    protected static final Logger LOGGER = LogManager.getLogger();
-   public static final Codec<RegistryKey<World>> RESOURCE_KEY_CODEC = ResourceLocation.CODEC.xmap(RegistryKey.elementKey(Registry.DIMENSION_REGISTRY), RegistryKey::location);
-   public static final RegistryKey<World> OVERWORLD = RegistryKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation("overworld"));
-   public static final RegistryKey<World> NETHER = RegistryKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation("the_nether"));
-   public static final RegistryKey<World> END = RegistryKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation("the_end"));
-   private static final Direction[] DIRECTIONS = Direction.values();
-   public final List<TileEntity> blockEntityList = Lists.newArrayList();
-   public final List<TileEntity> tickableBlockEntities = Lists.newArrayList();
-   protected final List<TileEntity> pendingBlockEntities = Lists.newArrayList();
-   protected final List<TileEntity> blockEntitiesToUnload = Lists.newArrayList();
-   private final Thread thread;
+   public static final Codec<RegistryKey<World>> CODEC = ResourceLocation.CODEC.xmap(RegistryKey.getKeyCreator(Registry.WORLD_KEY), RegistryKey::getLocation);
+   public static final RegistryKey<World> OVERWORLD = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, new ResourceLocation("overworld"));
+   public static final RegistryKey<World> THE_NETHER = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, new ResourceLocation("the_nether"));
+   public static final RegistryKey<World> THE_END = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, new ResourceLocation("the_end"));
+   private static final Direction[] FACING_VALUES = Direction.values();
+   public final List<TileEntity> loadedTileEntityList = Lists.newArrayList();
+   public final List<TileEntity> tickableTileEntities = Lists.newArrayList();
+   protected final List<TileEntity> addedTileEntityList = Lists.newArrayList();
+   protected final List<TileEntity> tileEntitiesToBeRemoved = Lists.newArrayList();
+   private final Thread mainThread;
    private final boolean isDebug;
-   private int skyDarken;
-   protected int randValue = (new Random()).nextInt();
-   protected final int addend = 1013904223;
-   protected float oRainLevel;
-   protected float rainLevel;
-   protected float oThunderLevel;
-   protected float thunderLevel;
-   public final Random random = new Random();
+   private int skylightSubtracted;
+   protected int updateLCG = (new Random()).nextInt();
+   protected final int DIST_HASH_MAGIC = 1013904223;
+   protected float prevRainingStrength;
+   protected float rainingStrength;
+   protected float prevThunderingStrength;
+   protected float thunderingStrength;
+   public final Random rand = new Random();
    private final DimensionType dimensionType;
-   protected final ISpawnWorldInfo levelData;
+   protected final ISpawnWorldInfo worldInfo;
    private final Supplier<IProfiler> profiler;
-   public final boolean isClientSide;
-   protected boolean updatingBlockEntities;
+   public final boolean isRemote;
+   protected boolean processingLoadedTiles;
    private final WorldBorder worldBorder;
    private final BiomeManager biomeManager;
    private final RegistryKey<World> dimension;
 
-   protected World(ISpawnWorldInfo p_i241925_1_, RegistryKey<World> p_i241925_2_, final DimensionType p_i241925_3_, Supplier<IProfiler> p_i241925_4_, boolean p_i241925_5_, boolean p_i241925_6_, long p_i241925_7_) {
-      this.profiler = p_i241925_4_;
-      this.levelData = p_i241925_1_;
-      this.dimensionType = p_i241925_3_;
-      this.dimension = p_i241925_2_;
-      this.isClientSide = p_i241925_5_;
-      if (p_i241925_3_.coordinateScale() != 1.0D) {
+   protected World(ISpawnWorldInfo worldInfo, RegistryKey<World> dimension, final DimensionType dimensionType, Supplier<IProfiler> profiler, boolean isRemote, boolean isDebug, long seed) {
+      this.profiler = profiler;
+      this.worldInfo = worldInfo;
+      this.dimensionType = dimensionType;
+      this.dimension = dimension;
+      this.isRemote = isRemote;
+      if (dimensionType.getCoordinateScale() != 1.0D) {
          this.worldBorder = new WorldBorder() {
             public double getCenterX() {
-               return super.getCenterX() / p_i241925_3_.coordinateScale();
+               return super.getCenterX() / dimensionType.getCoordinateScale();
             }
 
             public double getCenterZ() {
-               return super.getCenterZ() / p_i241925_3_.coordinateScale();
+               return super.getCenterZ() / dimensionType.getCoordinateScale();
             }
          };
       } else {
          this.worldBorder = new WorldBorder();
       }
 
-      this.thread = Thread.currentThread();
-      this.biomeManager = new BiomeManager(this, p_i241925_7_, p_i241925_3_.getBiomeZoomer());
-      this.isDebug = p_i241925_6_;
+      this.mainThread = Thread.currentThread();
+      this.biomeManager = new BiomeManager(this, seed, dimensionType.getMagnifier());
+      this.isDebug = isDebug;
    }
 
-   public boolean isClientSide() {
-      return this.isClientSide;
+   public boolean isRemote() {
+      return this.isRemote;
    }
 
    @Nullable
@@ -127,94 +127,94 @@ public abstract class World implements IWorld, AutoCloseable {
       return null;
    }
 
-   public static boolean isInWorldBounds(BlockPos p_175701_0_) {
-      return !isOutsideBuildHeight(p_175701_0_) && isInWorldBoundsHorizontal(p_175701_0_);
+   public static boolean isValid(BlockPos pos) {
+      return !isOutsideBuildHeight(pos) && isValidXZPosition(pos);
    }
 
-   public static boolean isInSpawnableBounds(BlockPos p_234935_0_) {
-      return !isOutsideSpawnableHeight(p_234935_0_.getY()) && isInWorldBoundsHorizontal(p_234935_0_);
+   public static boolean isInvalidPosition(BlockPos pos) {
+      return !isInvalidYPosition(pos.getY()) && isValidXZPosition(pos);
    }
 
-   private static boolean isInWorldBoundsHorizontal(BlockPos p_234934_0_) {
-      return p_234934_0_.getX() >= -30000000 && p_234934_0_.getZ() >= -30000000 && p_234934_0_.getX() < 30000000 && p_234934_0_.getZ() < 30000000;
+   private static boolean isValidXZPosition(BlockPos pos) {
+      return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000;
    }
 
-   private static boolean isOutsideSpawnableHeight(int p_234933_0_) {
-      return p_234933_0_ < -20000000 || p_234933_0_ >= 20000000;
+   private static boolean isInvalidYPosition(int y) {
+      return y < -20000000 || y >= 20000000;
    }
 
-   public static boolean isOutsideBuildHeight(BlockPos p_189509_0_) {
-      return isOutsideBuildHeight(p_189509_0_.getY());
+   public static boolean isOutsideBuildHeight(BlockPos pos) {
+      return isYOutOfBounds(pos.getY());
    }
 
-   public static boolean isOutsideBuildHeight(int p_217405_0_) {
-      return p_217405_0_ < 0 || p_217405_0_ >= 256;
+   public static boolean isYOutOfBounds(int y) {
+      return y < 0 || y >= 256;
    }
 
-   public Chunk getChunkAt(BlockPos p_175726_1_) {
-      return this.getChunk(p_175726_1_.getX() >> 4, p_175726_1_.getZ() >> 4);
+   public Chunk getChunkAt(BlockPos pos) {
+      return this.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
    }
 
-   public Chunk getChunk(int p_212866_1_, int p_212866_2_) {
-      return (Chunk)this.getChunk(p_212866_1_, p_212866_2_, ChunkStatus.FULL);
+   public Chunk getChunk(int chunkX, int chunkZ) {
+      return (Chunk)this.getChunk(chunkX, chunkZ, ChunkStatus.FULL);
    }
 
-   public IChunk getChunk(int p_217353_1_, int p_217353_2_, ChunkStatus p_217353_3_, boolean p_217353_4_) {
-      IChunk ichunk = this.getChunkSource().getChunk(p_217353_1_, p_217353_2_, p_217353_3_, p_217353_4_);
-      if (ichunk == null && p_217353_4_) {
+   public IChunk getChunk(int x, int z, ChunkStatus requiredStatus, boolean nonnull) {
+      IChunk ichunk = this.getChunkProvider().getChunk(x, z, requiredStatus, nonnull);
+      if (ichunk == null && nonnull) {
          throw new IllegalStateException("Should always be able to create a chunk!");
       } else {
          return ichunk;
       }
    }
 
-   public boolean setBlock(BlockPos p_180501_1_, BlockState p_180501_2_, int p_180501_3_) {
-      return this.setBlock(p_180501_1_, p_180501_2_, p_180501_3_, 512);
+   public boolean setBlockState(BlockPos pos, BlockState newState, int flags) {
+      return this.setBlockState(pos, newState, flags, 512);
    }
 
-   public boolean setBlock(BlockPos p_241211_1_, BlockState p_241211_2_, int p_241211_3_, int p_241211_4_) {
-      if (isOutsideBuildHeight(p_241211_1_)) {
+   public boolean setBlockState(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+      if (isOutsideBuildHeight(pos)) {
          return false;
-      } else if (!this.isClientSide && this.isDebug()) {
+      } else if (!this.isRemote && this.isDebug()) {
          return false;
       } else {
-         Chunk chunk = this.getChunkAt(p_241211_1_);
-         Block block = p_241211_2_.getBlock();
-         BlockState blockstate = chunk.setBlockState(p_241211_1_, p_241211_2_, (p_241211_3_ & 64) != 0);
+         Chunk chunk = this.getChunkAt(pos);
+         Block block = state.getBlock();
+         BlockState blockstate = chunk.setBlockState(pos, state, (flags & 64) != 0);
          if (blockstate == null) {
             return false;
          } else {
-            BlockState blockstate1 = this.getBlockState(p_241211_1_);
-            if ((p_241211_3_ & 128) == 0 && blockstate1 != blockstate && (blockstate1.getLightBlock(this, p_241211_1_) != blockstate.getLightBlock(this, p_241211_1_) || blockstate1.getLightEmission() != blockstate.getLightEmission() || blockstate1.useShapeForLightOcclusion() || blockstate.useShapeForLightOcclusion())) {
-               this.getProfiler().push("queueCheckLight");
-               this.getChunkSource().getLightEngine().checkBlock(p_241211_1_);
-               this.getProfiler().pop();
+            BlockState blockstate1 = this.getBlockState(pos);
+            if ((flags & 128) == 0 && blockstate1 != blockstate && (blockstate1.getOpacity(this, pos) != blockstate.getOpacity(this, pos) || blockstate1.getLightValue() != blockstate.getLightValue() || blockstate1.isTransparent() || blockstate.isTransparent())) {
+               this.getProfiler().startSection("queueCheckLight");
+               this.getChunkProvider().getLightManager().checkBlock(pos);
+               this.getProfiler().endSection();
             }
 
-            if (blockstate1 == p_241211_2_) {
+            if (blockstate1 == state) {
                if (blockstate != blockstate1) {
-                  this.setBlocksDirty(p_241211_1_, blockstate, blockstate1);
+                  this.markBlockRangeForRenderUpdate(pos, blockstate, blockstate1);
                }
 
-               if ((p_241211_3_ & 2) != 0 && (!this.isClientSide || (p_241211_3_ & 4) == 0) && (this.isClientSide || chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(ChunkHolder.LocationType.TICKING))) {
-                  this.sendBlockUpdated(p_241211_1_, blockstate, p_241211_2_, p_241211_3_);
+               if ((flags & 2) != 0 && (!this.isRemote || (flags & 4) == 0) && (this.isRemote || chunk.getLocationType() != null && chunk.getLocationType().isAtLeast(ChunkHolder.LocationType.TICKING))) {
+                  this.notifyBlockUpdate(pos, blockstate, state, flags);
                }
 
-               if ((p_241211_3_ & 1) != 0) {
-                  this.blockUpdated(p_241211_1_, blockstate.getBlock());
-                  if (!this.isClientSide && p_241211_2_.hasAnalogOutputSignal()) {
-                     this.updateNeighbourForOutputSignal(p_241211_1_, block);
+               if ((flags & 1) != 0) {
+                  this.func_230547_a_(pos, blockstate.getBlock());
+                  if (!this.isRemote && state.hasComparatorInputOverride()) {
+                     this.updateComparatorOutputLevel(pos, block);
                   }
                }
 
-               if ((p_241211_3_ & 16) == 0 && p_241211_4_ > 0) {
-                  int i = p_241211_3_ & -34;
-                  blockstate.updateIndirectNeighbourShapes(this, p_241211_1_, i, p_241211_4_ - 1);
-                  p_241211_2_.updateNeighbourShapes(this, p_241211_1_, i, p_241211_4_ - 1);
-                  p_241211_2_.updateIndirectNeighbourShapes(this, p_241211_1_, i, p_241211_4_ - 1);
+               if ((flags & 16) == 0 && recursionLeft > 0) {
+                  int i = flags & -34;
+                  blockstate.updateDiagonalNeighbors(this, pos, i, recursionLeft - 1);
+                  state.updateNeighbours(this, pos, i, recursionLeft - 1);
+                  state.updateDiagonalNeighbors(this, pos, i, recursionLeft - 1);
                }
 
-               this.onBlockStateChange(p_241211_1_, blockstate, blockstate1);
+               this.onBlockStateChange(pos, blockstate, blockstate1);
             }
 
             return true;
@@ -222,105 +222,105 @@ public abstract class World implements IWorld, AutoCloseable {
       }
    }
 
-   public void onBlockStateChange(BlockPos p_217393_1_, BlockState p_217393_2_, BlockState p_217393_3_) {
+   public void onBlockStateChange(BlockPos pos, BlockState blockStateIn, BlockState newState) {
    }
 
-   public boolean removeBlock(BlockPos p_217377_1_, boolean p_217377_2_) {
-      FluidState fluidstate = this.getFluidState(p_217377_1_);
-      return this.setBlock(p_217377_1_, fluidstate.createLegacyBlock(), 3 | (p_217377_2_ ? 64 : 0));
+   public boolean removeBlock(BlockPos pos, boolean isMoving) {
+      FluidState fluidstate = this.getFluidState(pos);
+      return this.setBlockState(pos, fluidstate.getBlockState(), 3 | (isMoving ? 64 : 0));
    }
 
-   public boolean destroyBlock(BlockPos p_241212_1_, boolean p_241212_2_, @Nullable Entity p_241212_3_, int p_241212_4_) {
-      BlockState blockstate = this.getBlockState(p_241212_1_);
+   public boolean destroyBlock(BlockPos pos, boolean dropBlock, @Nullable Entity entity, int recursionLeft) {
+      BlockState blockstate = this.getBlockState(pos);
       if (blockstate.isAir()) {
          return false;
       } else {
-         FluidState fluidstate = this.getFluidState(p_241212_1_);
+         FluidState fluidstate = this.getFluidState(pos);
          if (!(blockstate.getBlock() instanceof AbstractFireBlock)) {
-            this.levelEvent(2001, p_241212_1_, Block.getId(blockstate));
+            this.playEvent(2001, pos, Block.getStateId(blockstate));
          }
 
-         if (p_241212_2_) {
-            TileEntity tileentity = blockstate.getBlock().isEntityBlock() ? this.getBlockEntity(p_241212_1_) : null;
-            Block.dropResources(blockstate, this, p_241212_1_, tileentity, p_241212_3_, ItemStack.EMPTY);
+         if (dropBlock) {
+            TileEntity tileentity = blockstate.getBlock().isTileEntityProvider() ? this.getTileEntity(pos) : null;
+            Block.spawnDrops(blockstate, this, pos, tileentity, entity, ItemStack.EMPTY);
          }
 
-         return this.setBlock(p_241212_1_, fluidstate.createLegacyBlock(), 3, p_241212_4_);
+         return this.setBlockState(pos, fluidstate.getBlockState(), 3, recursionLeft);
       }
    }
 
-   public boolean setBlockAndUpdate(BlockPos p_175656_1_, BlockState p_175656_2_) {
-      return this.setBlock(p_175656_1_, p_175656_2_, 3);
+   public boolean setBlockState(BlockPos pos, BlockState state) {
+      return this.setBlockState(pos, state, 3);
    }
 
-   public abstract void sendBlockUpdated(BlockPos p_184138_1_, BlockState p_184138_2_, BlockState p_184138_3_, int p_184138_4_);
+   public abstract void notifyBlockUpdate(BlockPos pos, BlockState oldState, BlockState newState, int flags);
 
-   public void setBlocksDirty(BlockPos p_225319_1_, BlockState p_225319_2_, BlockState p_225319_3_) {
+   public void markBlockRangeForRenderUpdate(BlockPos blockPosIn, BlockState oldState, BlockState newState) {
    }
 
-   public void updateNeighborsAt(BlockPos p_195593_1_, Block p_195593_2_) {
-      this.neighborChanged(p_195593_1_.west(), p_195593_2_, p_195593_1_);
-      this.neighborChanged(p_195593_1_.east(), p_195593_2_, p_195593_1_);
-      this.neighborChanged(p_195593_1_.below(), p_195593_2_, p_195593_1_);
-      this.neighborChanged(p_195593_1_.above(), p_195593_2_, p_195593_1_);
-      this.neighborChanged(p_195593_1_.north(), p_195593_2_, p_195593_1_);
-      this.neighborChanged(p_195593_1_.south(), p_195593_2_, p_195593_1_);
+   public void notifyNeighborsOfStateChange(BlockPos pos, Block blockIn) {
+      this.neighborChanged(pos.west(), blockIn, pos);
+      this.neighborChanged(pos.east(), blockIn, pos);
+      this.neighborChanged(pos.down(), blockIn, pos);
+      this.neighborChanged(pos.up(), blockIn, pos);
+      this.neighborChanged(pos.north(), blockIn, pos);
+      this.neighborChanged(pos.south(), blockIn, pos);
    }
 
-   public void updateNeighborsAtExceptFromFacing(BlockPos p_175695_1_, Block p_175695_2_, Direction p_175695_3_) {
-      if (p_175695_3_ != Direction.WEST) {
-         this.neighborChanged(p_175695_1_.west(), p_175695_2_, p_175695_1_);
+   public void notifyNeighborsOfStateExcept(BlockPos pos, Block blockType, Direction skipSide) {
+      if (skipSide != Direction.WEST) {
+         this.neighborChanged(pos.west(), blockType, pos);
       }
 
-      if (p_175695_3_ != Direction.EAST) {
-         this.neighborChanged(p_175695_1_.east(), p_175695_2_, p_175695_1_);
+      if (skipSide != Direction.EAST) {
+         this.neighborChanged(pos.east(), blockType, pos);
       }
 
-      if (p_175695_3_ != Direction.DOWN) {
-         this.neighborChanged(p_175695_1_.below(), p_175695_2_, p_175695_1_);
+      if (skipSide != Direction.DOWN) {
+         this.neighborChanged(pos.down(), blockType, pos);
       }
 
-      if (p_175695_3_ != Direction.UP) {
-         this.neighborChanged(p_175695_1_.above(), p_175695_2_, p_175695_1_);
+      if (skipSide != Direction.UP) {
+         this.neighborChanged(pos.up(), blockType, pos);
       }
 
-      if (p_175695_3_ != Direction.NORTH) {
-         this.neighborChanged(p_175695_1_.north(), p_175695_2_, p_175695_1_);
+      if (skipSide != Direction.NORTH) {
+         this.neighborChanged(pos.north(), blockType, pos);
       }
 
-      if (p_175695_3_ != Direction.SOUTH) {
-         this.neighborChanged(p_175695_1_.south(), p_175695_2_, p_175695_1_);
+      if (skipSide != Direction.SOUTH) {
+         this.neighborChanged(pos.south(), blockType, pos);
       }
 
    }
 
-   public void neighborChanged(BlockPos p_190524_1_, Block p_190524_2_, BlockPos p_190524_3_) {
-      if (!this.isClientSide) {
-         BlockState blockstate = this.getBlockState(p_190524_1_);
+   public void neighborChanged(BlockPos pos, Block blockIn, BlockPos fromPos) {
+      if (!this.isRemote) {
+         BlockState blockstate = this.getBlockState(pos);
 
          try {
-            blockstate.neighborChanged(this, p_190524_1_, p_190524_2_, p_190524_3_, false);
+            blockstate.neighborChanged(this, pos, blockIn, fromPos, false);
          } catch (Throwable throwable) {
-            CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception while updating neighbours");
-            CrashReportCategory crashreportcategory = crashreport.addCategory("Block being updated");
-            crashreportcategory.setDetail("Source block type", () -> {
+            CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Exception while updating neighbours");
+            CrashReportCategory crashreportcategory = crashreport.makeCategory("Block being updated");
+            crashreportcategory.addDetail("Source block type", () -> {
                try {
-                  return String.format("ID #%s (%s // %s)", Registry.BLOCK.getKey(p_190524_2_), p_190524_2_.getDescriptionId(), p_190524_2_.getClass().getCanonicalName());
+                  return String.format("ID #%s (%s // %s)", Registry.BLOCK.getKey(blockIn), blockIn.getTranslationKey(), blockIn.getClass().getCanonicalName());
                } catch (Throwable throwable1) {
-                  return "ID #" + Registry.BLOCK.getKey(p_190524_2_);
+                  return "ID #" + Registry.BLOCK.getKey(blockIn);
                }
             });
-            CrashReportCategory.populateBlockDetails(crashreportcategory, p_190524_1_, blockstate);
+            CrashReportCategory.addBlockInfo(crashreportcategory, pos, blockstate);
             throw new ReportedException(crashreport);
          }
       }
    }
 
-   public int getHeight(Heightmap.Type p_201676_1_, int p_201676_2_, int p_201676_3_) {
+   public int getHeight(Heightmap.Type heightmapType, int x, int z) {
       int i;
-      if (p_201676_2_ >= -30000000 && p_201676_3_ >= -30000000 && p_201676_2_ < 30000000 && p_201676_3_ < 30000000) {
-         if (this.hasChunk(p_201676_2_ >> 4, p_201676_3_ >> 4)) {
-            i = this.getChunk(p_201676_2_ >> 4, p_201676_3_ >> 4).getHeight(p_201676_1_, p_201676_2_ & 15, p_201676_3_ & 15) + 1;
+      if (x >= -30000000 && z >= -30000000 && x < 30000000 && z < 30000000) {
+         if (this.chunkExists(x >> 4, z >> 4)) {
+            i = this.getChunk(x >> 4, z >> 4).getTopBlockY(heightmapType, x & 15, z & 15) + 1;
          } else {
             i = 0;
          }
@@ -331,92 +331,92 @@ public abstract class World implements IWorld, AutoCloseable {
       return i;
    }
 
-   public WorldLightManager getLightEngine() {
-      return this.getChunkSource().getLightEngine();
+   public WorldLightManager getLightManager() {
+      return this.getChunkProvider().getLightManager();
    }
 
-   public BlockState getBlockState(BlockPos p_180495_1_) {
-      if (isOutsideBuildHeight(p_180495_1_)) {
-         return Blocks.VOID_AIR.defaultBlockState();
+   public BlockState getBlockState(BlockPos pos) {
+      if (isOutsideBuildHeight(pos)) {
+         return Blocks.VOID_AIR.getDefaultState();
       } else {
-         Chunk chunk = this.getChunk(p_180495_1_.getX() >> 4, p_180495_1_.getZ() >> 4);
-         return chunk.getBlockState(p_180495_1_);
+         Chunk chunk = this.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
+         return chunk.getBlockState(pos);
       }
    }
 
-   public FluidState getFluidState(BlockPos p_204610_1_) {
-      if (isOutsideBuildHeight(p_204610_1_)) {
-         return Fluids.EMPTY.defaultFluidState();
+   public FluidState getFluidState(BlockPos pos) {
+      if (isOutsideBuildHeight(pos)) {
+         return Fluids.EMPTY.getDefaultState();
       } else {
-         Chunk chunk = this.getChunkAt(p_204610_1_);
-         return chunk.getFluidState(p_204610_1_);
+         Chunk chunk = this.getChunkAt(pos);
+         return chunk.getFluidState(pos);
       }
    }
 
-   public boolean isDay() {
-      return !this.dimensionType().hasFixedTime() && this.skyDarken < 4;
+   public boolean isDaytime() {
+      return !this.getDimensionType().doesFixedTimeExist() && this.skylightSubtracted < 4;
    }
 
-   public boolean isNight() {
-      return !this.dimensionType().hasFixedTime() && !this.isDay();
+   public boolean isNightTime() {
+      return !this.getDimensionType().doesFixedTimeExist() && !this.isDaytime();
    }
 
-   public void playSound(@Nullable PlayerEntity p_184133_1_, BlockPos p_184133_2_, SoundEvent p_184133_3_, SoundCategory p_184133_4_, float p_184133_5_, float p_184133_6_) {
-      this.playSound(p_184133_1_, (double)p_184133_2_.getX() + 0.5D, (double)p_184133_2_.getY() + 0.5D, (double)p_184133_2_.getZ() + 0.5D, p_184133_3_, p_184133_4_, p_184133_5_, p_184133_6_);
+   public void playSound(@Nullable PlayerEntity player, BlockPos pos, SoundEvent soundIn, SoundCategory category, float volume, float pitch) {
+      this.playSound(player, (double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, soundIn, category, volume, pitch);
    }
 
-   public abstract void playSound(@Nullable PlayerEntity p_184148_1_, double p_184148_2_, double p_184148_4_, double p_184148_6_, SoundEvent p_184148_8_, SoundCategory p_184148_9_, float p_184148_10_, float p_184148_11_);
+   public abstract void playSound(@Nullable PlayerEntity player, double x, double y, double z, SoundEvent soundIn, SoundCategory category, float volume, float pitch);
 
-   public abstract void playSound(@Nullable PlayerEntity p_217384_1_, Entity p_217384_2_, SoundEvent p_217384_3_, SoundCategory p_217384_4_, float p_217384_5_, float p_217384_6_);
+   public abstract void playMovingSound(@Nullable PlayerEntity playerIn, Entity entityIn, SoundEvent eventIn, SoundCategory categoryIn, float volume, float pitch);
 
-   public void playLocalSound(double p_184134_1_, double p_184134_3_, double p_184134_5_, SoundEvent p_184134_7_, SoundCategory p_184134_8_, float p_184134_9_, float p_184134_10_, boolean p_184134_11_) {
+   public void playSound(double x, double y, double z, SoundEvent soundIn, SoundCategory category, float volume, float pitch, boolean distanceDelay) {
    }
 
-   public void addParticle(IParticleData p_195594_1_, double p_195594_2_, double p_195594_4_, double p_195594_6_, double p_195594_8_, double p_195594_10_, double p_195594_12_) {
+   public void addParticle(IParticleData particleData, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void addParticle(IParticleData p_195590_1_, boolean p_195590_2_, double p_195590_3_, double p_195590_5_, double p_195590_7_, double p_195590_9_, double p_195590_11_, double p_195590_13_) {
+   public void addParticle(IParticleData particleData, boolean forceAlwaysRender, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
    }
 
-   public void addAlwaysVisibleParticle(IParticleData p_195589_1_, double p_195589_2_, double p_195589_4_, double p_195589_6_, double p_195589_8_, double p_195589_10_, double p_195589_12_) {
+   public void addOptionalParticle(IParticleData particleData, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
    }
 
-   public void addAlwaysVisibleParticle(IParticleData p_217404_1_, boolean p_217404_2_, double p_217404_3_, double p_217404_5_, double p_217404_7_, double p_217404_9_, double p_217404_11_, double p_217404_13_) {
+   public void addOptionalParticle(IParticleData particleData, boolean ignoreRange, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
    }
 
-   public float getSunAngle(float p_72929_1_) {
-      float f = this.getTimeOfDay(p_72929_1_);
+   public float getCelestialAngleRadians(float partialTicks) {
+      float f = this.func_242415_f(partialTicks);
       return f * ((float)Math.PI * 2F);
    }
 
-   public boolean addBlockEntity(TileEntity p_175700_1_) {
-      if (this.updatingBlockEntities) {
+   public boolean addTileEntity(TileEntity tile) {
+      if (this.processingLoadedTiles) {
          LOGGER.error("Adding block entity while ticking: {} @ {}", () -> {
-            return Registry.BLOCK_ENTITY_TYPE.getKey(p_175700_1_.getType());
-         }, p_175700_1_::getBlockPos);
+            return Registry.BLOCK_ENTITY_TYPE.getKey(tile.getType());
+         }, tile::getPos);
       }
 
-      boolean flag = this.blockEntityList.add(p_175700_1_);
-      if (flag && p_175700_1_ instanceof ITickableTileEntity) {
-         this.tickableBlockEntities.add(p_175700_1_);
+      boolean flag = this.loadedTileEntityList.add(tile);
+      if (flag && tile instanceof ITickableTileEntity) {
+         this.tickableTileEntities.add(tile);
       }
 
-      if (this.isClientSide) {
-         BlockPos blockpos = p_175700_1_.getBlockPos();
+      if (this.isRemote) {
+         BlockPos blockpos = tile.getPos();
          BlockState blockstate = this.getBlockState(blockpos);
-         this.sendBlockUpdated(blockpos, blockstate, blockstate, 2);
+         this.notifyBlockUpdate(blockpos, blockstate, blockstate, 2);
       }
 
       return flag;
    }
 
-   public void addAllPendingBlockEntities(Collection<TileEntity> p_147448_1_) {
-      if (this.updatingBlockEntities) {
-         this.pendingBlockEntities.addAll(p_147448_1_);
+   public void addTileEntities(Collection<TileEntity> tileEntityCollection) {
+      if (this.processingLoadedTiles) {
+         this.addedTileEntityList.addAll(tileEntityCollection);
       } else {
-         for(TileEntity tileentity : p_147448_1_) {
-            this.addBlockEntity(tileentity);
+         for(TileEntity tileentity : tileEntityCollection) {
+            this.addTileEntity(tileentity);
          }
       }
 
@@ -424,36 +424,36 @@ public abstract class World implements IWorld, AutoCloseable {
 
    public void tickBlockEntities() {
       IProfiler iprofiler = this.getProfiler();
-      iprofiler.push("blockEntities");
-      if (!this.blockEntitiesToUnload.isEmpty()) {
-         this.tickableBlockEntities.removeAll(this.blockEntitiesToUnload);
-         this.blockEntityList.removeAll(this.blockEntitiesToUnload);
-         this.blockEntitiesToUnload.clear();
+      iprofiler.startSection("blockEntities");
+      if (!this.tileEntitiesToBeRemoved.isEmpty()) {
+         this.tickableTileEntities.removeAll(this.tileEntitiesToBeRemoved);
+         this.loadedTileEntityList.removeAll(this.tileEntitiesToBeRemoved);
+         this.tileEntitiesToBeRemoved.clear();
       }
 
-      this.updatingBlockEntities = true;
-      Iterator<TileEntity> iterator = this.tickableBlockEntities.iterator();
+      this.processingLoadedTiles = true;
+      Iterator<TileEntity> iterator = this.tickableTileEntities.iterator();
 
       while(iterator.hasNext()) {
          TileEntity tileentity = iterator.next();
-         if (!tileentity.isRemoved() && tileentity.hasLevel()) {
-            BlockPos blockpos = tileentity.getBlockPos();
-            if (this.getChunkSource().isTickingChunk(blockpos) && this.getWorldBorder().isWithinBounds(blockpos)) {
+         if (!tileentity.isRemoved() && tileentity.hasWorld()) {
+            BlockPos blockpos = tileentity.getPos();
+            if (this.getChunkProvider().canTick(blockpos) && this.getWorldBorder().contains(blockpos)) {
                try {
-                  iprofiler.push(() -> {
-                     return String.valueOf((Object)TileEntityType.getKey(tileentity.getType()));
+                  iprofiler.startSection(() -> {
+                     return String.valueOf((Object)TileEntityType.getId(tileentity.getType()));
                   });
-                  if (tileentity.getType().isValid(this.getBlockState(blockpos).getBlock())) {
+                  if (tileentity.getType().isValidBlock(this.getBlockState(blockpos).getBlock())) {
                      ((ITickableTileEntity)tileentity).tick();
                   } else {
-                     tileentity.logInvalidState();
+                     tileentity.warnInvalidBlock();
                   }
 
-                  iprofiler.pop();
+                  iprofiler.endSection();
                } catch (Throwable throwable) {
-                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking block entity");
-                  CrashReportCategory crashreportcategory = crashreport.addCategory("Block entity being ticked");
-                  tileentity.fillCrashReportCategory(crashreportcategory);
+                  CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Ticking block entity");
+                  CrashReportCategory crashreportcategory = crashreport.makeCategory("Block entity being ticked");
+                  tileentity.addInfoToCrashReport(crashreportcategory);
                   throw new ReportedException(crashreport);
                }
             }
@@ -461,86 +461,86 @@ public abstract class World implements IWorld, AutoCloseable {
 
          if (tileentity.isRemoved()) {
             iterator.remove();
-            this.blockEntityList.remove(tileentity);
-            if (this.hasChunkAt(tileentity.getBlockPos())) {
-               this.getChunkAt(tileentity.getBlockPos()).removeBlockEntity(tileentity.getBlockPos());
+            this.loadedTileEntityList.remove(tileentity);
+            if (this.isBlockLoaded(tileentity.getPos())) {
+               this.getChunkAt(tileentity.getPos()).removeTileEntity(tileentity.getPos());
             }
          }
       }
 
-      this.updatingBlockEntities = false;
-      iprofiler.popPush("pendingBlockEntities");
-      if (!this.pendingBlockEntities.isEmpty()) {
-         for(int i = 0; i < this.pendingBlockEntities.size(); ++i) {
-            TileEntity tileentity1 = this.pendingBlockEntities.get(i);
+      this.processingLoadedTiles = false;
+      iprofiler.endStartSection("pendingBlockEntities");
+      if (!this.addedTileEntityList.isEmpty()) {
+         for(int i = 0; i < this.addedTileEntityList.size(); ++i) {
+            TileEntity tileentity1 = this.addedTileEntityList.get(i);
             if (!tileentity1.isRemoved()) {
-               if (!this.blockEntityList.contains(tileentity1)) {
-                  this.addBlockEntity(tileentity1);
+               if (!this.loadedTileEntityList.contains(tileentity1)) {
+                  this.addTileEntity(tileentity1);
                }
 
-               if (this.hasChunkAt(tileentity1.getBlockPos())) {
-                  Chunk chunk = this.getChunkAt(tileentity1.getBlockPos());
-                  BlockState blockstate = chunk.getBlockState(tileentity1.getBlockPos());
-                  chunk.setBlockEntity(tileentity1.getBlockPos(), tileentity1);
-                  this.sendBlockUpdated(tileentity1.getBlockPos(), blockstate, blockstate, 3);
+               if (this.isBlockLoaded(tileentity1.getPos())) {
+                  Chunk chunk = this.getChunkAt(tileentity1.getPos());
+                  BlockState blockstate = chunk.getBlockState(tileentity1.getPos());
+                  chunk.addTileEntity(tileentity1.getPos(), tileentity1);
+                  this.notifyBlockUpdate(tileentity1.getPos(), blockstate, blockstate, 3);
                }
             }
          }
 
-         this.pendingBlockEntities.clear();
+         this.addedTileEntityList.clear();
       }
 
-      iprofiler.pop();
+      iprofiler.endSection();
    }
 
-   public void guardEntityTick(Consumer<Entity> p_217390_1_, Entity p_217390_2_) {
+   public void guardEntityTick(Consumer<Entity> consumerEntity, Entity entityIn) {
       try {
-         p_217390_1_.accept(p_217390_2_);
+         consumerEntity.accept(entityIn);
       } catch (Throwable throwable) {
-         CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking entity");
-         CrashReportCategory crashreportcategory = crashreport.addCategory("Entity being ticked");
-         p_217390_2_.fillCrashReportCategory(crashreportcategory);
+         CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Ticking entity");
+         CrashReportCategory crashreportcategory = crashreport.makeCategory("Entity being ticked");
+         entityIn.fillCrashReport(crashreportcategory);
          throw new ReportedException(crashreport);
       }
    }
 
-   public Explosion explode(@Nullable Entity p_217385_1_, double p_217385_2_, double p_217385_4_, double p_217385_6_, float p_217385_8_, Explosion.Mode p_217385_9_) {
-      return this.explode(p_217385_1_, (DamageSource)null, (ExplosionContext)null, p_217385_2_, p_217385_4_, p_217385_6_, p_217385_8_, false, p_217385_9_);
+   public Explosion createExplosion(@Nullable Entity entityIn, double xIn, double yIn, double zIn, float explosionRadius, Explosion.Mode modeIn) {
+      return this.createExplosion(entityIn, (DamageSource)null, (ExplosionContext)null, xIn, yIn, zIn, explosionRadius, false, modeIn);
    }
 
-   public Explosion explode(@Nullable Entity p_217398_1_, double p_217398_2_, double p_217398_4_, double p_217398_6_, float p_217398_8_, boolean p_217398_9_, Explosion.Mode p_217398_10_) {
-      return this.explode(p_217398_1_, (DamageSource)null, (ExplosionContext)null, p_217398_2_, p_217398_4_, p_217398_6_, p_217398_8_, p_217398_9_, p_217398_10_);
+   public Explosion createExplosion(@Nullable Entity entityIn, double xIn, double yIn, double zIn, float explosionRadius, boolean causesFire, Explosion.Mode modeIn) {
+      return this.createExplosion(entityIn, (DamageSource)null, (ExplosionContext)null, xIn, yIn, zIn, explosionRadius, causesFire, modeIn);
    }
 
-   public Explosion explode(@Nullable Entity p_230546_1_, @Nullable DamageSource p_230546_2_, @Nullable ExplosionContext p_230546_3_, double p_230546_4_, double p_230546_6_, double p_230546_8_, float p_230546_10_, boolean p_230546_11_, Explosion.Mode p_230546_12_) {
-      Explosion explosion = new Explosion(this, p_230546_1_, p_230546_2_, p_230546_3_, p_230546_4_, p_230546_6_, p_230546_8_, p_230546_10_, p_230546_11_, p_230546_12_);
-      explosion.explode();
-      explosion.finalizeExplosion(true);
+   public Explosion createExplosion(@Nullable Entity exploder, @Nullable DamageSource damageSource, @Nullable ExplosionContext context, double x, double y, double z, float size, boolean causesFire, Explosion.Mode mode) {
+      Explosion explosion = new Explosion(this, exploder, damageSource, context, x, y, z, size, causesFire, mode);
+      explosion.doExplosionA();
+      explosion.doExplosionB(true);
       return explosion;
    }
 
-   public String gatherChunkSourceStats() {
-      return this.getChunkSource().gatherStats();
+   public String getProviderName() {
+      return this.getChunkProvider().makeString();
    }
 
    @Nullable
-   public TileEntity getBlockEntity(BlockPos p_175625_1_) {
-      if (isOutsideBuildHeight(p_175625_1_)) {
+   public TileEntity getTileEntity(BlockPos pos) {
+      if (isOutsideBuildHeight(pos)) {
          return null;
-      } else if (!this.isClientSide && Thread.currentThread() != this.thread) {
+      } else if (!this.isRemote && Thread.currentThread() != this.mainThread) {
          return null;
       } else {
          TileEntity tileentity = null;
-         if (this.updatingBlockEntities) {
-            tileentity = this.getPendingBlockEntityAt(p_175625_1_);
+         if (this.processingLoadedTiles) {
+            tileentity = this.getPendingTileEntityAt(pos);
          }
 
          if (tileentity == null) {
-            tileentity = this.getChunkAt(p_175625_1_).getBlockEntity(p_175625_1_, Chunk.CreateEntityType.IMMEDIATE);
+            tileentity = this.getChunkAt(pos).getTileEntity(pos, Chunk.CreateEntityType.IMMEDIATE);
          }
 
          if (tileentity == null) {
-            tileentity = this.getPendingBlockEntityAt(p_175625_1_);
+            tileentity = this.getPendingTileEntityAt(pos);
          }
 
          return tileentity;
@@ -548,10 +548,10 @@ public abstract class World implements IWorld, AutoCloseable {
    }
 
    @Nullable
-   private TileEntity getPendingBlockEntityAt(BlockPos p_189508_1_) {
-      for(int i = 0; i < this.pendingBlockEntities.size(); ++i) {
-         TileEntity tileentity = this.pendingBlockEntities.get(i);
-         if (!tileentity.isRemoved() && tileentity.getBlockPos().equals(p_189508_1_)) {
+   private TileEntity getPendingTileEntityAt(BlockPos pos) {
+      for(int i = 0; i < this.addedTileEntityList.size(); ++i) {
+         TileEntity tileentity = this.addedTileEntityList.get(i);
+         if (!tileentity.isRemoved() && tileentity.getPos().equals(pos)) {
             return tileentity;
          }
       }
@@ -559,109 +559,109 @@ public abstract class World implements IWorld, AutoCloseable {
       return null;
    }
 
-   public void setBlockEntity(BlockPos p_175690_1_, @Nullable TileEntity p_175690_2_) {
-      if (!isOutsideBuildHeight(p_175690_1_)) {
-         if (p_175690_2_ != null && !p_175690_2_.isRemoved()) {
-            if (this.updatingBlockEntities) {
-               p_175690_2_.setLevelAndPosition(this, p_175690_1_);
-               Iterator<TileEntity> iterator = this.pendingBlockEntities.iterator();
+   public void setTileEntity(BlockPos pos, @Nullable TileEntity tileEntityIn) {
+      if (!isOutsideBuildHeight(pos)) {
+         if (tileEntityIn != null && !tileEntityIn.isRemoved()) {
+            if (this.processingLoadedTiles) {
+               tileEntityIn.setWorldAndPos(this, pos);
+               Iterator<TileEntity> iterator = this.addedTileEntityList.iterator();
 
                while(iterator.hasNext()) {
                   TileEntity tileentity = iterator.next();
-                  if (tileentity.getBlockPos().equals(p_175690_1_)) {
-                     tileentity.setRemoved();
+                  if (tileentity.getPos().equals(pos)) {
+                     tileentity.remove();
                      iterator.remove();
                   }
                }
 
-               this.pendingBlockEntities.add(p_175690_2_);
+               this.addedTileEntityList.add(tileEntityIn);
             } else {
-               this.getChunkAt(p_175690_1_).setBlockEntity(p_175690_1_, p_175690_2_);
-               this.addBlockEntity(p_175690_2_);
+               this.getChunkAt(pos).addTileEntity(pos, tileEntityIn);
+               this.addTileEntity(tileEntityIn);
             }
          }
 
       }
    }
 
-   public void removeBlockEntity(BlockPos p_175713_1_) {
-      TileEntity tileentity = this.getBlockEntity(p_175713_1_);
-      if (tileentity != null && this.updatingBlockEntities) {
-         tileentity.setRemoved();
-         this.pendingBlockEntities.remove(tileentity);
+   public void removeTileEntity(BlockPos pos) {
+      TileEntity tileentity = this.getTileEntity(pos);
+      if (tileentity != null && this.processingLoadedTiles) {
+         tileentity.remove();
+         this.addedTileEntityList.remove(tileentity);
       } else {
          if (tileentity != null) {
-            this.pendingBlockEntities.remove(tileentity);
-            this.blockEntityList.remove(tileentity);
-            this.tickableBlockEntities.remove(tileentity);
+            this.addedTileEntityList.remove(tileentity);
+            this.loadedTileEntityList.remove(tileentity);
+            this.tickableTileEntities.remove(tileentity);
          }
 
-         this.getChunkAt(p_175713_1_).removeBlockEntity(p_175713_1_);
+         this.getChunkAt(pos).removeTileEntity(pos);
       }
 
    }
 
-   public boolean isLoaded(BlockPos p_195588_1_) {
-      return isOutsideBuildHeight(p_195588_1_) ? false : this.getChunkSource().hasChunk(p_195588_1_.getX() >> 4, p_195588_1_.getZ() >> 4);
+   public boolean isBlockPresent(BlockPos pos) {
+      return isOutsideBuildHeight(pos) ? false : this.getChunkProvider().chunkExists(pos.getX() >> 4, pos.getZ() >> 4);
    }
 
-   public boolean loadedAndEntityCanStandOnFace(BlockPos p_234929_1_, Entity p_234929_2_, Direction p_234929_3_) {
-      if (isOutsideBuildHeight(p_234929_1_)) {
+   public boolean isDirectionSolid(BlockPos pos, Entity entity, Direction direction) {
+      if (isOutsideBuildHeight(pos)) {
          return false;
       } else {
-         IChunk ichunk = this.getChunk(p_234929_1_.getX() >> 4, p_234929_1_.getZ() >> 4, ChunkStatus.FULL, false);
-         return ichunk == null ? false : ichunk.getBlockState(p_234929_1_).entityCanStandOnFace(this, p_234929_1_, p_234929_2_, p_234929_3_);
+         IChunk ichunk = this.getChunk(pos.getX() >> 4, pos.getZ() >> 4, ChunkStatus.FULL, false);
+         return ichunk == null ? false : ichunk.getBlockState(pos).isTopSolid(this, pos, entity, direction);
       }
    }
 
-   public boolean loadedAndEntityCanStandOn(BlockPos p_217400_1_, Entity p_217400_2_) {
-      return this.loadedAndEntityCanStandOnFace(p_217400_1_, p_217400_2_, Direction.UP);
+   public boolean isTopSolid(BlockPos pos, Entity entityIn) {
+      return this.isDirectionSolid(pos, entityIn, Direction.UP);
    }
 
-   public void updateSkyBrightness() {
-      double d0 = 1.0D - (double)(this.getRainLevel(1.0F) * 5.0F) / 16.0D;
-      double d1 = 1.0D - (double)(this.getThunderLevel(1.0F) * 5.0F) / 16.0D;
-      double d2 = 0.5D + 2.0D * MathHelper.clamp((double)MathHelper.cos(this.getTimeOfDay(1.0F) * ((float)Math.PI * 2F)), -0.25D, 0.25D);
-      this.skyDarken = (int)((1.0D - d2 * d0 * d1) * 11.0D);
+   public void calculateInitialSkylight() {
+      double d0 = 1.0D - (double)(this.getRainStrength(1.0F) * 5.0F) / 16.0D;
+      double d1 = 1.0D - (double)(this.getThunderStrength(1.0F) * 5.0F) / 16.0D;
+      double d2 = 0.5D + 2.0D * MathHelper.clamp((double)MathHelper.cos(this.func_242415_f(1.0F) * ((float)Math.PI * 2F)), -0.25D, 0.25D);
+      this.skylightSubtracted = (int)((1.0D - d2 * d0 * d1) * 11.0D);
    }
 
-   public void setSpawnSettings(boolean p_72891_1_, boolean p_72891_2_) {
-      this.getChunkSource().setSpawnSettings(p_72891_1_, p_72891_2_);
+   public void setAllowedSpawnTypes(boolean hostile, boolean peaceful) {
+      this.getChunkProvider().setAllowedSpawnTypes(hostile, peaceful);
    }
 
-   protected void prepareWeather() {
-      if (this.levelData.isRaining()) {
-         this.rainLevel = 1.0F;
-         if (this.levelData.isThundering()) {
-            this.thunderLevel = 1.0F;
+   protected void calculateInitialWeather() {
+      if (this.worldInfo.isRaining()) {
+         this.rainingStrength = 1.0F;
+         if (this.worldInfo.isThundering()) {
+            this.thunderingStrength = 1.0F;
          }
       }
 
    }
 
    public void close() throws IOException {
-      this.getChunkSource().close();
+      this.getChunkProvider().close();
    }
 
    @Nullable
-   public IBlockReader getChunkForCollisions(int p_225522_1_, int p_225522_2_) {
-      return this.getChunk(p_225522_1_, p_225522_2_, ChunkStatus.FULL, false);
+   public IBlockReader getBlockReader(int chunkX, int chunkZ) {
+      return this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
    }
 
-   public List<Entity> getEntities(@Nullable Entity p_175674_1_, AxisAlignedBB p_175674_2_, @Nullable Predicate<? super Entity> p_175674_3_) {
-      this.getProfiler().incrementCounter("getEntities");
+   public List<Entity> getEntitiesInAABBexcluding(@Nullable Entity entityIn, AxisAlignedBB boundingBox, @Nullable Predicate<? super Entity> predicate) {
+      this.getProfiler().func_230035_c_("getEntities");
       List<Entity> list = Lists.newArrayList();
-      int i = MathHelper.floor((p_175674_2_.minX - 2.0D) / 16.0D);
-      int j = MathHelper.floor((p_175674_2_.maxX + 2.0D) / 16.0D);
-      int k = MathHelper.floor((p_175674_2_.minZ - 2.0D) / 16.0D);
-      int l = MathHelper.floor((p_175674_2_.maxZ + 2.0D) / 16.0D);
-      AbstractChunkProvider abstractchunkprovider = this.getChunkSource();
+      int i = MathHelper.floor((boundingBox.minX - 2.0D) / 16.0D);
+      int j = MathHelper.floor((boundingBox.maxX + 2.0D) / 16.0D);
+      int k = MathHelper.floor((boundingBox.minZ - 2.0D) / 16.0D);
+      int l = MathHelper.floor((boundingBox.maxZ + 2.0D) / 16.0D);
+      AbstractChunkProvider abstractchunkprovider = this.getChunkProvider();
 
       for(int i1 = i; i1 <= j; ++i1) {
          for(int j1 = k; j1 <= l; ++j1) {
             Chunk chunk = abstractchunkprovider.getChunk(i1, j1, false);
             if (chunk != null) {
-               chunk.getEntities(p_175674_1_, p_175674_2_, list, p_175674_3_);
+               chunk.getEntitiesWithinAABBForEntity(entityIn, boundingBox, list, predicate);
             }
          }
       }
@@ -669,19 +669,19 @@ public abstract class World implements IWorld, AutoCloseable {
       return list;
    }
 
-   public <T extends Entity> List<T> getEntities(@Nullable EntityType<T> p_217394_1_, AxisAlignedBB p_217394_2_, Predicate<? super T> p_217394_3_) {
-      this.getProfiler().incrementCounter("getEntities");
-      int i = MathHelper.floor((p_217394_2_.minX - 2.0D) / 16.0D);
-      int j = MathHelper.ceil((p_217394_2_.maxX + 2.0D) / 16.0D);
-      int k = MathHelper.floor((p_217394_2_.minZ - 2.0D) / 16.0D);
-      int l = MathHelper.ceil((p_217394_2_.maxZ + 2.0D) / 16.0D);
+   public <T extends Entity> List<T> getEntitiesWithinAABB(@Nullable EntityType<T> type, AxisAlignedBB boundingBox, Predicate<? super T> predicate) {
+      this.getProfiler().func_230035_c_("getEntities");
+      int i = MathHelper.floor((boundingBox.minX - 2.0D) / 16.0D);
+      int j = MathHelper.ceil((boundingBox.maxX + 2.0D) / 16.0D);
+      int k = MathHelper.floor((boundingBox.minZ - 2.0D) / 16.0D);
+      int l = MathHelper.ceil((boundingBox.maxZ + 2.0D) / 16.0D);
       List<T> list = Lists.newArrayList();
 
       for(int i1 = i; i1 < j; ++i1) {
          for(int j1 = k; j1 < l; ++j1) {
-            Chunk chunk = this.getChunkSource().getChunk(i1, j1, false);
+            Chunk chunk = this.getChunkProvider().getChunk(i1, j1, false);
             if (chunk != null) {
-               chunk.getEntities(p_217394_1_, p_217394_2_, list, p_217394_3_);
+               chunk.getEntitiesWithinAABBForList(type, boundingBox, list, predicate);
             }
          }
       }
@@ -689,20 +689,20 @@ public abstract class World implements IWorld, AutoCloseable {
       return list;
    }
 
-   public <T extends Entity> List<T> getEntitiesOfClass(Class<? extends T> p_175647_1_, AxisAlignedBB p_175647_2_, @Nullable Predicate<? super T> p_175647_3_) {
-      this.getProfiler().incrementCounter("getEntities");
-      int i = MathHelper.floor((p_175647_2_.minX - 2.0D) / 16.0D);
-      int j = MathHelper.ceil((p_175647_2_.maxX + 2.0D) / 16.0D);
-      int k = MathHelper.floor((p_175647_2_.minZ - 2.0D) / 16.0D);
-      int l = MathHelper.ceil((p_175647_2_.maxZ + 2.0D) / 16.0D);
+   public <T extends Entity> List<T> getEntitiesWithinAABB(Class<? extends T> clazz, AxisAlignedBB aabb, @Nullable Predicate<? super T> filter) {
+      this.getProfiler().func_230035_c_("getEntities");
+      int i = MathHelper.floor((aabb.minX - 2.0D) / 16.0D);
+      int j = MathHelper.ceil((aabb.maxX + 2.0D) / 16.0D);
+      int k = MathHelper.floor((aabb.minZ - 2.0D) / 16.0D);
+      int l = MathHelper.ceil((aabb.maxZ + 2.0D) / 16.0D);
       List<T> list = Lists.newArrayList();
-      AbstractChunkProvider abstractchunkprovider = this.getChunkSource();
+      AbstractChunkProvider abstractchunkprovider = this.getChunkProvider();
 
       for(int i1 = i; i1 < j; ++i1) {
          for(int j1 = k; j1 < l; ++j1) {
             Chunk chunk = abstractchunkprovider.getChunk(i1, j1, false);
             if (chunk != null) {
-               chunk.getEntitiesOfClass(p_175647_1_, p_175647_2_, list, p_175647_3_);
+               chunk.getEntitiesOfTypeWithinAABB(clazz, aabb, list, filter);
             }
          }
       }
@@ -710,20 +710,20 @@ public abstract class World implements IWorld, AutoCloseable {
       return list;
    }
 
-   public <T extends Entity> List<T> getLoadedEntitiesOfClass(Class<? extends T> p_225316_1_, AxisAlignedBB p_225316_2_, @Nullable Predicate<? super T> p_225316_3_) {
-      this.getProfiler().incrementCounter("getLoadedEntities");
+   public <T extends Entity> List<T> getLoadedEntitiesWithinAABB(Class<? extends T> p_225316_1_, AxisAlignedBB p_225316_2_, @Nullable Predicate<? super T> p_225316_3_) {
+      this.getProfiler().func_230035_c_("getLoadedEntities");
       int i = MathHelper.floor((p_225316_2_.minX - 2.0D) / 16.0D);
       int j = MathHelper.ceil((p_225316_2_.maxX + 2.0D) / 16.0D);
       int k = MathHelper.floor((p_225316_2_.minZ - 2.0D) / 16.0D);
       int l = MathHelper.ceil((p_225316_2_.maxZ + 2.0D) / 16.0D);
       List<T> list = Lists.newArrayList();
-      AbstractChunkProvider abstractchunkprovider = this.getChunkSource();
+      AbstractChunkProvider abstractchunkprovider = this.getChunkProvider();
 
       for(int i1 = i; i1 < j; ++i1) {
          for(int j1 = k; j1 < l; ++j1) {
             Chunk chunk = abstractchunkprovider.getChunkNow(i1, j1);
             if (chunk != null) {
-               chunk.getEntitiesOfClass(p_225316_1_, p_225316_2_, list, p_225316_3_);
+               chunk.getEntitiesOfTypeWithinAABB(p_225316_1_, p_225316_2_, list, p_225316_3_);
             }
          }
       }
@@ -732,11 +732,11 @@ public abstract class World implements IWorld, AutoCloseable {
    }
 
    @Nullable
-   public abstract Entity getEntity(int p_73045_1_);
+   public abstract Entity getEntityByID(int id);
 
-   public void blockEntityChanged(BlockPos p_175646_1_, TileEntity p_175646_2_) {
-      if (this.hasChunkAt(p_175646_1_)) {
-         this.getChunkAt(p_175646_1_).markUnsaved();
+   public void markChunkDirty(BlockPos pos, TileEntity unusedTileEntity) {
+      if (this.isBlockLoaded(pos)) {
+         this.getChunkAt(pos).markDirty();
       }
 
    }
@@ -745,29 +745,29 @@ public abstract class World implements IWorld, AutoCloseable {
       return 63;
    }
 
-   public int getDirectSignalTo(BlockPos p_175676_1_) {
+   public int getStrongPower(BlockPos pos) {
       int i = 0;
-      i = Math.max(i, this.getDirectSignal(p_175676_1_.below(), Direction.DOWN));
+      i = Math.max(i, this.getStrongPower(pos.down(), Direction.DOWN));
       if (i >= 15) {
          return i;
       } else {
-         i = Math.max(i, this.getDirectSignal(p_175676_1_.above(), Direction.UP));
+         i = Math.max(i, this.getStrongPower(pos.up(), Direction.UP));
          if (i >= 15) {
             return i;
          } else {
-            i = Math.max(i, this.getDirectSignal(p_175676_1_.north(), Direction.NORTH));
+            i = Math.max(i, this.getStrongPower(pos.north(), Direction.NORTH));
             if (i >= 15) {
                return i;
             } else {
-               i = Math.max(i, this.getDirectSignal(p_175676_1_.south(), Direction.SOUTH));
+               i = Math.max(i, this.getStrongPower(pos.south(), Direction.SOUTH));
                if (i >= 15) {
                   return i;
                } else {
-                  i = Math.max(i, this.getDirectSignal(p_175676_1_.west(), Direction.WEST));
+                  i = Math.max(i, this.getStrongPower(pos.west(), Direction.WEST));
                   if (i >= 15) {
                      return i;
                   } else {
-                     i = Math.max(i, this.getDirectSignal(p_175676_1_.east(), Direction.EAST));
+                     i = Math.max(i, this.getStrongPower(pos.east(), Direction.EAST));
                      return i >= 15 ? i : i;
                   }
                }
@@ -776,37 +776,37 @@ public abstract class World implements IWorld, AutoCloseable {
       }
    }
 
-   public boolean hasSignal(BlockPos p_175709_1_, Direction p_175709_2_) {
-      return this.getSignal(p_175709_1_, p_175709_2_) > 0;
+   public boolean isSidePowered(BlockPos pos, Direction side) {
+      return this.getRedstonePower(pos, side) > 0;
    }
 
-   public int getSignal(BlockPos p_175651_1_, Direction p_175651_2_) {
-      BlockState blockstate = this.getBlockState(p_175651_1_);
-      int i = blockstate.getSignal(this, p_175651_1_, p_175651_2_);
-      return blockstate.isRedstoneConductor(this, p_175651_1_) ? Math.max(i, this.getDirectSignalTo(p_175651_1_)) : i;
+   public int getRedstonePower(BlockPos pos, Direction facing) {
+      BlockState blockstate = this.getBlockState(pos);
+      int i = blockstate.getWeakPower(this, pos, facing);
+      return blockstate.isNormalCube(this, pos) ? Math.max(i, this.getStrongPower(pos)) : i;
    }
 
-   public boolean hasNeighborSignal(BlockPos p_175640_1_) {
-      if (this.getSignal(p_175640_1_.below(), Direction.DOWN) > 0) {
+   public boolean isBlockPowered(BlockPos pos) {
+      if (this.getRedstonePower(pos.down(), Direction.DOWN) > 0) {
          return true;
-      } else if (this.getSignal(p_175640_1_.above(), Direction.UP) > 0) {
+      } else if (this.getRedstonePower(pos.up(), Direction.UP) > 0) {
          return true;
-      } else if (this.getSignal(p_175640_1_.north(), Direction.NORTH) > 0) {
+      } else if (this.getRedstonePower(pos.north(), Direction.NORTH) > 0) {
          return true;
-      } else if (this.getSignal(p_175640_1_.south(), Direction.SOUTH) > 0) {
+      } else if (this.getRedstonePower(pos.south(), Direction.SOUTH) > 0) {
          return true;
-      } else if (this.getSignal(p_175640_1_.west(), Direction.WEST) > 0) {
+      } else if (this.getRedstonePower(pos.west(), Direction.WEST) > 0) {
          return true;
       } else {
-         return this.getSignal(p_175640_1_.east(), Direction.EAST) > 0;
+         return this.getRedstonePower(pos.east(), Direction.EAST) > 0;
       }
    }
 
-   public int getBestNeighborSignal(BlockPos p_175687_1_) {
+   public int getRedstonePowerFromNeighbors(BlockPos pos) {
       int i = 0;
 
-      for(Direction direction : DIRECTIONS) {
-         int j = this.getSignal(p_175687_1_.relative(direction), direction);
+      for(Direction direction : FACING_VALUES) {
+         int j = this.getRedstonePower(pos.offset(direction), direction);
          if (j >= 15) {
             return 15;
          }
@@ -820,135 +820,135 @@ public abstract class World implements IWorld, AutoCloseable {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void disconnect() {
+   public void sendQuittingDisconnectingPacket() {
    }
 
    public long getGameTime() {
-      return this.levelData.getGameTime();
+      return this.worldInfo.getGameTime();
    }
 
    public long getDayTime() {
-      return this.levelData.getDayTime();
+      return this.worldInfo.getDayTime();
    }
 
-   public boolean mayInteract(PlayerEntity p_175660_1_, BlockPos p_175660_2_) {
+   public boolean isBlockModifiable(PlayerEntity player, BlockPos pos) {
       return true;
    }
 
-   public void broadcastEntityEvent(Entity p_72960_1_, byte p_72960_2_) {
+   public void setEntityState(Entity entityIn, byte state) {
    }
 
-   public void blockEvent(BlockPos p_175641_1_, Block p_175641_2_, int p_175641_3_, int p_175641_4_) {
-      this.getBlockState(p_175641_1_).triggerEvent(this, p_175641_1_, p_175641_3_, p_175641_4_);
+   public void addBlockEvent(BlockPos pos, Block blockIn, int eventID, int eventParam) {
+      this.getBlockState(pos).receiveBlockEvent(this, pos, eventID, eventParam);
    }
 
-   public IWorldInfo getLevelData() {
-      return this.levelData;
+   public IWorldInfo getWorldInfo() {
+      return this.worldInfo;
    }
 
    public GameRules getGameRules() {
-      return this.levelData.getGameRules();
+      return this.worldInfo.getGameRulesInstance();
    }
 
-   public float getThunderLevel(float p_72819_1_) {
-      return MathHelper.lerp(p_72819_1_, this.oThunderLevel, this.thunderLevel) * this.getRainLevel(p_72819_1_);
-   }
-
-   @OnlyIn(Dist.CLIENT)
-   public void setThunderLevel(float p_147442_1_) {
-      this.oThunderLevel = p_147442_1_;
-      this.thunderLevel = p_147442_1_;
-   }
-
-   public float getRainLevel(float p_72867_1_) {
-      return MathHelper.lerp(p_72867_1_, this.oRainLevel, this.rainLevel);
+   public float getThunderStrength(float delta) {
+      return MathHelper.lerp(delta, this.prevThunderingStrength, this.thunderingStrength) * this.getRainStrength(delta);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void setRainLevel(float p_72894_1_) {
-      this.oRainLevel = p_72894_1_;
-      this.rainLevel = p_72894_1_;
+   public void setThunderStrength(float strength) {
+      this.prevThunderingStrength = strength;
+      this.thunderingStrength = strength;
+   }
+
+   public float getRainStrength(float delta) {
+      return MathHelper.lerp(delta, this.prevRainingStrength, this.rainingStrength);
+   }
+
+   @OnlyIn(Dist.CLIENT)
+   public void setRainStrength(float strength) {
+      this.prevRainingStrength = strength;
+      this.rainingStrength = strength;
    }
 
    public boolean isThundering() {
-      if (this.dimensionType().hasSkyLight() && !this.dimensionType().hasCeiling()) {
-         return (double)this.getThunderLevel(1.0F) > 0.9D;
+      if (this.getDimensionType().hasSkyLight() && !this.getDimensionType().getHasCeiling()) {
+         return (double)this.getThunderStrength(1.0F) > 0.9D;
       } else {
          return false;
       }
    }
 
    public boolean isRaining() {
-      return (double)this.getRainLevel(1.0F) > 0.2D;
+      return (double)this.getRainStrength(1.0F) > 0.2D;
    }
 
-   public boolean isRainingAt(BlockPos p_175727_1_) {
+   public boolean isRainingAt(BlockPos position) {
       if (!this.isRaining()) {
          return false;
-      } else if (!this.canSeeSky(p_175727_1_)) {
+      } else if (!this.canSeeSky(position)) {
          return false;
-      } else if (this.getHeightmapPos(Heightmap.Type.MOTION_BLOCKING, p_175727_1_).getY() > p_175727_1_.getY()) {
+      } else if (this.getHeight(Heightmap.Type.MOTION_BLOCKING, position).getY() > position.getY()) {
          return false;
       } else {
-         Biome biome = this.getBiome(p_175727_1_);
-         return biome.getPrecipitation() == Biome.RainType.RAIN && biome.getTemperature(p_175727_1_) >= 0.15F;
+         Biome biome = this.getBiome(position);
+         return biome.getPrecipitation() == Biome.RainType.RAIN && biome.getTemperature(position) >= 0.15F;
       }
    }
 
-   public boolean isHumidAt(BlockPos p_180502_1_) {
-      Biome biome = this.getBiome(p_180502_1_);
-      return biome.isHumid();
+   public boolean isBlockinHighHumidity(BlockPos pos) {
+      Biome biome = this.getBiome(pos);
+      return biome.isHighHumidity();
    }
 
    @Nullable
-   public abstract MapData getMapData(String p_217406_1_);
+   public abstract MapData getMapData(String mapName);
 
-   public abstract void setMapData(MapData p_217399_1_);
+   public abstract void registerMapData(MapData mapDataIn);
 
-   public abstract int getFreeMapId();
+   public abstract int getNextMapId();
 
-   public void globalLevelEvent(int p_175669_1_, BlockPos p_175669_2_, int p_175669_3_) {
+   public void playBroadcastSound(int id, BlockPos pos, int data) {
    }
 
-   public CrashReportCategory fillReportDetails(CrashReport p_72914_1_) {
-      CrashReportCategory crashreportcategory = p_72914_1_.addCategory("Affected level", 1);
-      crashreportcategory.setDetail("All players", () -> {
-         return this.players().size() + " total; " + this.players();
+   public CrashReportCategory fillCrashReport(CrashReport report) {
+      CrashReportCategory crashreportcategory = report.makeCategoryDepth("Affected level", 1);
+      crashreportcategory.addDetail("All players", () -> {
+         return this.getPlayers().size() + " total; " + this.getPlayers();
       });
-      crashreportcategory.setDetail("Chunk stats", this.getChunkSource()::gatherStats);
-      crashreportcategory.setDetail("Level dimension", () -> {
-         return this.dimension().location().toString();
+      crashreportcategory.addDetail("Chunk stats", this.getChunkProvider()::makeString);
+      crashreportcategory.addDetail("Level dimension", () -> {
+         return this.getDimensionKey().getLocation().toString();
       });
 
       try {
-         this.levelData.fillCrashReportCategory(crashreportcategory);
+         this.worldInfo.addToCrashReport(crashreportcategory);
       } catch (Throwable throwable) {
-         crashreportcategory.setDetailError("Level Data Unobtainable", throwable);
+         crashreportcategory.addCrashSectionThrowable("Level Data Unobtainable", throwable);
       }
 
       return crashreportcategory;
    }
 
-   public abstract void destroyBlockProgress(int p_175715_1_, BlockPos p_175715_2_, int p_175715_3_);
+   public abstract void sendBlockBreakProgress(int breakerId, BlockPos pos, int progress);
 
    @OnlyIn(Dist.CLIENT)
-   public void createFireworks(double p_92088_1_, double p_92088_3_, double p_92088_5_, double p_92088_7_, double p_92088_9_, double p_92088_11_, @Nullable CompoundNBT p_92088_13_) {
+   public void makeFireworks(double x, double y, double z, double motionX, double motionY, double motionZ, @Nullable CompoundNBT compound) {
    }
 
    public abstract Scoreboard getScoreboard();
 
-   public void updateNeighbourForOutputSignal(BlockPos p_175666_1_, Block p_175666_2_) {
+   public void updateComparatorOutputLevel(BlockPos pos, Block blockIn) {
       for(Direction direction : Direction.Plane.HORIZONTAL) {
-         BlockPos blockpos = p_175666_1_.relative(direction);
-         if (this.hasChunkAt(blockpos)) {
+         BlockPos blockpos = pos.offset(direction);
+         if (this.isBlockLoaded(blockpos)) {
             BlockState blockstate = this.getBlockState(blockpos);
-            if (blockstate.is(Blocks.COMPARATOR)) {
-               blockstate.neighborChanged(this, blockpos, p_175666_2_, p_175666_1_, false);
-            } else if (blockstate.isRedstoneConductor(this, blockpos)) {
-               blockpos = blockpos.relative(direction);
+            if (blockstate.isIn(Blocks.COMPARATOR)) {
+               blockstate.neighborChanged(this, blockpos, blockIn, pos, false);
+            } else if (blockstate.isNormalCube(this, blockpos)) {
+               blockpos = blockpos.offset(direction);
                blockstate = this.getBlockState(blockpos);
-               if (blockstate.is(Blocks.COMPARATOR)) {
-                  blockstate.neighborChanged(this, blockpos, p_175666_2_, p_175666_1_, false);
+               if (blockstate.isIn(Blocks.COMPARATOR)) {
+                  blockstate.neighborChanged(this, blockpos, blockIn, pos, false);
                }
             }
          }
@@ -956,59 +956,59 @@ public abstract class World implements IWorld, AutoCloseable {
 
    }
 
-   public DifficultyInstance getCurrentDifficultyAt(BlockPos p_175649_1_) {
+   public DifficultyInstance getDifficultyForLocation(BlockPos pos) {
       long i = 0L;
       float f = 0.0F;
-      if (this.hasChunkAt(p_175649_1_)) {
-         f = this.getMoonBrightness();
-         i = this.getChunkAt(p_175649_1_).getInhabitedTime();
+      if (this.isBlockLoaded(pos)) {
+         f = this.getMoonFactor();
+         i = this.getChunkAt(pos).getInhabitedTime();
       }
 
       return new DifficultyInstance(this.getDifficulty(), this.getDayTime(), i, f);
    }
 
-   public int getSkyDarken() {
-      return this.skyDarken;
+   public int getSkylightSubtracted() {
+      return this.skylightSubtracted;
    }
 
-   public void setSkyFlashTime(int p_225605_1_) {
+   public void setTimeLightningFlash(int timeFlashIn) {
    }
 
    public WorldBorder getWorldBorder() {
       return this.worldBorder;
    }
 
-   public void sendPacketToServer(IPacket<?> p_184135_1_) {
+   public void sendPacketToServer(IPacket<?> packetIn) {
       throw new UnsupportedOperationException("Can't send packets to server unless you're on the client.");
    }
 
-   public DimensionType dimensionType() {
+   public DimensionType getDimensionType() {
       return this.dimensionType;
    }
 
-   public RegistryKey<World> dimension() {
+   public RegistryKey<World> getDimensionKey() {
       return this.dimension;
    }
 
    public Random getRandom() {
-      return this.random;
+      return this.rand;
    }
 
-   public boolean isStateAtPosition(BlockPos p_217375_1_, Predicate<BlockState> p_217375_2_) {
-      return p_217375_2_.test(this.getBlockState(p_217375_1_));
+   public boolean hasBlockState(BlockPos pos, Predicate<BlockState> state) {
+      return state.test(this.getBlockState(pos));
    }
 
    public abstract RecipeManager getRecipeManager();
 
-   public abstract ITagCollectionSupplier getTagManager();
+   public abstract ITagCollectionSupplier getTags();
 
-   public BlockPos getBlockRandomPos(int p_217383_1_, int p_217383_2_, int p_217383_3_, int p_217383_4_) {
-      this.randValue = this.randValue * 3 + 1013904223;
-      int i = this.randValue >> 2;
-      return new BlockPos(p_217383_1_ + (i & 15), p_217383_2_ + (i >> 16 & p_217383_4_), p_217383_3_ + (i >> 8 & 15));
+   public BlockPos getBlockRandomPos(int x, int y, int z, int yMask) {
+      this.updateLCG = this.updateLCG * 3 + 1013904223;
+      int i = this.updateLCG >> 2;
+      return new BlockPos(x + (i & 15), y + (i >> 16 & yMask), z + (i >> 8 & 15));
    }
 
-   public boolean noSave() {
+   public boolean isSaveDisabled() {
       return false;
    }
 
@@ -1016,7 +1016,7 @@ public abstract class World implements IWorld, AutoCloseable {
       return this.profiler.get();
    }
 
-   public Supplier<IProfiler> getProfilerSupplier() {
+   public Supplier<IProfiler> getWorldProfiler() {
       return this.profiler;
    }
 

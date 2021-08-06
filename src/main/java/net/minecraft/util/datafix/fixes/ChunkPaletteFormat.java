@@ -34,39 +34,39 @@ public class ChunkPaletteFormat extends DataFix {
    private static final Logger LOGGER = LogManager.getLogger();
    private static final BitSet VIRTUAL = new BitSet(256);
    private static final BitSet FIX = new BitSet(256);
-   private static final Dynamic<?> PUMPKIN = BlockStateFlatteningMap.parse("{Name:'minecraft:pumpkin'}");
-   private static final Dynamic<?> SNOWY_PODZOL = BlockStateFlatteningMap.parse("{Name:'minecraft:podzol',Properties:{snowy:'true'}}");
-   private static final Dynamic<?> SNOWY_GRASS = BlockStateFlatteningMap.parse("{Name:'minecraft:grass_block',Properties:{snowy:'true'}}");
-   private static final Dynamic<?> SNOWY_MYCELIUM = BlockStateFlatteningMap.parse("{Name:'minecraft:mycelium',Properties:{snowy:'true'}}");
-   private static final Dynamic<?> UPPER_SUNFLOWER = BlockStateFlatteningMap.parse("{Name:'minecraft:sunflower',Properties:{half:'upper'}}");
-   private static final Dynamic<?> UPPER_LILAC = BlockStateFlatteningMap.parse("{Name:'minecraft:lilac',Properties:{half:'upper'}}");
-   private static final Dynamic<?> UPPER_TALL_GRASS = BlockStateFlatteningMap.parse("{Name:'minecraft:tall_grass',Properties:{half:'upper'}}");
-   private static final Dynamic<?> UPPER_LARGE_FERN = BlockStateFlatteningMap.parse("{Name:'minecraft:large_fern',Properties:{half:'upper'}}");
-   private static final Dynamic<?> UPPER_ROSE_BUSH = BlockStateFlatteningMap.parse("{Name:'minecraft:rose_bush',Properties:{half:'upper'}}");
-   private static final Dynamic<?> UPPER_PEONY = BlockStateFlatteningMap.parse("{Name:'minecraft:peony',Properties:{half:'upper'}}");
+   private static final Dynamic<?> PUMPKIN = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:pumpkin'}");
+   private static final Dynamic<?> SNOWY_PODZOL = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:podzol',Properties:{snowy:'true'}}");
+   private static final Dynamic<?> SNOWY_GRASS = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:grass_block',Properties:{snowy:'true'}}");
+   private static final Dynamic<?> SNOWY_MYCELIUM = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:mycelium',Properties:{snowy:'true'}}");
+   private static final Dynamic<?> UPPER_SUNFLOWER = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:sunflower',Properties:{half:'upper'}}");
+   private static final Dynamic<?> UPPER_LILAC = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:lilac',Properties:{half:'upper'}}");
+   private static final Dynamic<?> UPPER_TALL_GRASS = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:tall_grass',Properties:{half:'upper'}}");
+   private static final Dynamic<?> UPPER_LARGE_FERN = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:large_fern',Properties:{half:'upper'}}");
+   private static final Dynamic<?> UPPER_ROSE_BUSH = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:rose_bush',Properties:{half:'upper'}}");
+   private static final Dynamic<?> UPPER_PEONY = BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:peony',Properties:{half:'upper'}}");
    private static final Map<String, Dynamic<?>> FLOWER_POT_MAP = DataFixUtils.make(Maps.newHashMap(), (p_209306_0_) -> {
-      p_209306_0_.put("minecraft:air0", BlockStateFlatteningMap.parse("{Name:'minecraft:flower_pot'}"));
-      p_209306_0_.put("minecraft:red_flower0", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_poppy'}"));
-      p_209306_0_.put("minecraft:red_flower1", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_blue_orchid'}"));
-      p_209306_0_.put("minecraft:red_flower2", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_allium'}"));
-      p_209306_0_.put("minecraft:red_flower3", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_azure_bluet'}"));
-      p_209306_0_.put("minecraft:red_flower4", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_red_tulip'}"));
-      p_209306_0_.put("minecraft:red_flower5", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_orange_tulip'}"));
-      p_209306_0_.put("minecraft:red_flower6", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_white_tulip'}"));
-      p_209306_0_.put("minecraft:red_flower7", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_pink_tulip'}"));
-      p_209306_0_.put("minecraft:red_flower8", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_oxeye_daisy'}"));
-      p_209306_0_.put("minecraft:yellow_flower0", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_dandelion'}"));
-      p_209306_0_.put("minecraft:sapling0", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_oak_sapling'}"));
-      p_209306_0_.put("minecraft:sapling1", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_spruce_sapling'}"));
-      p_209306_0_.put("minecraft:sapling2", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_birch_sapling'}"));
-      p_209306_0_.put("minecraft:sapling3", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_jungle_sapling'}"));
-      p_209306_0_.put("minecraft:sapling4", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_acacia_sapling'}"));
-      p_209306_0_.put("minecraft:sapling5", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_dark_oak_sapling'}"));
-      p_209306_0_.put("minecraft:red_mushroom0", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_red_mushroom'}"));
-      p_209306_0_.put("minecraft:brown_mushroom0", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_brown_mushroom'}"));
-      p_209306_0_.put("minecraft:deadbush0", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_dead_bush'}"));
-      p_209306_0_.put("minecraft:tallgrass2", BlockStateFlatteningMap.parse("{Name:'minecraft:potted_fern'}"));
-      p_209306_0_.put("minecraft:cactus0", BlockStateFlatteningMap.getTag(2240));
+      p_209306_0_.put("minecraft:air0", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:flower_pot'}"));
+      p_209306_0_.put("minecraft:red_flower0", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_poppy'}"));
+      p_209306_0_.put("minecraft:red_flower1", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_blue_orchid'}"));
+      p_209306_0_.put("minecraft:red_flower2", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_allium'}"));
+      p_209306_0_.put("minecraft:red_flower3", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_azure_bluet'}"));
+      p_209306_0_.put("minecraft:red_flower4", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_red_tulip'}"));
+      p_209306_0_.put("minecraft:red_flower5", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_orange_tulip'}"));
+      p_209306_0_.put("minecraft:red_flower6", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_white_tulip'}"));
+      p_209306_0_.put("minecraft:red_flower7", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_pink_tulip'}"));
+      p_209306_0_.put("minecraft:red_flower8", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_oxeye_daisy'}"));
+      p_209306_0_.put("minecraft:yellow_flower0", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_dandelion'}"));
+      p_209306_0_.put("minecraft:sapling0", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_oak_sapling'}"));
+      p_209306_0_.put("minecraft:sapling1", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_spruce_sapling'}"));
+      p_209306_0_.put("minecraft:sapling2", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_birch_sapling'}"));
+      p_209306_0_.put("minecraft:sapling3", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_jungle_sapling'}"));
+      p_209306_0_.put("minecraft:sapling4", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_acacia_sapling'}"));
+      p_209306_0_.put("minecraft:sapling5", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_dark_oak_sapling'}"));
+      p_209306_0_.put("minecraft:red_mushroom0", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_red_mushroom'}"));
+      p_209306_0_.put("minecraft:brown_mushroom0", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_brown_mushroom'}"));
+      p_209306_0_.put("minecraft:deadbush0", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_dead_bush'}"));
+      p_209306_0_.put("minecraft:tallgrass2", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:potted_fern'}"));
+      p_209306_0_.put("minecraft:cactus0", BlockStateFlatteningMap.getFixedNBTForID(2240));
    });
    private static final Map<String, Dynamic<?>> SKULL_MAP = DataFixUtils.make(Maps.newHashMap(), (p_209308_0_) -> {
       mapSkull(p_209308_0_, 0, "skeleton", "skull");
@@ -87,8 +87,8 @@ public class ChunkPaletteFormat extends DataFix {
    });
    private static final Map<String, Dynamic<?>> NOTE_BLOCK_MAP = DataFixUtils.make(Maps.newHashMap(), (p_209302_0_) -> {
       for(int i = 0; i < 26; ++i) {
-         p_209302_0_.put("true" + i, BlockStateFlatteningMap.parse("{Name:'minecraft:note_block',Properties:{powered:'true',note:'" + i + "'}}"));
-         p_209302_0_.put("false" + i, BlockStateFlatteningMap.parse("{Name:'minecraft:note_block',Properties:{powered:'false',note:'" + i + "'}}"));
+         p_209302_0_.put("true" + i, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:note_block',Properties:{powered:'true',note:'" + i + "'}}"));
+         p_209302_0_.put("false" + i, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:note_block',Properties:{powered:'false',note:'" + i + "'}}"));
       }
 
    });
@@ -126,115 +126,115 @@ public class ChunkPaletteFormat extends DataFix {
       }
 
    });
-   private static final Dynamic<?> AIR = BlockStateFlatteningMap.getTag(0);
+   private static final Dynamic<?> AIR = BlockStateFlatteningMap.getFixedNBTForID(0);
 
-   public ChunkPaletteFormat(Schema p_i49676_1_, boolean p_i49676_2_) {
-      super(p_i49676_1_, p_i49676_2_);
+   public ChunkPaletteFormat(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    private static void mapSkull(Map<String, Dynamic<?>> p_209300_0_, int p_209300_1_, String p_209300_2_, String p_209300_3_) {
-      p_209300_0_.put(p_209300_1_ + "north", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209300_2_ + "_wall_" + p_209300_3_ + "',Properties:{facing:'north'}}"));
-      p_209300_0_.put(p_209300_1_ + "east", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209300_2_ + "_wall_" + p_209300_3_ + "',Properties:{facing:'east'}}"));
-      p_209300_0_.put(p_209300_1_ + "south", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209300_2_ + "_wall_" + p_209300_3_ + "',Properties:{facing:'south'}}"));
-      p_209300_0_.put(p_209300_1_ + "west", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209300_2_ + "_wall_" + p_209300_3_ + "',Properties:{facing:'west'}}"));
+      p_209300_0_.put(p_209300_1_ + "north", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209300_2_ + "_wall_" + p_209300_3_ + "',Properties:{facing:'north'}}"));
+      p_209300_0_.put(p_209300_1_ + "east", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209300_2_ + "_wall_" + p_209300_3_ + "',Properties:{facing:'east'}}"));
+      p_209300_0_.put(p_209300_1_ + "south", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209300_2_ + "_wall_" + p_209300_3_ + "',Properties:{facing:'south'}}"));
+      p_209300_0_.put(p_209300_1_ + "west", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209300_2_ + "_wall_" + p_209300_3_ + "',Properties:{facing:'west'}}"));
 
       for(int i = 0; i < 16; ++i) {
-         p_209300_0_.put(p_209300_1_ + "" + i, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209300_2_ + "_" + p_209300_3_ + "',Properties:{rotation:'" + i + "'}}"));
+         p_209300_0_.put(p_209300_1_ + "" + i, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209300_2_ + "_" + p_209300_3_ + "',Properties:{rotation:'" + i + "'}}"));
       }
 
    }
 
    private static void mapDoor(Map<String, Dynamic<?>> p_209301_0_, String p_209301_1_, int p_209301_2_) {
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerleftfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'left',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerleftfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'left',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerlefttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'left',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerlefttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'left',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerrightfalsefalse", BlockStateFlatteningMap.getTag(p_209301_2_));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerrightfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'right',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerrighttruefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 4));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerrighttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'right',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperleftfalsefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 8));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperleftfalsetrue", BlockStateFlatteningMap.getTag(p_209301_2_ + 10));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperlefttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'upper',hinge:'left',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperlefttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'upper',hinge:'left',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperrightfalsefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 9));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperrightfalsetrue", BlockStateFlatteningMap.getTag(p_209301_2_ + 11));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperrighttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'upper',hinge:'right',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperrighttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'upper',hinge:'right',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerleftfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'left',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerleftfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'left',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerlefttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'left',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerlefttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'left',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerrightfalsefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 3));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerrightfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'right',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerrighttruefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 7));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerrighttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'right',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperleftfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'left',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperleftfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'left',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperlefttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'left',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperlefttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'left',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperrightfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'right',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperrightfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'right',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperrighttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'right',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperrighttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'right',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerleftfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'left',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerleftfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'left',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerlefttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'left',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerlefttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'left',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerrightfalsefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 1));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerrightfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'right',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerrighttruefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 5));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerrighttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'right',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperleftfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'left',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperleftfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'left',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperlefttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'left',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperlefttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'left',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperrightfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'right',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperrightfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'right',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperrighttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'right',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperrighttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'right',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerleftfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'left',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerleftfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'left',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerlefttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'left',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerlefttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'left',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerrightfalsefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 2));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerrightfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'right',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerrighttruefalse", BlockStateFlatteningMap.getTag(p_209301_2_ + 6));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerrighttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'right',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperleftfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'left',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperleftfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'left',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperlefttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'left',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperlefttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'left',open:'true',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperrightfalsefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'right',open:'false',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperrightfalsetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'right',open:'false',powered:'true'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperrighttruefalse", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'right',open:'true',powered:'false'}}"));
-      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperrighttruetrue", BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'right',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerleftfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'left',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerleftfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'left',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerlefttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'left',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerlefttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'left',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerrightfalsefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerrightfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'right',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerrighttruefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 4));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastlowerrighttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'lower',hinge:'right',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperleftfalsefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 8));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperleftfalsetrue", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 10));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperlefttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'upper',hinge:'left',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperlefttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'upper',hinge:'left',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperrightfalsefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 9));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperrightfalsetrue", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 11));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperrighttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'upper',hinge:'right',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "eastupperrighttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'east',half:'upper',hinge:'right',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerleftfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'left',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerleftfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'left',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerlefttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'left',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerlefttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'left',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerrightfalsefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 3));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerrightfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'right',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerrighttruefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 7));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northlowerrighttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'lower',hinge:'right',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperleftfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'left',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperleftfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'left',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperlefttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'left',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperlefttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'left',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperrightfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'right',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperrightfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'right',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperrighttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'right',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "northupperrighttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'north',half:'upper',hinge:'right',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerleftfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'left',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerleftfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'left',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerlefttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'left',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerlefttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'left',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerrightfalsefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 1));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerrightfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'right',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerrighttruefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 5));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southlowerrighttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'lower',hinge:'right',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperleftfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'left',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperleftfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'left',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperlefttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'left',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperlefttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'left',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperrightfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'right',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperrightfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'right',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperrighttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'right',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "southupperrighttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'south',half:'upper',hinge:'right',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerleftfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'left',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerleftfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'left',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerlefttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'left',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerlefttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'left',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerrightfalsefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 2));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerrightfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'right',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerrighttruefalse", BlockStateFlatteningMap.getFixedNBTForID(p_209301_2_ + 6));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westlowerrighttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'lower',hinge:'right',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperleftfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'left',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperleftfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'left',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperlefttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'left',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperlefttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'left',open:'true',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperrightfalsefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'right',open:'false',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperrightfalsetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'right',open:'false',powered:'true'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperrighttruefalse", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'right',open:'true',powered:'false'}}"));
+      p_209301_0_.put("minecraft:" + p_209301_1_ + "westupperrighttruetrue", BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209301_1_ + "',Properties:{facing:'west',half:'upper',hinge:'right',open:'true',powered:'true'}}"));
    }
 
    private static void addBeds(Map<String, Dynamic<?>> p_209307_0_, int p_209307_1_, String p_209307_2_) {
-      p_209307_0_.put("southfalsefoot" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'south',occupied:'false',part:'foot'}}"));
-      p_209307_0_.put("westfalsefoot" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'west',occupied:'false',part:'foot'}}"));
-      p_209307_0_.put("northfalsefoot" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'north',occupied:'false',part:'foot'}}"));
-      p_209307_0_.put("eastfalsefoot" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'east',occupied:'false',part:'foot'}}"));
-      p_209307_0_.put("southfalsehead" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'south',occupied:'false',part:'head'}}"));
-      p_209307_0_.put("westfalsehead" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'west',occupied:'false',part:'head'}}"));
-      p_209307_0_.put("northfalsehead" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'north',occupied:'false',part:'head'}}"));
-      p_209307_0_.put("eastfalsehead" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'east',occupied:'false',part:'head'}}"));
-      p_209307_0_.put("southtruehead" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'south',occupied:'true',part:'head'}}"));
-      p_209307_0_.put("westtruehead" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'west',occupied:'true',part:'head'}}"));
-      p_209307_0_.put("northtruehead" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'north',occupied:'true',part:'head'}}"));
-      p_209307_0_.put("easttruehead" + p_209307_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'east',occupied:'true',part:'head'}}"));
+      p_209307_0_.put("southfalsefoot" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'south',occupied:'false',part:'foot'}}"));
+      p_209307_0_.put("westfalsefoot" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'west',occupied:'false',part:'foot'}}"));
+      p_209307_0_.put("northfalsefoot" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'north',occupied:'false',part:'foot'}}"));
+      p_209307_0_.put("eastfalsefoot" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'east',occupied:'false',part:'foot'}}"));
+      p_209307_0_.put("southfalsehead" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'south',occupied:'false',part:'head'}}"));
+      p_209307_0_.put("westfalsehead" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'west',occupied:'false',part:'head'}}"));
+      p_209307_0_.put("northfalsehead" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'north',occupied:'false',part:'head'}}"));
+      p_209307_0_.put("eastfalsehead" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'east',occupied:'false',part:'head'}}"));
+      p_209307_0_.put("southtruehead" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'south',occupied:'true',part:'head'}}"));
+      p_209307_0_.put("westtruehead" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'west',occupied:'true',part:'head'}}"));
+      p_209307_0_.put("northtruehead" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'north',occupied:'true',part:'head'}}"));
+      p_209307_0_.put("easttruehead" + p_209307_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209307_2_ + "_bed',Properties:{facing:'east',occupied:'true',part:'head'}}"));
    }
 
    private static void addBanners(Map<String, Dynamic<?>> p_209297_0_, int p_209297_1_, String p_209297_2_) {
       for(int i = 0; i < 16; ++i) {
-         p_209297_0_.put("" + i + "_" + p_209297_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209297_2_ + "_banner',Properties:{rotation:'" + i + "'}}"));
+         p_209297_0_.put("" + i + "_" + p_209297_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209297_2_ + "_banner',Properties:{rotation:'" + i + "'}}"));
       }
 
-      p_209297_0_.put("north_" + p_209297_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209297_2_ + "_wall_banner',Properties:{facing:'north'}}"));
-      p_209297_0_.put("south_" + p_209297_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209297_2_ + "_wall_banner',Properties:{facing:'south'}}"));
-      p_209297_0_.put("west_" + p_209297_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209297_2_ + "_wall_banner',Properties:{facing:'west'}}"));
-      p_209297_0_.put("east_" + p_209297_1_, BlockStateFlatteningMap.parse("{Name:'minecraft:" + p_209297_2_ + "_wall_banner',Properties:{facing:'east'}}"));
+      p_209297_0_.put("north_" + p_209297_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209297_2_ + "_wall_banner',Properties:{facing:'north'}}"));
+      p_209297_0_.put("south_" + p_209297_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209297_2_ + "_wall_banner',Properties:{facing:'south'}}"));
+      p_209297_0_.put("west_" + p_209297_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209297_2_ + "_wall_banner',Properties:{facing:'west'}}"));
+      p_209297_0_.put("east_" + p_209297_1_, BlockStateFlatteningMap.makeDynamic("{Name:'minecraft:" + p_209297_2_ + "_wall_banner',Properties:{facing:'east'}}"));
    }
 
    public static String getName(Dynamic<?> p_209726_0_) {
@@ -366,9 +366,9 @@ public class ChunkPaletteFormat extends DataFix {
       private final ChunkPaletteFormat.Direction.Axis axis;
       private final ChunkPaletteFormat.Direction.Offset axisDirection;
 
-      private Direction(ChunkPaletteFormat.Direction.Offset p_i49576_3_, ChunkPaletteFormat.Direction.Axis p_i49576_4_) {
-         this.axis = p_i49576_4_;
-         this.axisDirection = p_i49576_3_;
+      private Direction(ChunkPaletteFormat.Direction.Offset axisIn, ChunkPaletteFormat.Direction.Axis directionIn) {
+         this.axis = directionIn;
+         this.axisDirection = axisIn;
       }
 
       public ChunkPaletteFormat.Direction.Offset getAxisDirection() {
@@ -449,7 +449,7 @@ public class ChunkPaletteFormat extends DataFix {
 
       public Dynamic<?> getBlock(int p_210056_1_) {
          if (p_210056_1_ >= 0 && p_210056_1_ <= 4095) {
-            Dynamic<?> dynamic = this.palette.byId(this.buffer[p_210056_1_]);
+            Dynamic<?> dynamic = this.palette.getByValue(this.buffer[p_210056_1_]);
             return dynamic == null ? ChunkPaletteFormat.AIR : dynamic;
          } else {
             return ChunkPaletteFormat.AIR;
@@ -497,7 +497,7 @@ public class ChunkPaletteFormat extends DataFix {
                   }
                }
 
-               this.setBlock(i, BlockStateFlatteningMap.getTag(i1));
+               this.setBlock(i, BlockStateFlatteningMap.getFixedNBTForID(i1));
             }
 
             return p_199207_1_;
@@ -524,10 +524,10 @@ public class ChunkPaletteFormat extends DataFix {
             ArbitraryBitLengthIntArray arbitrarybitlengthintarray = new ArbitraryBitLengthIntArray(i, 4096);
 
             for(int j = 0; j < this.buffer.length; ++j) {
-               arbitrarybitlengthintarray.set(j, this.buffer[j]);
+               arbitrarybitlengthintarray.func_233049_a_(j, this.buffer[j]);
             }
 
-            dynamic = dynamic.set("BlockStates", dynamic.createLongList(Arrays.stream(arbitrarybitlengthintarray.getRaw())));
+            dynamic = dynamic.set("BlockStates", dynamic.createLongList(Arrays.stream(arbitrarybitlengthintarray.func_233047_a_())));
             dynamic = dynamic.remove("Blocks");
             dynamic = dynamic.remove("Data");
             return dynamic.remove("Add");
@@ -541,7 +541,7 @@ public class ChunkPaletteFormat extends DataFix {
       private final Dynamic<?> level;
       private final int x;
       private final int z;
-      private final Int2ObjectMap<Dynamic<?>> blockEntities = new Int2ObjectLinkedOpenHashMap<>(16);
+      private final Int2ObjectMap<Dynamic<?>> tileEntities = new Int2ObjectLinkedOpenHashMap<>(16);
 
       public UpgradeChunk(Dynamic<?> p_i231449_1_) {
          this.level = p_i231449_1_;
@@ -553,7 +553,7 @@ public class ChunkPaletteFormat extends DataFix {
                int i4 = p_233150_1_.get("y").asInt(0);
                int j4 = p_233150_1_.get("z").asInt(0) - this.z & 15;
                int k4 = i4 << 8 | j4 << 4 | l3;
-               if (this.blockEntities.put(k4, p_233150_1_) != null) {
+               if (this.tileEntities.put(k4, p_233150_1_) != null) {
                   ChunkPaletteFormat.LOGGER.warn("In chunk: {}x{} found a duplicate block entity at position: [{}, {}, {}]", this.x, this.z, l3, i4, j4);
                }
 
@@ -600,7 +600,7 @@ public class ChunkPaletteFormat extends DataFix {
                   case 25:
                      for(int k2 : entry.getValue()) {
                         k2 = k2 | i;
-                        Dynamic<?> dynamic9 = this.removeBlockEntity(k2);
+                        Dynamic<?> dynamic9 = this.removeTileEntity(k2);
                         if (dynamic9 != null) {
                            String s10 = Boolean.toString(dynamic9.get("powered").asBoolean(false)) + (byte)Math.min(Math.max(dynamic9.get("note").asInt(0), 0), 24);
                            this.setBlock(k2, ChunkPaletteFormat.NOTE_BLOCK_MAP.getOrDefault(s10, ChunkPaletteFormat.NOTE_BLOCK_MAP.get("false0")));
@@ -610,7 +610,7 @@ public class ChunkPaletteFormat extends DataFix {
                   case 26:
                      for(int j2 : entry.getValue()) {
                         j2 = j2 | i;
-                        Dynamic<?> dynamic8 = this.getBlockEntity(j2);
+                        Dynamic<?> dynamic8 = this.getTileEntity(j2);
                         Dynamic<?> dynamic14 = this.getBlock(j2);
                         if (dynamic8 != null) {
                            int k3 = dynamic8.get("color").asInt(0);
@@ -678,7 +678,7 @@ public class ChunkPaletteFormat extends DataFix {
                   case 140:
                      for(int j1 : entry.getValue()) {
                         j1 = j1 | i;
-                        Dynamic<?> dynamic4 = this.removeBlockEntity(j1);
+                        Dynamic<?> dynamic4 = this.removeTileEntity(j1);
                         if (dynamic4 != null) {
                            String s7 = dynamic4.get("Item").asString("") + dynamic4.get("Data").asInt(0);
                            this.setBlock(j1, ChunkPaletteFormat.FLOWER_POT_MAP.getOrDefault(s7, ChunkPaletteFormat.FLOWER_POT_MAP.get("minecraft:air0")));
@@ -688,7 +688,7 @@ public class ChunkPaletteFormat extends DataFix {
                   case 144:
                      for(int i1 : entry.getValue()) {
                         i1 = i1 | i;
-                        Dynamic<?> dynamic3 = this.getBlockEntity(i1);
+                        Dynamic<?> dynamic3 = this.getTileEntity(i1);
                         if (dynamic3 != null) {
                            String s6 = String.valueOf(dynamic3.get("SkullType").asInt(0));
                            String s14 = ChunkPaletteFormat.getProperty(this.getBlock(i1), "facing");
@@ -733,7 +733,7 @@ public class ChunkPaletteFormat extends DataFix {
                   case 177:
                      for(int j : entry.getValue()) {
                         j = j | i;
-                        Dynamic<?> dynamic = this.getBlockEntity(j);
+                        Dynamic<?> dynamic = this.getTileEntity(j);
                         Dynamic<?> dynamic1 = this.getBlock(j);
                         if (dynamic != null) {
                            int k = dynamic.get("Base").asInt(0);
@@ -753,13 +753,13 @@ public class ChunkPaletteFormat extends DataFix {
       }
 
       @Nullable
-      private Dynamic<?> getBlockEntity(int p_210066_1_) {
-         return this.blockEntities.get(p_210066_1_);
+      private Dynamic<?> getTileEntity(int p_210066_1_) {
+         return this.tileEntities.get(p_210066_1_);
       }
 
       @Nullable
-      private Dynamic<?> removeBlockEntity(int p_210059_1_) {
-         return this.blockEntities.remove(p_210059_1_);
+      private Dynamic<?> removeTileEntity(int p_210059_1_) {
+         return this.tileEntities.remove(p_210059_1_);
       }
 
       public static int relative(int p_199223_0_, ChunkPaletteFormat.Direction p_199223_1_) {
@@ -804,10 +804,10 @@ public class ChunkPaletteFormat extends DataFix {
 
       public Dynamic<?> write() {
          Dynamic<?> dynamic = this.level;
-         if (this.blockEntities.isEmpty()) {
+         if (this.tileEntities.isEmpty()) {
             dynamic = dynamic.remove("TileEntities");
          } else {
-            dynamic = dynamic.set("TileEntities", dynamic.createList(this.blockEntities.values().stream()));
+            dynamic = dynamic.set("TileEntities", dynamic.createList(this.tileEntities.values().stream()));
          }
 
          Dynamic<?> dynamic1 = dynamic.emptyMap();

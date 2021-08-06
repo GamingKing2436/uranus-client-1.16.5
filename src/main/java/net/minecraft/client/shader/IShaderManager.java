@@ -5,11 +5,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IShaderManager {
-   int getId();
+   int getProgram();
 
    void markDirty();
 
-   ShaderLoader getVertexProgram();
+   ShaderLoader getVertexShaderLoader();
 
-   ShaderLoader getFragmentProgram();
+   ShaderLoader getFragmentShaderLoader();
 }

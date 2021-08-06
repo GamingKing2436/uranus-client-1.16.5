@@ -31,26 +31,26 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public final class Ingredient implements Predicate<ItemStack> {
    public static final Ingredient EMPTY = new Ingredient(Stream.empty());
-   private final Ingredient.IItemList[] values;
-   private ItemStack[] itemStacks;
-   private IntList stackingIds;
+   private final Ingredient.IItemList[] acceptedItems;
+   private ItemStack[] matchingStacks;
+   private IntList matchingStacksPacked;
 
-   private Ingredient(Stream<? extends Ingredient.IItemList> p_i49381_1_) {
-      this.values = p_i49381_1_.toArray((p_209360_0_) -> {
+   private Ingredient(Stream<? extends Ingredient.IItemList> itemLists) {
+      this.acceptedItems = itemLists.toArray((p_209360_0_) -> {
          return new Ingredient.IItemList[p_209360_0_];
       });
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack[] getItems() {
-      this.dissolve();
-      return this.itemStacks;
+   public ItemStack[] getMatchingStacks() {
+      this.determineMatchingStacks();
+      return this.matchingStacks;
    }
 
-   private void dissolve() {
-      if (this.itemStacks == null) {
-         this.itemStacks = Arrays.stream(this.values).flatMap((p_209359_0_) -> {
-            return p_209359_0_.getItems().stream();
+   private void determineMatchingStacks() {
+      if (this.matchingStacks == null) {
+         this.matchingStacks = Arrays.stream(this.acceptedItems).flatMap((p_209359_0_) -> {
+            return p_209359_0_.getStacks().stream();
          }).distinct().toArray((p_209358_0_) -> {
             return new ItemStack[p_209358_0_];
          });
@@ -62,11 +62,11 @@ public final class Ingredient implements Predicate<ItemStack> {
       if (p_test_1_ == null) {
          return false;
       } else {
-         this.dissolve();
-         if (this.itemStacks.length == 0) {
+         this.determineMatchingStacks();
+         if (this.matchingStacks.length == 0) {
             return p_test_1_.isEmpty();
          } else {
-            for(ItemStack itemstack : this.itemStacks) {
+            for(ItemStack itemstack : this.matchingStacks) {
                if (itemstack.getItem() == p_test_1_.getItem()) {
                   return true;
                }
@@ -77,38 +77,38 @@ public final class Ingredient implements Predicate<ItemStack> {
       }
    }
 
-   public IntList getStackingIds() {
-      if (this.stackingIds == null) {
-         this.dissolve();
-         this.stackingIds = new IntArrayList(this.itemStacks.length);
+   public IntList getValidItemStacksPacked() {
+      if (this.matchingStacksPacked == null) {
+         this.determineMatchingStacks();
+         this.matchingStacksPacked = new IntArrayList(this.matchingStacks.length);
 
-         for(ItemStack itemstack : this.itemStacks) {
-            this.stackingIds.add(RecipeItemHelper.getStackingIndex(itemstack));
+         for(ItemStack itemstack : this.matchingStacks) {
+            this.matchingStacksPacked.add(RecipeItemHelper.pack(itemstack));
          }
 
-         this.stackingIds.sort(IntComparators.NATURAL_COMPARATOR);
+         this.matchingStacksPacked.sort(IntComparators.NATURAL_COMPARATOR);
       }
 
-      return this.stackingIds;
+      return this.matchingStacksPacked;
    }
 
-   public void toNetwork(PacketBuffer p_199564_1_) {
-      this.dissolve();
-      p_199564_1_.writeVarInt(this.itemStacks.length);
+   public void write(PacketBuffer buffer) {
+      this.determineMatchingStacks();
+      buffer.writeVarInt(this.matchingStacks.length);
 
-      for(int i = 0; i < this.itemStacks.length; ++i) {
-         p_199564_1_.writeItem(this.itemStacks[i]);
+      for(int i = 0; i < this.matchingStacks.length; ++i) {
+         buffer.writeItemStack(this.matchingStacks[i]);
       }
 
    }
 
-   public JsonElement toJson() {
-      if (this.values.length == 1) {
-         return this.values[0].serialize();
+   public JsonElement serialize() {
+      if (this.acceptedItems.length == 1) {
+         return this.acceptedItems[0].serialize();
       } else {
          JsonArray jsonarray = new JsonArray();
 
-         for(Ingredient.IItemList ingredient$iitemlist : this.values) {
+         for(Ingredient.IItemList ingredient$iitemlist : this.acceptedItems) {
             jsonarray.add(ingredient$iitemlist.serialize());
          }
 
@@ -116,54 +116,54 @@ public final class Ingredient implements Predicate<ItemStack> {
       }
    }
 
-   public boolean isEmpty() {
-      return this.values.length == 0 && (this.itemStacks == null || this.itemStacks.length == 0) && (this.stackingIds == null || this.stackingIds.isEmpty());
+   public boolean hasNoMatchingItems() {
+      return this.acceptedItems.length == 0 && (this.matchingStacks == null || this.matchingStacks.length == 0) && (this.matchingStacksPacked == null || this.matchingStacksPacked.isEmpty());
    }
 
-   private static Ingredient fromValues(Stream<? extends Ingredient.IItemList> p_209357_0_) {
-      Ingredient ingredient = new Ingredient(p_209357_0_);
-      return ingredient.values.length == 0 ? EMPTY : ingredient;
+   private static Ingredient fromItemListStream(Stream<? extends Ingredient.IItemList> stream) {
+      Ingredient ingredient = new Ingredient(stream);
+      return ingredient.acceptedItems.length == 0 ? EMPTY : ingredient;
    }
 
-   public static Ingredient of(IItemProvider... p_199804_0_) {
-      return of(Arrays.stream(p_199804_0_).map(ItemStack::new));
+   public static Ingredient fromItems(IItemProvider... itemsIn) {
+      return fromStacks(Arrays.stream(itemsIn).map(ItemStack::new));
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static Ingredient of(ItemStack... p_193369_0_) {
-      return of(Arrays.stream(p_193369_0_));
+   public static Ingredient fromStacks(ItemStack... stacks) {
+      return fromStacks(Arrays.stream(stacks));
    }
 
-   public static Ingredient of(Stream<ItemStack> p_234819_0_) {
-      return fromValues(p_234819_0_.filter((p_234824_0_) -> {
+   public static Ingredient fromStacks(Stream<ItemStack> stacks) {
+      return fromItemListStream(stacks.filter((p_234824_0_) -> {
          return !p_234824_0_.isEmpty();
       }).map((p_209356_0_) -> {
          return new Ingredient.SingleItemList(p_209356_0_);
       }));
    }
 
-   public static Ingredient of(ITag<Item> p_199805_0_) {
-      return fromValues(Stream.of(new Ingredient.TagList(p_199805_0_)));
+   public static Ingredient fromTag(ITag<Item> tagIn) {
+      return fromItemListStream(Stream.of(new Ingredient.TagList(tagIn)));
    }
 
-   public static Ingredient fromNetwork(PacketBuffer p_199566_0_) {
-      int i = p_199566_0_.readVarInt();
-      return fromValues(Stream.generate(() -> {
-         return new Ingredient.SingleItemList(p_199566_0_.readItem());
+   public static Ingredient read(PacketBuffer buffer) {
+      int i = buffer.readVarInt();
+      return fromItemListStream(Stream.generate(() -> {
+         return new Ingredient.SingleItemList(buffer.readItemStack());
       }).limit((long)i));
    }
 
-   public static Ingredient fromJson(@Nullable JsonElement p_199802_0_) {
-      if (p_199802_0_ != null && !p_199802_0_.isJsonNull()) {
-         if (p_199802_0_.isJsonObject()) {
-            return fromValues(Stream.of(valueFromJson(p_199802_0_.getAsJsonObject())));
-         } else if (p_199802_0_.isJsonArray()) {
-            JsonArray jsonarray = p_199802_0_.getAsJsonArray();
+   public static Ingredient deserialize(@Nullable JsonElement json) {
+      if (json != null && !json.isJsonNull()) {
+         if (json.isJsonObject()) {
+            return fromItemListStream(Stream.of(deserializeItemList(json.getAsJsonObject())));
+         } else if (json.isJsonArray()) {
+            JsonArray jsonarray = json.getAsJsonArray();
             if (jsonarray.size() == 0) {
                throw new JsonSyntaxException("Item array cannot be empty, at least one item must be defined");
             } else {
-               return fromValues(StreamSupport.stream(jsonarray.spliterator(), false).map((p_209355_0_) -> {
-                  return valueFromJson(JSONUtils.convertToJsonObject(p_209355_0_, "item"));
+               return fromItemListStream(StreamSupport.stream(jsonarray.spliterator(), false).map((p_209355_0_) -> {
+                  return deserializeItemList(JSONUtils.getJsonObject(p_209355_0_, "item"));
                }));
             }
          } else {
@@ -174,18 +174,18 @@ public final class Ingredient implements Predicate<ItemStack> {
       }
    }
 
-   private static Ingredient.IItemList valueFromJson(JsonObject p_199803_0_) {
-      if (p_199803_0_.has("item") && p_199803_0_.has("tag")) {
+   private static Ingredient.IItemList deserializeItemList(JsonObject json) {
+      if (json.has("item") && json.has("tag")) {
          throw new JsonParseException("An ingredient entry is either a tag or an item, not both");
-      } else if (p_199803_0_.has("item")) {
-         ResourceLocation resourcelocation1 = new ResourceLocation(JSONUtils.getAsString(p_199803_0_, "item"));
+      } else if (json.has("item")) {
+         ResourceLocation resourcelocation1 = new ResourceLocation(JSONUtils.getString(json, "item"));
          Item item = Registry.ITEM.getOptional(resourcelocation1).orElseThrow(() -> {
             return new JsonSyntaxException("Unknown item '" + resourcelocation1 + "'");
          });
          return new Ingredient.SingleItemList(new ItemStack(item));
-      } else if (p_199803_0_.has("tag")) {
-         ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getAsString(p_199803_0_, "tag"));
-         ITag<Item> itag = TagCollectionManager.getInstance().getItems().getTag(resourcelocation);
+      } else if (json.has("tag")) {
+         ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getString(json, "tag"));
+         ITag<Item> itag = TagCollectionManager.getManager().getItemTags().get(resourcelocation);
          if (itag == null) {
             throw new JsonSyntaxException("Unknown item tag '" + resourcelocation + "'");
          } else {
@@ -197,25 +197,25 @@ public final class Ingredient implements Predicate<ItemStack> {
    }
 
    interface IItemList {
-      Collection<ItemStack> getItems();
+      Collection<ItemStack> getStacks();
 
       JsonObject serialize();
    }
 
    static class SingleItemList implements Ingredient.IItemList {
-      private final ItemStack item;
+      private final ItemStack stack;
 
-      private SingleItemList(ItemStack p_i48195_1_) {
-         this.item = p_i48195_1_;
+      private SingleItemList(ItemStack stackIn) {
+         this.stack = stackIn;
       }
 
-      public Collection<ItemStack> getItems() {
-         return Collections.singleton(this.item);
+      public Collection<ItemStack> getStacks() {
+         return Collections.singleton(this.stack);
       }
 
       public JsonObject serialize() {
          JsonObject jsonobject = new JsonObject();
-         jsonobject.addProperty("item", Registry.ITEM.getKey(this.item.getItem()).toString());
+         jsonobject.addProperty("item", Registry.ITEM.getKey(this.stack.getItem()).toString());
          return jsonobject;
       }
    }
@@ -223,14 +223,14 @@ public final class Ingredient implements Predicate<ItemStack> {
    static class TagList implements Ingredient.IItemList {
       private final ITag<Item> tag;
 
-      private TagList(ITag<Item> p_i48193_1_) {
-         this.tag = p_i48193_1_;
+      private TagList(ITag<Item> tagIn) {
+         this.tag = tagIn;
       }
 
-      public Collection<ItemStack> getItems() {
+      public Collection<ItemStack> getStacks() {
          List<ItemStack> list = Lists.newArrayList();
 
-         for(Item item : this.tag.getValues()) {
+         for(Item item : this.tag.getAllElements()) {
             list.add(new ItemStack(item));
          }
 
@@ -239,7 +239,7 @@ public final class Ingredient implements Predicate<ItemStack> {
 
       public JsonObject serialize() {
          JsonObject jsonobject = new JsonObject();
-         jsonobject.addProperty("tag", TagCollectionManager.getInstance().getItems().getIdOrThrow(this.tag).toString());
+         jsonobject.addProperty("tag", TagCollectionManager.getManager().getItemTags().getValidatedIdFromTag(this.tag).toString());
          return jsonobject;
       }
    }

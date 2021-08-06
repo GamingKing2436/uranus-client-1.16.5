@@ -11,24 +11,24 @@ import net.minecraft.world.World;
 import net.minecraft.world.spawner.AbstractSpawner;
 
 public class MobSpawnerTileEntity extends TileEntity implements ITickableTileEntity {
-   private final AbstractSpawner spawner = new AbstractSpawner() {
-      public void broadcastEvent(int p_98267_1_) {
-         MobSpawnerTileEntity.this.level.blockEvent(MobSpawnerTileEntity.this.worldPosition, Blocks.SPAWNER, p_98267_1_, 0);
+   private final AbstractSpawner spawnerLogic = new AbstractSpawner() {
+      public void broadcastEvent(int id) {
+         MobSpawnerTileEntity.this.world.addBlockEvent(MobSpawnerTileEntity.this.pos, Blocks.SPAWNER, id, 0);
       }
 
-      public World getLevel() {
-         return MobSpawnerTileEntity.this.level;
+      public World getWorld() {
+         return MobSpawnerTileEntity.this.world;
       }
 
-      public BlockPos getPos() {
-         return MobSpawnerTileEntity.this.worldPosition;
+      public BlockPos getSpawnerPosition() {
+         return MobSpawnerTileEntity.this.pos;
       }
 
-      public void setNextSpawnData(WeightedSpawnerEntity p_184993_1_) {
-         super.setNextSpawnData(p_184993_1_);
-         if (this.getLevel() != null) {
-            BlockState blockstate = this.getLevel().getBlockState(this.getPos());
-            this.getLevel().sendBlockUpdated(MobSpawnerTileEntity.this.worldPosition, blockstate, blockstate, 4);
+      public void setNextSpawnData(WeightedSpawnerEntity nextSpawnData) {
+         super.setNextSpawnData(nextSpawnData);
+         if (this.getWorld() != null) {
+            BlockState blockstate = this.getWorld().getBlockState(this.getSpawnerPosition());
+            this.getWorld().notifyBlockUpdate(MobSpawnerTileEntity.this.pos, blockstate, blockstate, 4);
          }
 
       }
@@ -38,41 +38,41 @@ public class MobSpawnerTileEntity extends TileEntity implements ITickableTileEnt
       super(TileEntityType.MOB_SPAWNER);
    }
 
-   public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
-      super.load(p_230337_1_, p_230337_2_);
-      this.spawner.load(p_230337_2_);
+   public void read(BlockState state, CompoundNBT nbt) {
+      super.read(state, nbt);
+      this.spawnerLogic.read(nbt);
    }
 
-   public CompoundNBT save(CompoundNBT p_189515_1_) {
-      super.save(p_189515_1_);
-      this.spawner.save(p_189515_1_);
-      return p_189515_1_;
+   public CompoundNBT write(CompoundNBT compound) {
+      super.write(compound);
+      this.spawnerLogic.write(compound);
+      return compound;
    }
 
    public void tick() {
-      this.spawner.tick();
+      this.spawnerLogic.tick();
    }
 
    @Nullable
    public SUpdateTileEntityPacket getUpdatePacket() {
-      return new SUpdateTileEntityPacket(this.worldPosition, 1, this.getUpdateTag());
+      return new SUpdateTileEntityPacket(this.pos, 1, this.getUpdateTag());
    }
 
    public CompoundNBT getUpdateTag() {
-      CompoundNBT compoundnbt = this.save(new CompoundNBT());
+      CompoundNBT compoundnbt = this.write(new CompoundNBT());
       compoundnbt.remove("SpawnPotentials");
       return compoundnbt;
    }
 
-   public boolean triggerEvent(int p_145842_1_, int p_145842_2_) {
-      return this.spawner.onEventTriggered(p_145842_1_) ? true : super.triggerEvent(p_145842_1_, p_145842_2_);
+   public boolean receiveClientEvent(int id, int type) {
+      return this.spawnerLogic.setDelayToMin(id) ? true : super.receiveClientEvent(id, type);
    }
 
-   public boolean onlyOpCanSetNbt() {
+   public boolean onlyOpsCanSetNbt() {
       return true;
    }
 
-   public AbstractSpawner getSpawner() {
-      return this.spawner;
+   public AbstractSpawner getSpawnerBaseLogic() {
+      return this.spawnerLogic;
    }
 }

@@ -20,61 +20,61 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class ResourceLocationArgument implements ArgumentType<ResourceLocation> {
    private static final Collection<String> EXAMPLES = Arrays.asList("foo", "foo:bar", "012");
-   private static final DynamicCommandExceptionType ERROR_UNKNOWN_ADVANCEMENT = new DynamicCommandExceptionType((p_208676_0_) -> {
+   private static final DynamicCommandExceptionType ADVANCEMENT_NOT_FOUND = new DynamicCommandExceptionType((p_208676_0_) -> {
       return new TranslationTextComponent("advancement.advancementNotFound", p_208676_0_);
    });
-   private static final DynamicCommandExceptionType ERROR_UNKNOWN_RECIPE = new DynamicCommandExceptionType((p_208677_0_) -> {
+   private static final DynamicCommandExceptionType RECIPE_NOT_FOUND = new DynamicCommandExceptionType((p_208677_0_) -> {
       return new TranslationTextComponent("recipe.notFound", p_208677_0_);
    });
-   private static final DynamicCommandExceptionType ERROR_UNKNOWN_PREDICATE = new DynamicCommandExceptionType((p_208674_0_) -> {
+   private static final DynamicCommandExceptionType field_228258_d_ = new DynamicCommandExceptionType((p_208674_0_) -> {
       return new TranslationTextComponent("predicate.unknown", p_208674_0_);
    });
-   private static final DynamicCommandExceptionType ERROR_UNKNOWN_ATTRIBUTE = new DynamicCommandExceptionType((p_239091_0_) -> {
+   private static final DynamicCommandExceptionType field_239090_e_ = new DynamicCommandExceptionType((p_239091_0_) -> {
       return new TranslationTextComponent("attribute.unknown", p_239091_0_);
    });
 
-   public static ResourceLocationArgument id() {
+   public static ResourceLocationArgument resourceLocation() {
       return new ResourceLocationArgument();
    }
 
-   public static Advancement getAdvancement(CommandContext<CommandSource> p_197198_0_, String p_197198_1_) throws CommandSyntaxException {
-      ResourceLocation resourcelocation = p_197198_0_.getArgument(p_197198_1_, ResourceLocation.class);
-      Advancement advancement = p_197198_0_.getSource().getServer().getAdvancements().getAdvancement(resourcelocation);
+   public static Advancement getAdvancement(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      ResourceLocation resourcelocation = context.getArgument(name, ResourceLocation.class);
+      Advancement advancement = context.getSource().getServer().getAdvancementManager().getAdvancement(resourcelocation);
       if (advancement == null) {
-         throw ERROR_UNKNOWN_ADVANCEMENT.create(resourcelocation);
+         throw ADVANCEMENT_NOT_FOUND.create(resourcelocation);
       } else {
          return advancement;
       }
    }
 
-   public static IRecipe<?> getRecipe(CommandContext<CommandSource> p_197194_0_, String p_197194_1_) throws CommandSyntaxException {
-      RecipeManager recipemanager = p_197194_0_.getSource().getServer().getRecipeManager();
-      ResourceLocation resourcelocation = p_197194_0_.getArgument(p_197194_1_, ResourceLocation.class);
-      return recipemanager.byKey(resourcelocation).orElseThrow(() -> {
-         return ERROR_UNKNOWN_RECIPE.create(resourcelocation);
+   public static IRecipe<?> getRecipe(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      RecipeManager recipemanager = context.getSource().getServer().getRecipeManager();
+      ResourceLocation resourcelocation = context.getArgument(name, ResourceLocation.class);
+      return recipemanager.getRecipe(resourcelocation).orElseThrow(() -> {
+         return RECIPE_NOT_FOUND.create(resourcelocation);
       });
    }
 
-   public static ILootCondition getPredicate(CommandContext<CommandSource> p_228259_0_, String p_228259_1_) throws CommandSyntaxException {
+   public static ILootCondition func_228259_c_(CommandContext<CommandSource> p_228259_0_, String p_228259_1_) throws CommandSyntaxException {
       ResourceLocation resourcelocation = p_228259_0_.getArgument(p_228259_1_, ResourceLocation.class);
-      LootPredicateManager lootpredicatemanager = p_228259_0_.getSource().getServer().getPredicateManager();
-      ILootCondition ilootcondition = lootpredicatemanager.get(resourcelocation);
+      LootPredicateManager lootpredicatemanager = p_228259_0_.getSource().getServer().func_229736_aP_();
+      ILootCondition ilootcondition = lootpredicatemanager.func_227517_a_(resourcelocation);
       if (ilootcondition == null) {
-         throw ERROR_UNKNOWN_PREDICATE.create(resourcelocation);
+         throw field_228258_d_.create(resourcelocation);
       } else {
          return ilootcondition;
       }
    }
 
-   public static Attribute getAttribute(CommandContext<CommandSource> p_239094_0_, String p_239094_1_) throws CommandSyntaxException {
+   public static Attribute func_239094_d_(CommandContext<CommandSource> p_239094_0_, String p_239094_1_) throws CommandSyntaxException {
       ResourceLocation resourcelocation = p_239094_0_.getArgument(p_239094_1_, ResourceLocation.class);
       return Registry.ATTRIBUTE.getOptional(resourcelocation).orElseThrow(() -> {
-         return ERROR_UNKNOWN_ATTRIBUTE.create(resourcelocation);
+         return field_239090_e_.create(resourcelocation);
       });
    }
 
-   public static ResourceLocation getId(CommandContext<CommandSource> p_197195_0_, String p_197195_1_) {
-      return p_197195_0_.getArgument(p_197195_1_, ResourceLocation.class);
+   public static ResourceLocation getResourceLocation(CommandContext<CommandSource> context, String name) {
+      return context.getArgument(name, ResourceLocation.class);
    }
 
    public ResourceLocation parse(StringReader p_parse_1_) throws CommandSyntaxException {

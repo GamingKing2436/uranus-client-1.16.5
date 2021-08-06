@@ -22,86 +22,86 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BipedArmorLayer<T extends LivingEntity, M extends BipedModel<T>, A extends BipedModel<T>> extends LayerRenderer<T, M> {
-   private static final Map<String, ResourceLocation> ARMOR_LOCATION_CACHE = Maps.newHashMap();
-   private final A innerModel;
-   private final A outerModel;
+   private static final Map<String, ResourceLocation> ARMOR_TEXTURE_RES_MAP = Maps.newHashMap();
+   private final A modelLeggings;
+   private final A modelArmor;
 
    public BipedArmorLayer(IEntityRenderer<T, M> p_i50936_1_, A p_i50936_2_, A p_i50936_3_) {
       super(p_i50936_1_);
-      this.innerModel = p_i50936_2_;
-      this.outerModel = p_i50936_3_;
+      this.modelLeggings = p_i50936_2_;
+      this.modelArmor = p_i50936_3_;
    }
 
-   public void render(MatrixStack p_225628_1_, IRenderTypeBuffer p_225628_2_, int p_225628_3_, T p_225628_4_, float p_225628_5_, float p_225628_6_, float p_225628_7_, float p_225628_8_, float p_225628_9_, float p_225628_10_) {
-      this.renderArmorPiece(p_225628_1_, p_225628_2_, p_225628_4_, EquipmentSlotType.CHEST, p_225628_3_, this.getArmorModel(EquipmentSlotType.CHEST));
-      this.renderArmorPiece(p_225628_1_, p_225628_2_, p_225628_4_, EquipmentSlotType.LEGS, p_225628_3_, this.getArmorModel(EquipmentSlotType.LEGS));
-      this.renderArmorPiece(p_225628_1_, p_225628_2_, p_225628_4_, EquipmentSlotType.FEET, p_225628_3_, this.getArmorModel(EquipmentSlotType.FEET));
-      this.renderArmorPiece(p_225628_1_, p_225628_2_, p_225628_4_, EquipmentSlotType.HEAD, p_225628_3_, this.getArmorModel(EquipmentSlotType.HEAD));
+   public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, T entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
+      this.func_241739_a_(matrixStackIn, bufferIn, entitylivingbaseIn, EquipmentSlotType.CHEST, packedLightIn, this.func_241736_a_(EquipmentSlotType.CHEST));
+      this.func_241739_a_(matrixStackIn, bufferIn, entitylivingbaseIn, EquipmentSlotType.LEGS, packedLightIn, this.func_241736_a_(EquipmentSlotType.LEGS));
+      this.func_241739_a_(matrixStackIn, bufferIn, entitylivingbaseIn, EquipmentSlotType.FEET, packedLightIn, this.func_241736_a_(EquipmentSlotType.FEET));
+      this.func_241739_a_(matrixStackIn, bufferIn, entitylivingbaseIn, EquipmentSlotType.HEAD, packedLightIn, this.func_241736_a_(EquipmentSlotType.HEAD));
    }
 
-   private void renderArmorPiece(MatrixStack p_241739_1_, IRenderTypeBuffer p_241739_2_, T p_241739_3_, EquipmentSlotType p_241739_4_, int p_241739_5_, A p_241739_6_) {
-      ItemStack itemstack = p_241739_3_.getItemBySlot(p_241739_4_);
+   private void func_241739_a_(MatrixStack p_241739_1_, IRenderTypeBuffer p_241739_2_, T p_241739_3_, EquipmentSlotType p_241739_4_, int p_241739_5_, A p_241739_6_) {
+      ItemStack itemstack = p_241739_3_.getItemStackFromSlot(p_241739_4_);
       if (itemstack.getItem() instanceof ArmorItem) {
          ArmorItem armoritem = (ArmorItem)itemstack.getItem();
-         if (armoritem.getSlot() == p_241739_4_) {
-            this.getParentModel().copyPropertiesTo(p_241739_6_);
-            this.setPartVisibility(p_241739_6_, p_241739_4_);
-            boolean flag = this.usesInnerModel(p_241739_4_);
-            boolean flag1 = itemstack.hasFoil();
+         if (armoritem.getEquipmentSlot() == p_241739_4_) {
+            this.getEntityModel().setModelAttributes(p_241739_6_);
+            this.setModelSlotVisible(p_241739_6_, p_241739_4_);
+            boolean flag = this.isLegSlot(p_241739_4_);
+            boolean flag1 = itemstack.hasEffect();
             if (armoritem instanceof DyeableArmorItem) {
                int i = ((DyeableArmorItem)armoritem).getColor(itemstack);
                float f = (float)(i >> 16 & 255) / 255.0F;
                float f1 = (float)(i >> 8 & 255) / 255.0F;
                float f2 = (float)(i & 255) / 255.0F;
-               this.renderModel(p_241739_1_, p_241739_2_, p_241739_5_, armoritem, flag1, p_241739_6_, flag, f, f1, f2, (String)null);
-               this.renderModel(p_241739_1_, p_241739_2_, p_241739_5_, armoritem, flag1, p_241739_6_, flag, 1.0F, 1.0F, 1.0F, "overlay");
+               this.func_241738_a_(p_241739_1_, p_241739_2_, p_241739_5_, armoritem, flag1, p_241739_6_, flag, f, f1, f2, (String)null);
+               this.func_241738_a_(p_241739_1_, p_241739_2_, p_241739_5_, armoritem, flag1, p_241739_6_, flag, 1.0F, 1.0F, 1.0F, "overlay");
             } else {
-               this.renderModel(p_241739_1_, p_241739_2_, p_241739_5_, armoritem, flag1, p_241739_6_, flag, 1.0F, 1.0F, 1.0F, (String)null);
+               this.func_241738_a_(p_241739_1_, p_241739_2_, p_241739_5_, armoritem, flag1, p_241739_6_, flag, 1.0F, 1.0F, 1.0F, (String)null);
             }
 
          }
       }
    }
 
-   protected void setPartVisibility(A p_188359_1_, EquipmentSlotType p_188359_2_) {
-      p_188359_1_.setAllVisible(false);
-      switch(p_188359_2_) {
+   protected void setModelSlotVisible(A modelIn, EquipmentSlotType slotIn) {
+      modelIn.setVisible(false);
+      switch(slotIn) {
       case HEAD:
-         p_188359_1_.head.visible = true;
-         p_188359_1_.hat.visible = true;
+         modelIn.bipedHead.showModel = true;
+         modelIn.bipedHeadwear.showModel = true;
          break;
       case CHEST:
-         p_188359_1_.body.visible = true;
-         p_188359_1_.rightArm.visible = true;
-         p_188359_1_.leftArm.visible = true;
+         modelIn.bipedBody.showModel = true;
+         modelIn.bipedRightArm.showModel = true;
+         modelIn.bipedLeftArm.showModel = true;
          break;
       case LEGS:
-         p_188359_1_.body.visible = true;
-         p_188359_1_.rightLeg.visible = true;
-         p_188359_1_.leftLeg.visible = true;
+         modelIn.bipedBody.showModel = true;
+         modelIn.bipedRightLeg.showModel = true;
+         modelIn.bipedLeftLeg.showModel = true;
          break;
       case FEET:
-         p_188359_1_.rightLeg.visible = true;
-         p_188359_1_.leftLeg.visible = true;
+         modelIn.bipedRightLeg.showModel = true;
+         modelIn.bipedLeftLeg.showModel = true;
       }
 
    }
 
-   private void renderModel(MatrixStack p_241738_1_, IRenderTypeBuffer p_241738_2_, int p_241738_3_, ArmorItem p_241738_4_, boolean p_241738_5_, A p_241738_6_, boolean p_241738_7_, float p_241738_8_, float p_241738_9_, float p_241738_10_, @Nullable String p_241738_11_) {
-      IVertexBuilder ivertexbuilder = ItemRenderer.getArmorFoilBuffer(p_241738_2_, RenderType.armorCutoutNoCull(this.getArmorLocation(p_241738_4_, p_241738_7_, p_241738_11_)), false, p_241738_5_);
-      p_241738_6_.renderToBuffer(p_241738_1_, ivertexbuilder, p_241738_3_, OverlayTexture.NO_OVERLAY, p_241738_8_, p_241738_9_, p_241738_10_, 1.0F);
+   private void func_241738_a_(MatrixStack p_241738_1_, IRenderTypeBuffer p_241738_2_, int p_241738_3_, ArmorItem p_241738_4_, boolean p_241738_5_, A p_241738_6_, boolean p_241738_7_, float p_241738_8_, float p_241738_9_, float p_241738_10_, @Nullable String p_241738_11_) {
+      IVertexBuilder ivertexbuilder = ItemRenderer.getArmorVertexBuilder(p_241738_2_, RenderType.getArmorCutoutNoCull(this.func_241737_a_(p_241738_4_, p_241738_7_, p_241738_11_)), false, p_241738_5_);
+      p_241738_6_.render(p_241738_1_, ivertexbuilder, p_241738_3_, OverlayTexture.NO_OVERLAY, p_241738_8_, p_241738_9_, p_241738_10_, 1.0F);
    }
 
-   private A getArmorModel(EquipmentSlotType p_241736_1_) {
-      return (A)(this.usesInnerModel(p_241736_1_) ? this.innerModel : this.outerModel);
+   private A func_241736_a_(EquipmentSlotType p_241736_1_) {
+      return (A)(this.isLegSlot(p_241736_1_) ? this.modelLeggings : this.modelArmor);
    }
 
-   private boolean usesInnerModel(EquipmentSlotType p_188363_1_) {
-      return p_188363_1_ == EquipmentSlotType.LEGS;
+   private boolean isLegSlot(EquipmentSlotType slotIn) {
+      return slotIn == EquipmentSlotType.LEGS;
    }
 
-   private ResourceLocation getArmorLocation(ArmorItem p_241737_1_, boolean p_241737_2_, @Nullable String p_241737_3_) {
-      String s = "textures/models/armor/" + p_241737_1_.getMaterial().getName() + "_layer_" + (p_241737_2_ ? 2 : 1) + (p_241737_3_ == null ? "" : "_" + p_241737_3_) + ".png";
-      return ARMOR_LOCATION_CACHE.computeIfAbsent(s, ResourceLocation::new);
+   private ResourceLocation func_241737_a_(ArmorItem p_241737_1_, boolean p_241737_2_, @Nullable String p_241737_3_) {
+      String s = "textures/models/armor/" + p_241737_1_.getArmorMaterial().getName() + "_layer_" + (p_241737_2_ ? 2 : 1) + (p_241737_3_ == null ? "" : "_" + p_241737_3_) + ".png";
+      return ARMOR_TEXTURE_RES_MAP.computeIfAbsent(s, ResourceLocation::new);
    }
 }

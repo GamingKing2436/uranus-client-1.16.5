@@ -5,11 +5,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IJumpingMount {
    @OnlyIn(Dist.CLIENT)
-   void onPlayerJump(int p_110206_1_);
+   void setJumpPower(int jumpPowerIn);
 
    boolean canJump();
 
-   void handleStartJump(int p_184775_1_);
+   void handleStartJump(int jumpPower);
 
    void handleStopJump();
 }

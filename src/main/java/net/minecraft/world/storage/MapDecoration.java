@@ -11,15 +11,15 @@ public class MapDecoration {
    private final MapDecoration.Type type;
    private byte x;
    private byte y;
-   private byte rot;
-   private final ITextComponent name;
+   private byte rotation;
+   private final ITextComponent customName;
 
-   public MapDecoration(MapDecoration.Type p_i48875_1_, byte p_i48875_2_, byte p_i48875_3_, byte p_i48875_4_, @Nullable ITextComponent p_i48875_5_) {
-      this.type = p_i48875_1_;
-      this.x = p_i48875_2_;
-      this.y = p_i48875_3_;
-      this.rot = p_i48875_4_;
-      this.name = p_i48875_5_;
+   public MapDecoration(MapDecoration.Type type, byte x, byte y, byte rotation, @Nullable ITextComponent customName) {
+      this.type = type;
+      this.x = x;
+      this.y = y;
+      this.rotation = rotation;
+      this.customName = customName;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -39,8 +39,8 @@ public class MapDecoration {
       return this.y;
    }
 
-   public byte getRot() {
-      return this.rot;
+   public byte getRotation() {
+      return this.rotation;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -49,8 +49,8 @@ public class MapDecoration {
    }
 
    @Nullable
-   public ITextComponent getName() {
-      return this.name;
+   public ITextComponent getCustomName() {
+      return this.customName;
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -62,14 +62,14 @@ public class MapDecoration {
          MapDecoration mapdecoration = (MapDecoration)p_equals_1_;
          if (this.type != mapdecoration.type) {
             return false;
-         } else if (this.rot != mapdecoration.rot) {
+         } else if (this.rotation != mapdecoration.rotation) {
             return false;
          } else if (this.x != mapdecoration.x) {
             return false;
          } else if (this.y != mapdecoration.y) {
             return false;
          } else {
-            return Objects.equals(this.name, mapdecoration.name);
+            return Objects.equals(this.customName, mapdecoration.customName);
          }
       }
    }
@@ -78,8 +78,8 @@ public class MapDecoration {
       int i = this.type.getIcon();
       i = 31 * i + this.x;
       i = 31 * i + this.y;
-      i = 31 * i + this.rot;
-      return 31 * i + Objects.hashCode(this.name);
+      i = 31 * i + this.rotation;
+      return 31 * i + Objects.hashCode(this.customName);
    }
 
    public static enum Type {
@@ -115,13 +115,13 @@ public class MapDecoration {
       private final boolean renderedOnFrame;
       private final int mapColor;
 
-      private Type(boolean p_i47343_3_) {
-         this(p_i47343_3_, -1);
+      private Type(boolean renderedOnFrame) {
+         this(renderedOnFrame, -1);
       }
 
-      private Type(boolean p_i47344_3_, int p_i47344_4_) {
-         this.renderedOnFrame = p_i47344_3_;
-         this.mapColor = p_i47344_4_;
+      private Type(boolean renderedOnFrame, int mapColor) {
+         this.renderedOnFrame = renderedOnFrame;
+         this.mapColor = mapColor;
       }
 
       public byte getIcon() {
@@ -141,8 +141,8 @@ public class MapDecoration {
          return this.mapColor;
       }
 
-      public static MapDecoration.Type byIcon(byte p_191159_0_) {
-         return values()[MathHelper.clamp(p_191159_0_, 0, values().length - 1)];
+      public static MapDecoration.Type byIcon(byte iconByte) {
+         return values()[MathHelper.clamp(iconByte, 0, values().length - 1)];
       }
    }
 }

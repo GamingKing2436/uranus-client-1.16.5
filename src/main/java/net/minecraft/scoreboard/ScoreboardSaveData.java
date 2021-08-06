@@ -12,53 +12,53 @@ import org.apache.logging.log4j.Logger;
 public class ScoreboardSaveData extends WorldSavedData {
    private static final Logger LOGGER = LogManager.getLogger();
    private Scoreboard scoreboard;
-   private CompoundNBT delayLoad;
+   private CompoundNBT delayedInitNbt;
 
    public ScoreboardSaveData() {
       super("scoreboard");
    }
 
-   public void setScoreboard(Scoreboard p_96499_1_) {
-      this.scoreboard = p_96499_1_;
-      if (this.delayLoad != null) {
-         this.load(this.delayLoad);
+   public void setScoreboard(Scoreboard scoreboardIn) {
+      this.scoreboard = scoreboardIn;
+      if (this.delayedInitNbt != null) {
+         this.read(this.delayedInitNbt);
       }
 
    }
 
-   public void load(CompoundNBT p_76184_1_) {
+   public void read(CompoundNBT nbt) {
       if (this.scoreboard == null) {
-         this.delayLoad = p_76184_1_;
+         this.delayedInitNbt = nbt;
       } else {
-         this.loadObjectives(p_76184_1_.getList("Objectives", 10));
-         this.scoreboard.loadPlayerScores(p_76184_1_.getList("PlayerScores", 10));
-         if (p_76184_1_.contains("DisplaySlots", 10)) {
-            this.loadDisplaySlots(p_76184_1_.getCompound("DisplaySlots"));
+         this.readObjectives(nbt.getList("Objectives", 10));
+         this.scoreboard.func_197905_a(nbt.getList("PlayerScores", 10));
+         if (nbt.contains("DisplaySlots", 10)) {
+            this.readDisplayConfig(nbt.getCompound("DisplaySlots"));
          }
 
-         if (p_76184_1_.contains("Teams", 9)) {
-            this.loadTeams(p_76184_1_.getList("Teams", 10));
+         if (nbt.contains("Teams", 9)) {
+            this.readTeams(nbt.getList("Teams", 10));
          }
 
       }
    }
 
-   protected void loadTeams(ListNBT p_96498_1_) {
-      for(int i = 0; i < p_96498_1_.size(); ++i) {
-         CompoundNBT compoundnbt = p_96498_1_.getCompound(i);
+   protected void readTeams(ListNBT tagList) {
+      for(int i = 0; i < tagList.size(); ++i) {
+         CompoundNBT compoundnbt = tagList.getCompound(i);
          String s = compoundnbt.getString("Name");
          if (s.length() > 16) {
             s = s.substring(0, 16);
          }
 
-         ScorePlayerTeam scoreplayerteam = this.scoreboard.addPlayerTeam(s);
-         ITextComponent itextcomponent = ITextComponent.Serializer.fromJson(compoundnbt.getString("DisplayName"));
+         ScorePlayerTeam scoreplayerteam = this.scoreboard.createTeam(s);
+         ITextComponent itextcomponent = ITextComponent.Serializer.getComponentFromJson(compoundnbt.getString("DisplayName"));
          if (itextcomponent != null) {
             scoreplayerteam.setDisplayName(itextcomponent);
          }
 
          if (compoundnbt.contains("TeamColor", 8)) {
-            scoreplayerteam.setColor(TextFormatting.getByName(compoundnbt.getString("TeamColor")));
+            scoreplayerteam.setColor(TextFormatting.getValueByName(compoundnbt.getString("TeamColor")));
          }
 
          if (compoundnbt.contains("AllowFriendlyFire", 99)) {
@@ -66,39 +66,39 @@ public class ScoreboardSaveData extends WorldSavedData {
          }
 
          if (compoundnbt.contains("SeeFriendlyInvisibles", 99)) {
-            scoreplayerteam.setSeeFriendlyInvisibles(compoundnbt.getBoolean("SeeFriendlyInvisibles"));
+            scoreplayerteam.setSeeFriendlyInvisiblesEnabled(compoundnbt.getBoolean("SeeFriendlyInvisibles"));
          }
 
          if (compoundnbt.contains("MemberNamePrefix", 8)) {
-            ITextComponent itextcomponent1 = ITextComponent.Serializer.fromJson(compoundnbt.getString("MemberNamePrefix"));
+            ITextComponent itextcomponent1 = ITextComponent.Serializer.getComponentFromJson(compoundnbt.getString("MemberNamePrefix"));
             if (itextcomponent1 != null) {
-               scoreplayerteam.setPlayerPrefix(itextcomponent1);
+               scoreplayerteam.setPrefix(itextcomponent1);
             }
          }
 
          if (compoundnbt.contains("MemberNameSuffix", 8)) {
-            ITextComponent itextcomponent2 = ITextComponent.Serializer.fromJson(compoundnbt.getString("MemberNameSuffix"));
+            ITextComponent itextcomponent2 = ITextComponent.Serializer.getComponentFromJson(compoundnbt.getString("MemberNameSuffix"));
             if (itextcomponent2 != null) {
-               scoreplayerteam.setPlayerSuffix(itextcomponent2);
+               scoreplayerteam.setSuffix(itextcomponent2);
             }
          }
 
          if (compoundnbt.contains("NameTagVisibility", 8)) {
-            Team.Visible team$visible = Team.Visible.byName(compoundnbt.getString("NameTagVisibility"));
+            Team.Visible team$visible = Team.Visible.getByName(compoundnbt.getString("NameTagVisibility"));
             if (team$visible != null) {
                scoreplayerteam.setNameTagVisibility(team$visible);
             }
          }
 
          if (compoundnbt.contains("DeathMessageVisibility", 8)) {
-            Team.Visible team$visible1 = Team.Visible.byName(compoundnbt.getString("DeathMessageVisibility"));
+            Team.Visible team$visible1 = Team.Visible.getByName(compoundnbt.getString("DeathMessageVisibility"));
             if (team$visible1 != null) {
                scoreplayerteam.setDeathMessageVisibility(team$visible1);
             }
          }
 
          if (compoundnbt.contains("CollisionRule", 8)) {
-            Team.CollisionRule team$collisionrule = Team.CollisionRule.byName(compoundnbt.getString("CollisionRule"));
+            Team.CollisionRule team$collisionrule = Team.CollisionRule.getByName(compoundnbt.getString("CollisionRule"));
             if (team$collisionrule != null) {
                scoreplayerteam.setCollisionRule(team$collisionrule);
             }
@@ -109,34 +109,34 @@ public class ScoreboardSaveData extends WorldSavedData {
 
    }
 
-   protected void loadTeamPlayers(ScorePlayerTeam p_96502_1_, ListNBT p_96502_2_) {
-      for(int i = 0; i < p_96502_2_.size(); ++i) {
-         this.scoreboard.addPlayerToTeam(p_96502_2_.getString(i), p_96502_1_);
+   protected void loadTeamPlayers(ScorePlayerTeam playerTeam, ListNBT tagList) {
+      for(int i = 0; i < tagList.size(); ++i) {
+         this.scoreboard.addPlayerToTeam(tagList.getString(i), playerTeam);
       }
 
    }
 
-   protected void loadDisplaySlots(CompoundNBT p_96504_1_) {
+   protected void readDisplayConfig(CompoundNBT compound) {
       for(int i = 0; i < 19; ++i) {
-         if (p_96504_1_.contains("slot_" + i, 8)) {
-            String s = p_96504_1_.getString("slot_" + i);
+         if (compound.contains("slot_" + i, 8)) {
+            String s = compound.getString("slot_" + i);
             ScoreObjective scoreobjective = this.scoreboard.getObjective(s);
-            this.scoreboard.setDisplayObjective(i, scoreobjective);
+            this.scoreboard.setObjectiveInDisplaySlot(i, scoreobjective);
          }
       }
 
    }
 
-   protected void loadObjectives(ListNBT p_96501_1_) {
-      for(int i = 0; i < p_96501_1_.size(); ++i) {
-         CompoundNBT compoundnbt = p_96501_1_.getCompound(i);
-         ScoreCriteria.byName(compoundnbt.getString("CriteriaName")).ifPresent((p_215164_2_) -> {
+   protected void readObjectives(ListNBT nbt) {
+      for(int i = 0; i < nbt.size(); ++i) {
+         CompoundNBT compoundnbt = nbt.getCompound(i);
+         ScoreCriteria.func_216390_a(compoundnbt.getString("CriteriaName")).ifPresent((p_215164_2_) -> {
             String s = compoundnbt.getString("Name");
             if (s.length() > 16) {
                s = s.substring(0, 16);
             }
 
-            ITextComponent itextcomponent = ITextComponent.Serializer.fromJson(compoundnbt.getString("DisplayName"));
+            ITextComponent itextcomponent = ITextComponent.Serializer.getComponentFromJson(compoundnbt.getString("DisplayName"));
             ScoreCriteria.RenderType scorecriteria$rendertype = ScoreCriteria.RenderType.byId(compoundnbt.getString("RenderType"));
             this.scoreboard.addObjective(s, p_215164_2_, itextcomponent, scorecriteria$rendertype);
          });
@@ -144,40 +144,40 @@ public class ScoreboardSaveData extends WorldSavedData {
 
    }
 
-   public CompoundNBT save(CompoundNBT p_189551_1_) {
+   public CompoundNBT write(CompoundNBT compound) {
       if (this.scoreboard == null) {
          LOGGER.warn("Tried to save scoreboard without having a scoreboard...");
-         return p_189551_1_;
+         return compound;
       } else {
-         p_189551_1_.put("Objectives", this.saveObjectives());
-         p_189551_1_.put("PlayerScores", this.scoreboard.savePlayerScores());
-         p_189551_1_.put("Teams", this.saveTeams());
-         this.saveDisplaySlots(p_189551_1_);
-         return p_189551_1_;
+         compound.put("Objectives", this.objectivesToNbt());
+         compound.put("PlayerScores", this.scoreboard.func_197902_i());
+         compound.put("Teams", this.teamsToNbt());
+         this.fillInDisplaySlots(compound);
+         return compound;
       }
    }
 
-   protected ListNBT saveTeams() {
+   protected ListNBT teamsToNbt() {
       ListNBT listnbt = new ListNBT();
 
-      for(ScorePlayerTeam scoreplayerteam : this.scoreboard.getPlayerTeams()) {
+      for(ScorePlayerTeam scoreplayerteam : this.scoreboard.getTeams()) {
          CompoundNBT compoundnbt = new CompoundNBT();
          compoundnbt.putString("Name", scoreplayerteam.getName());
          compoundnbt.putString("DisplayName", ITextComponent.Serializer.toJson(scoreplayerteam.getDisplayName()));
-         if (scoreplayerteam.getColor().getId() >= 0) {
-            compoundnbt.putString("TeamColor", scoreplayerteam.getColor().getName());
+         if (scoreplayerteam.getColor().getColorIndex() >= 0) {
+            compoundnbt.putString("TeamColor", scoreplayerteam.getColor().getFriendlyName());
          }
 
-         compoundnbt.putBoolean("AllowFriendlyFire", scoreplayerteam.isAllowFriendlyFire());
-         compoundnbt.putBoolean("SeeFriendlyInvisibles", scoreplayerteam.canSeeFriendlyInvisibles());
-         compoundnbt.putString("MemberNamePrefix", ITextComponent.Serializer.toJson(scoreplayerteam.getPlayerPrefix()));
-         compoundnbt.putString("MemberNameSuffix", ITextComponent.Serializer.toJson(scoreplayerteam.getPlayerSuffix()));
-         compoundnbt.putString("NameTagVisibility", scoreplayerteam.getNameTagVisibility().name);
-         compoundnbt.putString("DeathMessageVisibility", scoreplayerteam.getDeathMessageVisibility().name);
+         compoundnbt.putBoolean("AllowFriendlyFire", scoreplayerteam.getAllowFriendlyFire());
+         compoundnbt.putBoolean("SeeFriendlyInvisibles", scoreplayerteam.getSeeFriendlyInvisiblesEnabled());
+         compoundnbt.putString("MemberNamePrefix", ITextComponent.Serializer.toJson(scoreplayerteam.getPrefix()));
+         compoundnbt.putString("MemberNameSuffix", ITextComponent.Serializer.toJson(scoreplayerteam.getSuffix()));
+         compoundnbt.putString("NameTagVisibility", scoreplayerteam.getNameTagVisibility().internalName);
+         compoundnbt.putString("DeathMessageVisibility", scoreplayerteam.getDeathMessageVisibility().internalName);
          compoundnbt.putString("CollisionRule", scoreplayerteam.getCollisionRule().name);
          ListNBT listnbt1 = new ListNBT();
 
-         for(String s : scoreplayerteam.getPlayers()) {
+         for(String s : scoreplayerteam.getMembershipCollection()) {
             listnbt1.add(StringNBT.valueOf(s));
          }
 
@@ -188,12 +188,12 @@ public class ScoreboardSaveData extends WorldSavedData {
       return listnbt;
    }
 
-   protected void saveDisplaySlots(CompoundNBT p_96497_1_) {
+   protected void fillInDisplaySlots(CompoundNBT compound) {
       CompoundNBT compoundnbt = new CompoundNBT();
       boolean flag = false;
 
       for(int i = 0; i < 19; ++i) {
-         ScoreObjective scoreobjective = this.scoreboard.getDisplayObjective(i);
+         ScoreObjective scoreobjective = this.scoreboard.getObjectiveInDisplaySlot(i);
          if (scoreobjective != null) {
             compoundnbt.putString("slot_" + i, scoreobjective.getName());
             flag = true;
@@ -201,15 +201,15 @@ public class ScoreboardSaveData extends WorldSavedData {
       }
 
       if (flag) {
-         p_96497_1_.put("DisplaySlots", compoundnbt);
+         compound.put("DisplaySlots", compoundnbt);
       }
 
    }
 
-   protected ListNBT saveObjectives() {
+   protected ListNBT objectivesToNbt() {
       ListNBT listnbt = new ListNBT();
 
-      for(ScoreObjective scoreobjective : this.scoreboard.getObjectives()) {
+      for(ScoreObjective scoreobjective : this.scoreboard.getScoreObjectives()) {
          if (scoreobjective.getCriteria() != null) {
             CompoundNBT compoundnbt = new CompoundNBT();
             compoundnbt.putString("Name", scoreobjective.getName());

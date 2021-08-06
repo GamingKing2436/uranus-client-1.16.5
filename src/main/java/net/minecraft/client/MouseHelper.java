@@ -18,53 +18,53 @@ import org.lwjgl.glfw.GLFWDropCallback;
 @OnlyIn(Dist.CLIENT)
 public class MouseHelper {
    private final Minecraft minecraft;
-   private boolean isLeftPressed;
-   private boolean isMiddlePressed;
-   private boolean isRightPressed;
-   private double xpos;
-   private double ypos;
-   private int fakeRightMouse;
+   private boolean leftDown;
+   private boolean middleDown;
+   private boolean rightDown;
+   private double mouseX;
+   private double mouseY;
+   private int simulatedRightClicks;
    private int activeButton = -1;
    private boolean ignoreFirstMove = true;
-   private int clickDepth;
-   private double mousePressedTime;
-   private final MouseSmoother smoothTurnX = new MouseSmoother();
-   private final MouseSmoother smoothTurnY = new MouseSmoother();
-   private double accumulatedDX;
-   private double accumulatedDY;
-   private double accumulatedScroll;
-   private double lastMouseEventTime = Double.MIN_VALUE;
+   private int touchScreenCounter;
+   private double eventTime;
+   private final MouseSmoother xSmoother = new MouseSmoother();
+   private final MouseSmoother ySmoother = new MouseSmoother();
+   private double xVelocity;
+   private double yVelocity;
+   private double accumulatedScrollDelta;
+   private double lastLookTime = Double.MIN_VALUE;
    private boolean mouseGrabbed;
 
-   public MouseHelper(Minecraft p_i47672_1_) {
-      this.minecraft = p_i47672_1_;
+   public MouseHelper(Minecraft minecraftIn) {
+      this.minecraft = minecraftIn;
    }
 
-   private void onPress(long p_198023_1_, int p_198023_3_, int p_198023_4_, int p_198023_5_) {
-      if (p_198023_1_ == this.minecraft.getWindow().getWindow()) {
-         boolean flag = p_198023_4_ == 1;
-         if (Minecraft.ON_OSX && p_198023_3_ == 0) {
+   private void mouseButtonCallback(long handle, int button, int action, int mods) {
+      if (handle == this.minecraft.getMainWindow().getHandle()) {
+         boolean flag = action == 1;
+         if (Minecraft.IS_RUNNING_ON_MAC && button == 0) {
             if (flag) {
-               if ((p_198023_5_ & 2) == 2) {
-                  p_198023_3_ = 1;
-                  ++this.fakeRightMouse;
+               if ((mods & 2) == 2) {
+                  button = 1;
+                  ++this.simulatedRightClicks;
                }
-            } else if (this.fakeRightMouse > 0) {
-               p_198023_3_ = 1;
-               --this.fakeRightMouse;
+            } else if (this.simulatedRightClicks > 0) {
+               button = 1;
+               --this.simulatedRightClicks;
             }
          }
 
-         int i = p_198023_3_;
+         int i = button;
          if (flag) {
-            if (this.minecraft.options.touchscreen && this.clickDepth++ > 0) {
+            if (this.minecraft.gameSettings.touchscreen && this.touchScreenCounter++ > 0) {
                return;
             }
 
             this.activeButton = i;
-            this.mousePressedTime = NativeUtil.getTime();
+            this.eventTime = NativeUtil.getTime();
          } else if (this.activeButton != -1) {
-            if (this.minecraft.options.touchscreen && --this.clickDepth > 0) {
+            if (this.minecraft.gameSettings.touchscreen && --this.touchScreenCounter > 0) {
                return;
             }
 
@@ -72,41 +72,41 @@ public class MouseHelper {
          }
 
          boolean[] aboolean = new boolean[]{false};
-         if (this.minecraft.overlay == null) {
-            if (this.minecraft.screen == null) {
+         if (this.minecraft.loadingGui == null) {
+            if (this.minecraft.currentScreen == null) {
                if (!this.mouseGrabbed && flag) {
                   this.grabMouse();
                }
             } else {
-               double d0 = this.xpos * (double)this.minecraft.getWindow().getGuiScaledWidth() / (double)this.minecraft.getWindow().getScreenWidth();
-               double d1 = this.ypos * (double)this.minecraft.getWindow().getGuiScaledHeight() / (double)this.minecraft.getWindow().getScreenHeight();
+               double d0 = this.mouseX * (double)this.minecraft.getMainWindow().getScaledWidth() / (double)this.minecraft.getMainWindow().getWidth();
+               double d1 = this.mouseY * (double)this.minecraft.getMainWindow().getScaledHeight() / (double)this.minecraft.getMainWindow().getHeight();
                if (flag) {
                   Screen.wrapScreenError(() -> {
-                     aboolean[0] = this.minecraft.screen.mouseClicked(d0, d1, i);
-                  }, "mouseClicked event handler", this.minecraft.screen.getClass().getCanonicalName());
+                     aboolean[0] = this.minecraft.currentScreen.mouseClicked(d0, d1, i);
+                  }, "mouseClicked event handler", this.minecraft.currentScreen.getClass().getCanonicalName());
                } else {
                   Screen.wrapScreenError(() -> {
-                     aboolean[0] = this.minecraft.screen.mouseReleased(d0, d1, i);
-                  }, "mouseReleased event handler", this.minecraft.screen.getClass().getCanonicalName());
+                     aboolean[0] = this.minecraft.currentScreen.mouseReleased(d0, d1, i);
+                  }, "mouseReleased event handler", this.minecraft.currentScreen.getClass().getCanonicalName());
                }
             }
          }
 
-         if (!aboolean[0] && (this.minecraft.screen == null || this.minecraft.screen.passEvents) && this.minecraft.overlay == null) {
+         if (!aboolean[0] && (this.minecraft.currentScreen == null || this.minecraft.currentScreen.passEvents) && this.minecraft.loadingGui == null) {
             if (i == 0) {
-               this.isLeftPressed = flag;
+               this.leftDown = flag;
             } else if (i == 2) {
-               this.isMiddlePressed = flag;
+               this.middleDown = flag;
             } else if (i == 1) {
-               this.isRightPressed = flag;
+               this.rightDown = flag;
             }
 
-            KeyBinding.set(InputMappings.Type.MOUSE.getOrCreate(i), flag);
+            KeyBinding.setKeyBindState(InputMappings.Type.MOUSE.getOrMakeInput(i), flag);
             if (flag) {
                if (this.minecraft.player.isSpectator() && i == 2) {
-                  this.minecraft.gui.getSpectatorGui().onMouseMiddleClick();
+                  this.minecraft.ingameGUI.getSpectatorGui().onMiddleClick();
                } else {
-                  KeyBinding.click(InputMappings.Type.MOUSE.getOrCreate(i));
+                  KeyBinding.onTick(InputMappings.Type.MOUSE.getOrMakeInput(i));
                }
             }
          }
@@ -114,35 +114,35 @@ public class MouseHelper {
       }
    }
 
-   private void onScroll(long p_198020_1_, double p_198020_3_, double p_198020_5_) {
-      if (p_198020_1_ == Minecraft.getInstance().getWindow().getWindow()) {
-         double d0 = (this.minecraft.options.discreteMouseScroll ? Math.signum(p_198020_5_) : p_198020_5_) * this.minecraft.options.mouseWheelSensitivity;
-         if (this.minecraft.overlay == null) {
-            if (this.minecraft.screen != null) {
-               double d1 = this.xpos * (double)this.minecraft.getWindow().getGuiScaledWidth() / (double)this.minecraft.getWindow().getScreenWidth();
-               double d2 = this.ypos * (double)this.minecraft.getWindow().getGuiScaledHeight() / (double)this.minecraft.getWindow().getScreenHeight();
-               this.minecraft.screen.mouseScrolled(d1, d2, d0);
+   private void scrollCallback(long handle, double xoffset, double yoffset) {
+      if (handle == Minecraft.getInstance().getMainWindow().getHandle()) {
+         double d0 = (this.minecraft.gameSettings.discreteMouseScroll ? Math.signum(yoffset) : yoffset) * this.minecraft.gameSettings.mouseWheelSensitivity;
+         if (this.minecraft.loadingGui == null) {
+            if (this.minecraft.currentScreen != null) {
+               double d1 = this.mouseX * (double)this.minecraft.getMainWindow().getScaledWidth() / (double)this.minecraft.getMainWindow().getWidth();
+               double d2 = this.mouseY * (double)this.minecraft.getMainWindow().getScaledHeight() / (double)this.minecraft.getMainWindow().getHeight();
+               this.minecraft.currentScreen.mouseScrolled(d1, d2, d0);
             } else if (this.minecraft.player != null) {
-               if (this.accumulatedScroll != 0.0D && Math.signum(d0) != Math.signum(this.accumulatedScroll)) {
-                  this.accumulatedScroll = 0.0D;
+               if (this.accumulatedScrollDelta != 0.0D && Math.signum(d0) != Math.signum(this.accumulatedScrollDelta)) {
+                  this.accumulatedScrollDelta = 0.0D;
                }
 
-               this.accumulatedScroll += d0;
-               float f1 = (float)((int)this.accumulatedScroll);
+               this.accumulatedScrollDelta += d0;
+               float f1 = (float)((int)this.accumulatedScrollDelta);
                if (f1 == 0.0F) {
                   return;
                }
 
-               this.accumulatedScroll -= (double)f1;
+               this.accumulatedScrollDelta -= (double)f1;
                if (this.minecraft.player.isSpectator()) {
-                  if (this.minecraft.gui.getSpectatorGui().isMenuActive()) {
-                     this.minecraft.gui.getSpectatorGui().onMouseScrolled((double)(-f1));
+                  if (this.minecraft.ingameGUI.getSpectatorGui().isMenuActive()) {
+                     this.minecraft.ingameGUI.getSpectatorGui().onMouseScroll((double)(-f1));
                   } else {
-                     float f = MathHelper.clamp(this.minecraft.player.abilities.getFlyingSpeed() + f1 * 0.005F, 0.0F, 0.2F);
-                     this.minecraft.player.abilities.setFlyingSpeed(f);
+                     float f = MathHelper.clamp(this.minecraft.player.abilities.getFlySpeed() + f1 * 0.005F, 0.0F, 0.2F);
+                     this.minecraft.player.abilities.setFlySpeed(f);
                   }
                } else {
-                  this.minecraft.player.inventory.swapPaint((double)f1);
+                  this.minecraft.player.inventory.changeCurrentItem((double)f1);
                }
             }
          }
@@ -150,25 +150,25 @@ public class MouseHelper {
 
    }
 
-   private void onDrop(long p_238228_1_, List<Path> p_238228_3_) {
-      if (this.minecraft.screen != null) {
-         this.minecraft.screen.onFilesDrop(p_238228_3_);
+   private void addPacksToScreen(long window, List<Path> paths) {
+      if (this.minecraft.currentScreen != null) {
+         this.minecraft.currentScreen.addPacks(paths);
       }
 
    }
 
-   public void setup(long p_198029_1_) {
-      InputMappings.setupMouseCallbacks(p_198029_1_, (p_228032_1_, p_228032_3_, p_228032_5_) -> {
+   public void registerCallbacks(long handle) {
+      InputMappings.setMouseCallbacks(handle, (p_228032_1_, p_228032_3_, p_228032_5_) -> {
          this.minecraft.execute(() -> {
-            this.onMove(p_228032_1_, p_228032_3_, p_228032_5_);
+            this.cursorPosCallback(p_228032_1_, p_228032_3_, p_228032_5_);
          });
       }, (p_228028_1_, p_228028_3_, p_228028_4_, p_228028_5_) -> {
          this.minecraft.execute(() -> {
-            this.onPress(p_228028_1_, p_228028_3_, p_228028_4_, p_228028_5_);
+            this.mouseButtonCallback(p_228028_1_, p_228028_3_, p_228028_4_, p_228028_5_);
          });
       }, (p_228029_1_, p_228029_3_, p_228029_5_) -> {
          this.minecraft.execute(() -> {
-            this.onScroll(p_228029_1_, p_228029_3_, p_228029_5_);
+            this.scrollCallback(p_228029_1_, p_228029_3_, p_228029_5_);
          });
       }, (p_238227_1_, p_238227_3_, p_238227_4_) -> {
          Path[] apath = new Path[p_238227_3_];
@@ -178,101 +178,101 @@ public class MouseHelper {
          }
 
          this.minecraft.execute(() -> {
-            this.onDrop(p_238227_1_, Arrays.asList(apath));
+            this.addPacksToScreen(p_238227_1_, Arrays.asList(apath));
          });
       });
    }
 
-   private void onMove(long p_198022_1_, double p_198022_3_, double p_198022_5_) {
-      if (p_198022_1_ == Minecraft.getInstance().getWindow().getWindow()) {
+   private void cursorPosCallback(long handle, double xpos, double ypos) {
+      if (handle == Minecraft.getInstance().getMainWindow().getHandle()) {
          if (this.ignoreFirstMove) {
-            this.xpos = p_198022_3_;
-            this.ypos = p_198022_5_;
+            this.mouseX = xpos;
+            this.mouseY = ypos;
             this.ignoreFirstMove = false;
          }
 
-         IGuiEventListener iguieventlistener = this.minecraft.screen;
-         if (iguieventlistener != null && this.minecraft.overlay == null) {
-            double d0 = p_198022_3_ * (double)this.minecraft.getWindow().getGuiScaledWidth() / (double)this.minecraft.getWindow().getScreenWidth();
-            double d1 = p_198022_5_ * (double)this.minecraft.getWindow().getGuiScaledHeight() / (double)this.minecraft.getWindow().getScreenHeight();
+         IGuiEventListener iguieventlistener = this.minecraft.currentScreen;
+         if (iguieventlistener != null && this.minecraft.loadingGui == null) {
+            double d0 = xpos * (double)this.minecraft.getMainWindow().getScaledWidth() / (double)this.minecraft.getMainWindow().getWidth();
+            double d1 = ypos * (double)this.minecraft.getMainWindow().getScaledHeight() / (double)this.minecraft.getMainWindow().getHeight();
             Screen.wrapScreenError(() -> {
                iguieventlistener.mouseMoved(d0, d1);
             }, "mouseMoved event handler", iguieventlistener.getClass().getCanonicalName());
-            if (this.activeButton != -1 && this.mousePressedTime > 0.0D) {
-               double d2 = (p_198022_3_ - this.xpos) * (double)this.minecraft.getWindow().getGuiScaledWidth() / (double)this.minecraft.getWindow().getScreenWidth();
-               double d3 = (p_198022_5_ - this.ypos) * (double)this.minecraft.getWindow().getGuiScaledHeight() / (double)this.minecraft.getWindow().getScreenHeight();
+            if (this.activeButton != -1 && this.eventTime > 0.0D) {
+               double d2 = (xpos - this.mouseX) * (double)this.minecraft.getMainWindow().getScaledWidth() / (double)this.minecraft.getMainWindow().getWidth();
+               double d3 = (ypos - this.mouseY) * (double)this.minecraft.getMainWindow().getScaledHeight() / (double)this.minecraft.getMainWindow().getHeight();
                Screen.wrapScreenError(() -> {
                   iguieventlistener.mouseDragged(d0, d1, this.activeButton, d2, d3);
                }, "mouseDragged event handler", iguieventlistener.getClass().getCanonicalName());
             }
          }
 
-         this.minecraft.getProfiler().push("mouse");
-         if (this.isMouseGrabbed() && this.minecraft.isWindowActive()) {
-            this.accumulatedDX += p_198022_3_ - this.xpos;
-            this.accumulatedDY += p_198022_5_ - this.ypos;
+         this.minecraft.getProfiler().startSection("mouse");
+         if (this.isMouseGrabbed() && this.minecraft.isGameFocused()) {
+            this.xVelocity += xpos - this.mouseX;
+            this.yVelocity += ypos - this.mouseY;
          }
 
-         this.turnPlayer();
-         this.xpos = p_198022_3_;
-         this.ypos = p_198022_5_;
-         this.minecraft.getProfiler().pop();
+         this.updatePlayerLook();
+         this.mouseX = xpos;
+         this.mouseY = ypos;
+         this.minecraft.getProfiler().endSection();
       }
    }
 
-   public void turnPlayer() {
+   public void updatePlayerLook() {
       double d0 = NativeUtil.getTime();
-      double d1 = d0 - this.lastMouseEventTime;
-      this.lastMouseEventTime = d0;
-      if (this.isMouseGrabbed() && this.minecraft.isWindowActive()) {
-         double d4 = this.minecraft.options.sensitivity * (double)0.6F + (double)0.2F;
+      double d1 = d0 - this.lastLookTime;
+      this.lastLookTime = d0;
+      if (this.isMouseGrabbed() && this.minecraft.isGameFocused()) {
+         double d4 = this.minecraft.gameSettings.mouseSensitivity * (double)0.6F + (double)0.2F;
          double d5 = d4 * d4 * d4 * 8.0D;
          double d2;
          double d3;
-         if (this.minecraft.options.smoothCamera) {
-            double d6 = this.smoothTurnX.getNewDeltaValue(this.accumulatedDX * d5, d1 * d5);
-            double d7 = this.smoothTurnY.getNewDeltaValue(this.accumulatedDY * d5, d1 * d5);
+         if (this.minecraft.gameSettings.smoothCamera) {
+            double d6 = this.xSmoother.smooth(this.xVelocity * d5, d1 * d5);
+            double d7 = this.ySmoother.smooth(this.yVelocity * d5, d1 * d5);
             d2 = d6;
             d3 = d7;
          } else {
-            this.smoothTurnX.reset();
-            this.smoothTurnY.reset();
-            d2 = this.accumulatedDX * d5;
-            d3 = this.accumulatedDY * d5;
+            this.xSmoother.reset();
+            this.ySmoother.reset();
+            d2 = this.xVelocity * d5;
+            d3 = this.yVelocity * d5;
          }
 
-         this.accumulatedDX = 0.0D;
-         this.accumulatedDY = 0.0D;
+         this.xVelocity = 0.0D;
+         this.yVelocity = 0.0D;
          int i = 1;
-         if (this.minecraft.options.invertYMouse) {
+         if (this.minecraft.gameSettings.invertMouse) {
             i = -1;
          }
 
-         this.minecraft.getTutorial().onMouse(d2, d3);
+         this.minecraft.getTutorial().onMouseMove(d2, d3);
          if (this.minecraft.player != null) {
-            this.minecraft.player.turn(d2, d3 * (double)i);
+            this.minecraft.player.rotateTowards(d2, d3 * (double)i);
          }
 
       } else {
-         this.accumulatedDX = 0.0D;
-         this.accumulatedDY = 0.0D;
+         this.xVelocity = 0.0D;
+         this.yVelocity = 0.0D;
       }
    }
 
-   public boolean isLeftPressed() {
-      return this.isLeftPressed;
+   public boolean isLeftDown() {
+      return this.leftDown;
    }
 
-   public boolean isRightPressed() {
-      return this.isRightPressed;
+   public boolean isRightDown() {
+      return this.rightDown;
    }
 
-   public double xpos() {
-      return this.xpos;
+   public double getMouseX() {
+      return this.mouseX;
    }
 
-   public double ypos() {
-      return this.ypos;
+   public double getMouseY() {
+      return this.mouseY;
    }
 
    public void setIgnoreFirstMove() {
@@ -284,33 +284,33 @@ public class MouseHelper {
    }
 
    public void grabMouse() {
-      if (this.minecraft.isWindowActive()) {
+      if (this.minecraft.isGameFocused()) {
          if (!this.mouseGrabbed) {
-            if (!Minecraft.ON_OSX) {
-               KeyBinding.setAll();
+            if (!Minecraft.IS_RUNNING_ON_MAC) {
+               KeyBinding.updateKeyBindState();
             }
 
             this.mouseGrabbed = true;
-            this.xpos = (double)(this.minecraft.getWindow().getScreenWidth() / 2);
-            this.ypos = (double)(this.minecraft.getWindow().getScreenHeight() / 2);
-            InputMappings.grabOrReleaseMouse(this.minecraft.getWindow().getWindow(), 212995, this.xpos, this.ypos);
-            this.minecraft.setScreen((Screen)null);
-            this.minecraft.missTime = 10000;
+            this.mouseX = (double)(this.minecraft.getMainWindow().getWidth() / 2);
+            this.mouseY = (double)(this.minecraft.getMainWindow().getHeight() / 2);
+            InputMappings.setCursorPosAndMode(this.minecraft.getMainWindow().getHandle(), 212995, this.mouseX, this.mouseY);
+            this.minecraft.displayGuiScreen((Screen)null);
+            this.minecraft.leftClickCounter = 10000;
             this.ignoreFirstMove = true;
          }
       }
    }
 
-   public void releaseMouse() {
+   public void ungrabMouse() {
       if (this.mouseGrabbed) {
          this.mouseGrabbed = false;
-         this.xpos = (double)(this.minecraft.getWindow().getScreenWidth() / 2);
-         this.ypos = (double)(this.minecraft.getWindow().getScreenHeight() / 2);
-         InputMappings.grabOrReleaseMouse(this.minecraft.getWindow().getWindow(), 212993, this.xpos, this.ypos);
+         this.mouseX = (double)(this.minecraft.getMainWindow().getWidth() / 2);
+         this.mouseY = (double)(this.minecraft.getMainWindow().getHeight() / 2);
+         InputMappings.setCursorPosAndMode(this.minecraft.getMainWindow().getHandle(), 212993, this.mouseX, this.mouseY);
       }
    }
 
-   public void cursorEntered() {
+   public void ignoreFirstMove() {
       this.ignoreFirstMove = true;
    }
 }

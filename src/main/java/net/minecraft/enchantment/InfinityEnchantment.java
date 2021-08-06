@@ -3,15 +3,15 @@ package net.minecraft.enchantment;
 import net.minecraft.inventory.EquipmentSlotType;
 
 public class InfinityEnchantment extends Enchantment {
-   public InfinityEnchantment(Enchantment.Rarity p_i46736_1_, EquipmentSlotType... p_i46736_2_) {
-      super(p_i46736_1_, EnchantmentType.BOW, p_i46736_2_);
+   public InfinityEnchantment(Enchantment.Rarity rarityIn, EquipmentSlotType... slots) {
+      super(rarityIn, EnchantmentType.BOW, slots);
    }
 
-   public int getMinCost(int p_77321_1_) {
+   public int getMinEnchantability(int enchantmentLevel) {
       return 20;
    }
 
-   public int getMaxCost(int p_223551_1_) {
+   public int getMaxEnchantability(int enchantmentLevel) {
       return 50;
    }
 
@@ -19,7 +19,7 @@ public class InfinityEnchantment extends Enchantment {
       return 1;
    }
 
-   public boolean checkCompatibility(Enchantment p_77326_1_) {
-      return p_77326_1_ instanceof MendingEnchantment ? false : super.checkCompatibility(p_77326_1_);
+   public boolean canApplyTogether(Enchantment ench) {
+      return ench instanceof MendingEnchantment ? false : super.canApplyTogether(ench);
    }
 }

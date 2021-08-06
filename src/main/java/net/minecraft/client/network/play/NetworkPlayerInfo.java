@@ -18,89 +18,89 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class NetworkPlayerInfo {
-   private final GameProfile profile;
-   private final Map<Type, ResourceLocation> textureLocations = Maps.newEnumMap(Type.class);
-   private GameType gameMode;
-   private int latency;
-   private boolean pendingTextures;
+   private final GameProfile gameProfile;
+   private final Map<Type, ResourceLocation> playerTextures = Maps.newEnumMap(Type.class);
+   private GameType gameType;
+   private int responseTime;
+   private boolean playerTexturesLoaded;
    @Nullable
-   private String skinModel;
+   private String skinType;
    @Nullable
-   private ITextComponent tabListDisplayName;
+   private ITextComponent displayName;
    private int lastHealth;
    private int displayHealth;
    private long lastHealthTime;
    private long healthBlinkTime;
    private long renderVisibilityId;
 
-   public NetworkPlayerInfo(SPlayerListItemPacket.AddPlayerData p_i46583_1_) {
-      this.profile = p_i46583_1_.getProfile();
-      this.gameMode = p_i46583_1_.getGameMode();
-      this.latency = p_i46583_1_.getLatency();
-      this.tabListDisplayName = p_i46583_1_.getDisplayName();
+   public NetworkPlayerInfo(SPlayerListItemPacket.AddPlayerData entry) {
+      this.gameProfile = entry.getProfile();
+      this.gameType = entry.getGameMode();
+      this.responseTime = entry.getPing();
+      this.displayName = entry.getDisplayName();
    }
 
-   public GameProfile getProfile() {
-      return this.profile;
-   }
-
-   @Nullable
-   public GameType getGameMode() {
-      return this.gameMode;
-   }
-
-   protected void setGameMode(GameType p_178839_1_) {
-      this.gameMode = p_178839_1_;
-   }
-
-   public int getLatency() {
-      return this.latency;
-   }
-
-   protected void setLatency(int p_178838_1_) {
-      this.latency = p_178838_1_;
-   }
-
-   public boolean isSkinLoaded() {
-      return this.getSkinLocation() != null;
-   }
-
-   public String getModelName() {
-      return this.skinModel == null ? DefaultPlayerSkin.getSkinModelName(this.profile.getId()) : this.skinModel;
-   }
-
-   public ResourceLocation getSkinLocation() {
-      this.registerTextures();
-      return MoreObjects.firstNonNull(this.textureLocations.get(Type.SKIN), DefaultPlayerSkin.getDefaultSkin(this.profile.getId()));
+   public GameProfile getGameProfile() {
+      return this.gameProfile;
    }
 
    @Nullable
-   public ResourceLocation getCapeLocation() {
-      this.registerTextures();
-      return this.textureLocations.get(Type.CAPE);
+   public GameType getGameType() {
+      return this.gameType;
+   }
+
+   protected void setGameType(GameType gameMode) {
+      this.gameType = gameMode;
+   }
+
+   public int getResponseTime() {
+      return this.responseTime;
+   }
+
+   protected void setResponseTime(int latency) {
+      this.responseTime = latency;
+   }
+
+   public boolean hasLocationSkin() {
+      return this.getLocationSkin() != null;
+   }
+
+   public String getSkinType() {
+      return this.skinType == null ? DefaultPlayerSkin.getSkinType(this.gameProfile.getId()) : this.skinType;
+   }
+
+   public ResourceLocation getLocationSkin() {
+      this.loadPlayerTextures();
+      return MoreObjects.firstNonNull(this.playerTextures.get(Type.SKIN), DefaultPlayerSkin.getDefaultSkin(this.gameProfile.getId()));
    }
 
    @Nullable
-   public ResourceLocation getElytraLocation() {
-      this.registerTextures();
-      return this.textureLocations.get(Type.ELYTRA);
+   public ResourceLocation getLocationCape() {
+      this.loadPlayerTextures();
+      return this.playerTextures.get(Type.CAPE);
    }
 
    @Nullable
-   public ScorePlayerTeam getTeam() {
-      return Minecraft.getInstance().level.getScoreboard().getPlayersTeam(this.getProfile().getName());
+   public ResourceLocation getLocationElytra() {
+      this.loadPlayerTextures();
+      return this.playerTextures.get(Type.ELYTRA);
    }
 
-   protected void registerTextures() {
+   @Nullable
+   public ScorePlayerTeam getPlayerTeam() {
+      return Minecraft.getInstance().world.getScoreboard().getPlayersTeam(this.getGameProfile().getName());
+   }
+
+   protected void loadPlayerTextures() {
       synchronized(this) {
-         if (!this.pendingTextures) {
-            this.pendingTextures = true;
-            Minecraft.getInstance().getSkinManager().registerSkins(this.profile, (p_210250_1_, p_210250_2_, p_210250_3_) -> {
-               this.textureLocations.put(p_210250_1_, p_210250_2_);
+         if (!this.playerTexturesLoaded) {
+            this.playerTexturesLoaded = true;
+            Minecraft.getInstance().getSkinManager().loadProfileTextures(this.gameProfile, (p_210250_1_, p_210250_2_, p_210250_3_) -> {
+               this.playerTextures.put(p_210250_1_, p_210250_2_);
                if (p_210250_1_ == Type.SKIN) {
-                  this.skinModel = p_210250_3_.getMetadata("model");
-                  if (this.skinModel == null) {
-                     this.skinModel = "default";
+                  this.skinType = p_210250_3_.getMetadata("model");
+                  if (this.skinType == null) {
+                     this.skinType = "default";
                   }
                }
 
@@ -110,13 +110,13 @@ public class NetworkPlayerInfo {
       }
    }
 
-   public void setTabListDisplayName(@Nullable ITextComponent p_178859_1_) {
-      this.tabListDisplayName = p_178859_1_;
+   public void setDisplayName(@Nullable ITextComponent displayNameIn) {
+      this.displayName = displayNameIn;
    }
 
    @Nullable
-   public ITextComponent getTabListDisplayName() {
-      return this.tabListDisplayName;
+   public ITextComponent getDisplayName() {
+      return this.displayName;
    }
 
    public int getLastHealth() {

@@ -11,26 +11,26 @@ public class ChargingPlayerPhase extends Phase {
    private Vector3d targetLocation;
    private int timeSinceCharge;
 
-   public ChargingPlayerPhase(EnderDragonEntity p_i46793_1_) {
-      super(p_i46793_1_);
+   public ChargingPlayerPhase(EnderDragonEntity dragonIn) {
+      super(dragonIn);
    }
 
-   public void doServerTick() {
+   public void serverTick() {
       if (this.targetLocation == null) {
          LOGGER.warn("Aborting charge player as no target was set.");
          this.dragon.getPhaseManager().setPhase(PhaseType.HOLDING_PATTERN);
       } else if (this.timeSinceCharge > 0 && this.timeSinceCharge++ >= 10) {
          this.dragon.getPhaseManager().setPhase(PhaseType.HOLDING_PATTERN);
       } else {
-         double d0 = this.targetLocation.distanceToSqr(this.dragon.getX(), this.dragon.getY(), this.dragon.getZ());
-         if (d0 < 100.0D || d0 > 22500.0D || this.dragon.horizontalCollision || this.dragon.verticalCollision) {
+         double d0 = this.targetLocation.squareDistanceTo(this.dragon.getPosX(), this.dragon.getPosY(), this.dragon.getPosZ());
+         if (d0 < 100.0D || d0 > 22500.0D || this.dragon.collidedHorizontally || this.dragon.collidedVertically) {
             ++this.timeSinceCharge;
          }
 
       }
    }
 
-   public void begin() {
+   public void initPhase() {
       this.targetLocation = null;
       this.timeSinceCharge = 0;
    }
@@ -39,16 +39,16 @@ public class ChargingPlayerPhase extends Phase {
       this.targetLocation = p_188668_1_;
    }
 
-   public float getFlySpeed() {
+   public float getMaxRiseOrFall() {
       return 3.0F;
    }
 
    @Nullable
-   public Vector3d getFlyTargetLocation() {
+   public Vector3d getTargetLocation() {
       return this.targetLocation;
    }
 
-   public PhaseType<ChargingPlayerPhase> getPhase() {
+   public PhaseType<ChargingPlayerPhase> getType() {
       return PhaseType.CHARGING_PLAYER;
    }
 }

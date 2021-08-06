@@ -7,12 +7,12 @@ import net.minecraft.command.arguments.IArgumentSerializer;
 import net.minecraft.network.PacketBuffer;
 
 public class StringArgumentSerializer implements IArgumentSerializer<StringArgumentType> {
-   public void serializeToNetwork(StringArgumentType p_197072_1_, PacketBuffer p_197072_2_) {
-      p_197072_2_.writeEnum(p_197072_1_.getType());
+   public void write(StringArgumentType argument, PacketBuffer buffer) {
+      buffer.writeEnumValue(argument.getType());
    }
 
-   public StringArgumentType deserializeFromNetwork(PacketBuffer p_197071_1_) {
-      StringType stringtype = p_197071_1_.readEnum(StringType.class);
+   public StringArgumentType read(PacketBuffer buffer) {
+      StringType stringtype = buffer.readEnumValue(StringType.class);
       switch(stringtype) {
       case SINGLE_WORD:
          return StringArgumentType.word();
@@ -24,7 +24,7 @@ public class StringArgumentSerializer implements IArgumentSerializer<StringArgum
       }
    }
 
-   public void serializeToJson(StringArgumentType p_212244_1_, JsonObject p_212244_2_) {
+   public void write(StringArgumentType p_212244_1_, JsonObject p_212244_2_) {
       switch(p_212244_1_.getType()) {
       case SINGLE_WORD:
          p_212244_2_.addProperty("type", "word");

@@ -18,20 +18,20 @@ public class Activity {
    public static final Activity ADMIRE_ITEM = register("admire_item");
    public static final Activity AVOID = register("avoid");
    public static final Activity RIDE = register("ride");
-   private final String name;
-   private final int hashCode;
+   private final String id;
+   private final int hash;
 
-   private Activity(String p_i50141_1_) {
-      this.name = p_i50141_1_;
-      this.hashCode = p_i50141_1_.hashCode();
+   private Activity(String key) {
+      this.id = key;
+      this.hash = key.hashCode();
    }
 
-   public String getName() {
-      return this.name;
+   public String getKey() {
+      return this.id;
    }
 
-   private static Activity register(String p_221363_0_) {
-      return Registry.register(Registry.ACTIVITY, p_221363_0_, new Activity(p_221363_0_));
+   private static Activity register(String key) {
+      return Registry.register(Registry.ACTIVITY, key, new Activity(key));
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -39,17 +39,17 @@ public class Activity {
          return true;
       } else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass()) {
          Activity activity = (Activity)p_equals_1_;
-         return this.name.equals(activity.name);
+         return this.id.equals(activity.id);
       } else {
          return false;
       }
    }
 
    public int hashCode() {
-      return this.hashCode;
+      return this.hash;
    }
 
    public String toString() {
-      return this.getName();
+      return this.getKey();
    }
 }

@@ -14,93 +14,93 @@ import net.minecraft.world.BossInfo;
 
 public class ServerBossInfo extends BossInfo {
    private final Set<ServerPlayerEntity> players = Sets.newHashSet();
-   private final Set<ServerPlayerEntity> unmodifiablePlayers = Collections.unmodifiableSet(this.players);
+   private final Set<ServerPlayerEntity> readOnlyPlayers = Collections.unmodifiableSet(this.players);
    private boolean visible = true;
 
-   public ServerBossInfo(ITextComponent p_i46839_1_, BossInfo.Color p_i46839_2_, BossInfo.Overlay p_i46839_3_) {
-      super(MathHelper.createInsecureUUID(), p_i46839_1_, p_i46839_2_, p_i46839_3_);
+   public ServerBossInfo(ITextComponent nameIn, BossInfo.Color colorIn, BossInfo.Overlay overlayIn) {
+      super(MathHelper.getRandomUUID(), nameIn, colorIn, overlayIn);
    }
 
-   public void setPercent(float p_186735_1_) {
-      if (p_186735_1_ != this.percent) {
-         super.setPercent(p_186735_1_);
-         this.broadcast(SUpdateBossInfoPacket.Operation.UPDATE_PCT);
+   public void setPercent(float percentIn) {
+      if (percentIn != this.percent) {
+         super.setPercent(percentIn);
+         this.sendUpdate(SUpdateBossInfoPacket.Operation.UPDATE_PCT);
       }
 
    }
 
-   public void setColor(BossInfo.Color p_186745_1_) {
-      if (p_186745_1_ != this.color) {
-         super.setColor(p_186745_1_);
-         this.broadcast(SUpdateBossInfoPacket.Operation.UPDATE_STYLE);
+   public void setColor(BossInfo.Color colorIn) {
+      if (colorIn != this.color) {
+         super.setColor(colorIn);
+         this.sendUpdate(SUpdateBossInfoPacket.Operation.UPDATE_STYLE);
       }
 
    }
 
-   public void setOverlay(BossInfo.Overlay p_186746_1_) {
-      if (p_186746_1_ != this.overlay) {
-         super.setOverlay(p_186746_1_);
-         this.broadcast(SUpdateBossInfoPacket.Operation.UPDATE_STYLE);
+   public void setOverlay(BossInfo.Overlay overlayIn) {
+      if (overlayIn != this.overlay) {
+         super.setOverlay(overlayIn);
+         this.sendUpdate(SUpdateBossInfoPacket.Operation.UPDATE_STYLE);
       }
 
    }
 
-   public BossInfo setDarkenScreen(boolean p_186741_1_) {
-      if (p_186741_1_ != this.darkenScreen) {
-         super.setDarkenScreen(p_186741_1_);
-         this.broadcast(SUpdateBossInfoPacket.Operation.UPDATE_PROPERTIES);
-      }
-
-      return this;
-   }
-
-   public BossInfo setPlayBossMusic(boolean p_186742_1_) {
-      if (p_186742_1_ != this.playBossMusic) {
-         super.setPlayBossMusic(p_186742_1_);
-         this.broadcast(SUpdateBossInfoPacket.Operation.UPDATE_PROPERTIES);
+   public BossInfo setDarkenSky(boolean darkenSkyIn) {
+      if (darkenSkyIn != this.darkenSky) {
+         super.setDarkenSky(darkenSkyIn);
+         this.sendUpdate(SUpdateBossInfoPacket.Operation.UPDATE_PROPERTIES);
       }
 
       return this;
    }
 
-   public BossInfo setCreateWorldFog(boolean p_186743_1_) {
-      if (p_186743_1_ != this.createWorldFog) {
-         super.setCreateWorldFog(p_186743_1_);
-         this.broadcast(SUpdateBossInfoPacket.Operation.UPDATE_PROPERTIES);
+   public BossInfo setPlayEndBossMusic(boolean playEndBossMusicIn) {
+      if (playEndBossMusicIn != this.playEndBossMusic) {
+         super.setPlayEndBossMusic(playEndBossMusicIn);
+         this.sendUpdate(SUpdateBossInfoPacket.Operation.UPDATE_PROPERTIES);
       }
 
       return this;
    }
 
-   public void setName(ITextComponent p_186739_1_) {
-      if (!Objects.equal(p_186739_1_, this.name)) {
-         super.setName(p_186739_1_);
-         this.broadcast(SUpdateBossInfoPacket.Operation.UPDATE_NAME);
+   public BossInfo setCreateFog(boolean createFogIn) {
+      if (createFogIn != this.createFog) {
+         super.setCreateFog(createFogIn);
+         this.sendUpdate(SUpdateBossInfoPacket.Operation.UPDATE_PROPERTIES);
+      }
+
+      return this;
+   }
+
+   public void setName(ITextComponent nameIn) {
+      if (!Objects.equal(nameIn, this.name)) {
+         super.setName(nameIn);
+         this.sendUpdate(SUpdateBossInfoPacket.Operation.UPDATE_NAME);
       }
 
    }
 
-   private void broadcast(SUpdateBossInfoPacket.Operation p_186759_1_) {
+   private void sendUpdate(SUpdateBossInfoPacket.Operation operationIn) {
       if (this.visible) {
-         SUpdateBossInfoPacket supdatebossinfopacket = new SUpdateBossInfoPacket(p_186759_1_, this);
+         SUpdateBossInfoPacket supdatebossinfopacket = new SUpdateBossInfoPacket(operationIn, this);
 
          for(ServerPlayerEntity serverplayerentity : this.players) {
-            serverplayerentity.connection.send(supdatebossinfopacket);
+            serverplayerentity.connection.sendPacket(supdatebossinfopacket);
          }
       }
 
    }
 
-   public void addPlayer(ServerPlayerEntity p_186760_1_) {
-      if (this.players.add(p_186760_1_) && this.visible) {
-         p_186760_1_.connection.send(new SUpdateBossInfoPacket(SUpdateBossInfoPacket.Operation.ADD, this));
+   public void addPlayer(ServerPlayerEntity player) {
+      if (this.players.add(player) && this.visible) {
+         player.connection.sendPacket(new SUpdateBossInfoPacket(SUpdateBossInfoPacket.Operation.ADD, this));
       }
 
    }
 
-   public void removePlayer(ServerPlayerEntity p_186761_1_) {
-      if (this.players.remove(p_186761_1_) && this.visible) {
-         p_186761_1_.connection.send(new SUpdateBossInfoPacket(SUpdateBossInfoPacket.Operation.REMOVE, this));
+   public void removePlayer(ServerPlayerEntity player) {
+      if (this.players.remove(player) && this.visible) {
+         player.connection.sendPacket(new SUpdateBossInfoPacket(SUpdateBossInfoPacket.Operation.REMOVE, this));
       }
 
    }
@@ -118,18 +118,18 @@ public class ServerBossInfo extends BossInfo {
       return this.visible;
    }
 
-   public void setVisible(boolean p_186758_1_) {
-      if (p_186758_1_ != this.visible) {
-         this.visible = p_186758_1_;
+   public void setVisible(boolean visibleIn) {
+      if (visibleIn != this.visible) {
+         this.visible = visibleIn;
 
          for(ServerPlayerEntity serverplayerentity : this.players) {
-            serverplayerentity.connection.send(new SUpdateBossInfoPacket(p_186758_1_ ? SUpdateBossInfoPacket.Operation.ADD : SUpdateBossInfoPacket.Operation.REMOVE, this));
+            serverplayerentity.connection.sendPacket(new SUpdateBossInfoPacket(visibleIn ? SUpdateBossInfoPacket.Operation.ADD : SUpdateBossInfoPacket.Operation.REMOVE, this));
          }
       }
 
    }
 
    public Collection<ServerPlayerEntity> getPlayers() {
-      return this.unmodifiablePlayers;
+      return this.readOnlyPlayers;
    }
 }

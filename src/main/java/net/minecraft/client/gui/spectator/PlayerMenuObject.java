@@ -20,32 +20,32 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class PlayerMenuObject implements ISpectatorMenuObject {
    private final GameProfile profile;
-   private final ResourceLocation location;
-   private final StringTextComponent name;
+   private final ResourceLocation resourceLocation;
+   private final StringTextComponent field_243475_c;
 
-   public PlayerMenuObject(GameProfile p_i45498_1_) {
-      this.profile = p_i45498_1_;
+   public PlayerMenuObject(GameProfile profileIn) {
+      this.profile = profileIn;
       Minecraft minecraft = Minecraft.getInstance();
-      Map<Type, MinecraftProfileTexture> map = minecraft.getSkinManager().getInsecureSkinInformation(p_i45498_1_);
+      Map<Type, MinecraftProfileTexture> map = minecraft.getSkinManager().loadSkinFromCache(profileIn);
       if (map.containsKey(Type.SKIN)) {
-         this.location = minecraft.getSkinManager().registerTexture(map.get(Type.SKIN), Type.SKIN);
+         this.resourceLocation = minecraft.getSkinManager().loadSkin(map.get(Type.SKIN), Type.SKIN);
       } else {
-         this.location = DefaultPlayerSkin.getDefaultSkin(PlayerEntity.createPlayerUUID(p_i45498_1_));
+         this.resourceLocation = DefaultPlayerSkin.getDefaultSkin(PlayerEntity.getUUID(profileIn));
       }
 
-      this.name = new StringTextComponent(p_i45498_1_.getName());
+      this.field_243475_c = new StringTextComponent(profileIn.getName());
    }
 
-   public void selectItem(SpectatorMenu p_178661_1_) {
-      Minecraft.getInstance().getConnection().send(new CSpectatePacket(this.profile.getId()));
+   public void selectItem(SpectatorMenu menu) {
+      Minecraft.getInstance().getConnection().sendPacket(new CSpectatePacket(this.profile.getId()));
    }
 
-   public ITextComponent getName() {
-      return this.name;
+   public ITextComponent getSpectatorName() {
+      return this.field_243475_c;
    }
 
-   public void renderIcon(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
-      Minecraft.getInstance().getTextureManager().bind(this.location);
+   public void func_230485_a_(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
+      Minecraft.getInstance().getTextureManager().bindTexture(this.resourceLocation);
       RenderSystem.color4f(1.0F, 1.0F, 1.0F, (float)p_230485_3_ / 255.0F);
       AbstractGui.blit(p_230485_1_, 2, 2, 12, 12, 8.0F, 8.0F, 8, 8, 64, 64);
       AbstractGui.blit(p_230485_1_, 2, 2, 12, 12, 40.0F, 8.0F, 8, 8, 64, 64);

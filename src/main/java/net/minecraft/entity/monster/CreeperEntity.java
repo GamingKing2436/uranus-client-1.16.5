@@ -45,17 +45,17 @@ import net.minecraftforge.api.distmarker.OnlyIn;
    _interface = IChargeableMob.class
 )
 public class CreeperEntity extends MonsterEntity implements IChargeableMob {
-   private static final DataParameter<Integer> DATA_SWELL_DIR = EntityDataManager.defineId(CreeperEntity.class, DataSerializers.INT);
-   private static final DataParameter<Boolean> DATA_IS_POWERED = EntityDataManager.defineId(CreeperEntity.class, DataSerializers.BOOLEAN);
-   private static final DataParameter<Boolean> DATA_IS_IGNITED = EntityDataManager.defineId(CreeperEntity.class, DataSerializers.BOOLEAN);
-   private int oldSwell;
-   private int swell;
-   private int maxSwell = 30;
+   private static final DataParameter<Integer> STATE = EntityDataManager.createKey(CreeperEntity.class, DataSerializers.VARINT);
+   private static final DataParameter<Boolean> POWERED = EntityDataManager.createKey(CreeperEntity.class, DataSerializers.BOOLEAN);
+   private static final DataParameter<Boolean> IGNITED = EntityDataManager.createKey(CreeperEntity.class, DataSerializers.BOOLEAN);
+   private int lastActiveTime;
+   private int timeSinceIgnited;
+   private int fuseTime = 30;
    private int explosionRadius = 3;
    private int droppedSkulls;
 
-   public CreeperEntity(EntityType<? extends CreeperEntity> p_i50213_1_, World p_i50213_2_) {
-      super(p_i50213_1_, p_i50213_2_);
+   public CreeperEntity(EntityType<? extends CreeperEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
    protected void registerGoals() {
@@ -71,54 +71,54 @@ public class CreeperEntity extends MonsterEntity implements IChargeableMob {
       this.targetSelector.addGoal(2, new HurtByTargetGoal(this));
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return MonsterEntity.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.25D);
+   public static AttributeModifierMap.MutableAttribute registerAttributes() {
+      return MonsterEntity.func_234295_eP_().createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.25D);
    }
 
-   public int getMaxFallDistance() {
-      return this.getTarget() == null ? 3 : 3 + (int)(this.getHealth() - 1.0F);
+   public int getMaxFallHeight() {
+      return this.getAttackTarget() == null ? 3 : 3 + (int)(this.getHealth() - 1.0F);
    }
 
-   public boolean causeFallDamage(float p_225503_1_, float p_225503_2_) {
-      boolean flag = super.causeFallDamage(p_225503_1_, p_225503_2_);
-      this.swell = (int)((float)this.swell + p_225503_1_ * 1.5F);
-      if (this.swell > this.maxSwell - 5) {
-         this.swell = this.maxSwell - 5;
+   public boolean onLivingFall(float distance, float damageMultiplier) {
+      boolean flag = super.onLivingFall(distance, damageMultiplier);
+      this.timeSinceIgnited = (int)((float)this.timeSinceIgnited + distance * 1.5F);
+      if (this.timeSinceIgnited > this.fuseTime - 5) {
+         this.timeSinceIgnited = this.fuseTime - 5;
       }
 
       return flag;
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_SWELL_DIR, -1);
-      this.entityData.define(DATA_IS_POWERED, false);
-      this.entityData.define(DATA_IS_IGNITED, false);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(STATE, -1);
+      this.dataManager.register(POWERED, false);
+      this.dataManager.register(IGNITED, false);
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      if (this.entityData.get(DATA_IS_POWERED)) {
-         p_213281_1_.putBoolean("powered", true);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      if (this.dataManager.get(POWERED)) {
+         compound.putBoolean("powered", true);
       }
 
-      p_213281_1_.putShort("Fuse", (short)this.maxSwell);
-      p_213281_1_.putByte("ExplosionRadius", (byte)this.explosionRadius);
-      p_213281_1_.putBoolean("ignited", this.isIgnited());
+      compound.putShort("Fuse", (short)this.fuseTime);
+      compound.putByte("ExplosionRadius", (byte)this.explosionRadius);
+      compound.putBoolean("ignited", this.hasIgnited());
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.entityData.set(DATA_IS_POWERED, p_70037_1_.getBoolean("powered"));
-      if (p_70037_1_.contains("Fuse", 99)) {
-         this.maxSwell = p_70037_1_.getShort("Fuse");
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.dataManager.set(POWERED, compound.getBoolean("powered"));
+      if (compound.contains("Fuse", 99)) {
+         this.fuseTime = compound.getShort("Fuse");
       }
 
-      if (p_70037_1_.contains("ExplosionRadius", 99)) {
-         this.explosionRadius = p_70037_1_.getByte("ExplosionRadius");
+      if (compound.contains("ExplosionRadius", 99)) {
+         this.explosionRadius = compound.getByte("ExplosionRadius");
       }
 
-      if (p_70037_1_.getBoolean("ignited")) {
+      if (compound.getBoolean("ignited")) {
          this.ignite();
       }
 
@@ -126,100 +126,100 @@ public class CreeperEntity extends MonsterEntity implements IChargeableMob {
 
    public void tick() {
       if (this.isAlive()) {
-         this.oldSwell = this.swell;
-         if (this.isIgnited()) {
-            this.setSwellDir(1);
+         this.lastActiveTime = this.timeSinceIgnited;
+         if (this.hasIgnited()) {
+            this.setCreeperState(1);
          }
 
-         int i = this.getSwellDir();
-         if (i > 0 && this.swell == 0) {
-            this.playSound(SoundEvents.CREEPER_PRIMED, 1.0F, 0.5F);
+         int i = this.getCreeperState();
+         if (i > 0 && this.timeSinceIgnited == 0) {
+            this.playSound(SoundEvents.ENTITY_CREEPER_PRIMED, 1.0F, 0.5F);
          }
 
-         this.swell += i;
-         if (this.swell < 0) {
-            this.swell = 0;
+         this.timeSinceIgnited += i;
+         if (this.timeSinceIgnited < 0) {
+            this.timeSinceIgnited = 0;
          }
 
-         if (this.swell >= this.maxSwell) {
-            this.swell = this.maxSwell;
-            this.explodeCreeper();
+         if (this.timeSinceIgnited >= this.fuseTime) {
+            this.timeSinceIgnited = this.fuseTime;
+            this.explode();
          }
       }
 
       super.tick();
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.CREEPER_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_CREEPER_HURT;
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.CREEPER_DEATH;
+      return SoundEvents.ENTITY_CREEPER_DEATH;
    }
 
-   protected void dropCustomDeathLoot(DamageSource p_213333_1_, int p_213333_2_, boolean p_213333_3_) {
-      super.dropCustomDeathLoot(p_213333_1_, p_213333_2_, p_213333_3_);
-      Entity entity = p_213333_1_.getEntity();
+   protected void dropSpecialItems(DamageSource source, int looting, boolean recentlyHitIn) {
+      super.dropSpecialItems(source, looting, recentlyHitIn);
+      Entity entity = source.getTrueSource();
       if (entity != this && entity instanceof CreeperEntity) {
          CreeperEntity creeperentity = (CreeperEntity)entity;
-         if (creeperentity.canDropMobsSkull()) {
-            creeperentity.increaseDroppedSkulls();
-            this.spawnAtLocation(Items.CREEPER_HEAD);
+         if (creeperentity.ableToCauseSkullDrop()) {
+            creeperentity.incrementDroppedSkulls();
+            this.entityDropItem(Items.CREEPER_HEAD);
          }
       }
 
    }
 
-   public boolean doHurtTarget(Entity p_70652_1_) {
+   public boolean attackEntityAsMob(Entity entityIn) {
       return true;
    }
 
-   public boolean isPowered() {
-      return this.entityData.get(DATA_IS_POWERED);
+   public boolean isCharged() {
+      return this.dataManager.get(POWERED);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getSwelling(float p_70831_1_) {
-      return MathHelper.lerp(p_70831_1_, (float)this.oldSwell, (float)this.swell) / (float)(this.maxSwell - 2);
+   public float getCreeperFlashIntensity(float partialTicks) {
+      return MathHelper.lerp(partialTicks, (float)this.lastActiveTime, (float)this.timeSinceIgnited) / (float)(this.fuseTime - 2);
    }
 
-   public int getSwellDir() {
-      return this.entityData.get(DATA_SWELL_DIR);
+   public int getCreeperState() {
+      return this.dataManager.get(STATE);
    }
 
-   public void setSwellDir(int p_70829_1_) {
-      this.entityData.set(DATA_SWELL_DIR, p_70829_1_);
+   public void setCreeperState(int state) {
+      this.dataManager.set(STATE, state);
    }
 
-   public void thunderHit(ServerWorld p_241841_1_, LightningBoltEntity p_241841_2_) {
-      super.thunderHit(p_241841_1_, p_241841_2_);
-      this.entityData.set(DATA_IS_POWERED, true);
+   public void func_241841_a(ServerWorld p_241841_1_, LightningBoltEntity p_241841_2_) {
+      super.func_241841_a(p_241841_1_, p_241841_2_);
+      this.dataManager.set(POWERED, true);
    }
 
-   protected ActionResultType mobInteract(PlayerEntity p_230254_1_, Hand p_230254_2_) {
-      ItemStack itemstack = p_230254_1_.getItemInHand(p_230254_2_);
+   protected ActionResultType func_230254_b_(PlayerEntity p_230254_1_, Hand p_230254_2_) {
+      ItemStack itemstack = p_230254_1_.getHeldItem(p_230254_2_);
       if (itemstack.getItem() == Items.FLINT_AND_STEEL) {
-         this.level.playSound(p_230254_1_, this.getX(), this.getY(), this.getZ(), SoundEvents.FLINTANDSTEEL_USE, this.getSoundSource(), 1.0F, this.random.nextFloat() * 0.4F + 0.8F);
-         if (!this.level.isClientSide) {
+         this.world.playSound(p_230254_1_, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ITEM_FLINTANDSTEEL_USE, this.getSoundCategory(), 1.0F, this.rand.nextFloat() * 0.4F + 0.8F);
+         if (!this.world.isRemote) {
             this.ignite();
-            itemstack.hurtAndBreak(1, p_230254_1_, (p_213625_1_) -> {
-               p_213625_1_.broadcastBreakEvent(p_230254_2_);
+            itemstack.damageItem(1, p_230254_1_, (p_213625_1_) -> {
+               p_213625_1_.sendBreakAnimation(p_230254_2_);
             });
          }
 
-         return ActionResultType.sidedSuccess(this.level.isClientSide);
+         return ActionResultType.func_233537_a_(this.world.isRemote);
       } else {
-         return super.mobInteract(p_230254_1_, p_230254_2_);
+         return super.func_230254_b_(p_230254_1_, p_230254_2_);
       }
    }
 
-   private void explodeCreeper() {
-      if (!this.level.isClientSide) {
-         Explosion.Mode explosion$mode = this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? Explosion.Mode.DESTROY : Explosion.Mode.NONE;
-         float f = this.isPowered() ? 2.0F : 1.0F;
+   private void explode() {
+      if (!this.world.isRemote) {
+         Explosion.Mode explosion$mode = this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING) ? Explosion.Mode.DESTROY : Explosion.Mode.NONE;
+         float f = this.isCharged() ? 2.0F : 1.0F;
          this.dead = true;
-         this.level.explode(this, this.getX(), this.getY(), this.getZ(), (float)this.explosionRadius * f, explosion$mode);
+         this.world.createExplosion(this, this.getPosX(), this.getPosY(), this.getPosZ(), (float)this.explosionRadius * f, explosion$mode);
          this.remove();
          this.spawnLingeringCloud();
       }
@@ -227,9 +227,9 @@ public class CreeperEntity extends MonsterEntity implements IChargeableMob {
    }
 
    private void spawnLingeringCloud() {
-      Collection<EffectInstance> collection = this.getActiveEffects();
+      Collection<EffectInstance> collection = this.getActivePotionEffects();
       if (!collection.isEmpty()) {
-         AreaEffectCloudEntity areaeffectcloudentity = new AreaEffectCloudEntity(this.level, this.getX(), this.getY(), this.getZ());
+         AreaEffectCloudEntity areaeffectcloudentity = new AreaEffectCloudEntity(this.world, this.getPosX(), this.getPosY(), this.getPosZ());
          areaeffectcloudentity.setRadius(2.5F);
          areaeffectcloudentity.setRadiusOnUse(-0.5F);
          areaeffectcloudentity.setWaitTime(10);
@@ -240,24 +240,24 @@ public class CreeperEntity extends MonsterEntity implements IChargeableMob {
             areaeffectcloudentity.addEffect(new EffectInstance(effectinstance));
          }
 
-         this.level.addFreshEntity(areaeffectcloudentity);
+         this.world.addEntity(areaeffectcloudentity);
       }
 
    }
 
-   public boolean isIgnited() {
-      return this.entityData.get(DATA_IS_IGNITED);
+   public boolean hasIgnited() {
+      return this.dataManager.get(IGNITED);
    }
 
    public void ignite() {
-      this.entityData.set(DATA_IS_IGNITED, true);
+      this.dataManager.set(IGNITED, true);
    }
 
-   public boolean canDropMobsSkull() {
-      return this.isPowered() && this.droppedSkulls < 1;
+   public boolean ableToCauseSkullDrop() {
+      return this.isCharged() && this.droppedSkulls < 1;
    }
 
-   public void increaseDroppedSkulls() {
+   public void incrementDroppedSkulls() {
       ++this.droppedSkulls;
    }
 }

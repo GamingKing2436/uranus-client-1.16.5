@@ -14,45 +14,45 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class TranslationTextComponent extends TextComponent implements ITargetedTextComponent {
-   private static final Object[] NO_ARGS = new Object[0];
-   private static final ITextProperties TEXT_PERCENT = ITextProperties.of("%");
-   private static final ITextProperties TEXT_NULL = ITextProperties.of("null");
+   private static final Object[] field_240753_d_ = new Object[0];
+   private static final ITextProperties field_240754_e_ = ITextProperties.func_240652_a_("%");
+   private static final ITextProperties field_240755_f_ = ITextProperties.func_240652_a_("null");
    private final String key;
-   private final Object[] args;
+   private final Object[] formatArgs;
    @Nullable
-   private LanguageMap decomposedWith;
-   private final List<ITextProperties> decomposedParts = Lists.newArrayList();
-   private static final Pattern FORMAT_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?([A-Za-z%]|$)");
+   private LanguageMap field_240756_i_;
+   private final List<ITextProperties> children = Lists.newArrayList();
+   private static final Pattern STRING_VARIABLE_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?([A-Za-z%]|$)");
 
-   public TranslationTextComponent(String p_i232574_1_) {
-      this.key = p_i232574_1_;
-      this.args = NO_ARGS;
+   public TranslationTextComponent(String translationKey) {
+      this.key = translationKey;
+      this.formatArgs = field_240753_d_;
    }
 
-   public TranslationTextComponent(String p_i45160_1_, Object... p_i45160_2_) {
-      this.key = p_i45160_1_;
-      this.args = p_i45160_2_;
+   public TranslationTextComponent(String translationKey, Object... args) {
+      this.key = translationKey;
+      this.formatArgs = args;
    }
 
-   private void decompose() {
+   private void ensureInitialized() {
       LanguageMap languagemap = LanguageMap.getInstance();
-      if (languagemap != this.decomposedWith) {
-         this.decomposedWith = languagemap;
-         this.decomposedParts.clear();
-         String s = languagemap.getOrDefault(this.key);
+      if (languagemap != this.field_240756_i_) {
+         this.field_240756_i_ = languagemap;
+         this.children.clear();
+         String s = languagemap.func_230503_a_(this.key);
 
          try {
-            this.decomposeTemplate(s);
+            this.func_240758_a_(s);
          } catch (TranslationTextComponentFormatException translationtextcomponentformatexception) {
-            this.decomposedParts.clear();
-            this.decomposedParts.add(ITextProperties.of(s));
+            this.children.clear();
+            this.children.add(ITextProperties.func_240652_a_(s));
          }
 
       }
    }
 
-   private void decomposeTemplate(String p_240758_1_) {
-      Matcher matcher = FORMAT_PATTERN.matcher(p_240758_1_);
+   private void func_240758_a_(String p_240758_1_) {
+      Matcher matcher = STRING_VARIABLE_PATTERN.matcher(p_240758_1_);
 
       try {
          int i = 0;
@@ -68,13 +68,13 @@ public class TranslationTextComponent extends TextComponent implements ITargeted
                   throw new IllegalArgumentException();
                }
 
-               this.decomposedParts.add(ITextProperties.of(s));
+               this.children.add(ITextProperties.func_240652_a_(s));
             }
 
             String s4 = matcher.group(2);
             String s1 = p_240758_1_.substring(k, l);
             if ("%".equals(s4) && "%%".equals(s1)) {
-               this.decomposedParts.add(TEXT_PERCENT);
+               this.children.add(field_240754_e_);
             } else {
                if (!"s".equals(s4)) {
                   throw new TranslationTextComponentFormatException(this, "Unsupported format: '" + s1 + "'");
@@ -82,8 +82,8 @@ public class TranslationTextComponent extends TextComponent implements ITargeted
 
                String s2 = matcher.group(1);
                int i1 = s2 != null ? Integer.parseInt(s2) - 1 : i++;
-               if (i1 < this.args.length) {
-                  this.decomposedParts.add(this.getArgument(i1));
+               if (i1 < this.formatArgs.length) {
+                  this.children.add(this.func_240757_a_(i1));
                }
             }
          }
@@ -94,7 +94,7 @@ public class TranslationTextComponent extends TextComponent implements ITargeted
                throw new IllegalArgumentException();
             }
 
-            this.decomposedParts.add(ITextProperties.of(s3));
+            this.children.add(ITextProperties.func_240652_a_(s3));
          }
 
       } catch (IllegalArgumentException illegalargumentexception) {
@@ -102,29 +102,29 @@ public class TranslationTextComponent extends TextComponent implements ITargeted
       }
    }
 
-   private ITextProperties getArgument(int p_240757_1_) {
-      if (p_240757_1_ >= this.args.length) {
+   private ITextProperties func_240757_a_(int p_240757_1_) {
+      if (p_240757_1_ >= this.formatArgs.length) {
          throw new TranslationTextComponentFormatException(this, p_240757_1_);
       } else {
-         Object object = this.args[p_240757_1_];
+         Object object = this.formatArgs[p_240757_1_];
          if (object instanceof ITextComponent) {
             return (ITextComponent)object;
          } else {
-            return object == null ? TEXT_NULL : ITextProperties.of(object.toString());
+            return object == null ? field_240755_f_ : ITextProperties.func_240652_a_(object.toString());
          }
       }
    }
 
-   public TranslationTextComponent plainCopy() {
-      return new TranslationTextComponent(this.key, this.args);
+   public TranslationTextComponent copyRaw() {
+      return new TranslationTextComponent(this.key, this.formatArgs);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public <T> Optional<T> visitSelf(ITextProperties.IStyledTextAcceptor<T> p_230534_1_, Style p_230534_2_) {
-      this.decompose();
+   public <T> Optional<T> func_230534_b_(ITextProperties.IStyledTextAcceptor<T> acceptor, Style style) {
+      this.ensureInitialized();
 
-      for(ITextProperties itextproperties : this.decomposedParts) {
-         Optional<T> optional = itextproperties.visit(p_230534_1_, p_230534_2_);
+      for(ITextProperties itextproperties : this.children) {
+         Optional<T> optional = itextproperties.getComponentWithStyle(acceptor, style);
          if (optional.isPresent()) {
             return optional;
          }
@@ -133,11 +133,11 @@ public class TranslationTextComponent extends TextComponent implements ITargeted
       return Optional.empty();
    }
 
-   public <T> Optional<T> visitSelf(ITextProperties.ITextAcceptor<T> p_230533_1_) {
-      this.decompose();
+   public <T> Optional<T> func_230533_b_(ITextProperties.ITextAcceptor<T> acceptor) {
+      this.ensureInitialized();
 
-      for(ITextProperties itextproperties : this.decomposedParts) {
-         Optional<T> optional = itextproperties.visit(p_230533_1_);
+      for(ITextProperties itextproperties : this.children) {
+         Optional<T> optional = itextproperties.getComponent(acceptor);
          if (optional.isPresent()) {
             return optional;
          }
@@ -146,13 +146,13 @@ public class TranslationTextComponent extends TextComponent implements ITargeted
       return Optional.empty();
    }
 
-   public IFormattableTextComponent resolve(@Nullable CommandSource p_230535_1_, @Nullable Entity p_230535_2_, int p_230535_3_) throws CommandSyntaxException {
-      Object[] aobject = new Object[this.args.length];
+   public IFormattableTextComponent func_230535_a_(@Nullable CommandSource p_230535_1_, @Nullable Entity p_230535_2_, int p_230535_3_) throws CommandSyntaxException {
+      Object[] aobject = new Object[this.formatArgs.length];
 
       for(int i = 0; i < aobject.length; ++i) {
-         Object object = this.args[i];
+         Object object = this.formatArgs[i];
          if (object instanceof ITextComponent) {
-            aobject[i] = TextComponentUtils.updateForEntity(p_230535_1_, (ITextComponent)object, p_230535_2_, p_230535_3_);
+            aobject[i] = TextComponentUtils.func_240645_a_(p_230535_1_, (ITextComponent)object, p_230535_2_, p_230535_3_);
          } else {
             aobject[i] = object;
          }
@@ -168,25 +168,25 @@ public class TranslationTextComponent extends TextComponent implements ITargeted
          return false;
       } else {
          TranslationTextComponent translationtextcomponent = (TranslationTextComponent)p_equals_1_;
-         return Arrays.equals(this.args, translationtextcomponent.args) && this.key.equals(translationtextcomponent.key) && super.equals(p_equals_1_);
+         return Arrays.equals(this.formatArgs, translationtextcomponent.formatArgs) && this.key.equals(translationtextcomponent.key) && super.equals(p_equals_1_);
       }
    }
 
    public int hashCode() {
       int i = super.hashCode();
       i = 31 * i + this.key.hashCode();
-      return 31 * i + Arrays.hashCode(this.args);
+      return 31 * i + Arrays.hashCode(this.formatArgs);
    }
 
    public String toString() {
-      return "TranslatableComponent{key='" + this.key + '\'' + ", args=" + Arrays.toString(this.args) + ", siblings=" + this.siblings + ", style=" + this.getStyle() + '}';
+      return "TranslatableComponent{key='" + this.key + '\'' + ", args=" + Arrays.toString(this.formatArgs) + ", siblings=" + this.siblings + ", style=" + this.getStyle() + '}';
    }
 
    public String getKey() {
       return this.key;
    }
 
-   public Object[] getArgs() {
-      return this.args;
+   public Object[] getFormatArgs() {
+      return this.formatArgs;
    }
 }

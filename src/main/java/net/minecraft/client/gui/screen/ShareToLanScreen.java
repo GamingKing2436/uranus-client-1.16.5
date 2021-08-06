@@ -13,66 +13,66 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ShareToLanScreen extends Screen {
-   private static final ITextComponent ALLOW_COMMANDS_LABEL = new TranslationTextComponent("selectWorld.allowCommands");
-   private static final ITextComponent GAME_MODE_LABEL = new TranslationTextComponent("selectWorld.gameMode");
-   private static final ITextComponent INFO_TEXT = new TranslationTextComponent("lanServer.otherPlayers");
+   private static final ITextComponent field_243310_a = new TranslationTextComponent("selectWorld.allowCommands");
+   private static final ITextComponent field_243311_b = new TranslationTextComponent("selectWorld.gameMode");
+   private static final ITextComponent field_243312_c = new TranslationTextComponent("lanServer.otherPlayers");
    private final Screen lastScreen;
-   private Button commandsButton;
-   private Button modeButton;
-   private String gameModeName = "survival";
-   private boolean commands;
+   private Button allowCheatsButton;
+   private Button gameModeButton;
+   private String gameMode = "survival";
+   private boolean allowCheats;
 
-   public ShareToLanScreen(Screen p_i1055_1_) {
+   public ShareToLanScreen(Screen lastScreenIn) {
       super(new TranslationTextComponent("lanServer.title"));
-      this.lastScreen = p_i1055_1_;
+      this.lastScreen = lastScreenIn;
    }
 
    protected void init() {
       this.addButton(new Button(this.width / 2 - 155, this.height - 28, 150, 20, new TranslationTextComponent("lanServer.start"), (p_213082_1_) -> {
-         this.minecraft.setScreen((Screen)null);
-         int i = HTTPUtil.getAvailablePort();
+         this.minecraft.displayGuiScreen((Screen)null);
+         int i = HTTPUtil.getSuitableLanPort();
          ITextComponent itextcomponent;
-         if (this.minecraft.getSingleplayerServer().publishServer(GameType.byName(this.gameModeName), this.commands, i)) {
+         if (this.minecraft.getIntegratedServer().shareToLAN(GameType.getByName(this.gameMode), this.allowCheats, i)) {
             itextcomponent = new TranslationTextComponent("commands.publish.started", i);
          } else {
             itextcomponent = new TranslationTextComponent("commands.publish.failed");
          }
 
-         this.minecraft.gui.getChat().addMessage(itextcomponent);
-         this.minecraft.updateTitle();
+         this.minecraft.ingameGUI.getChatGUI().printChatMessage(itextcomponent);
+         this.minecraft.setDefaultMinecraftTitle();
       }));
       this.addButton(new Button(this.width / 2 + 5, this.height - 28, 150, 20, DialogTexts.GUI_CANCEL, (p_213085_1_) -> {
-         this.minecraft.setScreen(this.lastScreen);
+         this.minecraft.displayGuiScreen(this.lastScreen);
       }));
-      this.modeButton = this.addButton(new Button(this.width / 2 - 155, 100, 150, 20, StringTextComponent.EMPTY, (p_213084_1_) -> {
-         if ("spectator".equals(this.gameModeName)) {
-            this.gameModeName = "creative";
-         } else if ("creative".equals(this.gameModeName)) {
-            this.gameModeName = "adventure";
-         } else if ("adventure".equals(this.gameModeName)) {
-            this.gameModeName = "survival";
+      this.gameModeButton = this.addButton(new Button(this.width / 2 - 155, 100, 150, 20, StringTextComponent.EMPTY, (p_213084_1_) -> {
+         if ("spectator".equals(this.gameMode)) {
+            this.gameMode = "creative";
+         } else if ("creative".equals(this.gameMode)) {
+            this.gameMode = "adventure";
+         } else if ("adventure".equals(this.gameMode)) {
+            this.gameMode = "survival";
          } else {
-            this.gameModeName = "spectator";
+            this.gameMode = "spectator";
          }
 
-         this.updateSelectionStrings();
+         this.updateDisplayNames();
       }));
-      this.commandsButton = this.addButton(new Button(this.width / 2 + 5, 100, 150, 20, ALLOW_COMMANDS_LABEL, (p_213083_1_) -> {
-         this.commands = !this.commands;
-         this.updateSelectionStrings();
+      this.allowCheatsButton = this.addButton(new Button(this.width / 2 + 5, 100, 150, 20, field_243310_a, (p_213083_1_) -> {
+         this.allowCheats = !this.allowCheats;
+         this.updateDisplayNames();
       }));
-      this.updateSelectionStrings();
+      this.updateDisplayNames();
    }
 
-   private void updateSelectionStrings() {
-      this.modeButton.setMessage(new TranslationTextComponent("options.generic_value", GAME_MODE_LABEL, new TranslationTextComponent("selectWorld.gameMode." + this.gameModeName)));
-      this.commandsButton.setMessage(DialogTexts.optionStatus(ALLOW_COMMANDS_LABEL, this.commands));
+   private void updateDisplayNames() {
+      this.gameModeButton.setMessage(new TranslationTextComponent("options.generic_value", field_243311_b, new TranslationTextComponent("selectWorld.gameMode." + this.gameMode)));
+      this.allowCheatsButton.setMessage(DialogTexts.getComposedOptionMessage(field_243310_a, this.allowCheats));
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.renderBackground(p_230430_1_);
-      drawCenteredString(p_230430_1_, this.font, this.title, this.width / 2, 50, 16777215);
-      drawCenteredString(p_230430_1_, this.font, INFO_TEXT, this.width / 2, 82, 16777215);
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.renderBackground(matrixStack);
+      drawCenteredString(matrixStack, this.font, this.title, this.width / 2, 50, 16777215);
+      drawCenteredString(matrixStack, this.font, field_243312_c, this.width / 2, 82, 16777215);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
    }
 }

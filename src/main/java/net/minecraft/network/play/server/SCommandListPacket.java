@@ -33,39 +33,39 @@ public class SCommandListPacket implements IPacket<IClientPlayNetHandler> {
    public SCommandListPacket() {
    }
 
-   public SCommandListPacket(RootCommandNode<ISuggestionProvider> p_i47940_1_) {
-      this.root = p_i47940_1_;
+   public SCommandListPacket(RootCommandNode<ISuggestionProvider> rootIn) {
+      this.root = rootIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      SCommandListPacket.Entry[] ascommandlistpacket$entry = new SCommandListPacket.Entry[p_148837_1_.readVarInt()];
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      SCommandListPacket.Entry[] ascommandlistpacket$entry = new SCommandListPacket.Entry[buf.readVarInt()];
 
       for(int i = 0; i < ascommandlistpacket$entry.length; ++i) {
-         ascommandlistpacket$entry[i] = readNode(p_148837_1_);
+         ascommandlistpacket$entry[i] = readEntry(buf);
       }
 
-      resolveEntries(ascommandlistpacket$entry);
-      this.root = (RootCommandNode)ascommandlistpacket$entry[p_148837_1_.readVarInt()].node;
+      func_244294_a(ascommandlistpacket$entry);
+      this.root = (RootCommandNode)ascommandlistpacket$entry[buf.readVarInt()].node;
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      Object2IntMap<CommandNode<ISuggestionProvider>> object2intmap = enumerateNodes(this.root);
-      CommandNode<ISuggestionProvider>[] commandnode = getNodesInIdOrder(object2intmap);
-      p_148840_1_.writeVarInt(commandnode.length);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      Object2IntMap<CommandNode<ISuggestionProvider>> object2intmap = func_244292_a(this.root);
+      CommandNode<ISuggestionProvider>[] commandnode = func_244293_a(object2intmap);
+      buf.writeVarInt(commandnode.length);
 
       for(CommandNode<ISuggestionProvider> commandnode1 : commandnode) {
-         writeNode(p_148840_1_, commandnode1, object2intmap);
+         writeCommandNode(buf, commandnode1, object2intmap);
       }
 
-      p_148840_1_.writeVarInt(object2intmap.get(this.root));
+      buf.writeVarInt(object2intmap.get(this.root));
    }
 
-   private static void resolveEntries(SCommandListPacket.Entry[] p_244294_0_) {
+   private static void func_244294_a(SCommandListPacket.Entry[] p_244294_0_) {
       List<SCommandListPacket.Entry> list = Lists.newArrayList(p_244294_0_);
 
       while(!list.isEmpty()) {
          boolean flag = list.removeIf((p_244295_1_) -> {
-            return p_244295_1_.build(p_244294_0_);
+            return p_244295_1_.createCommandNode(p_244294_0_);
          });
          if (!flag) {
             throw new IllegalStateException("Server sent an impossible command tree");
@@ -74,7 +74,7 @@ public class SCommandListPacket implements IPacket<IClientPlayNetHandler> {
 
    }
 
-   private static Object2IntMap<CommandNode<ISuggestionProvider>> enumerateNodes(RootCommandNode<ISuggestionProvider> p_244292_0_) {
+   private static Object2IntMap<CommandNode<ISuggestionProvider>> func_244292_a(RootCommandNode<ISuggestionProvider> p_244292_0_) {
       Object2IntMap<CommandNode<ISuggestionProvider>> object2intmap = new Object2IntOpenHashMap<>();
       Queue<CommandNode<ISuggestionProvider>> queue = Queues.newArrayDeque();
       queue.add(p_244292_0_);
@@ -94,7 +94,7 @@ public class SCommandListPacket implements IPacket<IClientPlayNetHandler> {
       return object2intmap;
    }
 
-   private static CommandNode<ISuggestionProvider>[] getNodesInIdOrder(Object2IntMap<CommandNode<ISuggestionProvider>> p_244293_0_) {
+   private static CommandNode<ISuggestionProvider>[] func_244293_a(Object2IntMap<CommandNode<ISuggestionProvider>> p_244293_0_) {
       CommandNode<ISuggestionProvider>[] commandnode = new CommandNode[p_244293_0_.size()];
 
       for(Object2IntMap.Entry<CommandNode<ISuggestionProvider>> entry : Object2IntMaps.fastIterable(p_244293_0_)) {
@@ -104,86 +104,86 @@ public class SCommandListPacket implements IPacket<IClientPlayNetHandler> {
       return commandnode;
    }
 
-   private static SCommandListPacket.Entry readNode(PacketBuffer p_197692_0_) {
+   private static SCommandListPacket.Entry readEntry(PacketBuffer p_197692_0_) {
       byte b0 = p_197692_0_.readByte();
       int[] aint = p_197692_0_.readVarIntArray();
       int i = (b0 & 8) != 0 ? p_197692_0_.readVarInt() : 0;
-      ArgumentBuilder<ISuggestionProvider, ?> argumentbuilder = createBuilder(p_197692_0_, b0);
+      ArgumentBuilder<ISuggestionProvider, ?> argumentbuilder = readArgumentBuilder(p_197692_0_, b0);
       return new SCommandListPacket.Entry(argumentbuilder, b0, i, aint);
    }
 
    @Nullable
-   private static ArgumentBuilder<ISuggestionProvider, ?> createBuilder(PacketBuffer p_197695_0_, byte p_197695_1_) {
-      int i = p_197695_1_ & 3;
+   private static ArgumentBuilder<ISuggestionProvider, ?> readArgumentBuilder(PacketBuffer p_197695_0_, byte buf) {
+      int i = buf & 3;
       if (i == 2) {
-         String s = p_197695_0_.readUtf(32767);
+         String s = p_197695_0_.readString(32767);
          ArgumentType<?> argumenttype = ArgumentTypes.deserialize(p_197695_0_);
          if (argumenttype == null) {
             return null;
          } else {
             RequiredArgumentBuilder<ISuggestionProvider, ?> requiredargumentbuilder = RequiredArgumentBuilder.argument(s, argumenttype);
-            if ((p_197695_1_ & 16) != 0) {
-               requiredargumentbuilder.suggests(SuggestionProviders.getProvider(p_197695_0_.readResourceLocation()));
+            if ((buf & 16) != 0) {
+               requiredargumentbuilder.suggests(SuggestionProviders.get(p_197695_0_.readResourceLocation()));
             }
 
             return requiredargumentbuilder;
          }
       } else {
-         return i == 1 ? LiteralArgumentBuilder.literal(p_197695_0_.readUtf(32767)) : null;
+         return i == 1 ? LiteralArgumentBuilder.literal(p_197695_0_.readString(32767)) : null;
       }
    }
 
-   private static void writeNode(PacketBuffer p_197696_0_, CommandNode<ISuggestionProvider> p_197696_1_, Map<CommandNode<ISuggestionProvider>, Integer> p_197696_2_) {
+   private static void writeCommandNode(PacketBuffer p_197696_0_, CommandNode<ISuggestionProvider> buf, Map<CommandNode<ISuggestionProvider>, Integer> node) {
       byte b0 = 0;
-      if (p_197696_1_.getRedirect() != null) {
+      if (buf.getRedirect() != null) {
          b0 = (byte)(b0 | 8);
       }
 
-      if (p_197696_1_.getCommand() != null) {
+      if (buf.getCommand() != null) {
          b0 = (byte)(b0 | 4);
       }
 
-      if (p_197696_1_ instanceof RootCommandNode) {
+      if (buf instanceof RootCommandNode) {
          b0 = (byte)(b0 | 0);
-      } else if (p_197696_1_ instanceof ArgumentCommandNode) {
+      } else if (buf instanceof ArgumentCommandNode) {
          b0 = (byte)(b0 | 2);
-         if (((ArgumentCommandNode)p_197696_1_).getCustomSuggestions() != null) {
+         if (((ArgumentCommandNode)buf).getCustomSuggestions() != null) {
             b0 = (byte)(b0 | 16);
          }
       } else {
-         if (!(p_197696_1_ instanceof LiteralCommandNode)) {
-            throw new UnsupportedOperationException("Unknown node type " + p_197696_1_);
+         if (!(buf instanceof LiteralCommandNode)) {
+            throw new UnsupportedOperationException("Unknown node type " + buf);
          }
 
          b0 = (byte)(b0 | 1);
       }
 
       p_197696_0_.writeByte(b0);
-      p_197696_0_.writeVarInt(p_197696_1_.getChildren().size());
+      p_197696_0_.writeVarInt(buf.getChildren().size());
 
-      for(CommandNode<ISuggestionProvider> commandnode : p_197696_1_.getChildren()) {
-         p_197696_0_.writeVarInt(p_197696_2_.get(commandnode));
+      for(CommandNode<ISuggestionProvider> commandnode : buf.getChildren()) {
+         p_197696_0_.writeVarInt(node.get(commandnode));
       }
 
-      if (p_197696_1_.getRedirect() != null) {
-         p_197696_0_.writeVarInt(p_197696_2_.get(p_197696_1_.getRedirect()));
+      if (buf.getRedirect() != null) {
+         p_197696_0_.writeVarInt(node.get(buf.getRedirect()));
       }
 
-      if (p_197696_1_ instanceof ArgumentCommandNode) {
-         ArgumentCommandNode<ISuggestionProvider, ?> argumentcommandnode = (ArgumentCommandNode)p_197696_1_;
-         p_197696_0_.writeUtf(argumentcommandnode.getName());
+      if (buf instanceof ArgumentCommandNode) {
+         ArgumentCommandNode<ISuggestionProvider, ?> argumentcommandnode = (ArgumentCommandNode)buf;
+         p_197696_0_.writeString(argumentcommandnode.getName());
          ArgumentTypes.serialize(p_197696_0_, argumentcommandnode.getType());
          if (argumentcommandnode.getCustomSuggestions() != null) {
-            p_197696_0_.writeResourceLocation(SuggestionProviders.getName(argumentcommandnode.getCustomSuggestions()));
+            p_197696_0_.writeResourceLocation(SuggestionProviders.getId(argumentcommandnode.getCustomSuggestions()));
          }
-      } else if (p_197696_1_ instanceof LiteralCommandNode) {
-         p_197696_0_.writeUtf(((LiteralCommandNode)p_197696_1_).getLiteral());
+      } else if (buf instanceof LiteralCommandNode) {
+         p_197696_0_.writeString(((LiteralCommandNode)buf).getLiteral());
       }
 
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleCommands(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleCommandList(this);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -193,51 +193,51 @@ public class SCommandListPacket implements IPacket<IClientPlayNetHandler> {
 
    static class Entry {
       @Nullable
-      private final ArgumentBuilder<ISuggestionProvider, ?> builder;
+      private final ArgumentBuilder<ISuggestionProvider, ?> argBuilder;
       private final byte flags;
-      private final int redirect;
+      private final int redirectTarget;
       private final int[] children;
       @Nullable
       private CommandNode<ISuggestionProvider> node;
 
-      private Entry(@Nullable ArgumentBuilder<ISuggestionProvider, ?> p_i48139_1_, byte p_i48139_2_, int p_i48139_3_, int[] p_i48139_4_) {
-         this.builder = p_i48139_1_;
-         this.flags = p_i48139_2_;
-         this.redirect = p_i48139_3_;
-         this.children = p_i48139_4_;
+      private Entry(@Nullable ArgumentBuilder<ISuggestionProvider, ?> argBuilderIn, byte flagsIn, int redirectTargetIn, int[] childrenIn) {
+         this.argBuilder = argBuilderIn;
+         this.flags = flagsIn;
+         this.redirectTarget = redirectTargetIn;
+         this.children = childrenIn;
       }
 
-      public boolean build(SCommandListPacket.Entry[] p_197723_1_) {
+      public boolean createCommandNode(SCommandListPacket.Entry[] nodeArray) {
          if (this.node == null) {
-            if (this.builder == null) {
+            if (this.argBuilder == null) {
                this.node = new RootCommandNode<>();
             } else {
                if ((this.flags & 8) != 0) {
-                  if (p_197723_1_[this.redirect].node == null) {
+                  if (nodeArray[this.redirectTarget].node == null) {
                      return false;
                   }
 
-                  this.builder.redirect(p_197723_1_[this.redirect].node);
+                  this.argBuilder.redirect(nodeArray[this.redirectTarget].node);
                }
 
                if ((this.flags & 4) != 0) {
-                  this.builder.executes((p_197724_0_) -> {
+                  this.argBuilder.executes((p_197724_0_) -> {
                      return 0;
                   });
                }
 
-               this.node = this.builder.build();
+               this.node = this.argBuilder.build();
             }
          }
 
          for(int i : this.children) {
-            if (p_197723_1_[i].node == null) {
+            if (nodeArray[i].node == null) {
                return false;
             }
          }
 
          for(int j : this.children) {
-            CommandNode<ISuggestionProvider> commandnode = p_197723_1_[j].node;
+            CommandNode<ISuggestionProvider> commandnode = nodeArray[j].node;
             if (!(commandnode instanceof RootCommandNode)) {
                this.node.addChild(commandnode);
             }

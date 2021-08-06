@@ -11,41 +11,41 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SLoginSuccessPacket implements IPacket<IClientLoginNetHandler> {
-   private GameProfile gameProfile;
+   private GameProfile profile;
 
    public SLoginSuccessPacket() {
    }
 
-   public SLoginSuccessPacket(GameProfile p_i46856_1_) {
-      this.gameProfile = p_i46856_1_;
+   public SLoginSuccessPacket(GameProfile profileIn) {
+      this.profile = profileIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
+   public void readPacketData(PacketBuffer buf) throws IOException {
       int[] aint = new int[4];
 
       for(int i = 0; i < aint.length; ++i) {
-         aint[i] = p_148837_1_.readInt();
+         aint[i] = buf.readInt();
       }
 
-      UUID uuid = UUIDCodec.uuidFromIntArray(aint);
-      String s = p_148837_1_.readUtf(16);
-      this.gameProfile = new GameProfile(uuid, s);
+      UUID uuid = UUIDCodec.decodeUUID(aint);
+      String s = buf.readString(16);
+      this.profile = new GameProfile(uuid, s);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      for(int i : UUIDCodec.uuidToIntArray(this.gameProfile.getId())) {
-         p_148840_1_.writeInt(i);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      for(int i : UUIDCodec.encodeUUID(this.profile.getId())) {
+         buf.writeInt(i);
       }
 
-      p_148840_1_.writeUtf(this.gameProfile.getName());
+      buf.writeString(this.profile.getName());
    }
 
-   public void handle(IClientLoginNetHandler p_148833_1_) {
-      p_148833_1_.handleGameProfile(this);
+   public void processPacket(IClientLoginNetHandler handler) {
+      handler.handleLoginSuccess(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public GameProfile getGameProfile() {
-      return this.gameProfile;
+   public GameProfile getProfile() {
+      return this.profile;
    }
 }

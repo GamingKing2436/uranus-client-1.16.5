@@ -14,32 +14,32 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class ComponentArgument implements ArgumentType<ITextComponent> {
    private static final Collection<String> EXAMPLES = Arrays.asList("\"hello world\"", "\"\"", "\"{\"text\":\"hello world\"}", "[\"\"]");
-   public static final DynamicCommandExceptionType ERROR_INVALID_JSON = new DynamicCommandExceptionType((p_208660_0_) -> {
+   public static final DynamicCommandExceptionType COMPONENT_INVALID = new DynamicCommandExceptionType((p_208660_0_) -> {
       return new TranslationTextComponent("argument.component.invalid", p_208660_0_);
    });
 
    private ComponentArgument() {
    }
 
-   public static ITextComponent getComponent(CommandContext<CommandSource> p_197068_0_, String p_197068_1_) {
-      return p_197068_0_.getArgument(p_197068_1_, ITextComponent.class);
+   public static ITextComponent getComponent(CommandContext<CommandSource> context, String name) {
+      return context.getArgument(name, ITextComponent.class);
    }
 
-   public static ComponentArgument textComponent() {
+   public static ComponentArgument component() {
       return new ComponentArgument();
    }
 
    public ITextComponent parse(StringReader p_parse_1_) throws CommandSyntaxException {
       try {
-         ITextComponent itextcomponent = ITextComponent.Serializer.fromJson(p_parse_1_);
+         ITextComponent itextcomponent = ITextComponent.Serializer.getComponentFromReader(p_parse_1_);
          if (itextcomponent == null) {
-            throw ERROR_INVALID_JSON.createWithContext(p_parse_1_, "empty");
+            throw COMPONENT_INVALID.createWithContext(p_parse_1_, "empty");
          } else {
             return itextcomponent;
          }
       } catch (JsonParseException jsonparseexception) {
          String s = jsonparseexception.getCause() != null ? jsonparseexception.getCause().getMessage() : jsonparseexception.getMessage();
-         throw ERROR_INVALID_JSON.createWithContext(p_parse_1_, s);
+         throw COMPONENT_INVALID.createWithContext(p_parse_1_, s);
       }
    }
 

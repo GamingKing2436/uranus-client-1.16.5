@@ -10,19 +10,19 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class CreativeCraftingListener implements IContainerListener {
-   private final Minecraft minecraft;
+   private final Minecraft mc;
 
-   public CreativeCraftingListener(Minecraft p_i46314_1_) {
-      this.minecraft = p_i46314_1_;
+   public CreativeCraftingListener(Minecraft mc) {
+      this.mc = mc;
    }
 
-   public void refreshContainer(Container p_71110_1_, NonNullList<ItemStack> p_71110_2_) {
+   public void sendAllContents(Container containerToSend, NonNullList<ItemStack> itemsList) {
    }
 
-   public void slotChanged(Container p_71111_1_, int p_71111_2_, ItemStack p_71111_3_) {
-      this.minecraft.gameMode.handleCreativeModeItemAdd(p_71111_3_, p_71111_2_);
+   public void sendSlotContents(Container containerToSend, int slotInd, ItemStack stack) {
+      this.mc.playerController.sendSlotPacket(stack, slotInd);
    }
 
-   public void setContainerData(Container p_71112_1_, int p_71112_2_, int p_71112_3_) {
+   public void sendWindowProperty(Container containerIn, int varToUpdate, int newValue) {
    }
 }

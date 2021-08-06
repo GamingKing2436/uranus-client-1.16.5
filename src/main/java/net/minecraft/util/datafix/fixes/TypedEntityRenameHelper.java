@@ -14,15 +14,15 @@ import net.minecraft.util.datafix.TypeReferences;
 public abstract class TypedEntityRenameHelper extends DataFix {
    private final String name;
 
-   public TypedEntityRenameHelper(String p_i49713_1_, Schema p_i49713_2_, boolean p_i49713_3_) {
-      super(p_i49713_2_, p_i49713_3_);
-      this.name = p_i49713_1_;
+   public TypedEntityRenameHelper(String name, Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
+      this.name = name;
    }
 
    public TypeRewriteRule makeRule() {
       TaggedChoiceType<String> taggedchoicetype = (TaggedChoiceType<String>)this.getInputSchema().findChoiceType(TypeReferences.ENTITY);
       TaggedChoiceType<String> taggedchoicetype1 = (TaggedChoiceType<String>)this.getOutputSchema().findChoiceType(TypeReferences.ENTITY);
-      Type<Pair<String, String>> type = DSL.named(TypeReferences.ENTITY_NAME.typeName(), NamespacedSchema.namespacedString());
+      Type<Pair<String, String>> type = DSL.named(TypeReferences.ENTITY_NAME.typeName(), NamespacedSchema.func_233457_a_());
       if (!Objects.equals(this.getOutputSchema().getType(TypeReferences.ENTITY_NAME), type)) {
          throw new IllegalStateException("Entity name type is not what was expected.");
       } else {
@@ -47,5 +47,5 @@ public abstract class TypedEntityRenameHelper extends DataFix {
       }
    }
 
-   protected abstract String rename(String p_211311_1_);
+   protected abstract String rename(String name);
 }

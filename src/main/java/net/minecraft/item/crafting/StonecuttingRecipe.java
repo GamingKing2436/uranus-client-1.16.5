@@ -9,16 +9,16 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class StonecuttingRecipe extends SingleItemRecipe {
-   public StonecuttingRecipe(ResourceLocation p_i50021_1_, String p_i50021_2_, Ingredient p_i50021_3_, ItemStack p_i50021_4_) {
-      super(IRecipeType.STONECUTTING, IRecipeSerializer.STONECUTTER, p_i50021_1_, p_i50021_2_, p_i50021_3_, p_i50021_4_);
+   public StonecuttingRecipe(ResourceLocation id, String group, Ingredient ingredient, ItemStack result) {
+      super(IRecipeType.STONECUTTING, IRecipeSerializer.STONECUTTING, id, group, ingredient, result);
    }
 
-   public boolean matches(IInventory p_77569_1_, World p_77569_2_) {
-      return this.ingredient.test(p_77569_1_.getItem(0));
+   public boolean matches(IInventory inv, World worldIn) {
+      return this.ingredient.test(inv.getStackInSlot(0));
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack getToastSymbol() {
+   public ItemStack getIcon() {
       return new ItemStack(Blocks.STONECUTTER);
    }
 }

@@ -5,6 +5,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class UploadStatus {
-   public volatile long bytesWritten;
-   public volatile long totalBytes;
+   public volatile long field_224978_a;
+   public volatile long field_224979_b;
 }

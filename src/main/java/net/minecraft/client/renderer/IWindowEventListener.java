@@ -5,9 +5,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IWindowEventListener {
-   void setWindowActive(boolean p_213228_1_);
+   void setGameFocused(boolean focused);
 
-   void resizeDisplay();
+   void updateWindowSize();
 
-   void cursorEntered();
+   void ignoreFirstMove();
 }

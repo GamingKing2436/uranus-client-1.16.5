@@ -7,7 +7,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public interface ISoundEventAccessor<T> {
    int getWeight();
 
-   T getSound();
+   T cloneEntry();
 
-   void preloadIfRequired(SoundEngine p_217867_1_);
+   void enqueuePreload(SoundEngine engine);
 }

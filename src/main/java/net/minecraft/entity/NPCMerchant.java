@@ -14,22 +14,22 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class NPCMerchant implements IMerchant {
-   private final MerchantInventory container;
-   private final PlayerEntity source;
+   private final MerchantInventory merchantInventory;
+   private final PlayerEntity customer;
    private MerchantOffers offers = new MerchantOffers();
    private int xp;
 
-   public NPCMerchant(PlayerEntity p_i50184_1_) {
-      this.source = p_i50184_1_;
-      this.container = new MerchantInventory(this);
+   public NPCMerchant(PlayerEntity player) {
+      this.customer = player;
+      this.merchantInventory = new MerchantInventory(this);
    }
 
    @Nullable
-   public PlayerEntity getTradingPlayer() {
-      return this.source;
+   public PlayerEntity getCustomer() {
+      return this.customer;
    }
 
-   public void setTradingPlayer(@Nullable PlayerEntity p_70932_1_) {
+   public void setCustomer(@Nullable PlayerEntity player) {
    }
 
    public MerchantOffers getOffers() {
@@ -37,34 +37,34 @@ public class NPCMerchant implements IMerchant {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void overrideOffers(@Nullable MerchantOffers p_213703_1_) {
-      this.offers = p_213703_1_;
+   public void setClientSideOffers(@Nullable MerchantOffers offers) {
+      this.offers = offers;
    }
 
-   public void notifyTrade(MerchantOffer p_213704_1_) {
-      p_213704_1_.increaseUses();
+   public void onTrade(MerchantOffer offer) {
+      offer.increaseUses();
    }
 
-   public void notifyTradeUpdated(ItemStack p_110297_1_) {
+   public void verifySellingItem(ItemStack stack) {
    }
 
-   public World getLevel() {
-      return this.source.level;
+   public World getWorld() {
+      return this.customer.world;
    }
 
-   public int getVillagerXp() {
+   public int getXp() {
       return this.xp;
    }
 
-   public void overrideXp(int p_213702_1_) {
-      this.xp = p_213702_1_;
+   public void setXP(int xpIn) {
+      this.xp = xpIn;
    }
 
-   public boolean showProgressBar() {
+   public boolean hasXPBar() {
       return true;
    }
 
-   public SoundEvent getNotifyTradeSound() {
-      return SoundEvents.VILLAGER_YES;
+   public SoundEvent getYesSound() {
+      return SoundEvents.ENTITY_VILLAGER_YES;
    }
 }

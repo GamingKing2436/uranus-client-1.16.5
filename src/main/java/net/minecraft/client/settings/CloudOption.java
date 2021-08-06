@@ -18,9 +18,9 @@ public enum CloudOption {
    private final int id;
    private final String key;
 
-   private CloudOption(int p_i51166_3_, String p_i51166_4_) {
-      this.id = p_i51166_3_;
-      this.key = p_i51166_4_;
+   private CloudOption(int id, String keyIn) {
+      this.id = id;
+      this.key = keyIn;
    }
 
    public int getId() {
@@ -31,7 +31,7 @@ public enum CloudOption {
       return this.key;
    }
 
-   public static CloudOption byId(int p_216804_0_) {
-      return BY_ID[MathHelper.positiveModulo(p_216804_0_, BY_ID.length)];
+   public static CloudOption byId(int id) {
+      return BY_ID[MathHelper.normalizeAngle(id, BY_ID.length)];
    }
 }

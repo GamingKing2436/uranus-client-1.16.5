@@ -16,34 +16,34 @@ public class MuleEntity extends AbstractChestedHorseEntity {
 
    protected SoundEvent getAmbientSound() {
       super.getAmbientSound();
-      return SoundEvents.MULE_AMBIENT;
+      return SoundEvents.ENTITY_MULE_AMBIENT;
    }
 
    protected SoundEvent getAngrySound() {
       super.getAngrySound();
-      return SoundEvents.MULE_ANGRY;
+      return SoundEvents.ENTITY_MULE_ANGRY;
    }
 
    protected SoundEvent getDeathSound() {
       super.getDeathSound();
-      return SoundEvents.MULE_DEATH;
+      return SoundEvents.ENTITY_MULE_DEATH;
    }
 
    @Nullable
-   protected SoundEvent getEatingSound() {
-      return SoundEvents.MULE_EAT;
+   protected SoundEvent func_230274_fe_() {
+      return SoundEvents.ENTITY_MULE_EAT;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      super.getHurtSound(p_184601_1_);
-      return SoundEvents.MULE_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      super.getHurtSound(damageSourceIn);
+      return SoundEvents.ENTITY_MULE_HURT;
    }
 
-   protected void playChestEquipsSound() {
-      this.playSound(SoundEvents.MULE_CHEST, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+   protected void playChestEquipSound() {
+      this.playSound(SoundEvents.ENTITY_MULE_CHEST, 1.0F, (this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F + 1.0F);
    }
 
-   public AgeableEntity getBreedOffspring(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
+   public AgeableEntity func_241840_a(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
       return EntityType.MULE.create(p_241840_1_);
    }
 }

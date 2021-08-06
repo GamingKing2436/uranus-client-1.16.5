@@ -9,16 +9,16 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class MapCloningRecipe extends SpecialRecipe {
-   public MapCloningRecipe(ResourceLocation p_i48165_1_) {
-      super(p_i48165_1_);
+   public MapCloningRecipe(ResourceLocation idIn) {
+      super(idIn);
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
       int i = 0;
       ItemStack itemstack = ItemStack.EMPTY;
 
-      for(int j = 0; j < p_77569_1_.getContainerSize(); ++j) {
-         ItemStack itemstack1 = p_77569_1_.getItem(j);
+      for(int j = 0; j < inv.getSizeInventory(); ++j) {
+         ItemStack itemstack1 = inv.getStackInSlot(j);
          if (!itemstack1.isEmpty()) {
             if (itemstack1.getItem() == Items.FILLED_MAP) {
                if (!itemstack.isEmpty()) {
@@ -39,12 +39,12 @@ public class MapCloningRecipe extends SpecialRecipe {
       return !itemstack.isEmpty() && i > 0;
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
+   public ItemStack getCraftingResult(CraftingInventory inv) {
       int i = 0;
       ItemStack itemstack = ItemStack.EMPTY;
 
-      for(int j = 0; j < p_77572_1_.getContainerSize(); ++j) {
-         ItemStack itemstack1 = p_77572_1_.getItem(j);
+      for(int j = 0; j < inv.getSizeInventory(); ++j) {
+         ItemStack itemstack1 = inv.getStackInSlot(j);
          if (!itemstack1.isEmpty()) {
             if (itemstack1.getItem() == Items.FILLED_MAP) {
                if (!itemstack.isEmpty()) {
@@ -72,11 +72,11 @@ public class MapCloningRecipe extends SpecialRecipe {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ >= 3 && p_194133_2_ >= 3;
+   public boolean canFit(int width, int height) {
+      return width >= 3 && height >= 3;
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.MAP_CLONING;
+      return IRecipeSerializer.CRAFTING_SPECIAL_MAPCLONING;
    }
 }

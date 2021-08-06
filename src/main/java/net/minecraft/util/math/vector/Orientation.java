@@ -64,30 +64,30 @@ public enum Orientation implements IStringSerializable {
    ROT_90_REF_Z_NEG("rot_90_ref_z_neg", TriplePermutation.P213, false, true, true),
    ROT_90_REF_Z_POS("rot_90_ref_z_pos", TriplePermutation.P213, true, false, true);
 
-   private final Matrix3f transformation;
-   private final String name;
+   private final Matrix3f field_235517_W_;
+   private final String field_235518_X_;
    @Nullable
-   private Map<Direction, Direction> rotatedDirections;
-   private final boolean invertX;
-   private final boolean invertY;
-   private final boolean invertZ;
-   private final TriplePermutation permutation;
-   private static final Orientation[][] cayleyTable = Util.make(new Orientation[values().length][values().length], (p_235532_0_) -> {
+   private Map<Direction, Direction> field_235519_Y_;
+   private final boolean field_235520_Z_;
+   private final boolean field_235521_aa_;
+   private final boolean field_235522_ab_;
+   private final TriplePermutation field_235523_ac_;
+   private static final Orientation[][] field_235524_ad_ = Util.make(new Orientation[values().length][values().length], (p_235532_0_) -> {
       Map<Pair<TriplePermutation, BooleanList>, Orientation> map = Arrays.stream(values()).collect(Collectors.toMap((p_235536_0_) -> {
-         return Pair.of(p_235536_0_.permutation, p_235536_0_.packInversions());
+         return Pair.of(p_235536_0_.field_235523_ac_, p_235536_0_.func_235533_b_());
       }, (p_235535_0_) -> {
          return p_235535_0_;
       }));
 
       for(Orientation orientation : values()) {
          for(Orientation orientation1 : values()) {
-            BooleanList booleanlist = orientation.packInversions();
-            BooleanList booleanlist1 = orientation1.packInversions();
-            TriplePermutation triplepermutation = orientation1.permutation.compose(orientation.permutation);
+            BooleanList booleanlist = orientation.func_235533_b_();
+            BooleanList booleanlist1 = orientation1.func_235533_b_();
+            TriplePermutation triplepermutation = orientation1.field_235523_ac_.func_239188_a_(orientation.field_235523_ac_);
             BooleanArrayList booleanarraylist = new BooleanArrayList(3);
 
             for(int i = 0; i < 3; ++i) {
-               booleanarraylist.add(booleanlist.getBoolean(i) ^ booleanlist1.getBoolean(orientation.permutation.permutation(i)));
+               booleanarraylist.add(booleanlist.getBoolean(i) ^ booleanlist1.getBoolean(orientation.field_235523_ac_.func_239187_a_(i)));
             }
 
             p_235532_0_[orientation.ordinal()][orientation1.ordinal()] = map.get(Pair.of(triplepermutation, booleanarraylist));
@@ -95,73 +95,73 @@ public enum Orientation implements IStringSerializable {
       }
 
    });
-   private static final Orientation[] inverseTable = Arrays.stream(values()).map((p_235534_0_) -> {
+   private static final Orientation[] field_235525_ae_ = Arrays.stream(values()).map((p_235534_0_) -> {
       return Arrays.stream(values()).filter((p_235528_1_) -> {
-         return p_235534_0_.compose(p_235528_1_) == IDENTITY;
+         return p_235534_0_.func_235527_a_(p_235528_1_) == IDENTITY;
       }).findAny().get();
    }).toArray((p_235526_0_) -> {
       return new Orientation[p_235526_0_];
    });
 
    private Orientation(String p_i231784_3_, TriplePermutation p_i231784_4_, boolean p_i231784_5_, boolean p_i231784_6_, boolean p_i231784_7_) {
-      this.name = p_i231784_3_;
-      this.invertX = p_i231784_5_;
-      this.invertY = p_i231784_6_;
-      this.invertZ = p_i231784_7_;
-      this.permutation = p_i231784_4_;
-      this.transformation = new Matrix3f();
-      this.transformation.m00 = p_i231784_5_ ? -1.0F : 1.0F;
-      this.transformation.m11 = p_i231784_6_ ? -1.0F : 1.0F;
-      this.transformation.m22 = p_i231784_7_ ? -1.0F : 1.0F;
-      this.transformation.mul(p_i231784_4_.transformation());
+      this.field_235518_X_ = p_i231784_3_;
+      this.field_235520_Z_ = p_i231784_5_;
+      this.field_235521_aa_ = p_i231784_6_;
+      this.field_235522_ab_ = p_i231784_7_;
+      this.field_235523_ac_ = p_i231784_4_;
+      this.field_235517_W_ = new Matrix3f();
+      this.field_235517_W_.m00 = p_i231784_5_ ? -1.0F : 1.0F;
+      this.field_235517_W_.m11 = p_i231784_6_ ? -1.0F : 1.0F;
+      this.field_235517_W_.m22 = p_i231784_7_ ? -1.0F : 1.0F;
+      this.field_235517_W_.mul(p_i231784_4_.func_239186_a_());
    }
 
-   private BooleanList packInversions() {
-      return new BooleanArrayList(new boolean[]{this.invertX, this.invertY, this.invertZ});
+   private BooleanList func_235533_b_() {
+      return new BooleanArrayList(new boolean[]{this.field_235520_Z_, this.field_235521_aa_, this.field_235522_ab_});
    }
 
-   public Orientation compose(Orientation p_235527_1_) {
-      return cayleyTable[this.ordinal()][p_235527_1_.ordinal()];
+   public Orientation func_235527_a_(Orientation p_235527_1_) {
+      return field_235524_ad_[this.ordinal()][p_235527_1_.ordinal()];
    }
 
    public String toString() {
-      return this.name;
+      return this.field_235518_X_;
    }
 
-   public String getSerializedName() {
-      return this.name;
+   public String getString() {
+      return this.field_235518_X_;
    }
 
-   public Direction rotate(Direction p_235530_1_) {
-      if (this.rotatedDirections == null) {
-         this.rotatedDirections = Maps.newEnumMap(Direction.class);
+   public Direction func_235530_a_(Direction p_235530_1_) {
+      if (this.field_235519_Y_ == null) {
+         this.field_235519_Y_ = Maps.newEnumMap(Direction.class);
 
          for(Direction direction : Direction.values()) {
             Direction.Axis direction$axis = direction.getAxis();
             Direction.AxisDirection direction$axisdirection = direction.getAxisDirection();
-            Direction.Axis direction$axis1 = Direction.Axis.values()[this.permutation.permutation(direction$axis.ordinal())];
-            Direction.AxisDirection direction$axisdirection1 = this.inverts(direction$axis1) ? direction$axisdirection.opposite() : direction$axisdirection;
-            Direction direction1 = Direction.fromAxisAndDirection(direction$axis1, direction$axisdirection1);
-            this.rotatedDirections.put(direction, direction1);
+            Direction.Axis direction$axis1 = Direction.Axis.values()[this.field_235523_ac_.func_239187_a_(direction$axis.ordinal())];
+            Direction.AxisDirection direction$axisdirection1 = this.isOnAxis(direction$axis1) ? direction$axisdirection.inverted() : direction$axisdirection;
+            Direction direction1 = Direction.getFacingFromAxisDirection(direction$axis1, direction$axisdirection1);
+            this.field_235519_Y_.put(direction, direction1);
          }
       }
 
-      return this.rotatedDirections.get(p_235530_1_);
+      return this.field_235519_Y_.get(p_235530_1_);
    }
 
-   public boolean inverts(Direction.Axis p_235529_1_) {
-      switch(p_235529_1_) {
+   public boolean isOnAxis(Direction.Axis axis) {
+      switch(axis) {
       case X:
-         return this.invertX;
+         return this.field_235520_Z_;
       case Y:
-         return this.invertY;
+         return this.field_235521_aa_;
       case Z:
       default:
-         return this.invertZ;
+         return this.field_235522_ab_;
       }
    }
 
-   public JigsawOrientation rotate(JigsawOrientation p_235531_1_) {
-      return JigsawOrientation.fromFrontAndTop(this.rotate(p_235531_1_.front()), this.rotate(p_235531_1_.top()));
+   public JigsawOrientation func_235531_a_(JigsawOrientation p_235531_1_) {
+      return JigsawOrientation.func_239641_a_(this.func_235530_a_(p_235531_1_.func_239642_b_()), this.func_235530_a_(p_235531_1_.func_239644_c_()));
    }
 }

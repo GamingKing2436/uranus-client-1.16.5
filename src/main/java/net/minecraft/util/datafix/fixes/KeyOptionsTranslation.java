@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class KeyOptionsTranslation extends DataFix {
-   public KeyOptionsTranslation(Schema p_i49620_1_, boolean p_i49620_2_) {
-      super(p_i49620_1_, p_i49620_2_);
+   public KeyOptionsTranslation(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {

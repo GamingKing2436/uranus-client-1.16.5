@@ -9,33 +9,33 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SCustomPayloadLoginPacket implements IPacket<IClientLoginNetHandler> {
-   private int transactionId;
-   private ResourceLocation identifier;
-   private PacketBuffer data;
+   private int transaction;
+   private ResourceLocation channel;
+   private PacketBuffer payload;
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.transactionId = p_148837_1_.readVarInt();
-      this.identifier = p_148837_1_.readResourceLocation();
-      int i = p_148837_1_.readableBytes();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.transaction = buf.readVarInt();
+      this.channel = buf.readResourceLocation();
+      int i = buf.readableBytes();
       if (i >= 0 && i <= 1048576) {
-         this.data = new PacketBuffer(p_148837_1_.readBytes(i));
+         this.payload = new PacketBuffer(buf.readBytes(i));
       } else {
          throw new IOException("Payload may not be larger than 1048576 bytes");
       }
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.transactionId);
-      p_148840_1_.writeResourceLocation(this.identifier);
-      p_148840_1_.writeBytes(this.data.copy());
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.transaction);
+      buf.writeResourceLocation(this.channel);
+      buf.writeBytes(this.payload.copy());
    }
 
-   public void handle(IClientLoginNetHandler p_148833_1_) {
-      p_148833_1_.handleCustomQuery(this);
+   public void processPacket(IClientLoginNetHandler handler) {
+      handler.handleCustomPayloadLogin(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getTransactionId() {
-      return this.transactionId;
+   public int getTransaction() {
+      return this.transaction;
    }
 }

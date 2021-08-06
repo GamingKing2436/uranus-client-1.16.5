@@ -26,30 +26,30 @@ public class SetName extends LootFunction {
    private static final Logger LOGGER = LogManager.getLogger();
    private final ITextComponent name;
    @Nullable
-   private final LootContext.EntityTarget resolutionContext;
+   private final LootContext.EntityTarget field_215940_d;
 
    private SetName(ILootCondition[] p_i51218_1_, @Nullable ITextComponent p_i51218_2_, @Nullable LootContext.EntityTarget p_i51218_3_) {
       super(p_i51218_1_);
       this.name = p_i51218_2_;
-      this.resolutionContext = p_i51218_3_;
+      this.field_215940_d = p_i51218_3_;
    }
 
-   public LootFunctionType getType() {
+   public LootFunctionType getFunctionType() {
       return LootFunctionManager.SET_NAME;
    }
 
-   public Set<LootParameter<?>> getReferencedContextParams() {
-      return this.resolutionContext != null ? ImmutableSet.of(this.resolutionContext.getParam()) : ImmutableSet.of();
+   public Set<LootParameter<?>> getRequiredParameters() {
+      return this.field_215940_d != null ? ImmutableSet.of(this.field_215940_d.getParameter()) : ImmutableSet.of();
    }
 
-   public static UnaryOperator<ITextComponent> createResolver(LootContext p_215936_0_, @Nullable LootContext.EntityTarget p_215936_1_) {
+   public static UnaryOperator<ITextComponent> func_215936_a(LootContext p_215936_0_, @Nullable LootContext.EntityTarget p_215936_1_) {
       if (p_215936_1_ != null) {
-         Entity entity = p_215936_0_.getParamOrNull(p_215936_1_.getParam());
+         Entity entity = p_215936_0_.get(p_215936_1_.getParameter());
          if (entity != null) {
-            CommandSource commandsource = entity.createCommandSourceStack().withPermission(2);
+            CommandSource commandsource = entity.getCommandSource().withPermissionLevel(2);
             return (p_215937_2_) -> {
                try {
-                  return TextComponentUtils.updateForEntity(commandsource, p_215937_2_, entity, 0);
+                  return TextComponentUtils.func_240645_a_(commandsource, p_215937_2_, entity, 0);
                } catch (CommandSyntaxException commandsyntaxexception) {
                   LOGGER.warn("Failed to resolve text component", (Throwable)commandsyntaxexception);
                   return p_215937_2_;
@@ -63,12 +63,12 @@ public class SetName extends LootFunction {
       };
    }
 
-   public ItemStack run(ItemStack p_215859_1_, LootContext p_215859_2_) {
+   public ItemStack doApply(ItemStack stack, LootContext context) {
       if (this.name != null) {
-         p_215859_1_.setHoverName(createResolver(p_215859_2_, this.resolutionContext).apply(this.name));
+         stack.setDisplayName(func_215936_a(context, this.field_215940_d).apply(this.name));
       }
 
-      return p_215859_1_;
+      return stack;
    }
 
    public static class Serializer extends LootFunction.Serializer<SetName> {
@@ -78,16 +78,16 @@ public class SetName extends LootFunction {
             p_230424_1_.add("name", ITextComponent.Serializer.toJsonTree(p_230424_2_.name));
          }
 
-         if (p_230424_2_.resolutionContext != null) {
-            p_230424_1_.add("entity", p_230424_3_.serialize(p_230424_2_.resolutionContext));
+         if (p_230424_2_.field_215940_d != null) {
+            p_230424_1_.add("entity", p_230424_3_.serialize(p_230424_2_.field_215940_d));
          }
 
       }
 
-      public SetName deserialize(JsonObject p_186530_1_, JsonDeserializationContext p_186530_2_, ILootCondition[] p_186530_3_) {
-         ITextComponent itextcomponent = ITextComponent.Serializer.fromJson(p_186530_1_.get("name"));
-         LootContext.EntityTarget lootcontext$entitytarget = JSONUtils.getAsObject(p_186530_1_, "entity", (LootContext.EntityTarget)null, p_186530_2_, LootContext.EntityTarget.class);
-         return new SetName(p_186530_3_, itextcomponent, lootcontext$entitytarget);
+      public SetName deserialize(JsonObject object, JsonDeserializationContext deserializationContext, ILootCondition[] conditionsIn) {
+         ITextComponent itextcomponent = ITextComponent.Serializer.getComponentFromJson(object.get("name"));
+         LootContext.EntityTarget lootcontext$entitytarget = JSONUtils.deserializeClass(object, "entity", (LootContext.EntityTarget)null, deserializationContext, LootContext.EntityTarget.class);
+         return new SetName(conditionsIn, itextcomponent, lootcontext$entitytarget);
       }
    }
 }

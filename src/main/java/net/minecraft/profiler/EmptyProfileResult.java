@@ -7,33 +7,33 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class EmptyProfileResult implements IProfileResult {
-   public static final EmptyProfileResult EMPTY = new EmptyProfileResult();
+   public static final EmptyProfileResult INSTANCE = new EmptyProfileResult();
 
    private EmptyProfileResult() {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public List<DataPoint> getTimes(String p_219917_1_) {
+   public List<DataPoint> getDataPoints(String sectionPath) {
       return Collections.emptyList();
    }
 
-   public boolean saveResults(File p_219919_1_) {
+   public boolean writeToFile(File p_219919_1_) {
       return false;
    }
 
-   public long getStartTimeNano() {
+   public long timeStop() {
       return 0L;
    }
 
-   public int getStartTimeTicks() {
+   public int ticksStop() {
       return 0;
    }
 
-   public long getEndTimeNano() {
+   public long timeStart() {
       return 0L;
    }
 
-   public int getEndTimeTicks() {
+   public int ticksStart() {
       return 0;
    }
 }

@@ -12,15 +12,15 @@ public enum EmptyBlockReader implements IBlockReader {
    INSTANCE;
 
    @Nullable
-   public TileEntity getBlockEntity(BlockPos p_175625_1_) {
+   public TileEntity getTileEntity(BlockPos pos) {
       return null;
    }
 
-   public BlockState getBlockState(BlockPos p_180495_1_) {
-      return Blocks.AIR.defaultBlockState();
+   public BlockState getBlockState(BlockPos pos) {
+      return Blocks.AIR.getDefaultState();
    }
 
-   public FluidState getFluidState(BlockPos p_204610_1_) {
-      return Fluids.EMPTY.defaultFluidState();
+   public FluidState getFluidState(BlockPos pos) {
+      return Fluids.EMPTY.getDefaultState();
    }
 }

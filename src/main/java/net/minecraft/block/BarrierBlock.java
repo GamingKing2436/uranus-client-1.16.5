@@ -6,20 +6,20 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class BarrierBlock extends Block {
-   protected BarrierBlock(AbstractBlock.Properties p_i48447_1_) {
-      super(p_i48447_1_);
+   protected BarrierBlock(AbstractBlock.Properties properties) {
+      super(properties);
    }
 
-   public boolean propagatesSkylightDown(BlockState p_200123_1_, IBlockReader p_200123_2_, BlockPos p_200123_3_) {
+   public boolean propagatesSkylightDown(BlockState state, IBlockReader reader, BlockPos pos) {
       return true;
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.INVISIBLE;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getShadeBrightness(BlockState p_220080_1_, IBlockReader p_220080_2_, BlockPos p_220080_3_) {
+   public float getAmbientOcclusionLightValue(BlockState state, IBlockReader worldIn, BlockPos pos) {
       return 1.0F;
    }
 }

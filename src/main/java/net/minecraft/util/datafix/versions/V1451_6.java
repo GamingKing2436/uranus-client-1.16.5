@@ -9,8 +9,8 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class V1451_6 extends NamespacedSchema {
-   public V1451_6(int p_i49597_1_, Schema p_i49597_2_) {
-      super(p_i49597_1_, p_i49597_2_);
+   public V1451_6(int versionKey, Schema parent) {
+      super(versionKey, parent);
    }
 
    public void registerTypes(Schema p_registerTypes_1_, Map<String, Supplier<TypeTemplate>> p_registerTypes_2_, Map<String, Supplier<TypeTemplate>> p_registerTypes_3_) {
@@ -19,7 +19,7 @@ public class V1451_6 extends NamespacedSchema {
          return DSL.compoundList(TypeReferences.ITEM_NAME.in(p_registerTypes_1_), DSL.constType(DSL.intType()));
       };
       p_registerTypes_1_.registerType(false, TypeReferences.STATS, () -> {
-         return DSL.optionalFields("stats", DSL.optionalFields("minecraft:mined", DSL.compoundList(TypeReferences.BLOCK_NAME.in(p_registerTypes_1_), DSL.constType(DSL.intType())), "minecraft:crafted", supplier.get(), "minecraft:used", supplier.get(), "minecraft:broken", supplier.get(), "minecraft:picked_up", supplier.get(), DSL.optionalFields("minecraft:dropped", supplier.get(), "minecraft:killed", DSL.compoundList(TypeReferences.ENTITY_NAME.in(p_registerTypes_1_), DSL.constType(DSL.intType())), "minecraft:killed_by", DSL.compoundList(TypeReferences.ENTITY_NAME.in(p_registerTypes_1_), DSL.constType(DSL.intType())), "minecraft:custom", DSL.compoundList(DSL.constType(namespacedString()), DSL.constType(DSL.intType())))));
+         return DSL.optionalFields("stats", DSL.optionalFields("minecraft:mined", DSL.compoundList(TypeReferences.BLOCK_NAME.in(p_registerTypes_1_), DSL.constType(DSL.intType())), "minecraft:crafted", supplier.get(), "minecraft:used", supplier.get(), "minecraft:broken", supplier.get(), "minecraft:picked_up", supplier.get(), DSL.optionalFields("minecraft:dropped", supplier.get(), "minecraft:killed", DSL.compoundList(TypeReferences.ENTITY_NAME.in(p_registerTypes_1_), DSL.constType(DSL.intType())), "minecraft:killed_by", DSL.compoundList(TypeReferences.ENTITY_NAME.in(p_registerTypes_1_), DSL.constType(DSL.intType())), "minecraft:custom", DSL.compoundList(DSL.constType(func_233457_a_()), DSL.constType(DSL.intType())))));
       });
    }
 }

@@ -26,13 +26,13 @@ public enum PathNodeType {
    STICKY_HONEY(8.0F),
    COCOA(0.0F);
 
-   private final float malus;
+   private final float priority;
 
-   private PathNodeType(float p_i46653_3_) {
-      this.malus = p_i46653_3_;
+   private PathNodeType(float priorityIn) {
+      this.priority = priorityIn;
    }
 
-   public float getMalus() {
-      return this.malus;
+   public float getPriority() {
+      return this.priority;
    }
 }

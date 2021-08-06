@@ -11,8 +11,8 @@ public class TwoFeatureChoiceFeature extends Feature<TwoFeatureChoiceConfig> {
       super(p_i231978_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, TwoFeatureChoiceConfig p_241855_5_) {
-      boolean flag = p_241855_3_.nextBoolean();
-      return flag ? p_241855_5_.featureTrue.get().place(p_241855_1_, p_241855_2_, p_241855_3_, p_241855_4_) : p_241855_5_.featureFalse.get().place(p_241855_1_, p_241855_2_, p_241855_3_, p_241855_4_);
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, TwoFeatureChoiceConfig config) {
+      boolean flag = rand.nextBoolean();
+      return flag ? config.field_227285_a_.get().generate(reader, generator, rand, pos) : config.field_227286_b_.get().generate(reader, generator, rand, pos);
    }
 }

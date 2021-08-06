@@ -10,37 +10,37 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public final class Color {
-   private static final Map<TextFormatting, Color> LEGACY_FORMAT_TO_COLOR = Stream.of(TextFormatting.values()).filter(TextFormatting::isColor).collect(ImmutableMap.toImmutableMap(Function.identity(), (p_240748_0_) -> {
-      return new Color(p_240748_0_.getColor(), p_240748_0_.getName());
+   private static final Map<TextFormatting, Color> FORMATTING_TO_COLOR_MAP = Stream.of(TextFormatting.values()).filter(TextFormatting::isColor).collect(ImmutableMap.toImmutableMap(Function.identity(), (p_240748_0_) -> {
+      return new Color(p_240748_0_.getColor(), p_240748_0_.getFriendlyName());
    }));
-   private static final Map<String, Color> NAMED_COLORS = LEGACY_FORMAT_TO_COLOR.values().stream().collect(ImmutableMap.toImmutableMap((p_240746_0_) -> {
+   private static final Map<String, Color> NAME_TO_COLOR_MAP = FORMATTING_TO_COLOR_MAP.values().stream().collect(ImmutableMap.toImmutableMap((p_240746_0_) -> {
       return p_240746_0_.name;
    }, Function.identity()));
-   private final int value;
+   private final int color;
    @Nullable
    private final String name;
 
-   private Color(int p_i232573_1_, String p_i232573_2_) {
-      this.value = p_i232573_1_;
-      this.name = p_i232573_2_;
+   private Color(int color, String name) {
+      this.color = color;
+      this.name = name;
    }
 
-   private Color(int p_i232572_1_) {
-      this.value = p_i232572_1_;
+   private Color(int color) {
+      this.color = color;
       this.name = null;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getValue() {
-      return this.value;
+   public int getColor() {
+      return this.color;
    }
 
-   public String serialize() {
-      return this.name != null ? this.name : this.formatValue();
+   public String getName() {
+      return this.name != null ? this.name : this.getHex();
    }
 
-   private String formatValue() {
-      return String.format("#%06X", this.value);
+   private String getHex() {
+      return String.format("#%06X", this.color);
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -48,40 +48,40 @@ public final class Color {
          return true;
       } else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass()) {
          Color color = (Color)p_equals_1_;
-         return this.value == color.value;
+         return this.color == color.color;
       } else {
          return false;
       }
    }
 
    public int hashCode() {
-      return Objects.hash(this.value, this.name);
+      return Objects.hash(this.color, this.name);
    }
 
    public String toString() {
-      return this.name != null ? this.name : this.formatValue();
+      return this.name != null ? this.name : this.getHex();
    }
 
    @Nullable
-   public static Color fromLegacyFormat(TextFormatting p_240744_0_) {
-      return LEGACY_FORMAT_TO_COLOR.get(p_240744_0_);
+   public static Color fromTextFormatting(TextFormatting formatting) {
+      return FORMATTING_TO_COLOR_MAP.get(formatting);
    }
 
-   public static Color fromRgb(int p_240743_0_) {
-      return new Color(p_240743_0_);
+   public static Color fromInt(int color) {
+      return new Color(color);
    }
 
    @Nullable
-   public static Color parseColor(String p_240745_0_) {
-      if (p_240745_0_.startsWith("#")) {
+   public static Color fromHex(String hexString) {
+      if (hexString.startsWith("#")) {
          try {
-            int i = Integer.parseInt(p_240745_0_.substring(1), 16);
-            return fromRgb(i);
+            int i = Integer.parseInt(hexString.substring(1), 16);
+            return fromInt(i);
          } catch (NumberFormatException numberformatexception) {
             return null;
          }
       } else {
-         return NAMED_COLORS.get(p_240745_0_);
+         return NAME_TO_COLOR_MAP.get(hexString);
       }
    }
 }

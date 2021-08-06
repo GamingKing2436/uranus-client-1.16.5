@@ -6,7 +6,7 @@ import net.minecraft.world.IWorldReader;
 
 public abstract class StructureProcessor {
    @Nullable
-   public abstract Template.BlockInfo processBlock(IWorldReader p_230386_1_, BlockPos p_230386_2_, BlockPos p_230386_3_, Template.BlockInfo p_230386_4_, Template.BlockInfo p_230386_5_, PlacementSettings p_230386_6_);
+   public abstract Template.BlockInfo func_230386_a_(IWorldReader p_230386_1_, BlockPos p_230386_2_, BlockPos p_230386_3_, Template.BlockInfo p_230386_4_, Template.BlockInfo p_230386_5_, PlacementSettings p_230386_6_);
 
    protected abstract IStructureProcessorType<?> getType();
 }

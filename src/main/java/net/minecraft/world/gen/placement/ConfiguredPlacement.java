@@ -11,28 +11,28 @@ import net.minecraft.world.gen.feature.WorldDecoratingHelper;
 public class ConfiguredPlacement<DC extends IPlacementConfig> implements IDecoratable<ConfiguredPlacement<?>> {
    public static final Codec<ConfiguredPlacement<?>> CODEC = Registry.DECORATOR.dispatch("type", (p_236954_0_) -> {
       return p_236954_0_.decorator;
-   }, Placement::configuredCodec);
+   }, Placement::getCodec);
    private final Placement<DC> decorator;
    private final DC config;
 
-   public ConfiguredPlacement(Placement<DC> p_i51390_1_, DC p_i51390_2_) {
-      this.decorator = p_i51390_1_;
-      this.config = p_i51390_2_;
+   public ConfiguredPlacement(Placement<DC> decorator, DC config) {
+      this.decorator = decorator;
+      this.config = config;
    }
 
-   public Stream<BlockPos> getPositions(WorldDecoratingHelper p_242876_1_, Random p_242876_2_, BlockPos p_242876_3_) {
-      return this.decorator.getPositions(p_242876_1_, p_242876_2_, this.config, p_242876_3_);
+   public Stream<BlockPos> func_242876_a(WorldDecoratingHelper helper, Random rand, BlockPos pos) {
+      return this.decorator.getPositions(helper, rand, this.config, pos);
    }
 
    public String toString() {
       return String.format("[%s %s]", Registry.DECORATOR.getKey(this.decorator), this.config);
    }
 
-   public ConfiguredPlacement<?> decorated(ConfiguredPlacement<?> p_227228_1_) {
-      return new ConfiguredPlacement<>(Placement.DECORATED, new DecoratedPlacementConfig(p_227228_1_, this));
+   public ConfiguredPlacement<?> withPlacement(ConfiguredPlacement<?> placement) {
+      return new ConfiguredPlacement<>(Placement.DECORATED, new DecoratedPlacementConfig(placement, this));
    }
 
-   public DC config() {
+   public DC func_242877_b() {
       return this.config;
    }
 }

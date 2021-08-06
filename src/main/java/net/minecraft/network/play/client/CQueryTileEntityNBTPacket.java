@@ -21,25 +21,25 @@ public class CQueryTileEntityNBTPacket implements IPacket<IServerPlayNetHandler>
       this.pos = p_i49756_2_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.transactionId = p_148837_1_.readVarInt();
-      this.pos = p_148837_1_.readBlockPos();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.transactionId = buf.readVarInt();
+      this.pos = buf.readBlockPos();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.transactionId);
-      p_148840_1_.writeBlockPos(this.pos);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.transactionId);
+      buf.writeBlockPos(this.pos);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleBlockEntityTagQuery(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processNBTQueryBlockEntity(this);
    }
 
    public int getTransactionId() {
       return this.transactionId;
    }
 
-   public BlockPos getPos() {
+   public BlockPos getPosition() {
       return this.pos;
    }
 }

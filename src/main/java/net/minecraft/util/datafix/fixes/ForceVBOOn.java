@@ -7,8 +7,8 @@ import com.mojang.datafixers.schemas.Schema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ForceVBOOn extends DataFix {
-   public ForceVBOOn(Schema p_i49624_1_, boolean p_i49624_2_) {
-      super(p_i49624_1_, p_i49624_2_);
+   public ForceVBOOn(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {

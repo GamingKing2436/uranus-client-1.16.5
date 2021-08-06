@@ -23,103 +23,103 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class AbstractPiglinEntity extends MonsterEntity {
-   protected static final DataParameter<Boolean> DATA_IMMUNE_TO_ZOMBIFICATION = EntityDataManager.defineId(AbstractPiglinEntity.class, DataSerializers.BOOLEAN);
-   protected int timeInOverworld = 0;
+   protected static final DataParameter<Boolean> field_242333_b = EntityDataManager.createKey(AbstractPiglinEntity.class, DataSerializers.BOOLEAN);
+   protected int field_242334_c = 0;
 
    public AbstractPiglinEntity(EntityType<? extends AbstractPiglinEntity> p_i241915_1_, World p_i241915_2_) {
       super(p_i241915_1_, p_i241915_2_);
       this.setCanPickUpLoot(true);
-      this.applyOpenDoorsAbility();
-      this.setPathfindingMalus(PathNodeType.DANGER_FIRE, 16.0F);
-      this.setPathfindingMalus(PathNodeType.DAMAGE_FIRE, -1.0F);
+      this.func_242339_eS();
+      this.setPathPriority(PathNodeType.DANGER_FIRE, 16.0F);
+      this.setPathPriority(PathNodeType.DAMAGE_FIRE, -1.0F);
    }
 
-   private void applyOpenDoorsAbility() {
-      if (GroundPathHelper.hasGroundPathNavigation(this)) {
-         ((GroundPathNavigator)this.getNavigation()).setCanOpenDoors(true);
+   private void func_242339_eS() {
+      if (GroundPathHelper.isGroundNavigator(this)) {
+         ((GroundPathNavigator)this.getNavigator()).setBreakDoors(true);
       }
 
    }
 
-   protected abstract boolean canHunt();
+   protected abstract boolean func_234422_eK_();
 
-   public void setImmuneToZombification(boolean p_242340_1_) {
-      this.getEntityData().set(DATA_IMMUNE_TO_ZOMBIFICATION, p_242340_1_);
+   public void func_242340_t(boolean p_242340_1_) {
+      this.getDataManager().set(field_242333_b, p_242340_1_);
    }
 
-   protected boolean isImmuneToZombification() {
-      return this.getEntityData().get(DATA_IMMUNE_TO_ZOMBIFICATION);
+   protected boolean func_242335_eK() {
+      return this.getDataManager().get(field_242333_b);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_IMMUNE_TO_ZOMBIFICATION, false);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(field_242333_b, false);
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      if (this.isImmuneToZombification()) {
-         p_213281_1_.putBoolean("IsImmuneToZombification", true);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      if (this.func_242335_eK()) {
+         compound.putBoolean("IsImmuneToZombification", true);
       }
 
-      p_213281_1_.putInt("TimeInOverworld", this.timeInOverworld);
+      compound.putInt("TimeInOverworld", this.field_242334_c);
    }
 
-   public double getMyRidingOffset() {
-      return this.isBaby() ? -0.05D : -0.45D;
+   public double getYOffset() {
+      return this.isChild() ? -0.05D : -0.45D;
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.setImmuneToZombification(p_70037_1_.getBoolean("IsImmuneToZombification"));
-      this.timeInOverworld = p_70037_1_.getInt("TimeInOverworld");
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.func_242340_t(compound.getBoolean("IsImmuneToZombification"));
+      this.field_242334_c = compound.getInt("TimeInOverworld");
    }
 
-   protected void customServerAiStep() {
-      super.customServerAiStep();
-      if (this.isConverting()) {
-         ++this.timeInOverworld;
+   protected void updateAITasks() {
+      super.updateAITasks();
+      if (this.func_242336_eL()) {
+         ++this.field_242334_c;
       } else {
-         this.timeInOverworld = 0;
+         this.field_242334_c = 0;
       }
 
-      if (this.timeInOverworld > 300) {
-         this.playConvertedSound();
-         this.finishConversion((ServerWorld)this.level);
+      if (this.field_242334_c > 300) {
+         this.func_241848_eP();
+         this.func_234416_a_((ServerWorld)this.world);
       }
 
    }
 
-   public boolean isConverting() {
-      return !this.level.dimensionType().piglinSafe() && !this.isImmuneToZombification() && !this.isNoAi();
+   public boolean func_242336_eL() {
+      return !this.world.getDimensionType().isPiglinSafe() && !this.func_242335_eK() && !this.isAIDisabled();
    }
 
-   protected void finishConversion(ServerWorld p_234416_1_) {
-      ZombifiedPiglinEntity zombifiedpiglinentity = this.convertTo(EntityType.ZOMBIFIED_PIGLIN, true);
+   protected void func_234416_a_(ServerWorld p_234416_1_) {
+      ZombifiedPiglinEntity zombifiedpiglinentity = this.func_233656_b_(EntityType.ZOMBIFIED_PIGLIN, true);
       if (zombifiedpiglinentity != null) {
-         zombifiedpiglinentity.addEffect(new EffectInstance(Effects.CONFUSION, 200, 0));
+         zombifiedpiglinentity.addPotionEffect(new EffectInstance(Effects.NAUSEA, 200, 0));
       }
 
    }
 
-   public boolean isAdult() {
-      return !this.isBaby();
+   public boolean func_242337_eM() {
+      return !this.isChild();
    }
 
    @OnlyIn(Dist.CLIENT)
-   public abstract PiglinAction getArmPose();
+   public abstract PiglinAction func_234424_eM_();
 
    @Nullable
-   public LivingEntity getTarget() {
+   public LivingEntity getAttackTarget() {
       return this.brain.getMemory(MemoryModuleType.ATTACK_TARGET).orElse((LivingEntity)null);
    }
 
-   protected boolean isHoldingMeleeWeapon() {
-      return this.getMainHandItem().getItem() instanceof TieredItem;
+   protected boolean func_242338_eO() {
+      return this.getHeldItemMainhand().getItem() instanceof TieredItem;
    }
 
    public void playAmbientSound() {
-      if (PiglinTasks.isIdle(this)) {
+      if (PiglinTasks.func_234520_i_(this)) {
          super.playAmbientSound();
       }
 
@@ -127,8 +127,8 @@ public abstract class AbstractPiglinEntity extends MonsterEntity {
 
    protected void sendDebugPackets() {
       super.sendDebugPackets();
-      DebugPacketSender.sendEntityBrain(this);
+      DebugPacketSender.sendLivingEntity(this);
    }
 
-   protected abstract void playConvertedSound();
+   protected abstract void func_241848_eP();
 }

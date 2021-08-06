@@ -11,20 +11,20 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IToast {
-   ResourceLocation TEXTURE = new ResourceLocation("textures/gui/toasts.png");
+   ResourceLocation TEXTURE_TOASTS = new ResourceLocation("textures/gui/toasts.png");
    Object NO_TOKEN = new Object();
 
-   IToast.Visibility render(MatrixStack p_230444_1_, ToastGui p_230444_2_, long p_230444_3_);
+   IToast.Visibility func_230444_a_(MatrixStack p_230444_1_, ToastGui p_230444_2_, long p_230444_3_);
 
-   default Object getToken() {
+   default Object getType() {
       return NO_TOKEN;
    }
 
-   default int width() {
+   default int func_230445_a_() {
       return 160;
    }
 
-   default int height() {
+   default int func_238540_d_() {
       return 32;
    }
 
@@ -33,14 +33,14 @@ public interface IToast {
       SHOW(SoundEvents.UI_TOAST_IN),
       HIDE(SoundEvents.UI_TOAST_OUT);
 
-      private final SoundEvent soundEvent;
+      private final SoundEvent sound;
 
-      private Visibility(SoundEvent p_i47607_3_) {
-         this.soundEvent = p_i47607_3_;
+      private Visibility(SoundEvent soundIn) {
+         this.sound = soundIn;
       }
 
-      public void playSound(SoundHandler p_194169_1_) {
-         p_194169_1_.play(SimpleSound.forUI(this.soundEvent, 1.0F, 1.0F));
+      public void playSound(SoundHandler handler) {
+         handler.play(SimpleSound.master(this.sound, 1.0F, 1.0F));
       }
    }
 }

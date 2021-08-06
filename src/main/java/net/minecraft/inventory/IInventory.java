@@ -6,42 +6,42 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public interface IInventory extends IClearable {
-   int getContainerSize();
+   int getSizeInventory();
 
    boolean isEmpty();
 
-   ItemStack getItem(int p_70301_1_);
+   ItemStack getStackInSlot(int index);
 
-   ItemStack removeItem(int p_70298_1_, int p_70298_2_);
+   ItemStack decrStackSize(int index, int count);
 
-   ItemStack removeItemNoUpdate(int p_70304_1_);
+   ItemStack removeStackFromSlot(int index);
 
-   void setItem(int p_70299_1_, ItemStack p_70299_2_);
+   void setInventorySlotContents(int index, ItemStack stack);
 
-   default int getMaxStackSize() {
+   default int getInventoryStackLimit() {
       return 64;
    }
 
-   void setChanged();
+   void markDirty();
 
-   boolean stillValid(PlayerEntity p_70300_1_);
+   boolean isUsableByPlayer(PlayerEntity player);
 
-   default void startOpen(PlayerEntity p_174889_1_) {
+   default void openInventory(PlayerEntity player) {
    }
 
-   default void stopOpen(PlayerEntity p_174886_1_) {
+   default void closeInventory(PlayerEntity player) {
    }
 
-   default boolean canPlaceItem(int p_94041_1_, ItemStack p_94041_2_) {
+   default boolean isItemValidForSlot(int index, ItemStack stack) {
       return true;
    }
 
-   default int countItem(Item p_213901_1_) {
+   default int count(Item itemIn) {
       int i = 0;
 
-      for(int j = 0; j < this.getContainerSize(); ++j) {
-         ItemStack itemstack = this.getItem(j);
-         if (itemstack.getItem().equals(p_213901_1_)) {
+      for(int j = 0; j < this.getSizeInventory(); ++j) {
+         ItemStack itemstack = this.getStackInSlot(j);
+         if (itemstack.getItem().equals(itemIn)) {
             i += itemstack.getCount();
          }
       }
@@ -49,10 +49,10 @@ public interface IInventory extends IClearable {
       return i;
    }
 
-   default boolean hasAnyOf(Set<Item> p_213902_1_) {
-      for(int i = 0; i < this.getContainerSize(); ++i) {
-         ItemStack itemstack = this.getItem(i);
-         if (p_213902_1_.contains(itemstack.getItem()) && itemstack.getCount() > 0) {
+   default boolean hasAny(Set<Item> set) {
+      for(int i = 0; i < this.getSizeInventory(); ++i) {
+         ItemStack itemstack = this.getStackInSlot(i);
+         if (set.contains(itemstack.getItem()) && itemstack.getCount() > 0) {
             return true;
          }
       }

@@ -13,8 +13,8 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class VillagerTrades extends NamedEntityFix {
-   public VillagerTrades(Schema p_i49614_1_, boolean p_i49614_2_) {
-      super(p_i49614_1_, p_i49614_2_, "Villager trade fix", TypeReferences.ENTITY, "minecraft:villager");
+   public VillagerTrades(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "Villager trade fix", TypeReferences.ENTITY, "minecraft:villager");
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
@@ -30,7 +30,7 @@ public class VillagerTrades extends NamedEntityFix {
          OpticFinder<?> opticfinder3 = type1.findField("buy");
          OpticFinder<?> opticfinder4 = type1.findField("buyB");
          OpticFinder<?> opticfinder5 = type1.findField("sell");
-         OpticFinder<Pair<String, String>> opticfinder6 = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+         OpticFinder<Pair<String, String>> opticfinder6 = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
          Function<Typed<?>, Typed<?>> function = (p_209284_2_) -> {
             return this.updateItemStack(opticfinder6, p_209284_2_);
          };

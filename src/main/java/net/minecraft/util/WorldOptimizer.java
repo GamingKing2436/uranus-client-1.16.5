@@ -35,39 +35,39 @@ import org.apache.logging.log4j.Logger;
 public class WorldOptimizer {
    private static final Logger LOGGER = LogManager.getLogger();
    private static final ThreadFactory THREAD_FACTORY = (new ThreadFactoryBuilder()).setDaemon(true).build();
-   private final ImmutableSet<RegistryKey<World>> levels;
-   private final boolean eraseCache;
-   private final SaveFormat.LevelSave levelStorage;
+   private final ImmutableSet<RegistryKey<World>> field_233529_c_;
+   private final boolean field_219957_d;
+   private final SaveFormat.LevelSave worldStorage;
    private final Thread thread;
-   private final DataFixer dataFixer;
-   private volatile boolean running = true;
-   private volatile boolean finished;
-   private volatile float progress;
+   private final DataFixer field_233530_g_;
+   private volatile boolean active = true;
+   private volatile boolean done;
+   private volatile float totalProgress;
    private volatile int totalChunks;
    private volatile int converted;
    private volatile int skipped;
-   private final Object2FloatMap<RegistryKey<World>> progressMap = Object2FloatMaps.synchronize(new Object2FloatOpenCustomHashMap<>(Util.identityStrategy()));
-   private volatile ITextComponent status = new TranslationTextComponent("optimizeWorld.stage.counting");
-   private static final Pattern REGEX = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
-   private final DimensionSavedDataManager overworldDataStorage;
+   private final Object2FloatMap<RegistryKey<World>> progress = Object2FloatMaps.synchronize(new Object2FloatOpenCustomHashMap<>(Util.identityHashStrategy()));
+   private volatile ITextComponent statusText = new TranslationTextComponent("optimizeWorld.stage.counting");
+   private static final Pattern REGION_FILE_PATTERN = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
+   private final DimensionSavedDataManager savedDataManager;
 
    public WorldOptimizer(SaveFormat.LevelSave p_i231486_1_, DataFixer p_i231486_2_, ImmutableSet<RegistryKey<World>> p_i231486_3_, boolean p_i231486_4_) {
-      this.levels = p_i231486_3_;
-      this.eraseCache = p_i231486_4_;
-      this.dataFixer = p_i231486_2_;
-      this.levelStorage = p_i231486_1_;
-      this.overworldDataStorage = new DimensionSavedDataManager(new File(this.levelStorage.getDimensionPath(World.OVERWORLD), "data"), p_i231486_2_);
-      this.thread = THREAD_FACTORY.newThread(this::work);
+      this.field_233529_c_ = p_i231486_3_;
+      this.field_219957_d = p_i231486_4_;
+      this.field_233530_g_ = p_i231486_2_;
+      this.worldStorage = p_i231486_1_;
+      this.savedDataManager = new DimensionSavedDataManager(new File(this.worldStorage.getDimensionFolder(World.OVERWORLD), "data"), p_i231486_2_);
+      this.thread = THREAD_FACTORY.newThread(this::optimize);
       this.thread.setUncaughtExceptionHandler((p_219956_1_, p_219956_2_) -> {
          LOGGER.error("Error upgrading world", p_219956_2_);
-         this.status = new TranslationTextComponent("optimizeWorld.stage.failed");
-         this.finished = true;
+         this.statusText = new TranslationTextComponent("optimizeWorld.stage.failed");
+         this.done = true;
       });
       this.thread.start();
    }
 
    public void cancel() {
-      this.running = false;
+      this.active = false;
 
       try {
          this.thread.join();
@@ -76,37 +76,37 @@ public class WorldOptimizer {
 
    }
 
-   private void work() {
+   private void optimize() {
       this.totalChunks = 0;
       Builder<RegistryKey<World>, ListIterator<ChunkPos>> builder = ImmutableMap.builder();
 
-      for(RegistryKey<World> registrykey : this.levels) {
-         List<ChunkPos> list = this.getAllChunkPos(registrykey);
+      for(RegistryKey<World> registrykey : this.field_233529_c_) {
+         List<ChunkPos> list = this.func_233532_b_(registrykey);
          builder.put(registrykey, list.listIterator());
          this.totalChunks += list.size();
       }
 
       if (this.totalChunks == 0) {
-         this.finished = true;
+         this.done = true;
       } else {
          float f1 = (float)this.totalChunks;
          ImmutableMap<RegistryKey<World>, ListIterator<ChunkPos>> immutablemap = builder.build();
          Builder<RegistryKey<World>, ChunkLoader> builder1 = ImmutableMap.builder();
 
-         for(RegistryKey<World> registrykey1 : this.levels) {
-            File file1 = this.levelStorage.getDimensionPath(registrykey1);
-            builder1.put(registrykey1, new ChunkLoader(new File(file1, "region"), this.dataFixer, true));
+         for(RegistryKey<World> registrykey1 : this.field_233529_c_) {
+            File file1 = this.worldStorage.getDimensionFolder(registrykey1);
+            builder1.put(registrykey1, new ChunkLoader(new File(file1, "region"), this.field_233530_g_, true));
          }
 
          ImmutableMap<RegistryKey<World>, ChunkLoader> immutablemap1 = builder1.build();
-         long i = Util.getMillis();
-         this.status = new TranslationTextComponent("optimizeWorld.stage.upgrading");
+         long i = Util.milliTime();
+         this.statusText = new TranslationTextComponent("optimizeWorld.stage.upgrading");
 
-         while(this.running) {
+         while(this.active) {
             boolean flag = false;
             float f = 0.0F;
 
-            for(RegistryKey<World> registrykey2 : this.levels) {
+            for(RegistryKey<World> registrykey2 : this.field_233529_c_) {
                ListIterator<ChunkPos> listiterator = immutablemap.get(registrykey2);
                ChunkLoader chunkloader = immutablemap1.get(registrykey2);
                if (listiterator.hasNext()) {
@@ -114,11 +114,11 @@ public class WorldOptimizer {
                   boolean flag1 = false;
 
                   try {
-                     CompoundNBT compoundnbt = chunkloader.read(chunkpos);
+                     CompoundNBT compoundnbt = chunkloader.readChunk(chunkpos);
                      if (compoundnbt != null) {
-                        int j = ChunkLoader.getVersion(compoundnbt);
-                        CompoundNBT compoundnbt1 = chunkloader.upgradeChunkTag(registrykey2, () -> {
-                           return this.overworldDataStorage;
+                        int j = ChunkLoader.getDataVersion(compoundnbt);
+                        CompoundNBT compoundnbt1 = chunkloader.func_235968_a_(registrykey2, () -> {
+                           return this.savedDataManager;
                         }, compoundnbt);
                         CompoundNBT compoundnbt2 = compoundnbt1.getCompound("Level");
                         ChunkPos chunkpos1 = new ChunkPos(compoundnbt2.getInt("xPos"), compoundnbt2.getInt("zPos"));
@@ -126,8 +126,8 @@ public class WorldOptimizer {
                            LOGGER.warn("Chunk {} has invalid position {}", chunkpos, chunkpos1);
                         }
 
-                        boolean flag2 = j < SharedConstants.getCurrentVersion().getWorldVersion();
-                        if (this.eraseCache) {
+                        boolean flag2 = j < SharedConstants.getVersion().getWorldVersion();
+                        if (this.field_219957_d) {
                            flag2 = flag2 || compoundnbt2.contains("Heightmaps");
                            compoundnbt2.remove("Heightmaps");
                            flag2 = flag2 || compoundnbt2.contains("isLightOn");
@@ -135,7 +135,7 @@ public class WorldOptimizer {
                         }
 
                         if (flag2) {
-                           chunkloader.write(chunkpos, compoundnbt1);
+                           chunkloader.writeChunk(chunkpos, compoundnbt1);
                            flag1 = true;
                         }
                      }
@@ -160,17 +160,17 @@ public class WorldOptimizer {
                }
 
                float f2 = (float)listiterator.nextIndex() / f1;
-               this.progressMap.put(registrykey2, f2);
+               this.progress.put(registrykey2, f2);
                f += f2;
             }
 
-            this.progress = f;
+            this.totalProgress = f;
             if (!flag) {
-               this.running = false;
+               this.active = false;
             }
          }
 
-         this.status = new TranslationTextComponent("optimizeWorld.stage.finished");
+         this.statusText = new TranslationTextComponent("optimizeWorld.stage.finished");
 
          for(ChunkLoader chunkloader1 : immutablemap1.values()) {
             try {
@@ -180,15 +180,15 @@ public class WorldOptimizer {
             }
          }
 
-         this.overworldDataStorage.save();
-         i = Util.getMillis() - i;
+         this.savedDataManager.save();
+         i = Util.milliTime() - i;
          LOGGER.info("World optimizaton finished after {} ms", (long)i);
-         this.finished = true;
+         this.done = true;
       }
    }
 
-   private List<ChunkPos> getAllChunkPos(RegistryKey<World> p_233532_1_) {
-      File file1 = this.levelStorage.getDimensionPath(p_233532_1_);
+   private List<ChunkPos> func_233532_b_(RegistryKey<World> p_233532_1_) {
+      File file1 = this.worldStorage.getDimensionFolder(p_233532_1_);
       File file2 = new File(file1, "region");
       File[] afile = file2.listFiles((p_219954_0_, p_219954_1_) -> {
          return p_219954_1_.endsWith(".mca");
@@ -199,7 +199,7 @@ public class WorldOptimizer {
          List<ChunkPos> list = Lists.newArrayList();
 
          for(File file3 : afile) {
-            Matcher matcher = REGEX.matcher(file3.getName());
+            Matcher matcher = REGION_FILE_PATTERN.matcher(file3.getName());
             if (matcher.matches()) {
                int i = Integer.parseInt(matcher.group(1)) << 5;
                int j = Integer.parseInt(matcher.group(2)) << 5;
@@ -208,7 +208,7 @@ public class WorldOptimizer {
                   for(int k = 0; k < 32; ++k) {
                      for(int l = 0; l < 32; ++l) {
                         ChunkPos chunkpos = new ChunkPos(k + i, l + j);
-                        if (regionfile.doesChunkExist(chunkpos)) {
+                        if (regionfile.func_222662_b(chunkpos)) {
                            list.add(chunkpos);
                         }
                      }
@@ -223,22 +223,22 @@ public class WorldOptimizer {
    }
 
    public boolean isFinished() {
-      return this.finished;
+      return this.done;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ImmutableSet<RegistryKey<World>> levels() {
-      return this.levels;
+   public ImmutableSet<RegistryKey<World>> func_233533_c_() {
+      return this.field_233529_c_;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float dimensionProgress(RegistryKey<World> p_233531_1_) {
-      return this.progressMap.getFloat(p_233531_1_);
+   public float func_233531_a_(RegistryKey<World> p_233531_1_) {
+      return this.progress.getFloat(p_233531_1_);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getProgress() {
-      return this.progress;
+   public float getTotalProgress() {
+      return this.totalProgress;
    }
 
    public int getTotalChunks() {
@@ -253,7 +253,7 @@ public class WorldOptimizer {
       return this.skipped;
    }
 
-   public ITextComponent getStatus() {
-      return this.status;
+   public ITextComponent getStatusText() {
+      return this.statusText;
    }
 }

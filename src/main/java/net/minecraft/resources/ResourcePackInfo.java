@@ -21,31 +21,31 @@ import org.apache.logging.log4j.Logger;
 
 public class ResourcePackInfo implements AutoCloseable {
    private static final Logger LOGGER = LogManager.getLogger();
-   private static final PackMetadataSection BROKEN_ASSETS_FALLBACK = new PackMetadataSection((new TranslationTextComponent("resourcePack.broken_assets")).withStyle(new TextFormatting[]{TextFormatting.RED, TextFormatting.ITALIC}), SharedConstants.getCurrentVersion().getPackVersion());
-   private final String id;
-   private final Supplier<IResourcePack> supplier;
+   private static final PackMetadataSection BROKEN_ASSETS_FALLBACK = new PackMetadataSection((new TranslationTextComponent("resourcePack.broken_assets")).mergeStyle(new TextFormatting[]{TextFormatting.RED, TextFormatting.ITALIC}), SharedConstants.getVersion().getPackVersion());
+   private final String name;
+   private final Supplier<IResourcePack> resourcePackSupplier;
    private final ITextComponent title;
    private final ITextComponent description;
    private final PackCompatibility compatibility;
-   private final ResourcePackInfo.Priority defaultPosition;
-   private final boolean required;
-   private final boolean fixedPosition;
-   private final IPackNameDecorator packSource;
+   private final ResourcePackInfo.Priority priority;
+   private final boolean alwaysEnabled;
+   private final boolean orderLocked;
+   private final IPackNameDecorator decorator;
 
    @Nullable
-   public static ResourcePackInfo create(String p_195793_0_, boolean p_195793_1_, Supplier<IResourcePack> p_195793_2_, ResourcePackInfo.IFactory p_195793_3_, ResourcePackInfo.Priority p_195793_4_, IPackNameDecorator p_195793_5_) {
+   public static ResourcePackInfo createResourcePack(String nameIn, boolean p_195793_1_, Supplier<IResourcePack> p_195793_2_, ResourcePackInfo.IFactory factory, ResourcePackInfo.Priority p_195793_4_, IPackNameDecorator p_195793_5_) {
       try (IResourcePack iresourcepack = p_195793_2_.get()) {
-         PackMetadataSection packmetadatasection = iresourcepack.getMetadataSection(PackMetadataSection.SERIALIZER);
+         PackMetadataSection packmetadatasection = iresourcepack.getMetadata(PackMetadataSection.SERIALIZER);
          if (p_195793_1_ && packmetadatasection == null) {
             LOGGER.error("Broken/missing pack.mcmeta detected, fudging it into existance. Please check that your launcher has downloaded all assets for the game correctly!");
             packmetadatasection = BROKEN_ASSETS_FALLBACK;
          }
 
          if (packmetadatasection != null) {
-            return p_195793_3_.create(p_195793_0_, p_195793_1_, p_195793_2_, iresourcepack, packmetadatasection, p_195793_4_, p_195793_5_);
+            return factory.create(nameIn, p_195793_1_, p_195793_2_, iresourcepack, packmetadatasection, p_195793_4_, p_195793_5_);
          }
 
-         LOGGER.warn("Couldn't find pack meta for pack {}", (Object)p_195793_0_);
+         LOGGER.warn("Couldn't find pack meta for pack {}", (Object)nameIn);
       } catch (IOException ioexception) {
          LOGGER.warn("Couldn't get pack info for: {}", (Object)ioexception.toString());
       }
@@ -54,19 +54,19 @@ public class ResourcePackInfo implements AutoCloseable {
    }
 
    public ResourcePackInfo(String p_i231422_1_, boolean p_i231422_2_, Supplier<IResourcePack> p_i231422_3_, ITextComponent p_i231422_4_, ITextComponent p_i231422_5_, PackCompatibility p_i231422_6_, ResourcePackInfo.Priority p_i231422_7_, boolean p_i231422_8_, IPackNameDecorator p_i231422_9_) {
-      this.id = p_i231422_1_;
-      this.supplier = p_i231422_3_;
+      this.name = p_i231422_1_;
+      this.resourcePackSupplier = p_i231422_3_;
       this.title = p_i231422_4_;
       this.description = p_i231422_5_;
       this.compatibility = p_i231422_6_;
-      this.required = p_i231422_2_;
-      this.defaultPosition = p_i231422_7_;
-      this.fixedPosition = p_i231422_8_;
-      this.packSource = p_i231422_9_;
+      this.alwaysEnabled = p_i231422_2_;
+      this.priority = p_i231422_7_;
+      this.orderLocked = p_i231422_8_;
+      this.decorator = p_i231422_9_;
    }
 
    public ResourcePackInfo(String p_i231421_1_, boolean p_i231421_2_, Supplier<IResourcePack> p_i231421_3_, IResourcePack p_i231421_4_, PackMetadataSection p_i231421_5_, ResourcePackInfo.Priority p_i231421_6_, IPackNameDecorator p_i231421_7_) {
-      this(p_i231421_1_, p_i231421_2_, p_i231421_3_, new StringTextComponent(p_i231421_4_.getName()), p_i231421_5_.getDescription(), PackCompatibility.forFormat(p_i231421_5_.getPackFormat()), p_i231421_6_, false, p_i231421_7_);
+      this(p_i231421_1_, p_i231421_2_, p_i231421_3_, new StringTextComponent(p_i231421_4_.getName()), p_i231421_5_.getDescription(), PackCompatibility.getCompatibility(p_i231421_5_.getPackFormat()), p_i231421_6_, false, p_i231421_7_);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -80,8 +80,8 @@ public class ResourcePackInfo implements AutoCloseable {
    }
 
    public ITextComponent getChatLink(boolean p_195794_1_) {
-      return TextComponentUtils.wrapInSquareBrackets(this.packSource.decorate(new StringTextComponent(this.id))).withStyle((p_211689_2_) -> {
-         return p_211689_2_.withColor(p_195794_1_ ? TextFormatting.GREEN : TextFormatting.RED).withInsertion(StringArgumentType.escapeIfRequired(this.id)).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, (new StringTextComponent("")).append(this.title).append("\n").append(this.description)));
+      return TextComponentUtils.wrapWithSquareBrackets(this.decorator.decorate(new StringTextComponent(this.name))).modifyStyle((p_211689_2_) -> {
+         return p_211689_2_.setFormatting(p_195794_1_ ? TextFormatting.GREEN : TextFormatting.RED).setInsertion(StringArgumentType.escapeIfRequired(this.name)).setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, (new StringTextComponent("")).append(this.title).appendString("\n").append(this.description)));
       });
    }
 
@@ -89,29 +89,29 @@ public class ResourcePackInfo implements AutoCloseable {
       return this.compatibility;
    }
 
-   public IResourcePack open() {
-      return this.supplier.get();
+   public IResourcePack getResourcePack() {
+      return this.resourcePackSupplier.get();
    }
 
-   public String getId() {
-      return this.id;
+   public String getName() {
+      return this.name;
    }
 
-   public boolean isRequired() {
-      return this.required;
+   public boolean isAlwaysEnabled() {
+      return this.alwaysEnabled;
    }
 
-   public boolean isFixedPosition() {
-      return this.fixedPosition;
+   public boolean isOrderLocked() {
+      return this.orderLocked;
    }
 
-   public ResourcePackInfo.Priority getDefaultPosition() {
-      return this.defaultPosition;
+   public ResourcePackInfo.Priority getPriority() {
+      return this.priority;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public IPackNameDecorator getPackSource() {
-      return this.packSource;
+   public IPackNameDecorator getDecorator() {
+      return this.decorator;
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -121,12 +121,12 @@ public class ResourcePackInfo implements AutoCloseable {
          return false;
       } else {
          ResourcePackInfo resourcepackinfo = (ResourcePackInfo)p_equals_1_;
-         return this.id.equals(resourcepackinfo.id);
+         return this.name.equals(resourcepackinfo.name);
       }
    }
 
    public int hashCode() {
-      return this.id.hashCode();
+      return this.name.hashCode();
    }
 
    public void close() {
@@ -148,7 +148,7 @@ public class ResourcePackInfo implements AutoCloseable {
             int j;
             for(j = 0; j < p_198993_1_.size(); ++j) {
                ResourcePackInfo resourcepackinfo1 = p_198993_3_.apply(p_198993_1_.get(j));
-               if (!resourcepackinfo1.isFixedPosition() || resourcepackinfo1.getDefaultPosition() != this) {
+               if (!resourcepackinfo1.isOrderLocked() || resourcepackinfo1.getPriority() != this) {
                   break;
                }
             }
@@ -159,7 +159,7 @@ public class ResourcePackInfo implements AutoCloseable {
             int i;
             for(i = p_198993_1_.size() - 1; i >= 0; --i) {
                ResourcePackInfo resourcepackinfo = p_198993_3_.apply(p_198993_1_.get(i));
-               if (!resourcepackinfo.isFixedPosition() || resourcepackinfo.getDefaultPosition() != this) {
+               if (!resourcepackinfo.isOrderLocked() || resourcepackinfo.getPriority() != this) {
                   break;
                }
             }

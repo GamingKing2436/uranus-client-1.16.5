@@ -13,7 +13,7 @@ public class V1920 extends NamespacedSchema {
       super(p_i50414_1_, p_i50414_2_);
    }
 
-   protected static void registerInventory(Schema p_219886_0_, Map<String, Supplier<TypeTemplate>> p_219886_1_, String p_219886_2_) {
+   protected static void func_219886_a(Schema p_219886_0_, Map<String, Supplier<TypeTemplate>> p_219886_1_, String p_219886_2_) {
       p_219886_0_.register(p_219886_1_, p_219886_2_, () -> {
          return DSL.optionalFields("Items", DSL.list(TypeReferences.ITEM_STACK.in(p_219886_0_)));
       });
@@ -21,7 +21,7 @@ public class V1920 extends NamespacedSchema {
 
    public Map<String, Supplier<TypeTemplate>> registerBlockEntities(Schema p_registerBlockEntities_1_) {
       Map<String, Supplier<TypeTemplate>> map = super.registerBlockEntities(p_registerBlockEntities_1_);
-      registerInventory(p_registerBlockEntities_1_, map, "minecraft:campfire");
+      func_219886_a(p_registerBlockEntities_1_, map, "minecraft:campfire");
       return map;
    }
 }

@@ -32,24 +32,24 @@ public class BitStorageAlignFix extends DataFix {
       OpticFinder<List<Pair<String, Dynamic<?>>>> opticfinder3 = DSL.fieldFinder("Palette", DSL.list(type3));
       return this.fixTypeEverywhereTyped("BitStorageAlignFix", type, this.getOutputSchema().getType(TypeReferences.CHUNK), (p_233088_5_) -> {
          return p_233088_5_.updateTyped(opticfinder, (p_233099_4_) -> {
-            return this.updateHeightmaps(updateSections(opticfinder1, opticfinder2, opticfinder3, p_233099_4_));
+            return this.func_233092_a_(func_233089_a_(opticfinder1, opticfinder2, opticfinder3, p_233099_4_));
          });
       });
    }
 
-   private Typed<?> updateHeightmaps(Typed<?> p_233092_1_) {
+   private Typed<?> func_233092_a_(Typed<?> p_233092_1_) {
       return p_233092_1_.update(DSL.remainderFinder(), (p_233093_0_) -> {
          return p_233093_0_.update("Heightmaps", (p_233096_1_) -> {
             return p_233096_1_.updateMapValues((p_233095_1_) -> {
                return p_233095_1_.mapSecond((p_233100_1_) -> {
-                  return updateBitStorage(p_233093_0_, p_233100_1_, 256, 9);
+                  return func_233097_a_(p_233093_0_, p_233100_1_, 256, 9);
                });
             });
          });
       });
    }
 
-   private static Typed<?> updateSections(OpticFinder<?> p_233089_0_, OpticFinder<?> p_233089_1_, OpticFinder<List<Pair<String, Dynamic<?>>>> p_233089_2_, Typed<?> p_233089_3_) {
+   private static Typed<?> func_233089_a_(OpticFinder<?> p_233089_0_, OpticFinder<?> p_233089_1_, OpticFinder<List<Pair<String, Dynamic<?>>>> p_233089_2_, Typed<?> p_233089_3_) {
       return p_233089_3_.updateTyped(p_233089_0_, (p_233090_2_) -> {
          return p_233090_2_.updateTyped(p_233089_1_, (p_233091_1_) -> {
             int i = p_233091_1_.getOptional(p_233089_2_).map((p_233098_0_) -> {
@@ -57,20 +57,20 @@ public class BitStorageAlignFix extends DataFix {
             }).orElse(0);
             return i != 0 && !MathHelper.isPowerOfTwo(i) ? p_233091_1_.update(DSL.remainderFinder(), (p_233087_1_) -> {
                return p_233087_1_.update("BlockStates", (p_233094_2_) -> {
-                  return updateBitStorage(p_233087_1_, p_233094_2_, 4096, i);
+                  return func_233097_a_(p_233087_1_, p_233094_2_, 4096, i);
                });
             }) : p_233091_1_;
          });
       });
    }
 
-   private static Dynamic<?> updateBitStorage(Dynamic<?> p_233097_0_, Dynamic<?> p_233097_1_, int p_233097_2_, int p_233097_3_) {
+   private static Dynamic<?> func_233097_a_(Dynamic<?> p_233097_0_, Dynamic<?> p_233097_1_, int p_233097_2_, int p_233097_3_) {
       long[] along = p_233097_1_.asLongStream().toArray();
-      long[] along1 = addPadding(p_233097_2_, p_233097_3_, along);
+      long[] along1 = func_233086_a_(p_233097_2_, p_233097_3_, along);
       return p_233097_0_.createLongList(LongStream.of(along1));
    }
 
-   public static long[] addPadding(int p_233086_0_, int p_233086_1_, long[] p_233086_2_) {
+   public static long[] func_233086_a_(int p_233086_0_, int p_233086_1_, long[] p_233086_2_) {
       int i = p_233086_2_.length;
       if (i == 0) {
          return p_233086_2_;

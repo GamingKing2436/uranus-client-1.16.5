@@ -10,7 +10,7 @@ public interface IModelTransform {
       return TransformationMatrix.identity();
    }
 
-   default boolean isUvLocked() {
+   default boolean isUvLock() {
       return false;
    }
 }

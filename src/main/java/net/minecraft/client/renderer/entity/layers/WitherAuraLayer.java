@@ -11,22 +11,22 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class WitherAuraLayer extends EnergyLayer<WitherEntity, WitherModel<WitherEntity>> {
-   private static final ResourceLocation WITHER_ARMOR_LOCATION = new ResourceLocation("textures/entity/wither/wither_armor.png");
-   private final WitherModel<WitherEntity> model = new WitherModel<>(0.5F);
+   private static final ResourceLocation WITHER_ARMOR = new ResourceLocation("textures/entity/wither/wither_armor.png");
+   private final WitherModel<WitherEntity> witherModel = new WitherModel<>(0.5F);
 
    public WitherAuraLayer(IEntityRenderer<WitherEntity, WitherModel<WitherEntity>> p_i50915_1_) {
       super(p_i50915_1_);
    }
 
-   protected float xOffset(float p_225634_1_) {
+   protected float func_225634_a_(float p_225634_1_) {
       return MathHelper.cos(p_225634_1_ * 0.02F) * 3.0F;
    }
 
-   protected ResourceLocation getTextureLocation() {
-      return WITHER_ARMOR_LOCATION;
+   protected ResourceLocation func_225633_a_() {
+      return WITHER_ARMOR;
    }
 
-   protected EntityModel<WitherEntity> model() {
-      return this.model;
+   protected EntityModel<WitherEntity> func_225635_b_() {
+      return this.witherModel;
    }
 }

@@ -9,8 +9,8 @@ import java.util.UUID;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class StringToUUID extends DataFix {
-   public StringToUUID(Schema p_i49652_1_, boolean p_i49652_2_) {
-      super(p_i49652_1_, p_i49652_2_);
+   public StringToUUID(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {

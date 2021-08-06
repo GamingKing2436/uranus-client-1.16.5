@@ -14,15 +14,15 @@ public class Vector4f {
    public Vector4f() {
    }
 
-   public Vector4f(float p_i48096_1_, float p_i48096_2_, float p_i48096_3_, float p_i48096_4_) {
-      this.x = p_i48096_1_;
-      this.y = p_i48096_2_;
-      this.z = p_i48096_3_;
-      this.w = p_i48096_4_;
+   public Vector4f(float x, float y, float z, float w) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+      this.w = w;
    }
 
-   public Vector4f(Vector3f p_i226061_1_) {
-      this(p_i226061_1_.x(), p_i226061_1_.y(), p_i226061_1_.z(), 1.0F);
+   public Vector4f(Vector3f vectorIn) {
+      this(vectorIn.getX(), vectorIn.getY(), vectorIn.getZ(), 1.0F);
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -51,37 +51,37 @@ public class Vector4f {
       return 31 * i + Float.floatToIntBits(this.w);
    }
 
-   public float x() {
+   public float getX() {
       return this.x;
    }
 
-   public float y() {
+   public float getY() {
       return this.y;
    }
 
-   public float z() {
+   public float getZ() {
       return this.z;
    }
 
-   public float w() {
+   public float getW() {
       return this.w;
    }
 
-   public void mul(Vector3f p_195909_1_) {
-      this.x *= p_195909_1_.x();
-      this.y *= p_195909_1_.y();
-      this.z *= p_195909_1_.z();
+   public void scale(Vector3f vec) {
+      this.x *= vec.getX();
+      this.y *= vec.getY();
+      this.z *= vec.getZ();
    }
 
-   public void set(float p_195911_1_, float p_195911_2_, float p_195911_3_, float p_195911_4_) {
-      this.x = p_195911_1_;
-      this.y = p_195911_2_;
-      this.z = p_195911_3_;
-      this.w = p_195911_4_;
+   public void set(float x, float y, float z, float w) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+      this.w = w;
    }
 
-   public float dot(Vector4f p_229373_1_) {
-      return this.x * p_229373_1_.x + this.y * p_229373_1_.y + this.z * p_229373_1_.z + this.w * p_229373_1_.w;
+   public float dot(Vector4f vectorIn) {
+      return this.x * vectorIn.x + this.y * vectorIn.y + this.z * vectorIn.z + this.w * vectorIn.w;
    }
 
    public boolean normalize() {
@@ -98,24 +98,24 @@ public class Vector4f {
       }
    }
 
-   public void transform(Matrix4f p_229372_1_) {
+   public void transform(Matrix4f matrixIn) {
       float f = this.x;
       float f1 = this.y;
       float f2 = this.z;
       float f3 = this.w;
-      this.x = p_229372_1_.m00 * f + p_229372_1_.m01 * f1 + p_229372_1_.m02 * f2 + p_229372_1_.m03 * f3;
-      this.y = p_229372_1_.m10 * f + p_229372_1_.m11 * f1 + p_229372_1_.m12 * f2 + p_229372_1_.m13 * f3;
-      this.z = p_229372_1_.m20 * f + p_229372_1_.m21 * f1 + p_229372_1_.m22 * f2 + p_229372_1_.m23 * f3;
-      this.w = p_229372_1_.m30 * f + p_229372_1_.m31 * f1 + p_229372_1_.m32 * f2 + p_229372_1_.m33 * f3;
+      this.x = matrixIn.m00 * f + matrixIn.m01 * f1 + matrixIn.m02 * f2 + matrixIn.m03 * f3;
+      this.y = matrixIn.m10 * f + matrixIn.m11 * f1 + matrixIn.m12 * f2 + matrixIn.m13 * f3;
+      this.z = matrixIn.m20 * f + matrixIn.m21 * f1 + matrixIn.m22 * f2 + matrixIn.m23 * f3;
+      this.w = matrixIn.m30 * f + matrixIn.m31 * f1 + matrixIn.m32 * f2 + matrixIn.m33 * f3;
    }
 
-   public void transform(Quaternion p_195912_1_) {
-      Quaternion quaternion = new Quaternion(p_195912_1_);
-      quaternion.mul(new Quaternion(this.x(), this.y(), this.z(), 0.0F));
-      Quaternion quaternion1 = new Quaternion(p_195912_1_);
-      quaternion1.conj();
-      quaternion.mul(quaternion1);
-      this.set(quaternion.i(), quaternion.j(), quaternion.k(), this.w());
+   public void transform(Quaternion quaternionIn) {
+      Quaternion quaternion = new Quaternion(quaternionIn);
+      quaternion.multiply(new Quaternion(this.getX(), this.getY(), this.getZ(), 0.0F));
+      Quaternion quaternion1 = new Quaternion(quaternionIn);
+      quaternion1.conjugate();
+      quaternion.multiply(quaternion1);
+      this.set(quaternion.getX(), quaternion.getY(), quaternion.getZ(), this.getW());
    }
 
    public void perspectiveDivide() {

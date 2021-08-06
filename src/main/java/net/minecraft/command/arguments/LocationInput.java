@@ -11,19 +11,19 @@ public class LocationInput implements ILocationArgument {
    private final LocationPart y;
    private final LocationPart z;
 
-   public LocationInput(LocationPart p_i47962_1_, LocationPart p_i47962_2_, LocationPart p_i47962_3_) {
-      this.x = p_i47962_1_;
-      this.y = p_i47962_2_;
-      this.z = p_i47962_3_;
+   public LocationInput(LocationPart x, LocationPart y, LocationPart z) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
    }
 
-   public Vector3d getPosition(CommandSource p_197281_1_) {
-      Vector3d vector3d = p_197281_1_.getPosition();
+   public Vector3d getPosition(CommandSource source) {
+      Vector3d vector3d = source.getPos();
       return new Vector3d(this.x.get(vector3d.x), this.y.get(vector3d.y), this.z.get(vector3d.z));
    }
 
-   public Vector2f getRotation(CommandSource p_197282_1_) {
-      Vector2f vector2f = p_197282_1_.getRotation();
+   public Vector2f getRotation(CommandSource source) {
+      Vector2f vector2f = source.getRotation();
       return new Vector2f((float)this.x.get((double)vector2f.x), (float)this.y.get((double)vector2f.y));
    }
 
@@ -54,43 +54,43 @@ public class LocationInput implements ILocationArgument {
       }
    }
 
-   public static LocationInput parseInt(StringReader p_200148_0_) throws CommandSyntaxException {
-      int i = p_200148_0_.getCursor();
-      LocationPart locationpart = LocationPart.parseInt(p_200148_0_);
-      if (p_200148_0_.canRead() && p_200148_0_.peek() == ' ') {
-         p_200148_0_.skip();
-         LocationPart locationpart1 = LocationPart.parseInt(p_200148_0_);
-         if (p_200148_0_.canRead() && p_200148_0_.peek() == ' ') {
-            p_200148_0_.skip();
-            LocationPart locationpart2 = LocationPart.parseInt(p_200148_0_);
+   public static LocationInput parseInt(StringReader reader) throws CommandSyntaxException {
+      int i = reader.getCursor();
+      LocationPart locationpart = LocationPart.parseInt(reader);
+      if (reader.canRead() && reader.peek() == ' ') {
+         reader.skip();
+         LocationPart locationpart1 = LocationPart.parseInt(reader);
+         if (reader.canRead() && reader.peek() == ' ') {
+            reader.skip();
+            LocationPart locationpart2 = LocationPart.parseInt(reader);
             return new LocationInput(locationpart, locationpart1, locationpart2);
          } else {
-            p_200148_0_.setCursor(i);
-            throw Vec3Argument.ERROR_NOT_COMPLETE.createWithContext(p_200148_0_);
+            reader.setCursor(i);
+            throw Vec3Argument.POS_INCOMPLETE.createWithContext(reader);
          }
       } else {
-         p_200148_0_.setCursor(i);
-         throw Vec3Argument.ERROR_NOT_COMPLETE.createWithContext(p_200148_0_);
+         reader.setCursor(i);
+         throw Vec3Argument.POS_INCOMPLETE.createWithContext(reader);
       }
    }
 
-   public static LocationInput parseDouble(StringReader p_200147_0_, boolean p_200147_1_) throws CommandSyntaxException {
-      int i = p_200147_0_.getCursor();
-      LocationPart locationpart = LocationPart.parseDouble(p_200147_0_, p_200147_1_);
-      if (p_200147_0_.canRead() && p_200147_0_.peek() == ' ') {
-         p_200147_0_.skip();
-         LocationPart locationpart1 = LocationPart.parseDouble(p_200147_0_, false);
-         if (p_200147_0_.canRead() && p_200147_0_.peek() == ' ') {
-            p_200147_0_.skip();
-            LocationPart locationpart2 = LocationPart.parseDouble(p_200147_0_, p_200147_1_);
+   public static LocationInput parseDouble(StringReader reader, boolean centerIntegers) throws CommandSyntaxException {
+      int i = reader.getCursor();
+      LocationPart locationpart = LocationPart.parseDouble(reader, centerIntegers);
+      if (reader.canRead() && reader.peek() == ' ') {
+         reader.skip();
+         LocationPart locationpart1 = LocationPart.parseDouble(reader, false);
+         if (reader.canRead() && reader.peek() == ' ') {
+            reader.skip();
+            LocationPart locationpart2 = LocationPart.parseDouble(reader, centerIntegers);
             return new LocationInput(locationpart, locationpart1, locationpart2);
          } else {
-            p_200147_0_.setCursor(i);
-            throw Vec3Argument.ERROR_NOT_COMPLETE.createWithContext(p_200147_0_);
+            reader.setCursor(i);
+            throw Vec3Argument.POS_INCOMPLETE.createWithContext(reader);
          }
       } else {
-         p_200147_0_.setCursor(i);
-         throw Vec3Argument.ERROR_NOT_COMPLETE.createWithContext(p_200147_0_);
+         reader.setCursor(i);
+         throw Vec3Argument.POS_INCOMPLETE.createWithContext(reader);
       }
    }
 

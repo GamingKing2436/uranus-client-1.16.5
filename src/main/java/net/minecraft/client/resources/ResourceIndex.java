@@ -28,31 +28,31 @@ import org.apache.logging.log4j.Logger;
 public class ResourceIndex {
    protected static final Logger LOGGER = LogManager.getLogger();
    private final Map<String, File> rootFiles = Maps.newHashMap();
-   private final Map<ResourceLocation, File> namespacedFiles = Maps.newHashMap();
+   private final Map<ResourceLocation, File> namespaceFiles = Maps.newHashMap();
 
    protected ResourceIndex() {
    }
 
-   public ResourceIndex(File p_i1047_1_, String p_i1047_2_) {
-      File file1 = new File(p_i1047_1_, "objects");
-      File file2 = new File(p_i1047_1_, "indexes/" + p_i1047_2_ + ".json");
+   public ResourceIndex(File assetsFolder, String indexName) {
+      File file1 = new File(assetsFolder, "objects");
+      File file2 = new File(assetsFolder, "indexes/" + indexName + ".json");
       BufferedReader bufferedreader = null;
 
       try {
          bufferedreader = Files.newReader(file2, StandardCharsets.UTF_8);
-         JsonObject jsonobject = JSONUtils.parse(bufferedreader);
-         JsonObject jsonobject1 = JSONUtils.getAsJsonObject(jsonobject, "objects", (JsonObject)null);
+         JsonObject jsonobject = JSONUtils.fromJson(bufferedreader);
+         JsonObject jsonobject1 = JSONUtils.getJsonObject(jsonobject, "objects", (JsonObject)null);
          if (jsonobject1 != null) {
             for(Entry<String, JsonElement> entry : jsonobject1.entrySet()) {
                JsonObject jsonobject2 = (JsonObject)entry.getValue();
                String s = entry.getKey();
                String[] astring = s.split("/", 2);
-               String s1 = JSONUtils.getAsString(jsonobject2, "hash");
+               String s1 = JSONUtils.getString(jsonobject2, "hash");
                File file3 = new File(file1, s1.substring(0, 2) + "/" + s1);
                if (astring.length == 1) {
                   this.rootFiles.put(astring[0], file3);
                } else {
-                  this.namespacedFiles.put(new ResourceLocation(astring[0], astring[1]), file3);
+                  this.namespaceFiles.put(new ResourceLocation(astring[0], astring[1]), file3);
                }
             }
          }
@@ -67,17 +67,17 @@ public class ResourceIndex {
    }
 
    @Nullable
-   public File getFile(ResourceLocation p_188547_1_) {
-      return this.namespacedFiles.get(p_188547_1_);
+   public File getFile(ResourceLocation location) {
+      return this.namespaceFiles.get(location);
    }
 
    @Nullable
-   public File getRootFile(String p_225638_1_) {
+   public File getFile(String p_225638_1_) {
       return this.rootFiles.get(p_225638_1_);
    }
 
    public Collection<ResourceLocation> getFiles(String p_225639_1_, String p_225639_2_, int p_225639_3_, Predicate<String> p_225639_4_) {
-      return this.namespacedFiles.keySet().stream().filter((p_229273_3_) -> {
+      return this.namespaceFiles.keySet().stream().filter((p_229273_3_) -> {
          String s = p_229273_3_.getPath();
          return p_229273_3_.getNamespace().equals(p_225639_2_) && !s.endsWith(".mcmeta") && s.startsWith(p_225639_1_ + "/") && p_225639_4_.test(s);
       }).collect(Collectors.toList());

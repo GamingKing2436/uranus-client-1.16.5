@@ -38,27 +38,27 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
       case 0:
          return p_convertTo_1_.empty();
       case 1:
-         return p_convertTo_1_.createByte(((NumberNBT)p_convertTo_2_).getAsByte());
+         return p_convertTo_1_.createByte(((NumberNBT)p_convertTo_2_).getByte());
       case 2:
-         return p_convertTo_1_.createShort(((NumberNBT)p_convertTo_2_).getAsShort());
+         return p_convertTo_1_.createShort(((NumberNBT)p_convertTo_2_).getShort());
       case 3:
-         return p_convertTo_1_.createInt(((NumberNBT)p_convertTo_2_).getAsInt());
+         return p_convertTo_1_.createInt(((NumberNBT)p_convertTo_2_).getInt());
       case 4:
-         return p_convertTo_1_.createLong(((NumberNBT)p_convertTo_2_).getAsLong());
+         return p_convertTo_1_.createLong(((NumberNBT)p_convertTo_2_).getLong());
       case 5:
-         return p_convertTo_1_.createFloat(((NumberNBT)p_convertTo_2_).getAsFloat());
+         return p_convertTo_1_.createFloat(((NumberNBT)p_convertTo_2_).getFloat());
       case 6:
-         return p_convertTo_1_.createDouble(((NumberNBT)p_convertTo_2_).getAsDouble());
+         return p_convertTo_1_.createDouble(((NumberNBT)p_convertTo_2_).getDouble());
       case 7:
-         return p_convertTo_1_.createByteList(ByteBuffer.wrap(((ByteArrayNBT)p_convertTo_2_).getAsByteArray()));
+         return p_convertTo_1_.createByteList(ByteBuffer.wrap(((ByteArrayNBT)p_convertTo_2_).getByteArray()));
       case 8:
-         return p_convertTo_1_.createString(p_convertTo_2_.getAsString());
+         return p_convertTo_1_.createString(p_convertTo_2_.getString());
       case 9:
          return this.convertList(p_convertTo_1_, p_convertTo_2_);
       case 10:
          return this.convertMap(p_convertTo_1_, p_convertTo_2_);
       case 11:
-         return p_convertTo_1_.createIntList(Arrays.stream(((IntArrayNBT)p_convertTo_2_).getAsIntArray()));
+         return p_convertTo_1_.createIntList(Arrays.stream(((IntArrayNBT)p_convertTo_2_).getIntArray()));
       case 12:
          return p_convertTo_1_.createLongList(Arrays.stream(((LongArrayNBT)p_convertTo_2_).getAsLongArray()));
       default:
@@ -103,28 +103,28 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
    }
 
    public DataResult<String> getStringValue(INBT p_getStringValue_1_) {
-      return p_getStringValue_1_ instanceof StringNBT ? DataResult.success(p_getStringValue_1_.getAsString()) : DataResult.error("Not a string");
+      return p_getStringValue_1_ instanceof StringNBT ? DataResult.success(p_getStringValue_1_.getString()) : DataResult.error("Not a string");
    }
 
    public INBT createString(String p_createString_1_) {
       return StringNBT.valueOf(p_createString_1_);
    }
 
-   private static CollectionNBT<?> createGenericList(byte p_240602_0_, byte p_240602_1_) {
-      if (typesMatch(p_240602_0_, p_240602_1_, (byte)4)) {
+   private static CollectionNBT<?> func_240602_a_(byte p_240602_0_, byte p_240602_1_) {
+      if (func_240603_a_(p_240602_0_, p_240602_1_, (byte)4)) {
          return new LongArrayNBT(new long[0]);
-      } else if (typesMatch(p_240602_0_, p_240602_1_, (byte)1)) {
+      } else if (func_240603_a_(p_240602_0_, p_240602_1_, (byte)1)) {
          return new ByteArrayNBT(new byte[0]);
       } else {
-         return (CollectionNBT<?>)(typesMatch(p_240602_0_, p_240602_1_, (byte)3) ? new IntArrayNBT(new int[0]) : new ListNBT());
+         return (CollectionNBT<?>)(func_240603_a_(p_240602_0_, p_240602_1_, (byte)3) ? new IntArrayNBT(new int[0]) : new ListNBT());
       }
    }
 
-   private static boolean typesMatch(byte p_240603_0_, byte p_240603_1_, byte p_240603_2_) {
+   private static boolean func_240603_a_(byte p_240603_0_, byte p_240603_1_, byte p_240603_2_) {
       return p_240603_0_ == p_240603_2_ && (p_240603_1_ == p_240603_2_ || p_240603_1_ == 0);
    }
 
-   private static <T extends INBT> void fillOne(CollectionNBT<T> p_240609_0_, INBT p_240609_1_, INBT p_240609_2_) {
+   private static <T extends INBT> void func_240609_a_(CollectionNBT<T> p_240609_0_, INBT p_240609_1_, INBT p_240609_2_) {
       if (p_240609_1_ instanceof CollectionNBT) {
          CollectionNBT<?> collectionnbt = (CollectionNBT)p_240609_1_;
          collectionnbt.forEach((p_240616_1_) -> {
@@ -135,7 +135,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
       p_240609_0_.add((T)p_240609_2_);
    }
 
-   private static <T extends INBT> void fillMany(CollectionNBT<T> p_240608_0_, INBT p_240608_1_, List<INBT> p_240608_2_) {
+   private static <T extends INBT> void func_240608_a_(CollectionNBT<T> p_240608_0_, INBT p_240608_1_, List<INBT> p_240608_2_) {
       if (p_240608_1_ instanceof CollectionNBT) {
          CollectionNBT<?> collectionnbt = (CollectionNBT)p_240608_1_;
          collectionnbt.forEach((p_240614_1_) -> {
@@ -152,8 +152,8 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
       if (!(p_mergeToList_1_ instanceof CollectionNBT) && !(p_mergeToList_1_ instanceof EndNBT)) {
          return DataResult.error("mergeToList called with not a list: " + p_mergeToList_1_, p_mergeToList_1_);
       } else {
-         CollectionNBT<?> collectionnbt = createGenericList(p_mergeToList_1_ instanceof CollectionNBT ? ((CollectionNBT)p_mergeToList_1_).getElementType() : 0, p_mergeToList_2_.getId());
-         fillOne(collectionnbt, p_mergeToList_1_, p_mergeToList_2_);
+         CollectionNBT<?> collectionnbt = func_240602_a_(p_mergeToList_1_ instanceof CollectionNBT ? ((CollectionNBT)p_mergeToList_1_).getTagType() : 0, p_mergeToList_2_.getId());
+         func_240609_a_(collectionnbt, p_mergeToList_1_, p_mergeToList_2_);
          return DataResult.success(collectionnbt);
       }
    }
@@ -162,8 +162,8 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
       if (!(p_mergeToList_1_ instanceof CollectionNBT) && !(p_mergeToList_1_ instanceof EndNBT)) {
          return DataResult.error("mergeToList called with not a list: " + p_mergeToList_1_, p_mergeToList_1_);
       } else {
-         CollectionNBT<?> collectionnbt = createGenericList(p_mergeToList_1_ instanceof CollectionNBT ? ((CollectionNBT)p_mergeToList_1_).getElementType() : 0, p_mergeToList_2_.stream().findFirst().map(INBT::getId).orElse((byte)0));
-         fillMany(collectionnbt, p_mergeToList_1_, p_mergeToList_2_);
+         CollectionNBT<?> collectionnbt = func_240602_a_(p_mergeToList_1_ instanceof CollectionNBT ? ((CollectionNBT)p_mergeToList_1_).getTagType() : 0, p_mergeToList_2_.stream().findFirst().map(INBT::getId).orElse((byte)0));
+         func_240608_a_(collectionnbt, p_mergeToList_1_, p_mergeToList_2_);
          return DataResult.success(collectionnbt);
       }
    }
@@ -177,12 +177,12 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
          CompoundNBT compoundnbt = new CompoundNBT();
          if (p_mergeToMap_1_ instanceof CompoundNBT) {
             CompoundNBT compoundnbt1 = (CompoundNBT)p_mergeToMap_1_;
-            compoundnbt1.getAllKeys().forEach((p_240617_2_) -> {
+            compoundnbt1.keySet().forEach((p_240617_2_) -> {
                compoundnbt.put(p_240617_2_, compoundnbt1.get(p_240617_2_));
             });
          }
 
-         compoundnbt.put(p_mergeToMap_2_.getAsString(), p_mergeToMap_3_);
+         compoundnbt.put(p_mergeToMap_2_.getString(), p_mergeToMap_3_);
          return DataResult.success(compoundnbt);
       }
    }
@@ -194,7 +194,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
          CompoundNBT compoundnbt = new CompoundNBT();
          if (p_mergeToMap_1_ instanceof CompoundNBT) {
             CompoundNBT compoundnbt1 = (CompoundNBT)p_mergeToMap_1_;
-            compoundnbt1.getAllKeys().forEach((p_240615_2_) -> {
+            compoundnbt1.keySet().forEach((p_240615_2_) -> {
                compoundnbt.put(p_240615_2_, compoundnbt1.get(p_240615_2_));
             });
          }
@@ -205,7 +205,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
             if (!(inbt instanceof StringNBT)) {
                list.add(inbt);
             } else {
-               compoundnbt.put(inbt.getAsString(), p_240605_2_.getSecond());
+               compoundnbt.put(inbt.getString(), p_240605_2_.getSecond());
             }
          });
          return !list.isEmpty() ? DataResult.error("some keys are not strings: " + list, compoundnbt) : DataResult.success(compoundnbt);
@@ -217,7 +217,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
          return DataResult.error("Not a map: " + p_getMapValues_1_);
       } else {
          CompoundNBT compoundnbt = (CompoundNBT)p_getMapValues_1_;
-         return DataResult.success(compoundnbt.getAllKeys().stream().map((p_240611_2_) -> {
+         return DataResult.success(compoundnbt.keySet().stream().map((p_240611_2_) -> {
             return Pair.of(this.createString(p_240611_2_), compoundnbt.get(p_240611_2_));
          }));
       }
@@ -229,7 +229,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
       } else {
          CompoundNBT compoundnbt = (CompoundNBT)p_getMapEntries_1_;
          return DataResult.success((p_240612_2_) -> {
-            compoundnbt.getAllKeys().forEach((p_240606_3_) -> {
+            compoundnbt.keySet().forEach((p_240606_3_) -> {
                p_240612_2_.accept(this.createString(p_240606_3_), compoundnbt.get(p_240606_3_));
             });
          });
@@ -244,7 +244,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
          return DataResult.success(new MapLike<INBT>() {
             @Nullable
             public INBT get(INBT p_get_1_) {
-               return compoundnbt.get(p_get_1_.getAsString());
+               return compoundnbt.get(p_get_1_.getString());
             }
 
             @Nullable
@@ -253,7 +253,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
             }
 
             public Stream<Pair<INBT, INBT>> entries() {
-               return compoundnbt.getAllKeys().stream().map((p_240624_2_) -> {
+               return compoundnbt.keySet().stream().map((p_240624_2_) -> {
                   return Pair.of(NBTDynamicOps.this.createString(p_240624_2_), compoundnbt.get(p_240624_2_));
                });
             }
@@ -268,7 +268,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
    public INBT createMap(Stream<Pair<INBT, INBT>> p_createMap_1_) {
       CompoundNBT compoundnbt = new CompoundNBT();
       p_createMap_1_.forEach((p_240610_1_) -> {
-         compoundnbt.put(p_240610_1_.getFirst().getAsString(), p_240610_1_.getSecond());
+         compoundnbt.put(p_240610_1_.getFirst().getString(), p_240610_1_.getSecond());
       });
       return compoundnbt;
    }
@@ -289,7 +289,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
    }
 
    public DataResult<ByteBuffer> getByteBuffer(INBT p_getByteBuffer_1_) {
-      return p_getByteBuffer_1_ instanceof ByteArrayNBT ? DataResult.success(ByteBuffer.wrap(((ByteArrayNBT)p_getByteBuffer_1_).getAsByteArray())) : DynamicOps.super.getByteBuffer(p_getByteBuffer_1_);
+      return p_getByteBuffer_1_ instanceof ByteArrayNBT ? DataResult.success(ByteBuffer.wrap(((ByteArrayNBT)p_getByteBuffer_1_).getByteArray())) : DynamicOps.super.getByteBuffer(p_getByteBuffer_1_);
    }
 
    public INBT createByteList(ByteBuffer p_createByteList_1_) {
@@ -297,7 +297,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
    }
 
    public DataResult<IntStream> getIntStream(INBT p_getIntStream_1_) {
-      return p_getIntStream_1_ instanceof IntArrayNBT ? DataResult.success(Arrays.stream(((IntArrayNBT)p_getIntStream_1_).getAsIntArray())) : DynamicOps.super.getIntStream(p_getIntStream_1_);
+      return p_getIntStream_1_ instanceof IntArrayNBT ? DataResult.success(Arrays.stream(((IntArrayNBT)p_getIntStream_1_).getIntArray())) : DynamicOps.super.getIntStream(p_getIntStream_1_);
    }
 
    public INBT createIntList(IntStream p_createIntList_1_) {
@@ -320,17 +320,17 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
          INBT inbt = peekingiterator.peek();
          if (inbt instanceof ByteNBT) {
             List<Byte> list2 = Lists.newArrayList(Iterators.transform(peekingiterator, (p_210815_0_) -> {
-               return ((ByteNBT)p_210815_0_).getAsByte();
+               return ((ByteNBT)p_210815_0_).getByte();
             }));
             return new ByteArrayNBT(list2);
          } else if (inbt instanceof IntNBT) {
             List<Integer> list1 = Lists.newArrayList(Iterators.transform(peekingiterator, (p_210818_0_) -> {
-               return ((IntNBT)p_210818_0_).getAsInt();
+               return ((IntNBT)p_210818_0_).getInt();
             }));
             return new IntArrayNBT(list1);
          } else if (inbt instanceof LongNBT) {
             List<Long> list = Lists.newArrayList(Iterators.transform(peekingiterator, (p_210816_0_) -> {
-               return ((LongNBT)p_210816_0_).getAsLong();
+               return ((LongNBT)p_210816_0_).getLong();
             }));
             return new LongArrayNBT(list);
          } else {
@@ -352,7 +352,7 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
       if (p_remove_1_ instanceof CompoundNBT) {
          CompoundNBT compoundnbt = (CompoundNBT)p_remove_1_;
          CompoundNBT compoundnbt1 = new CompoundNBT();
-         compoundnbt.getAllKeys().stream().filter((p_212019_1_) -> {
+         compoundnbt.keySet().stream().filter((p_212019_1_) -> {
             return !Objects.equals(p_212019_1_, p_remove_2_);
          }).forEach((p_212010_2_) -> {
             compoundnbt1.put(p_212010_2_, compoundnbt.get(p_212010_2_));
@@ -390,9 +390,9 @@ public class NBTDynamicOps implements DynamicOps<INBT> {
             if (!(p_build_2_ instanceof CompoundNBT)) {
                return DataResult.error("mergeToMap called with not a map: " + p_build_2_, p_build_2_);
             } else {
-               CompoundNBT compoundnbt = new CompoundNBT(Maps.newHashMap(((CompoundNBT)p_build_2_).entries()));
+               CompoundNBT compoundnbt = new CompoundNBT(Maps.newHashMap(((CompoundNBT)p_build_2_).getTagMap()));
 
-               for(Entry<String, INBT> entry : p_build_1_.entries().entrySet()) {
+               for(Entry<String, INBT> entry : p_build_1_.getTagMap().entrySet()) {
                   compoundnbt.put(entry.getKey(), entry.getValue());
                }
 

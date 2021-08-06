@@ -9,38 +9,38 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SSetSlotPacket implements IPacket<IClientPlayNetHandler> {
-   private int containerId;
+   private int windowId;
    private int slot;
-   private ItemStack itemStack = ItemStack.EMPTY;
+   private ItemStack item = ItemStack.EMPTY;
 
    public SSetSlotPacket() {
    }
 
-   public SSetSlotPacket(int p_i46951_1_, int p_i46951_2_, ItemStack p_i46951_3_) {
-      this.containerId = p_i46951_1_;
-      this.slot = p_i46951_2_;
-      this.itemStack = p_i46951_3_.copy();
+   public SSetSlotPacket(int windowIdIn, int slotIn, ItemStack itemIn) {
+      this.windowId = windowIdIn;
+      this.slot = slotIn;
+      this.item = itemIn.copy();
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleContainerSetSlot(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleSetSlot(this);
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.containerId = p_148837_1_.readByte();
-      this.slot = p_148837_1_.readShort();
-      this.itemStack = p_148837_1_.readItem();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.windowId = buf.readByte();
+      this.slot = buf.readShort();
+      this.item = buf.readItemStack();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeByte(this.containerId);
-      p_148840_1_.writeShort(this.slot);
-      p_148840_1_.writeItem(this.itemStack);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeByte(this.windowId);
+      buf.writeShort(this.slot);
+      buf.writeItemStack(this.item);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getContainerId() {
-      return this.containerId;
+   public int getWindowId() {
+      return this.windowId;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -49,7 +49,7 @@ public class SSetSlotPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack getItem() {
-      return this.itemStack;
+   public ItemStack getStack() {
+      return this.item;
    }
 }

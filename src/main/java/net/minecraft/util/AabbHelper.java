@@ -3,8 +3,8 @@ package net.minecraft.util;
 import net.minecraft.util.math.AxisAlignedBB;
 
 public class AabbHelper {
-   public static AxisAlignedBB getMovementArea(AxisAlignedBB p_227019_0_, Direction p_227019_1_, double p_227019_2_) {
-      double d0 = p_227019_2_ * (double)p_227019_1_.getAxisDirection().getStep();
+   public static AxisAlignedBB func_227019_a_(AxisAlignedBB p_227019_0_, Direction p_227019_1_, double p_227019_2_) {
+      double d0 = p_227019_2_ * (double)p_227019_1_.getAxisDirection().getOffset();
       double d1 = Math.min(d0, 0.0D);
       double d2 = Math.max(d0, 0.0D);
       switch(p_227019_1_) {

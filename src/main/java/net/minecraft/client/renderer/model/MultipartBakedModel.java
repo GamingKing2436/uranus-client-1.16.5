@@ -20,49 +20,49 @@ import org.apache.commons.lang3.tuple.Pair;
 @OnlyIn(Dist.CLIENT)
 public class MultipartBakedModel implements IBakedModel {
    private final List<Pair<Predicate<BlockState>, IBakedModel>> selectors;
-   protected final boolean hasAmbientOcclusion;
-   protected final boolean isGui3d;
-   protected final boolean usesBlockLight;
-   protected final TextureAtlasSprite particleIcon;
-   protected final ItemCameraTransforms transforms;
+   protected final boolean ambientOcclusion;
+   protected final boolean gui3D;
+   protected final boolean isSideLit;
+   protected final TextureAtlasSprite particleTexture;
+   protected final ItemCameraTransforms cameraTransforms;
    protected final ItemOverrideList overrides;
-   private final Map<BlockState, BitSet> selectorCache = new Object2ObjectOpenCustomHashMap<>(Util.identityStrategy());
+   private final Map<BlockState, BitSet> bitSetCache = new Object2ObjectOpenCustomHashMap<>(Util.identityHashStrategy());
 
-   public MultipartBakedModel(List<Pair<Predicate<BlockState>, IBakedModel>> p_i48273_1_) {
-      this.selectors = p_i48273_1_;
-      IBakedModel ibakedmodel = p_i48273_1_.iterator().next().getRight();
-      this.hasAmbientOcclusion = ibakedmodel.useAmbientOcclusion();
-      this.isGui3d = ibakedmodel.isGui3d();
-      this.usesBlockLight = ibakedmodel.usesBlockLight();
-      this.particleIcon = ibakedmodel.getParticleIcon();
-      this.transforms = ibakedmodel.getTransforms();
+   public MultipartBakedModel(List<Pair<Predicate<BlockState>, IBakedModel>> selectors) {
+      this.selectors = selectors;
+      IBakedModel ibakedmodel = selectors.iterator().next().getRight();
+      this.ambientOcclusion = ibakedmodel.isAmbientOcclusion();
+      this.gui3D = ibakedmodel.isGui3d();
+      this.isSideLit = ibakedmodel.isSideLit();
+      this.particleTexture = ibakedmodel.getParticleTexture();
+      this.cameraTransforms = ibakedmodel.getItemCameraTransforms();
       this.overrides = ibakedmodel.getOverrides();
    }
 
-   public List<BakedQuad> getQuads(@Nullable BlockState p_200117_1_, @Nullable Direction p_200117_2_, Random p_200117_3_) {
-      if (p_200117_1_ == null) {
+   public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, Random rand) {
+      if (state == null) {
          return Collections.emptyList();
       } else {
-         BitSet bitset = this.selectorCache.get(p_200117_1_);
+         BitSet bitset = this.bitSetCache.get(state);
          if (bitset == null) {
             bitset = new BitSet();
 
             for(int i = 0; i < this.selectors.size(); ++i) {
                Pair<Predicate<BlockState>, IBakedModel> pair = this.selectors.get(i);
-               if (pair.getLeft().test(p_200117_1_)) {
+               if (pair.getLeft().test(state)) {
                   bitset.set(i);
                }
             }
 
-            this.selectorCache.put(p_200117_1_, bitset);
+            this.bitSetCache.put(state, bitset);
          }
 
          List<BakedQuad> list = Lists.newArrayList();
-         long k = p_200117_3_.nextLong();
+         long k = rand.nextLong();
 
          for(int j = 0; j < bitset.length(); ++j) {
             if (bitset.get(j)) {
-               list.addAll(this.selectors.get(j).getRight().getQuads(p_200117_1_, p_200117_2_, new Random(k)));
+               list.addAll(this.selectors.get(j).getRight().getQuads(state, side, new Random(k)));
             }
          }
 
@@ -70,28 +70,28 @@ public class MultipartBakedModel implements IBakedModel {
       }
    }
 
-   public boolean useAmbientOcclusion() {
-      return this.hasAmbientOcclusion;
+   public boolean isAmbientOcclusion() {
+      return this.ambientOcclusion;
    }
 
    public boolean isGui3d() {
-      return this.isGui3d;
+      return this.gui3D;
    }
 
-   public boolean usesBlockLight() {
-      return this.usesBlockLight;
+   public boolean isSideLit() {
+      return this.isSideLit;
    }
 
-   public boolean isCustomRenderer() {
+   public boolean isBuiltInRenderer() {
       return false;
    }
 
-   public TextureAtlasSprite getParticleIcon() {
-      return this.particleIcon;
+   public TextureAtlasSprite getParticleTexture() {
+      return this.particleTexture;
    }
 
-   public ItemCameraTransforms getTransforms() {
-      return this.transforms;
+   public ItemCameraTransforms getItemCameraTransforms() {
+      return this.cameraTransforms;
    }
 
    public ItemOverrideList getOverrides() {
@@ -102,8 +102,8 @@ public class MultipartBakedModel implements IBakedModel {
    public static class Builder {
       private final List<Pair<Predicate<BlockState>, IBakedModel>> selectors = Lists.newArrayList();
 
-      public void add(Predicate<BlockState> p_188648_1_, IBakedModel p_188648_2_) {
-         this.selectors.add(Pair.of(p_188648_1_, p_188648_2_));
+      public void putModel(Predicate<BlockState> predicate, IBakedModel model) {
+         this.selectors.add(Pair.of(predicate, model));
       }
 
       public IBakedModel build() {

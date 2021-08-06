@@ -22,30 +22,30 @@ import net.minecraft.util.JSONUtils;
 
 public class EntityHasScore implements ILootCondition {
    private final Map<String, RandomValueRange> scores;
-   private final LootContext.EntityTarget entityTarget;
+   private final LootContext.EntityTarget target;
 
-   private EntityHasScore(Map<String, RandomValueRange> p_i46618_1_, LootContext.EntityTarget p_i46618_2_) {
-      this.scores = ImmutableMap.copyOf(p_i46618_1_);
-      this.entityTarget = p_i46618_2_;
+   private EntityHasScore(Map<String, RandomValueRange> scoreIn, LootContext.EntityTarget targetIn) {
+      this.scores = ImmutableMap.copyOf(scoreIn);
+      this.target = targetIn;
    }
 
-   public LootConditionType getType() {
+   public LootConditionType func_230419_b_() {
       return LootConditionManager.ENTITY_SCORES;
    }
 
-   public Set<LootParameter<?>> getReferencedContextParams() {
-      return ImmutableSet.of(this.entityTarget.getParam());
+   public Set<LootParameter<?>> getRequiredParameters() {
+      return ImmutableSet.of(this.target.getParameter());
    }
 
    public boolean test(LootContext p_test_1_) {
-      Entity entity = p_test_1_.getParamOrNull(this.entityTarget.getParam());
+      Entity entity = p_test_1_.get(this.target.getParameter());
       if (entity == null) {
          return false;
       } else {
-         Scoreboard scoreboard = entity.level.getScoreboard();
+         Scoreboard scoreboard = entity.world.getScoreboard();
 
          for(Entry<String, RandomValueRange> entry : this.scores.entrySet()) {
-            if (!this.hasScore(entity, scoreboard, entry.getKey(), entry.getValue())) {
+            if (!this.entityScoreMatch(entity, scoreboard, entry.getKey(), entry.getValue())) {
                return false;
             }
          }
@@ -54,13 +54,13 @@ public class EntityHasScore implements ILootCondition {
       }
    }
 
-   protected boolean hasScore(Entity p_186631_1_, Scoreboard p_186631_2_, String p_186631_3_, RandomValueRange p_186631_4_) {
-      ScoreObjective scoreobjective = p_186631_2_.getObjective(p_186631_3_);
+   protected boolean entityScoreMatch(Entity entityIn, Scoreboard scoreboardIn, String objectiveStr, RandomValueRange rand) {
+      ScoreObjective scoreobjective = scoreboardIn.getObjective(objectiveStr);
       if (scoreobjective == null) {
          return false;
       } else {
-         String s = p_186631_1_.getScoreboardName();
-         return !p_186631_2_.hasPlayerScore(s, scoreobjective) ? false : p_186631_4_.matchesValue(p_186631_2_.getOrCreatePlayerScore(s, scoreobjective).getScore());
+         String s = entityIn.getScoreboardName();
+         return !scoreboardIn.entityHasObjective(s, scoreobjective) ? false : rand.isInRange(scoreboardIn.getOrCreateScore(s, scoreobjective).getScorePoints());
       }
    }
 
@@ -73,18 +73,18 @@ public class EntityHasScore implements ILootCondition {
          }
 
          p_230424_1_.add("scores", jsonobject);
-         p_230424_1_.add("entity", p_230424_3_.serialize(p_230424_2_.entityTarget));
+         p_230424_1_.add("entity", p_230424_3_.serialize(p_230424_2_.target));
       }
 
       public EntityHasScore deserialize(JsonObject p_230423_1_, JsonDeserializationContext p_230423_2_) {
-         Set<Entry<String, JsonElement>> set = JSONUtils.getAsJsonObject(p_230423_1_, "scores").entrySet();
+         Set<Entry<String, JsonElement>> set = JSONUtils.getJsonObject(p_230423_1_, "scores").entrySet();
          Map<String, RandomValueRange> map = Maps.newLinkedHashMap();
 
          for(Entry<String, JsonElement> entry : set) {
-            map.put(entry.getKey(), JSONUtils.convertToObject(entry.getValue(), "score", p_230423_2_, RandomValueRange.class));
+            map.put(entry.getKey(), JSONUtils.deserializeClass(entry.getValue(), "score", p_230423_2_, RandomValueRange.class));
          }
 
-         return new EntityHasScore(map, JSONUtils.getAsObject(p_230423_1_, "entity", p_230423_2_, LootContext.EntityTarget.class));
+         return new EntityHasScore(map, JSONUtils.deserializeClass(p_230423_1_, "entity", p_230423_2_, LootContext.EntityTarget.class));
       }
    }
 }

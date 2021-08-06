@@ -28,26 +28,26 @@ public class NetherFossilStructure extends Structure<NoFeatureConfig> {
          super(p_i232106_1_, p_i232106_2_, p_i232106_3_, p_i232106_4_, p_i232106_5_, p_i232106_6_);
       }
 
-      public void generatePieces(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
+      public void func_230364_a_(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
          ChunkPos chunkpos = new ChunkPos(p_230364_4_, p_230364_5_);
-         int i = chunkpos.getMinBlockX() + this.random.nextInt(16);
-         int j = chunkpos.getMinBlockZ() + this.random.nextInt(16);
+         int i = chunkpos.getXStart() + this.rand.nextInt(16);
+         int j = chunkpos.getZStart() + this.rand.nextInt(16);
          int k = p_230364_2_.getSeaLevel();
-         int l = k + this.random.nextInt(p_230364_2_.getGenDepth() - 2 - k);
-         IBlockReader iblockreader = p_230364_2_.getBaseColumn(i, j);
+         int l = k + this.rand.nextInt(p_230364_2_.getMaxBuildHeight() - 2 - k);
+         IBlockReader iblockreader = p_230364_2_.func_230348_a_(i, j);
 
          for(BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable(i, l, j); l > k; --l) {
             BlockState blockstate = iblockreader.getBlockState(blockpos$mutable);
             blockpos$mutable.move(Direction.DOWN);
             BlockState blockstate1 = iblockreader.getBlockState(blockpos$mutable);
-            if (blockstate.isAir() && (blockstate1.is(Blocks.SOUL_SAND) || blockstate1.isFaceSturdy(iblockreader, blockpos$mutable, Direction.UP))) {
+            if (blockstate.isAir() && (blockstate1.isIn(Blocks.SOUL_SAND) || blockstate1.isSolidSide(iblockreader, blockpos$mutable, Direction.UP))) {
                break;
             }
          }
 
          if (l > k) {
-            NetherFossilStructures.addPieces(p_230364_3_, this.pieces, this.random, new BlockPos(i, l, j));
-            this.calculateBoundingBox();
+            NetherFossilStructures.func_236994_a_(p_230364_3_, this.components, this.rand, new BlockPos(i, l, j));
+            this.recalculateStructureSize();
          }
       }
    }

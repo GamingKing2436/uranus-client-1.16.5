@@ -14,8 +14,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class OrCondition implements ICondition {
    private final Iterable<? extends ICondition> conditions;
 
-   public OrCondition(Iterable<? extends ICondition> p_i46563_1_) {
-      this.conditions = p_i46563_1_;
+   public OrCondition(Iterable<? extends ICondition> conditionsIn) {
+      this.conditions = conditionsIn;
    }
 
    public Predicate<BlockState> getPredicate(StateContainer<Block, BlockState> p_getPredicate_1_) {

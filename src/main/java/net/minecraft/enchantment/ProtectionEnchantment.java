@@ -6,70 +6,70 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.MathHelper;
 
 public class ProtectionEnchantment extends Enchantment {
-   public final ProtectionEnchantment.Type type;
+   public final ProtectionEnchantment.Type protectionType;
 
-   public ProtectionEnchantment(Enchantment.Rarity p_i46723_1_, ProtectionEnchantment.Type p_i46723_2_, EquipmentSlotType... p_i46723_3_) {
-      super(p_i46723_1_, p_i46723_2_ == ProtectionEnchantment.Type.FALL ? EnchantmentType.ARMOR_FEET : EnchantmentType.ARMOR, p_i46723_3_);
-      this.type = p_i46723_2_;
+   public ProtectionEnchantment(Enchantment.Rarity rarityIn, ProtectionEnchantment.Type protectionTypeIn, EquipmentSlotType... slots) {
+      super(rarityIn, protectionTypeIn == ProtectionEnchantment.Type.FALL ? EnchantmentType.ARMOR_FEET : EnchantmentType.ARMOR, slots);
+      this.protectionType = protectionTypeIn;
    }
 
-   public int getMinCost(int p_77321_1_) {
-      return this.type.getMinCost() + (p_77321_1_ - 1) * this.type.getLevelCost();
+   public int getMinEnchantability(int enchantmentLevel) {
+      return this.protectionType.getMinimalEnchantability() + (enchantmentLevel - 1) * this.protectionType.getEnchantIncreasePerLevel();
    }
 
-   public int getMaxCost(int p_223551_1_) {
-      return this.getMinCost(p_223551_1_) + this.type.getLevelCost();
+   public int getMaxEnchantability(int enchantmentLevel) {
+      return this.getMinEnchantability(enchantmentLevel) + this.protectionType.getEnchantIncreasePerLevel();
    }
 
    public int getMaxLevel() {
       return 4;
    }
 
-   public int getDamageProtection(int p_77318_1_, DamageSource p_77318_2_) {
-      if (p_77318_2_.isBypassInvul()) {
+   public int calcModifierDamage(int level, DamageSource source) {
+      if (source.canHarmInCreative()) {
          return 0;
-      } else if (this.type == ProtectionEnchantment.Type.ALL) {
-         return p_77318_1_;
-      } else if (this.type == ProtectionEnchantment.Type.FIRE && p_77318_2_.isFire()) {
-         return p_77318_1_ * 2;
-      } else if (this.type == ProtectionEnchantment.Type.FALL && p_77318_2_ == DamageSource.FALL) {
-         return p_77318_1_ * 3;
-      } else if (this.type == ProtectionEnchantment.Type.EXPLOSION && p_77318_2_.isExplosion()) {
-         return p_77318_1_ * 2;
+      } else if (this.protectionType == ProtectionEnchantment.Type.ALL) {
+         return level;
+      } else if (this.protectionType == ProtectionEnchantment.Type.FIRE && source.isFireDamage()) {
+         return level * 2;
+      } else if (this.protectionType == ProtectionEnchantment.Type.FALL && source == DamageSource.FALL) {
+         return level * 3;
+      } else if (this.protectionType == ProtectionEnchantment.Type.EXPLOSION && source.isExplosion()) {
+         return level * 2;
       } else {
-         return this.type == ProtectionEnchantment.Type.PROJECTILE && p_77318_2_.isProjectile() ? p_77318_1_ * 2 : 0;
+         return this.protectionType == ProtectionEnchantment.Type.PROJECTILE && source.isProjectile() ? level * 2 : 0;
       }
    }
 
-   public boolean checkCompatibility(Enchantment p_77326_1_) {
-      if (p_77326_1_ instanceof ProtectionEnchantment) {
-         ProtectionEnchantment protectionenchantment = (ProtectionEnchantment)p_77326_1_;
-         if (this.type == protectionenchantment.type) {
+   public boolean canApplyTogether(Enchantment ench) {
+      if (ench instanceof ProtectionEnchantment) {
+         ProtectionEnchantment protectionenchantment = (ProtectionEnchantment)ench;
+         if (this.protectionType == protectionenchantment.protectionType) {
             return false;
          } else {
-            return this.type == ProtectionEnchantment.Type.FALL || protectionenchantment.type == ProtectionEnchantment.Type.FALL;
+            return this.protectionType == ProtectionEnchantment.Type.FALL || protectionenchantment.protectionType == ProtectionEnchantment.Type.FALL;
          }
       } else {
-         return super.checkCompatibility(p_77326_1_);
+         return super.canApplyTogether(ench);
       }
    }
 
-   public static int getFireAfterDampener(LivingEntity p_92093_0_, int p_92093_1_) {
-      int i = EnchantmentHelper.getEnchantmentLevel(Enchantments.FIRE_PROTECTION, p_92093_0_);
+   public static int getFireTimeForEntity(LivingEntity livingEntity, int level) {
+      int i = EnchantmentHelper.getMaxEnchantmentLevel(Enchantments.FIRE_PROTECTION, livingEntity);
       if (i > 0) {
-         p_92093_1_ -= MathHelper.floor((float)p_92093_1_ * (float)i * 0.15F);
+         level -= MathHelper.floor((float)level * (float)i * 0.15F);
       }
 
-      return p_92093_1_;
+      return level;
    }
 
-   public static double getExplosionKnockbackAfterDampener(LivingEntity p_92092_0_, double p_92092_1_) {
-      int i = EnchantmentHelper.getEnchantmentLevel(Enchantments.BLAST_PROTECTION, p_92092_0_);
+   public static double getBlastDamageReduction(LivingEntity entityLivingBaseIn, double damage) {
+      int i = EnchantmentHelper.getMaxEnchantmentLevel(Enchantments.BLAST_PROTECTION, entityLivingBaseIn);
       if (i > 0) {
-         p_92092_1_ -= (double)MathHelper.floor(p_92092_1_ * (double)((float)i * 0.15F));
+         damage -= (double)MathHelper.floor(damage * (double)((float)i * 0.15F));
       }
 
-      return p_92092_1_;
+      return damage;
    }
 
    public static enum Type {
@@ -79,21 +79,21 @@ public class ProtectionEnchantment extends Enchantment {
       EXPLOSION("explosion", 5, 8),
       PROJECTILE("projectile", 3, 6);
 
-      private final String name;
-      private final int minCost;
+      private final String typeName;
+      private final int minEnchantability;
       private final int levelCost;
 
-      private Type(String p_i48839_3_, int p_i48839_4_, int p_i48839_5_) {
-         this.name = p_i48839_3_;
-         this.minCost = p_i48839_4_;
-         this.levelCost = p_i48839_5_;
+      private Type(String typeName, int minEnchantability, int levelCost) {
+         this.typeName = typeName;
+         this.minEnchantability = minEnchantability;
+         this.levelCost = levelCost;
       }
 
-      public int getMinCost() {
-         return this.minCost;
+      public int getMinimalEnchantability() {
+         return this.minEnchantability;
       }
 
-      public int getLevelCost() {
+      public int getEnchantIncreasePerLevel() {
          return this.levelCost;
       }
    }

@@ -14,7 +14,7 @@ import java.util.Optional;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ItemStackEnchantmentFix extends DataFix {
-   private static final Int2ObjectMap<String> MAP = DataFixUtils.make(new Int2ObjectOpenHashMap<>(), (p_208043_0_) -> {
+   private static final Int2ObjectMap<String> field_208047_a = DataFixUtils.make(new Int2ObjectOpenHashMap<>(), (p_208043_0_) -> {
       p_208043_0_.put(0, "minecraft:protection");
       p_208043_0_.put(1, "minecraft:fire_protection");
       p_208043_0_.put(2, "minecraft:feather_falling");
@@ -51,8 +51,8 @@ public class ItemStackEnchantmentFix extends DataFix {
       p_208043_0_.put(71, "minecraft:vanishing_curse");
    });
 
-   public ItemStackEnchantmentFix(Schema p_i49638_1_, boolean p_i49638_2_) {
-      super(p_i49638_1_, p_i49638_2_);
+   public ItemStackEnchantmentFix(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    protected TypeRewriteRule makeRule() {
@@ -68,7 +68,7 @@ public class ItemStackEnchantmentFix extends DataFix {
    private Dynamic<?> fixTag(Dynamic<?> p_209627_1_) {
       Optional<? extends Dynamic<?>> optional = p_209627_1_.get("ench").asStreamOpt().map((p_209626_0_) -> {
          return p_209626_0_.map((p_209628_0_) -> {
-            return p_209628_0_.set("id", p_209628_0_.createString(MAP.getOrDefault(p_209628_0_.get("id").asInt(0), "null")));
+            return p_209628_0_.set("id", p_209628_0_.createString(field_208047_a.getOrDefault(p_209628_0_.get("id").asInt(0), "null")));
          });
       }).map(p_209627_1_::createList).result();
       if (optional.isPresent()) {
@@ -78,7 +78,7 @@ public class ItemStackEnchantmentFix extends DataFix {
       return p_209627_1_.update("StoredEnchantments", (p_209625_0_) -> {
          return DataFixUtils.orElse(p_209625_0_.asStreamOpt().map((p_209623_0_) -> {
             return p_209623_0_.map((p_209624_0_) -> {
-               return p_209624_0_.set("id", p_209624_0_.createString(MAP.getOrDefault(p_209624_0_.get("id").asInt(0), "null")));
+               return p_209624_0_.set("id", p_209624_0_.createString(field_208047_a.getOrDefault(p_209624_0_.get("id").asInt(0), "null")));
             });
          }).map(p_209625_0_::createList).result(), p_209625_0_);
       });

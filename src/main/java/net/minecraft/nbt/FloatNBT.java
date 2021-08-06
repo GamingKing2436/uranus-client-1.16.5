@@ -10,35 +10,35 @@ import net.minecraft.util.text.StringTextComponent;
 public class FloatNBT extends NumberNBT {
    public static final FloatNBT ZERO = new FloatNBT(0.0F);
    public static final INBTType<FloatNBT> TYPE = new INBTType<FloatNBT>() {
-      public FloatNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(96L);
-         return FloatNBT.valueOf(p_225649_1_.readFloat());
+      public FloatNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(96L);
+         return FloatNBT.valueOf(input.readFloat());
       }
 
       public String getName() {
          return "FLOAT";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_Float";
       }
 
-      public boolean isValue() {
+      public boolean isPrimitive() {
          return true;
       }
    };
    private final float data;
 
-   private FloatNBT(float p_i45131_1_) {
-      this.data = p_i45131_1_;
+   private FloatNBT(float data) {
+      this.data = data;
    }
 
-   public static FloatNBT valueOf(float p_229689_0_) {
-      return p_229689_0_ == 0.0F ? ZERO : new FloatNBT(p_229689_0_);
+   public static FloatNBT valueOf(float value) {
+      return value == 0.0F ? ZERO : new FloatNBT(value);
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      p_74734_1_.writeFloat(this.data);
+   public void write(DataOutput output) throws IOException {
+      output.writeFloat(this.data);
    }
 
    public byte getId() {
@@ -69,32 +69,32 @@ public class FloatNBT extends NumberNBT {
       return Float.floatToIntBits(this.data);
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
-      ITextComponent itextcomponent = (new StringTextComponent("f")).withStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
-      return (new StringTextComponent(String.valueOf(this.data))).append(itextcomponent).withStyle(SYNTAX_HIGHLIGHTING_NUMBER);
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
+      ITextComponent itextcomponent = (new StringTextComponent("f")).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
+      return (new StringTextComponent(String.valueOf(this.data))).append(itextcomponent).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER);
    }
 
-   public long getAsLong() {
+   public long getLong() {
       return (long)this.data;
    }
 
-   public int getAsInt() {
+   public int getInt() {
       return MathHelper.floor(this.data);
    }
 
-   public short getAsShort() {
+   public short getShort() {
       return (short)(MathHelper.floor(this.data) & '\uffff');
    }
 
-   public byte getAsByte() {
+   public byte getByte() {
       return (byte)(MathHelper.floor(this.data) & 255);
    }
 
-   public double getAsDouble() {
+   public double getDouble() {
       return (double)this.data;
    }
 
-   public float getAsFloat() {
+   public float getFloat() {
       return this.data;
    }
 

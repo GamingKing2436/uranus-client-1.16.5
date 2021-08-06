@@ -23,33 +23,33 @@ public class SoundSystem {
    private static final Logger LOGGER = LogManager.getLogger();
    private long device;
    private long context;
-   private static final SoundSystem.IHandler EMPTY = new SoundSystem.IHandler() {
+   private static final SoundSystem.IHandler DUMMY_HANDLER = new SoundSystem.IHandler() {
       @Nullable
-      public SoundSource acquire() {
+      public SoundSource getSource() {
          return null;
       }
 
-      public boolean release(SoundSource p_216396_1_) {
+      public boolean freeSource(SoundSource source) {
          return false;
       }
 
-      public void cleanup() {
+      public void unload() {
       }
 
-      public int getMaxCount() {
+      public int getMaxSoundSources() {
          return 0;
       }
 
-      public int getUsedCount() {
+      public int getActiveSoundSourceCount() {
          return 0;
       }
    };
-   private SoundSystem.IHandler staticChannels = EMPTY;
-   private SoundSystem.IHandler streamingChannels = EMPTY;
+   private SoundSystem.IHandler staticHandler = DUMMY_HANDLER;
+   private SoundSystem.IHandler streamingHandler = DUMMY_HANDLER;
    private final Listener listener = new Listener();
 
    public void init() {
-      this.device = tryOpenDevice();
+      this.device = openDevice();
       ALCCapabilities alccapabilities = ALC.createCapabilities(this.device);
       if (ALUtils.checkALCError(this.device, "Get capabilities")) {
          throw new IllegalStateException("Failed to get OpenAL capabilities");
@@ -58,11 +58,11 @@ public class SoundSystem {
       } else {
          this.context = ALC10.alcCreateContext(this.device, (IntBuffer)null);
          ALC10.alcMakeContextCurrent(this.context);
-         int i = this.getChannelCount();
+         int i = this.getMaxChannels();
          int j = MathHelper.clamp((int)MathHelper.sqrt((float)i), 2, 8);
          int k = MathHelper.clamp(i - j, 8, 255);
-         this.staticChannels = new SoundSystem.HandlerImpl(k);
-         this.streamingChannels = new SoundSystem.HandlerImpl(j);
+         this.staticHandler = new SoundSystem.HandlerImpl(k);
+         this.streamingHandler = new SoundSystem.HandlerImpl(j);
          ALCapabilities alcapabilities = AL.createCapabilities(alccapabilities);
          ALUtils.checkALError("Initialization");
          if (!alcapabilities.AL_EXT_source_distance_model) {
@@ -79,7 +79,7 @@ public class SoundSystem {
       }
    }
 
-   private int getChannelCount() {
+   private int getMaxChannels() {
       int i1;
       try (MemoryStack memorystack = MemoryStack.stackPush()) {
          int i = ALC10.alcGetInteger(this.device, 4098);
@@ -116,7 +116,7 @@ public class SoundSystem {
       return i1;
    }
 
-   private static long tryOpenDevice() {
+   private static long openDevice() {
       for(int i = 0; i < 3; ++i) {
          long j = ALC10.alcOpenDevice((ByteBuffer)null);
          if (j != 0L && !ALUtils.checkALCError(j, "Open device")) {
@@ -127,9 +127,9 @@ public class SoundSystem {
       throw new IllegalStateException("Failed to open OpenAL device");
    }
 
-   public void cleanup() {
-      this.staticChannels.cleanup();
-      this.streamingChannels.cleanup();
+   public void unload() {
+      this.staticHandler.unload();
+      this.streamingHandler.unload();
       ALC10.alcDestroyContext(this.context);
       if (this.device != 0L) {
          ALC10.alcCloseDevice(this.device);
@@ -142,79 +142,79 @@ public class SoundSystem {
    }
 
    @Nullable
-   public SoundSource acquireChannel(SoundSystem.Mode p_216403_1_) {
-      return (p_216403_1_ == SoundSystem.Mode.STREAMING ? this.streamingChannels : this.staticChannels).acquire();
+   public SoundSource getSource(SoundSystem.Mode soundMode) {
+      return (soundMode == SoundSystem.Mode.STREAMING ? this.streamingHandler : this.staticHandler).getSource();
    }
 
-   public void releaseChannel(SoundSource p_216408_1_) {
-      if (!this.staticChannels.release(p_216408_1_) && !this.streamingChannels.release(p_216408_1_)) {
+   public void release(SoundSource source) {
+      if (!this.staticHandler.freeSource(source) && !this.streamingHandler.freeSource(source)) {
          throw new IllegalStateException("Tried to release unknown channel");
       }
    }
 
    public String getDebugString() {
-      return String.format("Sounds: %d/%d + %d/%d", this.staticChannels.getUsedCount(), this.staticChannels.getMaxCount(), this.streamingChannels.getUsedCount(), this.streamingChannels.getMaxCount());
+      return String.format("Sounds: %d/%d + %d/%d", this.staticHandler.getActiveSoundSourceCount(), this.staticHandler.getMaxSoundSources(), this.streamingHandler.getActiveSoundSourceCount(), this.streamingHandler.getMaxSoundSources());
    }
 
    @OnlyIn(Dist.CLIENT)
    static class HandlerImpl implements SoundSystem.IHandler {
-      private final int limit;
-      private final Set<SoundSource> activeChannels = Sets.newIdentityHashSet();
+      private final int maxSoundSources;
+      private final Set<SoundSource> activeSoundSources = Sets.newIdentityHashSet();
 
-      public HandlerImpl(int p_i50804_1_) {
-         this.limit = p_i50804_1_;
+      public HandlerImpl(int maxSoundSources) {
+         this.maxSoundSources = maxSoundSources;
       }
 
       @Nullable
-      public SoundSource acquire() {
-         if (this.activeChannels.size() >= this.limit) {
-            SoundSystem.LOGGER.warn("Maximum sound pool size {} reached", (int)this.limit);
+      public SoundSource getSource() {
+         if (this.activeSoundSources.size() >= this.maxSoundSources) {
+            SoundSystem.LOGGER.warn("Maximum sound pool size {} reached", (int)this.maxSoundSources);
             return null;
          } else {
-            SoundSource soundsource = SoundSource.create();
+            SoundSource soundsource = SoundSource.allocateNewSource();
             if (soundsource != null) {
-               this.activeChannels.add(soundsource);
+               this.activeSoundSources.add(soundsource);
             }
 
             return soundsource;
          }
       }
 
-      public boolean release(SoundSource p_216396_1_) {
-         if (!this.activeChannels.remove(p_216396_1_)) {
+      public boolean freeSource(SoundSource source) {
+         if (!this.activeSoundSources.remove(source)) {
             return false;
          } else {
-            p_216396_1_.destroy();
+            source.close();
             return true;
          }
       }
 
-      public void cleanup() {
-         this.activeChannels.forEach(SoundSource::destroy);
-         this.activeChannels.clear();
+      public void unload() {
+         this.activeSoundSources.forEach(SoundSource::close);
+         this.activeSoundSources.clear();
       }
 
-      public int getMaxCount() {
-         return this.limit;
+      public int getMaxSoundSources() {
+         return this.maxSoundSources;
       }
 
-      public int getUsedCount() {
-         return this.activeChannels.size();
+      public int getActiveSoundSourceCount() {
+         return this.activeSoundSources.size();
       }
    }
 
    @OnlyIn(Dist.CLIENT)
    interface IHandler {
       @Nullable
-      SoundSource acquire();
+      SoundSource getSource();
 
-      boolean release(SoundSource p_216396_1_);
+      boolean freeSource(SoundSource source);
 
-      void cleanup();
+      void unload();
 
-      int getMaxCount();
+      int getMaxSoundSources();
 
-      int getUsedCount();
+      int getActiveSoundSourceCount();
    }
 
    @OnlyIn(Dist.CLIENT)

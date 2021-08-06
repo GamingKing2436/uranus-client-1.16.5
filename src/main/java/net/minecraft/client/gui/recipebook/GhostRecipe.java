@@ -49,7 +49,7 @@ public class GhostRecipe {
       this.recipe = p_192685_1_;
    }
 
-   public void render(MatrixStack p_238922_1_, Minecraft p_238922_2_, int p_238922_3_, int p_238922_4_, boolean p_238922_5_, float p_238922_6_) {
+   public void func_238922_a_(MatrixStack p_238922_1_, Minecraft p_238922_2_, int p_238922_3_, int p_238922_4_, boolean p_238922_5_, float p_238922_6_) {
       if (!Screen.hasControlDown()) {
          this.time += p_238922_6_;
       }
@@ -66,12 +66,12 @@ public class GhostRecipe {
 
          ItemStack itemstack = ghostrecipe$ghostingredient.getItem();
          ItemRenderer itemrenderer = p_238922_2_.getItemRenderer();
-         itemrenderer.renderAndDecorateFakeItem(itemstack, j, k);
+         itemrenderer.renderItemAndEffectIntoGuiWithoutEntity(itemstack, j, k);
          RenderSystem.depthFunc(516);
          AbstractGui.fill(p_238922_1_, j, k, j + 16, k + 16, 822083583);
          RenderSystem.depthFunc(515);
          if (i == 0) {
-            itemrenderer.renderGuiItemDecorations(p_238922_2_.font, itemstack, j, k);
+            itemrenderer.renderItemOverlays(p_238922_2_.fontRenderer, itemstack, j, k);
          }
       }
 
@@ -98,7 +98,7 @@ public class GhostRecipe {
       }
 
       public ItemStack getItem() {
-         ItemStack[] aitemstack = this.ingredient.getItems();
+         ItemStack[] aitemstack = this.ingredient.getMatchingStacks();
          return aitemstack[MathHelper.floor(GhostRecipe.this.time / 30.0F) % aitemstack.length];
       }
    }

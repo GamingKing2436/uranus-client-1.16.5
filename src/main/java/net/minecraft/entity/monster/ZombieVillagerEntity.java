@@ -47,93 +47,93 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ZombieVillagerEntity extends ZombieEntity implements IVillagerDataHolder {
-   private static final DataParameter<Boolean> DATA_CONVERTING_ID = EntityDataManager.defineId(ZombieVillagerEntity.class, DataSerializers.BOOLEAN);
-   private static final DataParameter<VillagerData> DATA_VILLAGER_DATA = EntityDataManager.defineId(ZombieVillagerEntity.class, DataSerializers.VILLAGER_DATA);
-   private int villagerConversionTime;
-   private UUID conversionStarter;
+   private static final DataParameter<Boolean> CONVERTING = EntityDataManager.createKey(ZombieVillagerEntity.class, DataSerializers.BOOLEAN);
+   private static final DataParameter<VillagerData> VILLAGER_DATA = EntityDataManager.createKey(ZombieVillagerEntity.class, DataSerializers.VILLAGER_DATA);
+   private int conversionTime;
+   private UUID converstionStarter;
    private INBT gossips;
-   private CompoundNBT tradeOffers;
-   private int villagerXp;
+   private CompoundNBT offers;
+   private int xp;
 
    public ZombieVillagerEntity(EntityType<? extends ZombieVillagerEntity> p_i50186_1_, World p_i50186_2_) {
       super(p_i50186_1_, p_i50186_2_);
-      this.setVillagerData(this.getVillagerData().setProfession(Registry.VILLAGER_PROFESSION.getRandom(this.random)));
+      this.setVillagerData(this.getVillagerData().withProfession(Registry.VILLAGER_PROFESSION.getRandom(this.rand)));
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_CONVERTING_ID, false);
-      this.entityData.define(DATA_VILLAGER_DATA, new VillagerData(VillagerType.PLAINS, VillagerProfession.NONE, 1));
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(CONVERTING, false);
+      this.dataManager.register(VILLAGER_DATA, new VillagerData(VillagerType.PLAINS, VillagerProfession.NONE, 1));
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
       VillagerData.CODEC.encodeStart(NBTDynamicOps.INSTANCE, this.getVillagerData()).resultOrPartial(LOGGER::error).ifPresent((p_234343_1_) -> {
-         p_213281_1_.put("VillagerData", p_234343_1_);
+         compound.put("VillagerData", p_234343_1_);
       });
-      if (this.tradeOffers != null) {
-         p_213281_1_.put("Offers", this.tradeOffers);
+      if (this.offers != null) {
+         compound.put("Offers", this.offers);
       }
 
       if (this.gossips != null) {
-         p_213281_1_.put("Gossips", this.gossips);
+         compound.put("Gossips", this.gossips);
       }
 
-      p_213281_1_.putInt("ConversionTime", this.isConverting() ? this.villagerConversionTime : -1);
-      if (this.conversionStarter != null) {
-         p_213281_1_.putUUID("ConversionPlayer", this.conversionStarter);
+      compound.putInt("ConversionTime", this.isConverting() ? this.conversionTime : -1);
+      if (this.converstionStarter != null) {
+         compound.putUniqueId("ConversionPlayer", this.converstionStarter);
       }
 
-      p_213281_1_.putInt("Xp", this.villagerXp);
+      compound.putInt("Xp", this.xp);
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      if (p_70037_1_.contains("VillagerData", 10)) {
-         DataResult<VillagerData> dataresult = VillagerData.CODEC.parse(new Dynamic<>(NBTDynamicOps.INSTANCE, p_70037_1_.get("VillagerData")));
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      if (compound.contains("VillagerData", 10)) {
+         DataResult<VillagerData> dataresult = VillagerData.CODEC.parse(new Dynamic<>(NBTDynamicOps.INSTANCE, compound.get("VillagerData")));
          dataresult.resultOrPartial(LOGGER::error).ifPresent(this::setVillagerData);
       }
 
-      if (p_70037_1_.contains("Offers", 10)) {
-         this.tradeOffers = p_70037_1_.getCompound("Offers");
+      if (compound.contains("Offers", 10)) {
+         this.offers = compound.getCompound("Offers");
       }
 
-      if (p_70037_1_.contains("Gossips", 10)) {
-         this.gossips = p_70037_1_.getList("Gossips", 10);
+      if (compound.contains("Gossips", 10)) {
+         this.gossips = compound.getList("Gossips", 10);
       }
 
-      if (p_70037_1_.contains("ConversionTime", 99) && p_70037_1_.getInt("ConversionTime") > -1) {
-         this.startConverting(p_70037_1_.hasUUID("ConversionPlayer") ? p_70037_1_.getUUID("ConversionPlayer") : null, p_70037_1_.getInt("ConversionTime"));
+      if (compound.contains("ConversionTime", 99) && compound.getInt("ConversionTime") > -1) {
+         this.startConverting(compound.hasUniqueId("ConversionPlayer") ? compound.getUniqueId("ConversionPlayer") : null, compound.getInt("ConversionTime"));
       }
 
-      if (p_70037_1_.contains("Xp", 3)) {
-         this.villagerXp = p_70037_1_.getInt("Xp");
+      if (compound.contains("Xp", 3)) {
+         this.xp = compound.getInt("Xp");
       }
 
    }
 
    public void tick() {
-      if (!this.level.isClientSide && this.isAlive() && this.isConverting()) {
+      if (!this.world.isRemote && this.isAlive() && this.isConverting()) {
          int i = this.getConversionProgress();
-         this.villagerConversionTime -= i;
-         if (this.villagerConversionTime <= 0) {
-            this.finishConversion((ServerWorld)this.level);
+         this.conversionTime -= i;
+         if (this.conversionTime <= 0) {
+            this.cureZombie((ServerWorld)this.world);
          }
       }
 
       super.tick();
    }
 
-   public ActionResultType mobInteract(PlayerEntity p_230254_1_, Hand p_230254_2_) {
-      ItemStack itemstack = p_230254_1_.getItemInHand(p_230254_2_);
+   public ActionResultType func_230254_b_(PlayerEntity p_230254_1_, Hand p_230254_2_) {
+      ItemStack itemstack = p_230254_1_.getHeldItem(p_230254_2_);
       if (itemstack.getItem() == Items.GOLDEN_APPLE) {
-         if (this.hasEffect(Effects.WEAKNESS)) {
-            if (!p_230254_1_.abilities.instabuild) {
+         if (this.isPotionActive(Effects.WEAKNESS)) {
+            if (!p_230254_1_.abilities.isCreativeMode) {
                itemstack.shrink(1);
             }
 
-            if (!this.level.isClientSide) {
-               this.startConverting(p_230254_1_.getUUID(), this.random.nextInt(2401) + 3600);
+            if (!this.world.isRemote) {
+               this.startConverting(p_230254_1_.getUniqueID(), this.rand.nextInt(2401) + 3600);
             }
 
             return ActionResultType.SUCCESS;
@@ -141,55 +141,55 @@ public class ZombieVillagerEntity extends ZombieEntity implements IVillagerDataH
             return ActionResultType.CONSUME;
          }
       } else {
-         return super.mobInteract(p_230254_1_, p_230254_2_);
+         return super.func_230254_b_(p_230254_1_, p_230254_2_);
       }
    }
 
-   protected boolean convertsInWater() {
+   protected boolean shouldDrown() {
       return false;
    }
 
-   public boolean removeWhenFarAway(double p_213397_1_) {
-      return !this.isConverting() && this.villagerXp == 0;
+   public boolean canDespawn(double distanceToClosestPlayer) {
+      return !this.isConverting() && this.xp == 0;
    }
 
    public boolean isConverting() {
-      return this.getEntityData().get(DATA_CONVERTING_ID);
+      return this.getDataManager().get(CONVERTING);
    }
 
-   private void startConverting(@Nullable UUID p_191991_1_, int p_191991_2_) {
-      this.conversionStarter = p_191991_1_;
-      this.villagerConversionTime = p_191991_2_;
-      this.getEntityData().set(DATA_CONVERTING_ID, true);
-      this.removeEffect(Effects.WEAKNESS);
-      this.addEffect(new EffectInstance(Effects.DAMAGE_BOOST, p_191991_2_, Math.min(this.level.getDifficulty().getId() - 1, 0)));
-      this.level.broadcastEntityEvent(this, (byte)16);
+   private void startConverting(@Nullable UUID conversionStarterIn, int conversionTimeIn) {
+      this.converstionStarter = conversionStarterIn;
+      this.conversionTime = conversionTimeIn;
+      this.getDataManager().set(CONVERTING, true);
+      this.removePotionEffect(Effects.WEAKNESS);
+      this.addPotionEffect(new EffectInstance(Effects.STRENGTH, conversionTimeIn, Math.min(this.world.getDifficulty().getId() - 1, 0)));
+      this.world.setEntityState(this, (byte)16);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void handleEntityEvent(byte p_70103_1_) {
-      if (p_70103_1_ == 16) {
+   public void handleStatusUpdate(byte id) {
+      if (id == 16) {
          if (!this.isSilent()) {
-            this.level.playLocalSound(this.getX(), this.getEyeY(), this.getZ(), SoundEvents.ZOMBIE_VILLAGER_CURE, this.getSoundSource(), 1.0F + this.random.nextFloat(), this.random.nextFloat() * 0.7F + 0.3F, false);
+            this.world.playSound(this.getPosX(), this.getPosYEye(), this.getPosZ(), SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, this.getSoundCategory(), 1.0F + this.rand.nextFloat(), this.rand.nextFloat() * 0.7F + 0.3F, false);
          }
 
       } else {
-         super.handleEntityEvent(p_70103_1_);
+         super.handleStatusUpdate(id);
       }
    }
 
-   private void finishConversion(ServerWorld p_213791_1_) {
-      VillagerEntity villagerentity = this.convertTo(EntityType.VILLAGER, false);
+   private void cureZombie(ServerWorld p_213791_1_) {
+      VillagerEntity villagerentity = this.func_233656_b_(EntityType.VILLAGER, false);
 
       for(EquipmentSlotType equipmentslottype : EquipmentSlotType.values()) {
-         ItemStack itemstack = this.getItemBySlot(equipmentslottype);
+         ItemStack itemstack = this.getItemStackFromSlot(equipmentslottype);
          if (!itemstack.isEmpty()) {
             if (EnchantmentHelper.hasBindingCurse(itemstack)) {
-               villagerentity.setSlot(equipmentslottype.getIndex() + 300, itemstack);
+               villagerentity.replaceItemInInventory(equipmentslottype.getIndex() + 300, itemstack);
             } else {
-               double d0 = (double)this.getEquipmentDropChance(equipmentslottype);
+               double d0 = (double)this.getDropChance(equipmentslottype);
                if (d0 > 1.0D) {
-                  this.spawnAtLocation(itemstack);
+                  this.entityDropItem(itemstack);
                }
             }
          }
@@ -200,39 +200,39 @@ public class ZombieVillagerEntity extends ZombieEntity implements IVillagerDataH
          villagerentity.setGossips(this.gossips);
       }
 
-      if (this.tradeOffers != null) {
-         villagerentity.setOffers(new MerchantOffers(this.tradeOffers));
+      if (this.offers != null) {
+         villagerentity.setOffers(new MerchantOffers(this.offers));
       }
 
-      villagerentity.setVillagerXp(this.villagerXp);
-      villagerentity.finalizeSpawn(p_213791_1_, p_213791_1_.getCurrentDifficultyAt(villagerentity.blockPosition()), SpawnReason.CONVERSION, (ILivingEntityData)null, (CompoundNBT)null);
-      if (this.conversionStarter != null) {
-         PlayerEntity playerentity = p_213791_1_.getPlayerByUUID(this.conversionStarter);
+      villagerentity.setXp(this.xp);
+      villagerentity.onInitialSpawn(p_213791_1_, p_213791_1_.getDifficultyForLocation(villagerentity.getPosition()), SpawnReason.CONVERSION, (ILivingEntityData)null, (CompoundNBT)null);
+      if (this.converstionStarter != null) {
+         PlayerEntity playerentity = p_213791_1_.getPlayerByUuid(this.converstionStarter);
          if (playerentity instanceof ServerPlayerEntity) {
             CriteriaTriggers.CURED_ZOMBIE_VILLAGER.trigger((ServerPlayerEntity)playerentity, this, villagerentity);
-            p_213791_1_.onReputationEvent(IReputationType.ZOMBIE_VILLAGER_CURED, playerentity, villagerentity);
+            p_213791_1_.updateReputation(IReputationType.ZOMBIE_VILLAGER_CURED, playerentity, villagerentity);
          }
       }
 
-      villagerentity.addEffect(new EffectInstance(Effects.CONFUSION, 200, 0));
+      villagerentity.addPotionEffect(new EffectInstance(Effects.NAUSEA, 200, 0));
       if (!this.isSilent()) {
-         p_213791_1_.levelEvent((PlayerEntity)null, 1027, this.blockPosition(), 0);
+         p_213791_1_.playEvent((PlayerEntity)null, 1027, this.getPosition(), 0);
       }
 
    }
 
    private int getConversionProgress() {
       int i = 1;
-      if (this.random.nextFloat() < 0.01F) {
+      if (this.rand.nextFloat() < 0.01F) {
          int j = 0;
          BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
 
-         for(int k = (int)this.getX() - 4; k < (int)this.getX() + 4 && j < 14; ++k) {
-            for(int l = (int)this.getY() - 4; l < (int)this.getY() + 4 && j < 14; ++l) {
-               for(int i1 = (int)this.getZ() - 4; i1 < (int)this.getZ() + 4 && j < 14; ++i1) {
-                  Block block = this.level.getBlockState(blockpos$mutable.set(k, l, i1)).getBlock();
+         for(int k = (int)this.getPosX() - 4; k < (int)this.getPosX() + 4 && j < 14; ++k) {
+            for(int l = (int)this.getPosY() - 4; l < (int)this.getPosY() + 4 && j < 14; ++l) {
+               for(int i1 = (int)this.getPosZ() - 4; i1 < (int)this.getPosZ() + 4 && j < 14; ++i1) {
+                  Block block = this.world.getBlockState(blockpos$mutable.setPos(k, l, i1)).getBlock();
                   if (block == Blocks.IRON_BARS || block instanceof BedBlock) {
-                     if (this.random.nextFloat() < 0.3F) {
+                     if (this.rand.nextFloat() < 0.3F) {
                         ++i;
                      }
 
@@ -246,32 +246,32 @@ public class ZombieVillagerEntity extends ZombieEntity implements IVillagerDataH
       return i;
    }
 
-   protected float getVoicePitch() {
-      return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 2.0F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
+   protected float getSoundPitch() {
+      return this.isChild() ? (this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F + 2.0F : (this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F + 1.0F;
    }
 
    public SoundEvent getAmbientSound() {
-      return SoundEvents.ZOMBIE_VILLAGER_AMBIENT;
+      return SoundEvents.ENTITY_ZOMBIE_VILLAGER_AMBIENT;
    }
 
-   public SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.ZOMBIE_VILLAGER_HURT;
+   public SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_ZOMBIE_VILLAGER_HURT;
    }
 
    public SoundEvent getDeathSound() {
-      return SoundEvents.ZOMBIE_VILLAGER_DEATH;
+      return SoundEvents.ENTITY_ZOMBIE_VILLAGER_DEATH;
    }
 
    public SoundEvent getStepSound() {
-      return SoundEvents.ZOMBIE_VILLAGER_STEP;
+      return SoundEvents.ENTITY_ZOMBIE_VILLAGER_STEP;
    }
 
-   protected ItemStack getSkull() {
+   protected ItemStack getSkullDrop() {
       return ItemStack.EMPTY;
    }
 
-   public void setTradeOffers(CompoundNBT p_213790_1_) {
-      this.tradeOffers = p_213790_1_;
+   public void setOffers(CompoundNBT p_213790_1_) {
+      this.offers = p_213790_1_;
    }
 
    public void setGossips(INBT p_223727_1_) {
@@ -279,25 +279,25 @@ public class ZombieVillagerEntity extends ZombieEntity implements IVillagerDataH
    }
 
    @Nullable
-   public ILivingEntityData finalizeSpawn(IServerWorld p_213386_1_, DifficultyInstance p_213386_2_, SpawnReason p_213386_3_, @Nullable ILivingEntityData p_213386_4_, @Nullable CompoundNBT p_213386_5_) {
-      this.setVillagerData(this.getVillagerData().setType(VillagerType.byBiome(p_213386_1_.getBiomeName(this.blockPosition()))));
-      return super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, p_213386_4_, p_213386_5_);
+   public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+      this.setVillagerData(this.getVillagerData().withType(VillagerType.func_242371_a(worldIn.func_242406_i(this.getPosition()))));
+      return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
    }
 
    public void setVillagerData(VillagerData p_213792_1_) {
       VillagerData villagerdata = this.getVillagerData();
       if (villagerdata.getProfession() != p_213792_1_.getProfession()) {
-         this.tradeOffers = null;
+         this.offers = null;
       }
 
-      this.entityData.set(DATA_VILLAGER_DATA, p_213792_1_);
+      this.dataManager.set(VILLAGER_DATA, p_213792_1_);
    }
 
    public VillagerData getVillagerData() {
-      return this.entityData.get(DATA_VILLAGER_DATA);
+      return this.dataManager.get(VILLAGER_DATA);
    }
 
-   public void setVillagerXp(int p_213789_1_) {
-      this.villagerXp = p_213789_1_;
+   public void setEXP(int p_213789_1_) {
+      this.xp = p_213789_1_;
    }
 }

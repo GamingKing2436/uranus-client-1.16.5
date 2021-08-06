@@ -8,60 +8,60 @@ import net.minecraft.world.GameType;
 import net.minecraft.world.border.WorldBorder;
 
 public interface IServerWorldInfo extends ISpawnWorldInfo {
-   String getLevelName();
+   String getWorldName();
 
-   void setThundering(boolean p_76069_1_);
+   void setThundering(boolean thunderingIn);
 
    int getRainTime();
 
-   void setRainTime(int p_76080_1_);
+   void setRainTime(int time);
 
-   void setThunderTime(int p_76090_1_);
+   void setThunderTime(int time);
 
    int getThunderTime();
 
-   default void fillCrashReportCategory(CrashReportCategory p_85118_1_) {
-      ISpawnWorldInfo.super.fillCrashReportCategory(p_85118_1_);
-      p_85118_1_.setDetail("Level name", this::getLevelName);
-      p_85118_1_.setDetail("Level game mode", () -> {
-         return String.format("Game mode: %s (ID %d). Hardcore: %b. Cheats: %b", this.getGameType().getName(), this.getGameType().getId(), this.isHardcore(), this.getAllowCommands());
+   default void addToCrashReport(CrashReportCategory category) {
+      ISpawnWorldInfo.super.addToCrashReport(category);
+      category.addDetail("Level name", this::getWorldName);
+      category.addDetail("Level game mode", () -> {
+         return String.format("Game mode: %s (ID %d). Hardcore: %b. Cheats: %b", this.getGameType().getName(), this.getGameType().getID(), this.isHardcore(), this.areCommandsAllowed());
       });
-      p_85118_1_.setDetail("Level weather", () -> {
+      category.addDetail("Level weather", () -> {
          return String.format("Rain time: %d (now: %b), thunder time: %d (now: %b)", this.getRainTime(), this.isRaining(), this.getThunderTime(), this.isThundering());
       });
    }
 
    int getClearWeatherTime();
 
-   void setClearWeatherTime(int p_230391_1_);
+   void setClearWeatherTime(int time);
 
    int getWanderingTraderSpawnDelay();
 
-   void setWanderingTraderSpawnDelay(int p_230396_1_);
+   void setWanderingTraderSpawnDelay(int delay);
 
    int getWanderingTraderSpawnChance();
 
-   void setWanderingTraderSpawnChance(int p_230397_1_);
+   void setWanderingTraderSpawnChance(int chance);
 
-   void setWanderingTraderId(UUID p_230394_1_);
+   void setWanderingTraderID(UUID id);
 
    GameType getGameType();
 
-   void setWorldBorder(WorldBorder.Serializer p_230393_1_);
+   void setWorldBorderSerializer(WorldBorder.Serializer serializer);
 
-   WorldBorder.Serializer getWorldBorder();
+   WorldBorder.Serializer getWorldBorderSerializer();
 
    boolean isInitialized();
 
-   void setInitialized(boolean p_76091_1_);
+   void setInitialized(boolean initializedIn);
 
-   boolean getAllowCommands();
+   boolean areCommandsAllowed();
 
-   void setGameType(GameType p_230392_1_);
+   void setGameType(GameType type);
 
    TimerCallbackManager<MinecraftServer> getScheduledEvents();
 
-   void setGameTime(long p_82572_1_);
+   void setGameTime(long time);
 
-   void setDayTime(long p_76068_1_);
+   void setDayTime(long time);
 }

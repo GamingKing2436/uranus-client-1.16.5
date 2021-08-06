@@ -35,164 +35,164 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class SimpleRegistry<T> extends MutableRegistry<T> {
-   protected static final Logger LOGGER = LogManager.getLogger();
-   private final ObjectList<T> byId = new ObjectArrayList<>(256);
-   private final Object2IntMap<T> toId = new Object2IntOpenCustomHashMap<>(Util.identityStrategy());
-   private final BiMap<ResourceLocation, T> storage;
-   private final BiMap<RegistryKey<T>, T> keyStorage;
-   private final Map<T, Lifecycle> lifecycles;
-   private Lifecycle elementsLifecycle;
-   protected Object[] randomCache;
-   private int nextId;
+   protected static final Logger LOGGER0 = LogManager.getLogger();
+   private final ObjectList<T> entryList = new ObjectArrayList<>(256);
+   private final Object2IntMap<T> entryIndexMap = new Object2IntOpenCustomHashMap<>(Util.identityHashStrategy());
+   private final BiMap<ResourceLocation, T> registryObjects;
+   private final BiMap<RegistryKey<T>, T> keyToObjectMap;
+   private final Map<T, Lifecycle> objectToLifecycleMap;
+   private Lifecycle lifecycle;
+   protected Object[] values;
+   private int nextFreeId;
 
-   public SimpleRegistry(RegistryKey<? extends Registry<T>> p_i232509_1_, Lifecycle p_i232509_2_) {
-      super(p_i232509_1_, p_i232509_2_);
-      this.toId.defaultReturnValue(-1);
-      this.storage = HashBiMap.create();
-      this.keyStorage = HashBiMap.create();
-      this.lifecycles = Maps.newIdentityHashMap();
-      this.elementsLifecycle = p_i232509_2_;
+   public SimpleRegistry(RegistryKey<? extends Registry<T>> registryKey, Lifecycle lifecycle) {
+      super(registryKey, lifecycle);
+      this.entryIndexMap.defaultReturnValue(-1);
+      this.registryObjects = HashBiMap.create();
+      this.keyToObjectMap = HashBiMap.create();
+      this.objectToLifecycleMap = Maps.newIdentityHashMap();
+      this.lifecycle = lifecycle;
    }
 
-   public static <T> MapCodec<SimpleRegistry.Entry<T>> withNameAndId(RegistryKey<? extends Registry<T>> p_243541_0_, MapCodec<T> p_243541_1_) {
+   public static <T> MapCodec<SimpleRegistry.Entry<T>> getRegistryEntryCodec(RegistryKey<? extends Registry<T>> registryKey, MapCodec<T> mapCodec) {
       return RecordCodecBuilder.mapCodec((p_243542_2_) -> {
-         return p_243542_2_.group(ResourceLocation.CODEC.xmap(RegistryKey.elementKey(p_243541_0_), RegistryKey::location).fieldOf("name").forGetter((p_243545_0_) -> {
-            return p_243545_0_.key;
+         return p_243542_2_.group(ResourceLocation.CODEC.xmap(RegistryKey.getKeyCreator(registryKey), RegistryKey::getLocation).fieldOf("name").forGetter((p_243545_0_) -> {
+            return p_243545_0_.name;
          }), Codec.INT.fieldOf("id").forGetter((p_243543_0_) -> {
-            return p_243543_0_.id;
-         }), p_243541_1_.forGetter((p_243538_0_) -> {
+            return p_243543_0_.index;
+         }), mapCodec.forGetter((p_243538_0_) -> {
             return p_243538_0_.value;
          })).apply(p_243542_2_, SimpleRegistry.Entry::new);
       });
    }
 
-   public <V extends T> V registerMapping(int p_218382_1_, RegistryKey<T> p_218382_2_, V p_218382_3_, Lifecycle p_218382_4_) {
-      return this.registerMapping(p_218382_1_, p_218382_2_, p_218382_3_, p_218382_4_, true);
+   public <V extends T> V register(int id, RegistryKey<T> name, V instance, Lifecycle lifecycle) {
+      return this.register(id, name, instance, lifecycle, true);
    }
 
-   private <V extends T> V registerMapping(int p_243537_1_, RegistryKey<T> p_243537_2_, V p_243537_3_, Lifecycle p_243537_4_, boolean p_243537_5_) {
-      Validate.notNull(p_243537_2_);
-      Validate.notNull((T)p_243537_3_);
-      this.byId.size(Math.max(this.byId.size(), p_243537_1_ + 1));
-      this.byId.set(p_243537_1_, p_243537_3_);
-      this.toId.put((T)p_243537_3_, p_243537_1_);
-      this.randomCache = null;
-      if (p_243537_5_ && this.keyStorage.containsKey(p_243537_2_)) {
-         LOGGER.debug("Adding duplicate key '{}' to registry", (Object)p_243537_2_);
+   private <V extends T> V register(int index, RegistryKey<T> registryKey, V value, Lifecycle lifecycle, boolean logDuplicateKeys) {
+      Validate.notNull(registryKey);
+      Validate.notNull((T)value);
+      this.entryList.size(Math.max(this.entryList.size(), index + 1));
+      this.entryList.set(index, value);
+      this.entryIndexMap.put((T)value, index);
+      this.values = null;
+      if (logDuplicateKeys && this.keyToObjectMap.containsKey(registryKey)) {
+         LOGGER0.debug("Adding duplicate key '{}' to registry", (Object)registryKey);
       }
 
-      if (this.storage.containsValue(p_243537_3_)) {
-         LOGGER.error("Adding duplicate value '{}' to registry", p_243537_3_);
+      if (this.registryObjects.containsValue(value)) {
+         LOGGER0.error("Adding duplicate value '{}' to registry", value);
       }
 
-      this.storage.put(p_243537_2_.location(), (T)p_243537_3_);
-      this.keyStorage.put(p_243537_2_, (T)p_243537_3_);
-      this.lifecycles.put((T)p_243537_3_, p_243537_4_);
-      this.elementsLifecycle = this.elementsLifecycle.add(p_243537_4_);
-      if (this.nextId <= p_243537_1_) {
-         this.nextId = p_243537_1_ + 1;
+      this.registryObjects.put(registryKey.getLocation(), (T)value);
+      this.keyToObjectMap.put(registryKey, (T)value);
+      this.objectToLifecycleMap.put((T)value, lifecycle);
+      this.lifecycle = this.lifecycle.add(lifecycle);
+      if (this.nextFreeId <= index) {
+         this.nextFreeId = index + 1;
       }
 
-      return p_243537_3_;
+      return value;
    }
 
-   public <V extends T> V register(RegistryKey<T> p_218381_1_, V p_218381_2_, Lifecycle p_218381_3_) {
-      return this.registerMapping(this.nextId, p_218381_1_, p_218381_2_, p_218381_3_);
+   public <V extends T> V register(RegistryKey<T> name, V instance, Lifecycle lifecycle) {
+      return this.register(this.nextFreeId, name, instance, lifecycle);
    }
 
-   public <V extends T> V registerOrOverride(OptionalInt p_241874_1_, RegistryKey<T> p_241874_2_, V p_241874_3_, Lifecycle p_241874_4_) {
-      Validate.notNull(p_241874_2_);
-      Validate.notNull((T)p_241874_3_);
-      T t = this.keyStorage.get(p_241874_2_);
+   public <V extends T> V validateAndRegister(OptionalInt index, RegistryKey<T> registryKey, V value, Lifecycle lifecycle) {
+      Validate.notNull(registryKey);
+      Validate.notNull((T)value);
+      T t = this.keyToObjectMap.get(registryKey);
       int i;
       if (t == null) {
-         i = p_241874_1_.isPresent() ? p_241874_1_.getAsInt() : this.nextId;
+         i = index.isPresent() ? index.getAsInt() : this.nextFreeId;
       } else {
-         i = this.toId.getInt(t);
-         if (p_241874_1_.isPresent() && p_241874_1_.getAsInt() != i) {
+         i = this.entryIndexMap.getInt(t);
+         if (index.isPresent() && index.getAsInt() != i) {
             throw new IllegalStateException("ID mismatch");
          }
 
-         this.toId.removeInt(t);
-         this.lifecycles.remove(t);
+         this.entryIndexMap.removeInt(t);
+         this.objectToLifecycleMap.remove(t);
       }
 
-      return this.registerMapping(i, p_241874_2_, p_241874_3_, p_241874_4_, false);
+      return this.register(i, registryKey, value, lifecycle, false);
    }
 
    @Nullable
-   public ResourceLocation getKey(T p_177774_1_) {
-      return this.storage.inverse().get(p_177774_1_);
+   public ResourceLocation getKey(T value) {
+      return this.registryObjects.inverse().get(value);
    }
 
-   public Optional<RegistryKey<T>> getResourceKey(T p_230519_1_) {
-      return Optional.ofNullable(this.keyStorage.inverse().get(p_230519_1_));
+   public Optional<RegistryKey<T>> getOptionalKey(T value) {
+      return Optional.ofNullable(this.keyToObjectMap.inverse().get(value));
    }
 
-   public int getId(@Nullable T p_148757_1_) {
-      return this.toId.getInt(p_148757_1_);
-   }
-
-   @Nullable
-   public T get(@Nullable RegistryKey<T> p_230516_1_) {
-      return this.keyStorage.get(p_230516_1_);
+   public int getId(@Nullable T value) {
+      return this.entryIndexMap.getInt(value);
    }
 
    @Nullable
-   public T byId(int p_148745_1_) {
-      return (T)(p_148745_1_ >= 0 && p_148745_1_ < this.byId.size() ? this.byId.get(p_148745_1_) : null);
+   public T getValueForKey(@Nullable RegistryKey<T> key) {
+      return this.keyToObjectMap.get(key);
    }
 
-   public Lifecycle lifecycle(T p_241876_1_) {
-      return this.lifecycles.get(p_241876_1_);
+   @Nullable
+   public T getByValue(int value) {
+      return (T)(value >= 0 && value < this.entryList.size() ? this.entryList.get(value) : null);
    }
 
-   public Lifecycle elementsLifecycle() {
-      return this.elementsLifecycle;
+   public Lifecycle getLifecycleByRegistry(T object) {
+      return this.objectToLifecycleMap.get(object);
+   }
+
+   public Lifecycle getLifecycle() {
+      return this.lifecycle;
    }
 
    public Iterator<T> iterator() {
-      return Iterators.filter(this.byId.iterator(), Objects::nonNull);
+      return Iterators.filter(this.entryList.iterator(), Objects::nonNull);
    }
 
    @Nullable
-   public T get(@Nullable ResourceLocation p_82594_1_) {
-      return this.storage.get(p_82594_1_);
+   public T getOrDefault(@Nullable ResourceLocation name) {
+      return this.registryObjects.get(name);
    }
 
    public Set<ResourceLocation> keySet() {
-      return Collections.unmodifiableSet(this.storage.keySet());
+      return Collections.unmodifiableSet(this.registryObjects.keySet());
    }
 
-   public Set<Map.Entry<RegistryKey<T>, T>> entrySet() {
-      return Collections.unmodifiableMap(this.keyStorage).entrySet();
+   public Set<Map.Entry<RegistryKey<T>, T>> getEntries() {
+      return Collections.unmodifiableMap(this.keyToObjectMap).entrySet();
    }
 
    @Nullable
-   public T getRandom(Random p_186801_1_) {
-      if (this.randomCache == null) {
-         Collection<?> collection = this.storage.values();
+   public T getRandom(Random random) {
+      if (this.values == null) {
+         Collection<?> collection = this.registryObjects.values();
          if (collection.isEmpty()) {
             return (T)null;
          }
 
-         this.randomCache = collection.toArray(new Object[collection.size()]);
+         this.values = collection.toArray(new Object[collection.size()]);
       }
 
-      return Util.getRandom((T[])this.randomCache, p_186801_1_);
+      return Util.getRandomObject((T[])this.values, random);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean containsKey(ResourceLocation p_212607_1_) {
-      return this.storage.containsKey(p_212607_1_);
+   public boolean containsKey(ResourceLocation name) {
+      return this.registryObjects.containsKey(name);
    }
 
-   public static <T> Codec<SimpleRegistry<T>> networkCodec(RegistryKey<? extends Registry<T>> p_243539_0_, Lifecycle p_243539_1_, Codec<T> p_243539_2_) {
-      return withNameAndId(p_243539_0_, p_243539_2_.fieldOf("element")).codec().listOf().xmap((p_243540_2_) -> {
-         SimpleRegistry<T> simpleregistry = new SimpleRegistry<>(p_243539_0_, p_243539_1_);
+   public static <T> Codec<SimpleRegistry<T>> createSimpleRegistryCodec(RegistryKey<? extends Registry<T>> registryKey, Lifecycle lifecycle, Codec<T> codec) {
+      return getRegistryEntryCodec(registryKey, codec.fieldOf("element")).codec().listOf().xmap((p_243540_2_) -> {
+         SimpleRegistry<T> simpleregistry = new SimpleRegistry<>(registryKey, lifecycle);
 
          for(SimpleRegistry.Entry<T> entry : p_243540_2_) {
-            simpleregistry.registerMapping(entry.id, entry.key, entry.value, p_243539_1_);
+            simpleregistry.register(entry.index, entry.name, entry.value, lifecycle);
          }
 
          return simpleregistry;
@@ -200,38 +200,38 @@ public class SimpleRegistry<T> extends MutableRegistry<T> {
          Builder<SimpleRegistry.Entry<T>> builder = ImmutableList.builder();
 
          for(T t : p_243544_0_) {
-            builder.add(new SimpleRegistry.Entry<>(p_243544_0_.getResourceKey(t).get(), p_243544_0_.getId(t), t));
+            builder.add(new SimpleRegistry.Entry<>(p_243544_0_.getOptionalKey(t).get(), p_243544_0_.getId(t), t));
          }
 
          return builder.build();
       });
    }
 
-   public static <T> Codec<SimpleRegistry<T>> dataPackCodec(RegistryKey<? extends Registry<T>> p_241744_0_, Lifecycle p_241744_1_, Codec<T> p_241744_2_) {
-      return SimpleRegistryCodec.create(p_241744_0_, p_241744_1_, p_241744_2_);
+   public static <T> Codec<SimpleRegistry<T>> getSimpleRegistryCodec(RegistryKey<? extends Registry<T>> registryKey, Lifecycle lifecycle, Codec<T> mapCodec) {
+      return SimpleRegistryCodec.create(registryKey, lifecycle, mapCodec);
    }
 
-   public static <T> Codec<SimpleRegistry<T>> directCodec(RegistryKey<? extends Registry<T>> p_241745_0_, Lifecycle p_241745_1_, Codec<T> p_241745_2_) {
-      return Codec.unboundedMap(ResourceLocation.CODEC.xmap(RegistryKey.elementKey(p_241745_0_), RegistryKey::location), p_241745_2_).xmap((p_239656_2_) -> {
-         SimpleRegistry<T> simpleregistry = new SimpleRegistry<>(p_241745_0_, p_241745_1_);
+   public static <T> Codec<SimpleRegistry<T>> getUnboundedRegistryCodec(RegistryKey<? extends Registry<T>> registryKey, Lifecycle lifecycle, Codec<T> mapCodec) {
+      return Codec.unboundedMap(ResourceLocation.CODEC.xmap(RegistryKey.getKeyCreator(registryKey), RegistryKey::getLocation), mapCodec).xmap((p_239656_2_) -> {
+         SimpleRegistry<T> simpleregistry = new SimpleRegistry<>(registryKey, lifecycle);
          p_239656_2_.forEach((p_239653_2_, p_239653_3_) -> {
-            simpleregistry.register(p_239653_2_, p_239653_3_, p_241745_1_);
+            simpleregistry.register(p_239653_2_, p_239653_3_, lifecycle);
          });
          return simpleregistry;
       }, (p_239651_0_) -> {
-         return ImmutableMap.copyOf(p_239651_0_.keyStorage);
+         return ImmutableMap.copyOf(p_239651_0_.keyToObjectMap);
       });
    }
 
    public static class Entry<T> {
-      public final RegistryKey<T> key;
-      public final int id;
+      public final RegistryKey<T> name;
+      public final int index;
       public final T value;
 
-      public Entry(RegistryKey<T> p_i242072_1_, int p_i242072_2_, T p_i242072_3_) {
-         this.key = p_i242072_1_;
-         this.id = p_i242072_2_;
-         this.value = p_i242072_3_;
+      public Entry(RegistryKey<T> name, int index, T value) {
+         this.name = name;
+         this.index = index;
+         this.value = value;
       }
    }
 }

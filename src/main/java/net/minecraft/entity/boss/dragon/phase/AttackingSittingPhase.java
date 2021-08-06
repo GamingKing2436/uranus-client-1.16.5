@@ -6,26 +6,26 @@ import net.minecraft.util.SoundEvents;
 public class AttackingSittingPhase extends SittingPhase {
    private int attackingTicks;
 
-   public AttackingSittingPhase(EnderDragonEntity p_i46787_1_) {
-      super(p_i46787_1_);
+   public AttackingSittingPhase(EnderDragonEntity dragonIn) {
+      super(dragonIn);
    }
 
-   public void doClientTick() {
-      this.dragon.level.playLocalSound(this.dragon.getX(), this.dragon.getY(), this.dragon.getZ(), SoundEvents.ENDER_DRAGON_GROWL, this.dragon.getSoundSource(), 2.5F, 0.8F + this.dragon.getRandom().nextFloat() * 0.3F, false);
+   public void clientTick() {
+      this.dragon.world.playSound(this.dragon.getPosX(), this.dragon.getPosY(), this.dragon.getPosZ(), SoundEvents.ENTITY_ENDER_DRAGON_GROWL, this.dragon.getSoundCategory(), 2.5F, 0.8F + this.dragon.getRNG().nextFloat() * 0.3F, false);
    }
 
-   public void doServerTick() {
+   public void serverTick() {
       if (this.attackingTicks++ >= 40) {
          this.dragon.getPhaseManager().setPhase(PhaseType.SITTING_FLAMING);
       }
 
    }
 
-   public void begin() {
+   public void initPhase() {
       this.attackingTicks = 0;
    }
 
-   public PhaseType<AttackingSittingPhase> getPhase() {
+   public PhaseType<AttackingSittingPhase> getType() {
       return PhaseType.SITTING_ATTACKING;
    }
 }

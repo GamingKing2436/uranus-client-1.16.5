@@ -25,15 +25,15 @@ public class LootConditionManager {
    public static final LootConditionType REFERENCE = register("reference", new Reference.Serializer());
    public static final LootConditionType TIME_CHECK = register("time_check", new TimeCheck.Serializer());
 
-   private static LootConditionType register(String p_237475_0_, ILootSerializer<? extends ILootCondition> p_237475_1_) {
-      return Registry.register(Registry.LOOT_CONDITION_TYPE, new ResourceLocation(p_237475_0_), new LootConditionType(p_237475_1_));
+   private static LootConditionType register(String registryName, ILootSerializer<? extends ILootCondition> serializer) {
+      return Registry.register(Registry.LOOT_CONDITION_TYPE, new ResourceLocation(registryName), new LootConditionType(serializer));
    }
 
-   public static Object createGsonAdapter() {
-      return LootTypesManager.builder(Registry.LOOT_CONDITION_TYPE, "condition", "condition", ILootCondition::getType).build();
+   public static Object func_237474_a_() {
+      return LootTypesManager.getLootTypeRegistryWrapper(Registry.LOOT_CONDITION_TYPE, "condition", "condition", ILootCondition::func_230419_b_).getSerializer();
    }
 
-   public static <T> Predicate<T> andConditions(Predicate<T>[] p_216305_0_) {
+   public static <T> Predicate<T> and(Predicate<T>[] p_216305_0_) {
       switch(p_216305_0_.length) {
       case 0:
          return (p_216304_0_) -> {
@@ -56,7 +56,7 @@ public class LootConditionManager {
       }
    }
 
-   public static <T> Predicate<T> orConditions(Predicate<T>[] p_216306_0_) {
+   public static <T> Predicate<T> or(Predicate<T>[] p_216306_0_) {
       switch(p_216306_0_.length) {
       case 0:
          return (p_216308_0_) -> {

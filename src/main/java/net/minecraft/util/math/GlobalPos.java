@@ -8,25 +8,25 @@ import net.minecraft.world.World;
 
 public final class GlobalPos {
    public static final Codec<GlobalPos> CODEC = RecordCodecBuilder.create((p_239647_0_) -> {
-      return p_239647_0_.group(World.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(GlobalPos::dimension), BlockPos.CODEC.fieldOf("pos").forGetter(GlobalPos::pos)).apply(p_239647_0_, GlobalPos::of);
+      return p_239647_0_.group(World.CODEC.fieldOf("dimension").forGetter(GlobalPos::getDimension), BlockPos.CODEC.fieldOf("pos").forGetter(GlobalPos::getPos)).apply(p_239647_0_, GlobalPos::getPosition);
    });
    private final RegistryKey<World> dimension;
    private final BlockPos pos;
 
-   private GlobalPos(RegistryKey<World> p_i232508_1_, BlockPos p_i232508_2_) {
-      this.dimension = p_i232508_1_;
-      this.pos = p_i232508_2_;
+   private GlobalPos(RegistryKey<World> dimension, BlockPos pos) {
+      this.dimension = dimension;
+      this.pos = pos;
    }
 
-   public static GlobalPos of(RegistryKey<World> p_239648_0_, BlockPos p_239648_1_) {
-      return new GlobalPos(p_239648_0_, p_239648_1_);
+   public static GlobalPos getPosition(RegistryKey<World> dimension, BlockPos pos) {
+      return new GlobalPos(dimension, pos);
    }
 
-   public RegistryKey<World> dimension() {
+   public RegistryKey<World> getDimension() {
       return this.dimension;
    }
 
-   public BlockPos pos() {
+   public BlockPos getPos() {
       return this.pos;
    }
 

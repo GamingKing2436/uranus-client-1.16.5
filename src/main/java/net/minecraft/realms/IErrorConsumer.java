@@ -7,9 +7,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IErrorConsumer {
-   void error(ITextComponent p_230434_1_);
+   void func_230434_a_(ITextComponent p_230434_1_);
 
-   default void error(String p_237703_1_) {
-      this.error(new StringTextComponent(p_237703_1_));
+   default void func_237703_a_(String p_237703_1_) {
+      this.func_230434_a_(new StringTextComponent(p_237703_1_));
    }
 }

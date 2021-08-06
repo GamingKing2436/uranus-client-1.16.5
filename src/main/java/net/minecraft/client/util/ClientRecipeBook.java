@@ -25,32 +25,32 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientRecipeBook extends RecipeBook {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private Map<RecipeBookCategories, List<RecipeList>> collectionsByTab = ImmutableMap.of();
-   private List<RecipeList> allCollections = ImmutableList.of();
+   private static final Logger field_241555_k_ = LogManager.getLogger();
+   private Map<RecipeBookCategories, List<RecipeList>> recipesByCategory = ImmutableMap.of();
+   private List<RecipeList> allRecipes = ImmutableList.of();
 
-   public void setupCollections(Iterable<IRecipe<?>> p_243196_1_) {
-      Map<RecipeBookCategories, List<List<IRecipe<?>>>> map = categorizeAndGroupRecipes(p_243196_1_);
+   public void func_243196_a(Iterable<IRecipe<?>> p_243196_1_) {
+      Map<RecipeBookCategories, List<List<IRecipe<?>>>> map = func_243201_b(p_243196_1_);
       Map<RecipeBookCategories, List<RecipeList>> map1 = Maps.newHashMap();
       Builder<RecipeList> builder = ImmutableList.builder();
       map.forEach((p_243197_2_, p_243197_3_) -> {
          List list = map1.put(p_243197_2_, p_243197_3_.stream().map(RecipeList::new).peek(builder::add).collect(ImmutableList.toImmutableList()));
       });
-      RecipeBookCategories.AGGREGATE_CATEGORIES.forEach((p_243199_1_, p_243199_2_) -> {
+      RecipeBookCategories.field_243235_w.forEach((p_243199_1_, p_243199_2_) -> {
          List list = map1.put(p_243199_1_, p_243199_2_.stream().flatMap((p_243198_1_) -> {
             return map1.getOrDefault(p_243198_1_, ImmutableList.of()).stream();
          }).collect(ImmutableList.toImmutableList()));
       });
-      this.collectionsByTab = ImmutableMap.copyOf(map1);
-      this.allCollections = builder.build();
+      this.recipesByCategory = ImmutableMap.copyOf(map1);
+      this.allRecipes = builder.build();
    }
 
-   private static Map<RecipeBookCategories, List<List<IRecipe<?>>>> categorizeAndGroupRecipes(Iterable<IRecipe<?>> p_243201_0_) {
+   private static Map<RecipeBookCategories, List<List<IRecipe<?>>>> func_243201_b(Iterable<IRecipe<?>> p_243201_0_) {
       Map<RecipeBookCategories, List<List<IRecipe<?>>>> map = Maps.newHashMap();
       Table<RecipeBookCategories, String, List<IRecipe<?>>> table = HashBasedTable.create();
 
       for(IRecipe<?> irecipe : p_243201_0_) {
-         if (!irecipe.isSpecial()) {
+         if (!irecipe.isDynamic()) {
             RecipeBookCategories recipebookcategories = getCategory(irecipe);
             String s = irecipe.getGroup();
             if (s.isEmpty()) {
@@ -75,26 +75,26 @@ public class ClientRecipeBook extends RecipeBook {
       return map;
    }
 
-   private static RecipeBookCategories getCategory(IRecipe<?> p_202887_0_) {
-      IRecipeType<?> irecipetype = p_202887_0_.getType();
+   private static RecipeBookCategories getCategory(IRecipe<?> recipe) {
+      IRecipeType<?> irecipetype = recipe.getType();
       if (irecipetype == IRecipeType.CRAFTING) {
-         ItemStack itemstack = p_202887_0_.getResultItem();
-         ItemGroup itemgroup = itemstack.getItem().getItemCategory();
-         if (itemgroup == ItemGroup.TAB_BUILDING_BLOCKS) {
+         ItemStack itemstack = recipe.getRecipeOutput();
+         ItemGroup itemgroup = itemstack.getItem().getGroup();
+         if (itemgroup == ItemGroup.BUILDING_BLOCKS) {
             return RecipeBookCategories.CRAFTING_BUILDING_BLOCKS;
-         } else if (itemgroup != ItemGroup.TAB_TOOLS && itemgroup != ItemGroup.TAB_COMBAT) {
-            return itemgroup == ItemGroup.TAB_REDSTONE ? RecipeBookCategories.CRAFTING_REDSTONE : RecipeBookCategories.CRAFTING_MISC;
+         } else if (itemgroup != ItemGroup.TOOLS && itemgroup != ItemGroup.COMBAT) {
+            return itemgroup == ItemGroup.REDSTONE ? RecipeBookCategories.CRAFTING_REDSTONE : RecipeBookCategories.CRAFTING_MISC;
          } else {
             return RecipeBookCategories.CRAFTING_EQUIPMENT;
          }
       } else if (irecipetype == IRecipeType.SMELTING) {
-         if (p_202887_0_.getResultItem().getItem().isEdible()) {
+         if (recipe.getRecipeOutput().getItem().isFood()) {
             return RecipeBookCategories.FURNACE_FOOD;
          } else {
-            return p_202887_0_.getResultItem().getItem() instanceof BlockItem ? RecipeBookCategories.FURNACE_BLOCKS : RecipeBookCategories.FURNACE_MISC;
+            return recipe.getRecipeOutput().getItem() instanceof BlockItem ? RecipeBookCategories.FURNACE_BLOCKS : RecipeBookCategories.FURNACE_MISC;
          }
       } else if (irecipetype == IRecipeType.BLASTING) {
-         return p_202887_0_.getResultItem().getItem() instanceof BlockItem ? RecipeBookCategories.BLAST_FURNACE_BLOCKS : RecipeBookCategories.BLAST_FURNACE_MISC;
+         return recipe.getRecipeOutput().getItem() instanceof BlockItem ? RecipeBookCategories.BLAST_FURNACE_BLOCKS : RecipeBookCategories.BLAST_FURNACE_MISC;
       } else if (irecipetype == IRecipeType.SMOKING) {
          return RecipeBookCategories.SMOKER_FOOD;
       } else if (irecipetype == IRecipeType.STONECUTTING) {
@@ -104,18 +104,18 @@ public class ClientRecipeBook extends RecipeBook {
       } else if (irecipetype == IRecipeType.SMITHING) {
          return RecipeBookCategories.SMITHING;
       } else {
-         LOGGER.warn("Unknown recipe category: {}/{}", () -> {
-            return Registry.RECIPE_TYPE.getKey(p_202887_0_.getType());
-         }, p_202887_0_::getId);
+         field_241555_k_.warn("Unknown recipe category: {}/{}", () -> {
+            return Registry.RECIPE_TYPE.getKey(recipe.getType());
+         }, recipe::getId);
          return RecipeBookCategories.UNKNOWN;
       }
    }
 
-   public List<RecipeList> getCollections() {
-      return this.allCollections;
+   public List<RecipeList> getRecipes() {
+      return this.allRecipes;
    }
 
-   public List<RecipeList> getCollection(RecipeBookCategories p_202891_1_) {
-      return this.collectionsByTab.getOrDefault(p_202891_1_, Collections.emptyList());
+   public List<RecipeList> getRecipes(RecipeBookCategories p_202891_1_) {
+      return this.recipesByCategory.getOrDefault(p_202891_1_, Collections.emptyList());
    }
 }

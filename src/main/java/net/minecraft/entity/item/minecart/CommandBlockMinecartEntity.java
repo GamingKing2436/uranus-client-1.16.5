@@ -21,91 +21,91 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class CommandBlockMinecartEntity extends AbstractMinecartEntity {
-   private static final DataParameter<String> DATA_ID_COMMAND_NAME = EntityDataManager.defineId(CommandBlockMinecartEntity.class, DataSerializers.STRING);
-   private static final DataParameter<ITextComponent> DATA_ID_LAST_OUTPUT = EntityDataManager.defineId(CommandBlockMinecartEntity.class, DataSerializers.COMPONENT);
-   private final CommandBlockLogic commandBlock = new CommandBlockMinecartEntity.MinecartCommandLogic();
-   private int lastActivated;
+   private static final DataParameter<String> COMMAND = EntityDataManager.createKey(CommandBlockMinecartEntity.class, DataSerializers.STRING);
+   private static final DataParameter<ITextComponent> LAST_OUTPUT = EntityDataManager.createKey(CommandBlockMinecartEntity.class, DataSerializers.TEXT_COMPONENT);
+   private final CommandBlockLogic commandBlockLogic = new CommandBlockMinecartEntity.MinecartCommandLogic();
+   private int activatorRailCooldown;
 
-   public CommandBlockMinecartEntity(EntityType<? extends CommandBlockMinecartEntity> p_i50123_1_, World p_i50123_2_) {
-      super(p_i50123_1_, p_i50123_2_);
+   public CommandBlockMinecartEntity(EntityType<? extends CommandBlockMinecartEntity> type, World world) {
+      super(type, world);
    }
 
-   public CommandBlockMinecartEntity(World p_i46755_1_, double p_i46755_2_, double p_i46755_4_, double p_i46755_6_) {
-      super(EntityType.COMMAND_BLOCK_MINECART, p_i46755_1_, p_i46755_2_, p_i46755_4_, p_i46755_6_);
+   public CommandBlockMinecartEntity(World worldIn, double x, double y, double z) {
+      super(EntityType.COMMAND_BLOCK_MINECART, worldIn, x, y, z);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.getEntityData().define(DATA_ID_COMMAND_NAME, "");
-      this.getEntityData().define(DATA_ID_LAST_OUTPUT, StringTextComponent.EMPTY);
+   protected void registerData() {
+      super.registerData();
+      this.getDataManager().register(COMMAND, "");
+      this.getDataManager().register(LAST_OUTPUT, StringTextComponent.EMPTY);
    }
 
-   protected void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.commandBlock.load(p_70037_1_);
-      this.getEntityData().set(DATA_ID_COMMAND_NAME, this.getCommandBlock().getCommand());
-      this.getEntityData().set(DATA_ID_LAST_OUTPUT, this.getCommandBlock().getLastOutput());
+   protected void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.commandBlockLogic.read(compound);
+      this.getDataManager().set(COMMAND, this.getCommandBlockLogic().getCommand());
+      this.getDataManager().set(LAST_OUTPUT, this.getCommandBlockLogic().getLastOutput());
    }
 
-   protected void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      this.commandBlock.save(p_213281_1_);
+   protected void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      this.commandBlockLogic.write(compound);
    }
 
    public AbstractMinecartEntity.Type getMinecartType() {
       return AbstractMinecartEntity.Type.COMMAND_BLOCK;
    }
 
-   public BlockState getDefaultDisplayBlockState() {
-      return Blocks.COMMAND_BLOCK.defaultBlockState();
+   public BlockState getDefaultDisplayTile() {
+      return Blocks.COMMAND_BLOCK.getDefaultState();
    }
 
-   public CommandBlockLogic getCommandBlock() {
-      return this.commandBlock;
+   public CommandBlockLogic getCommandBlockLogic() {
+      return this.commandBlockLogic;
    }
 
-   public void activateMinecart(int p_96095_1_, int p_96095_2_, int p_96095_3_, boolean p_96095_4_) {
-      if (p_96095_4_ && this.tickCount - this.lastActivated >= 4) {
-         this.getCommandBlock().performCommand(this.level);
-         this.lastActivated = this.tickCount;
+   public void onActivatorRailPass(int x, int y, int z, boolean receivingPower) {
+      if (receivingPower && this.ticksExisted - this.activatorRailCooldown >= 4) {
+         this.getCommandBlockLogic().trigger(this.world);
+         this.activatorRailCooldown = this.ticksExisted;
       }
 
    }
 
-   public ActionResultType interact(PlayerEntity p_184230_1_, Hand p_184230_2_) {
-      return this.commandBlock.usedBy(p_184230_1_);
+   public ActionResultType processInitialInteract(PlayerEntity player, Hand hand) {
+      return this.commandBlockLogic.tryOpenEditCommandBlock(player);
    }
 
-   public void onSyncedDataUpdated(DataParameter<?> p_184206_1_) {
-      super.onSyncedDataUpdated(p_184206_1_);
-      if (DATA_ID_LAST_OUTPUT.equals(p_184206_1_)) {
+   public void notifyDataManagerChange(DataParameter<?> key) {
+      super.notifyDataManagerChange(key);
+      if (LAST_OUTPUT.equals(key)) {
          try {
-            this.commandBlock.setLastOutput(this.getEntityData().get(DATA_ID_LAST_OUTPUT));
+            this.commandBlockLogic.setLastOutput(this.getDataManager().get(LAST_OUTPUT));
          } catch (Throwable throwable) {
          }
-      } else if (DATA_ID_COMMAND_NAME.equals(p_184206_1_)) {
-         this.commandBlock.setCommand(this.getEntityData().get(DATA_ID_COMMAND_NAME));
+      } else if (COMMAND.equals(key)) {
+         this.commandBlockLogic.setCommand(this.getDataManager().get(COMMAND));
       }
 
    }
 
-   public boolean onlyOpCanSetNbt() {
+   public boolean ignoreItemEntityData() {
       return true;
    }
 
    public class MinecartCommandLogic extends CommandBlockLogic {
-      public ServerWorld getLevel() {
-         return (ServerWorld)CommandBlockMinecartEntity.this.level;
+      public ServerWorld getWorld() {
+         return (ServerWorld)CommandBlockMinecartEntity.this.world;
       }
 
-      public void onUpdated() {
-         CommandBlockMinecartEntity.this.getEntityData().set(CommandBlockMinecartEntity.DATA_ID_COMMAND_NAME, this.getCommand());
-         CommandBlockMinecartEntity.this.getEntityData().set(CommandBlockMinecartEntity.DATA_ID_LAST_OUTPUT, this.getLastOutput());
+      public void updateCommand() {
+         CommandBlockMinecartEntity.this.getDataManager().set(CommandBlockMinecartEntity.COMMAND, this.getCommand());
+         CommandBlockMinecartEntity.this.getDataManager().set(CommandBlockMinecartEntity.LAST_OUTPUT, this.getLastOutput());
       }
 
       @OnlyIn(Dist.CLIENT)
-      public Vector3d getPosition() {
-         return CommandBlockMinecartEntity.this.position();
+      public Vector3d getPositionVector() {
+         return CommandBlockMinecartEntity.this.getPositionVec();
       }
 
       @OnlyIn(Dist.CLIENT)
@@ -113,8 +113,8 @@ public class CommandBlockMinecartEntity extends AbstractMinecartEntity {
          return CommandBlockMinecartEntity.this;
       }
 
-      public CommandSource createCommandSourceStack() {
-         return new CommandSource(this, CommandBlockMinecartEntity.this.position(), CommandBlockMinecartEntity.this.getRotationVector(), this.getLevel(), 2, this.getName().getString(), CommandBlockMinecartEntity.this.getDisplayName(), this.getLevel().getServer(), CommandBlockMinecartEntity.this);
+      public CommandSource getCommandSource() {
+         return new CommandSource(this, CommandBlockMinecartEntity.this.getPositionVec(), CommandBlockMinecartEntity.this.getPitchYaw(), this.getWorld(), 2, this.getName().getString(), CommandBlockMinecartEntity.this.getDisplayName(), this.getWorld().getServer(), CommandBlockMinecartEntity.this);
       }
    }
 }

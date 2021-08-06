@@ -10,29 +10,29 @@ import net.minecraft.network.play.IServerPlayNetHandler;
 import net.minecraft.world.server.ServerWorld;
 
 public class CSpectatePacket implements IPacket<IServerPlayNetHandler> {
-   private UUID uuid;
+   private UUID id;
 
    public CSpectatePacket() {
    }
 
-   public CSpectatePacket(UUID p_i46859_1_) {
-      this.uuid = p_i46859_1_;
+   public CSpectatePacket(UUID uniqueIdIn) {
+      this.id = uniqueIdIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.uuid = p_148837_1_.readUUID();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.id = buf.readUniqueId();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeUUID(this.uuid);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeUniqueId(this.id);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleTeleportToEntityPacket(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.handleSpectate(this);
    }
 
    @Nullable
-   public Entity getEntity(ServerWorld p_179727_1_) {
-      return p_179727_1_.getEntity(this.uuid);
+   public Entity getEntity(ServerWorld worldIn) {
+      return worldIn.getEntityByUuid(this.id);
    }
 }

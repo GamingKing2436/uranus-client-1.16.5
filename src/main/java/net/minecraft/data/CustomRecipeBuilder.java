@@ -14,29 +14,29 @@ public class CustomRecipeBuilder {
       this.serializer = p_i50786_1_;
    }
 
-   public static CustomRecipeBuilder special(SpecialRecipeSerializer<?> p_218656_0_) {
+   public static CustomRecipeBuilder customRecipe(SpecialRecipeSerializer<?> p_218656_0_) {
       return new CustomRecipeBuilder(p_218656_0_);
    }
 
-   public void save(Consumer<IFinishedRecipe> p_200499_1_, final String p_200499_2_) {
-      p_200499_1_.accept(new IFinishedRecipe() {
-         public void serializeRecipeData(JsonObject p_218610_1_) {
+   public void build(Consumer<IFinishedRecipe> consumerIn, final String id) {
+      consumerIn.accept(new IFinishedRecipe() {
+         public void serialize(JsonObject json) {
          }
 
-         public IRecipeSerializer<?> getType() {
+         public IRecipeSerializer<?> getSerializer() {
             return CustomRecipeBuilder.this.serializer;
          }
 
-         public ResourceLocation getId() {
-            return new ResourceLocation(p_200499_2_);
+         public ResourceLocation getID() {
+            return new ResourceLocation(id);
          }
 
          @Nullable
-         public JsonObject serializeAdvancement() {
+         public JsonObject getAdvancementJson() {
             return null;
          }
 
-         public ResourceLocation getAdvancementId() {
+         public ResourceLocation getAdvancementID() {
             return new ResourceLocation("");
          }
       });

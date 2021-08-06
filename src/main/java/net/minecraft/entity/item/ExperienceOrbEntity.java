@@ -22,113 +22,113 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ExperienceOrbEntity extends Entity {
-   public int tickCount;
-   public int age;
-   public int throwTime;
-   private int health = 5;
-   private int value;
-   private PlayerEntity followingPlayer;
-   private int followingTime;
+   public int xpColor;
+   public int xpOrbAge;
+   public int delayBeforeCanPickup;
+   private int xpOrbHealth = 5;
+   private int xpValue;
+   private PlayerEntity closestPlayer;
+   private int xpTargetColor;
 
-   public ExperienceOrbEntity(World p_i1585_1_, double p_i1585_2_, double p_i1585_4_, double p_i1585_6_, int p_i1585_8_) {
-      this(EntityType.EXPERIENCE_ORB, p_i1585_1_);
-      this.setPos(p_i1585_2_, p_i1585_4_, p_i1585_6_);
-      this.yRot = (float)(this.random.nextDouble() * 360.0D);
-      this.setDeltaMovement((this.random.nextDouble() * (double)0.2F - (double)0.1F) * 2.0D, this.random.nextDouble() * 0.2D * 2.0D, (this.random.nextDouble() * (double)0.2F - (double)0.1F) * 2.0D);
-      this.value = p_i1585_8_;
+   public ExperienceOrbEntity(World worldIn, double x, double y, double z, int expValue) {
+      this(EntityType.EXPERIENCE_ORB, worldIn);
+      this.setPosition(x, y, z);
+      this.rotationYaw = (float)(this.rand.nextDouble() * 360.0D);
+      this.setMotion((this.rand.nextDouble() * (double)0.2F - (double)0.1F) * 2.0D, this.rand.nextDouble() * 0.2D * 2.0D, (this.rand.nextDouble() * (double)0.2F - (double)0.1F) * 2.0D);
+      this.xpValue = expValue;
    }
 
-   public ExperienceOrbEntity(EntityType<? extends ExperienceOrbEntity> p_i50382_1_, World p_i50382_2_) {
-      super(p_i50382_1_, p_i50382_2_);
+   public ExperienceOrbEntity(EntityType<? extends ExperienceOrbEntity> p_i50382_1_, World entity) {
+      super(p_i50382_1_, entity);
    }
 
-   protected boolean isMovementNoisy() {
+   protected boolean canTriggerWalking() {
       return false;
    }
 
-   protected void defineSynchedData() {
+   protected void registerData() {
    }
 
    public void tick() {
       super.tick();
-      if (this.throwTime > 0) {
-         --this.throwTime;
+      if (this.delayBeforeCanPickup > 0) {
+         --this.delayBeforeCanPickup;
       }
 
-      this.xo = this.getX();
-      this.yo = this.getY();
-      this.zo = this.getZ();
-      if (this.isEyeInFluid(FluidTags.WATER)) {
-         this.setUnderwaterMovement();
-      } else if (!this.isNoGravity()) {
-         this.setDeltaMovement(this.getDeltaMovement().add(0.0D, -0.03D, 0.0D));
+      this.prevPosX = this.getPosX();
+      this.prevPosY = this.getPosY();
+      this.prevPosZ = this.getPosZ();
+      if (this.areEyesInFluid(FluidTags.WATER)) {
+         this.applyFloatMotion();
+      } else if (!this.hasNoGravity()) {
+         this.setMotion(this.getMotion().add(0.0D, -0.03D, 0.0D));
       }
 
-      if (this.level.getFluidState(this.blockPosition()).is(FluidTags.LAVA)) {
-         this.setDeltaMovement((double)((this.random.nextFloat() - this.random.nextFloat()) * 0.2F), (double)0.2F, (double)((this.random.nextFloat() - this.random.nextFloat()) * 0.2F));
-         this.playSound(SoundEvents.GENERIC_BURN, 0.4F, 2.0F + this.random.nextFloat() * 0.4F);
+      if (this.world.getFluidState(this.getPosition()).isTagged(FluidTags.LAVA)) {
+         this.setMotion((double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F), (double)0.2F, (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F));
+         this.playSound(SoundEvents.ENTITY_GENERIC_BURN, 0.4F, 2.0F + this.rand.nextFloat() * 0.4F);
       }
 
-      if (!this.level.noCollision(this.getBoundingBox())) {
-         this.moveTowardsClosestSpace(this.getX(), (this.getBoundingBox().minY + this.getBoundingBox().maxY) / 2.0D, this.getZ());
+      if (!this.world.hasNoCollisions(this.getBoundingBox())) {
+         this.pushOutOfBlocks(this.getPosX(), (this.getBoundingBox().minY + this.getBoundingBox().maxY) / 2.0D, this.getPosZ());
       }
 
       double d0 = 8.0D;
-      if (this.followingTime < this.tickCount - 20 + this.getId() % 100) {
-         if (this.followingPlayer == null || this.followingPlayer.distanceToSqr(this) > 64.0D) {
-            this.followingPlayer = this.level.getNearestPlayer(this, 8.0D);
+      if (this.xpTargetColor < this.xpColor - 20 + this.getEntityId() % 100) {
+         if (this.closestPlayer == null || this.closestPlayer.getDistanceSq(this) > 64.0D) {
+            this.closestPlayer = this.world.getClosestPlayer(this, 8.0D);
          }
 
-         this.followingTime = this.tickCount;
+         this.xpTargetColor = this.xpColor;
       }
 
-      if (this.followingPlayer != null && this.followingPlayer.isSpectator()) {
-         this.followingPlayer = null;
+      if (this.closestPlayer != null && this.closestPlayer.isSpectator()) {
+         this.closestPlayer = null;
       }
 
-      if (this.followingPlayer != null) {
-         Vector3d vector3d = new Vector3d(this.followingPlayer.getX() - this.getX(), this.followingPlayer.getY() + (double)this.followingPlayer.getEyeHeight() / 2.0D - this.getY(), this.followingPlayer.getZ() - this.getZ());
-         double d1 = vector3d.lengthSqr();
+      if (this.closestPlayer != null) {
+         Vector3d vector3d = new Vector3d(this.closestPlayer.getPosX() - this.getPosX(), this.closestPlayer.getPosY() + (double)this.closestPlayer.getEyeHeight() / 2.0D - this.getPosY(), this.closestPlayer.getPosZ() - this.getPosZ());
+         double d1 = vector3d.lengthSquared();
          if (d1 < 64.0D) {
             double d2 = 1.0D - Math.sqrt(d1) / 8.0D;
-            this.setDeltaMovement(this.getDeltaMovement().add(vector3d.normalize().scale(d2 * d2 * 0.1D)));
+            this.setMotion(this.getMotion().add(vector3d.normalize().scale(d2 * d2 * 0.1D)));
          }
       }
 
-      this.move(MoverType.SELF, this.getDeltaMovement());
+      this.move(MoverType.SELF, this.getMotion());
       float f = 0.98F;
       if (this.onGround) {
-         f = this.level.getBlockState(new BlockPos(this.getX(), this.getY() - 1.0D, this.getZ())).getBlock().getFriction() * 0.98F;
+         f = this.world.getBlockState(new BlockPos(this.getPosX(), this.getPosY() - 1.0D, this.getPosZ())).getBlock().getSlipperiness() * 0.98F;
       }
 
-      this.setDeltaMovement(this.getDeltaMovement().multiply((double)f, 0.98D, (double)f));
+      this.setMotion(this.getMotion().mul((double)f, 0.98D, (double)f));
       if (this.onGround) {
-         this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, -0.9D, 1.0D));
+         this.setMotion(this.getMotion().mul(1.0D, -0.9D, 1.0D));
       }
 
-      ++this.tickCount;
-      ++this.age;
-      if (this.age >= 6000) {
+      ++this.xpColor;
+      ++this.xpOrbAge;
+      if (this.xpOrbAge >= 6000) {
          this.remove();
       }
 
    }
 
-   private void setUnderwaterMovement() {
-      Vector3d vector3d = this.getDeltaMovement();
-      this.setDeltaMovement(vector3d.x * (double)0.99F, Math.min(vector3d.y + (double)5.0E-4F, (double)0.06F), vector3d.z * (double)0.99F);
+   private void applyFloatMotion() {
+      Vector3d vector3d = this.getMotion();
+      this.setMotion(vector3d.x * (double)0.99F, Math.min(vector3d.y + (double)5.0E-4F, (double)0.06F), vector3d.z * (double)0.99F);
    }
 
    protected void doWaterSplashEffect() {
    }
 
-   public boolean hurt(DamageSource p_70097_1_, float p_70097_2_) {
-      if (this.isInvulnerableTo(p_70097_1_)) {
+   public boolean attackEntityFrom(DamageSource source, float amount) {
+      if (this.isInvulnerableTo(source)) {
          return false;
       } else {
-         this.markHurt();
-         this.health = (int)((float)this.health - p_70097_2_);
-         if (this.health <= 0) {
+         this.markVelocityChanged();
+         this.xpOrbHealth = (int)((float)this.xpOrbHealth - amount);
+         if (this.xpOrbHealth <= 0) {
             this.remove();
          }
 
@@ -136,35 +136,35 @@ public class ExperienceOrbEntity extends Entity {
       }
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      p_213281_1_.putShort("Health", (short)this.health);
-      p_213281_1_.putShort("Age", (short)this.age);
-      p_213281_1_.putShort("Value", (short)this.value);
+   public void writeAdditional(CompoundNBT compound) {
+      compound.putShort("Health", (short)this.xpOrbHealth);
+      compound.putShort("Age", (short)this.xpOrbAge);
+      compound.putShort("Value", (short)this.xpValue);
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      this.health = p_70037_1_.getShort("Health");
-      this.age = p_70037_1_.getShort("Age");
-      this.value = p_70037_1_.getShort("Value");
+   public void readAdditional(CompoundNBT compound) {
+      this.xpOrbHealth = compound.getShort("Health");
+      this.xpOrbAge = compound.getShort("Age");
+      this.xpValue = compound.getShort("Value");
    }
 
-   public void playerTouch(PlayerEntity p_70100_1_) {
-      if (!this.level.isClientSide) {
-         if (this.throwTime == 0 && p_70100_1_.takeXpDelay == 0) {
-            p_70100_1_.takeXpDelay = 2;
-            p_70100_1_.take(this, 1);
-            Entry<EquipmentSlotType, ItemStack> entry = EnchantmentHelper.getRandomItemWith(Enchantments.MENDING, p_70100_1_, ItemStack::isDamaged);
+   public void onCollideWithPlayer(PlayerEntity entityIn) {
+      if (!this.world.isRemote) {
+         if (this.delayBeforeCanPickup == 0 && entityIn.xpCooldown == 0) {
+            entityIn.xpCooldown = 2;
+            entityIn.onItemPickup(this, 1);
+            Entry<EquipmentSlotType, ItemStack> entry = EnchantmentHelper.getRandomEquippedWithEnchantment(Enchantments.MENDING, entityIn, ItemStack::isDamaged);
             if (entry != null) {
                ItemStack itemstack = entry.getValue();
                if (!itemstack.isEmpty() && itemstack.isDamaged()) {
-                  int i = Math.min(this.xpToDurability(this.value), itemstack.getDamageValue());
-                  this.value -= this.durabilityToXp(i);
-                  itemstack.setDamageValue(itemstack.getDamageValue() - i);
+                  int i = Math.min(this.xpToDurability(this.xpValue), itemstack.getDamage());
+                  this.xpValue -= this.durabilityToXp(i);
+                  itemstack.setDamage(itemstack.getDamage() - i);
                }
             }
 
-            if (this.value > 0) {
-               p_70100_1_.giveExperiencePoints(this.value);
+            if (this.xpValue > 0) {
+               entityIn.giveExperiencePoints(this.xpValue);
             }
 
             this.remove();
@@ -173,72 +173,72 @@ public class ExperienceOrbEntity extends Entity {
       }
    }
 
-   private int durabilityToXp(int p_184515_1_) {
-      return p_184515_1_ / 2;
+   private int durabilityToXp(int durability) {
+      return durability / 2;
    }
 
-   private int xpToDurability(int p_184514_1_) {
-      return p_184514_1_ * 2;
+   private int xpToDurability(int xp) {
+      return xp * 2;
    }
 
-   public int getValue() {
-      return this.value;
+   public int getXpValue() {
+      return this.xpValue;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getIcon() {
-      if (this.value >= 2477) {
+   public int getTextureByXP() {
+      if (this.xpValue >= 2477) {
          return 10;
-      } else if (this.value >= 1237) {
+      } else if (this.xpValue >= 1237) {
          return 9;
-      } else if (this.value >= 617) {
+      } else if (this.xpValue >= 617) {
          return 8;
-      } else if (this.value >= 307) {
+      } else if (this.xpValue >= 307) {
          return 7;
-      } else if (this.value >= 149) {
+      } else if (this.xpValue >= 149) {
          return 6;
-      } else if (this.value >= 73) {
+      } else if (this.xpValue >= 73) {
          return 5;
-      } else if (this.value >= 37) {
+      } else if (this.xpValue >= 37) {
          return 4;
-      } else if (this.value >= 17) {
+      } else if (this.xpValue >= 17) {
          return 3;
-      } else if (this.value >= 7) {
+      } else if (this.xpValue >= 7) {
          return 2;
       } else {
-         return this.value >= 3 ? 1 : 0;
+         return this.xpValue >= 3 ? 1 : 0;
       }
    }
 
-   public static int getExperienceValue(int p_70527_0_) {
-      if (p_70527_0_ >= 2477) {
+   public static int getXPSplit(int expValue) {
+      if (expValue >= 2477) {
          return 2477;
-      } else if (p_70527_0_ >= 1237) {
+      } else if (expValue >= 1237) {
          return 1237;
-      } else if (p_70527_0_ >= 617) {
+      } else if (expValue >= 617) {
          return 617;
-      } else if (p_70527_0_ >= 307) {
+      } else if (expValue >= 307) {
          return 307;
-      } else if (p_70527_0_ >= 149) {
+      } else if (expValue >= 149) {
          return 149;
-      } else if (p_70527_0_ >= 73) {
+      } else if (expValue >= 73) {
          return 73;
-      } else if (p_70527_0_ >= 37) {
+      } else if (expValue >= 37) {
          return 37;
-      } else if (p_70527_0_ >= 17) {
+      } else if (expValue >= 17) {
          return 17;
-      } else if (p_70527_0_ >= 7) {
+      } else if (expValue >= 7) {
          return 7;
       } else {
-         return p_70527_0_ >= 3 ? 3 : 1;
+         return expValue >= 3 ? 3 : 1;
       }
    }
 
-   public boolean isAttackable() {
+   public boolean canBeAttackedWithItem() {
       return false;
    }
 
-   public IPacket<?> getAddEntityPacket() {
+   public IPacket<?> createSpawnPacket() {
       return new SSpawnExperienceOrbPacket(this);
    }
 }

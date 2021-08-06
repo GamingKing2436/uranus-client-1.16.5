@@ -11,9 +11,9 @@ public class ReplaceBlockFeature extends Feature<ReplaceBlockConfig> {
       super(p_i231983_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, ReplaceBlockConfig p_241855_5_) {
-      if (p_241855_1_.getBlockState(p_241855_4_).is(p_241855_5_.target.getBlock())) {
-         p_241855_1_.setBlock(p_241855_4_, p_241855_5_.state, 2);
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, ReplaceBlockConfig config) {
+      if (reader.getBlockState(pos).isIn(config.target.getBlock())) {
+         reader.setBlockState(pos, config.state, 2);
       }
 
       return true;

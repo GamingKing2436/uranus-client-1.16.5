@@ -9,15 +9,15 @@ public enum BambooLeaves implements IStringSerializable {
 
    private final String name;
 
-   private BambooLeaves(String p_i49957_3_) {
-      this.name = p_i49957_3_;
+   private BambooLeaves(String name) {
+      this.name = name;
    }
 
    public String toString() {
       return this.name;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 }

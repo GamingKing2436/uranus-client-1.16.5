@@ -12,11 +12,11 @@ public class IcePathFeature extends AbstractSphereReplaceConfig {
       super(p_i231961_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, SphereReplaceConfig p_241855_5_) {
-      while(p_241855_1_.isEmptyBlock(p_241855_4_) && p_241855_4_.getY() > 2) {
-         p_241855_4_ = p_241855_4_.below();
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, SphereReplaceConfig config) {
+      while(reader.isAirBlock(pos) && pos.getY() > 2) {
+         pos = pos.down();
       }
 
-      return !p_241855_1_.getBlockState(p_241855_4_).is(Blocks.SNOW_BLOCK) ? false : super.place(p_241855_1_, p_241855_2_, p_241855_3_, p_241855_4_, p_241855_5_);
+      return !reader.getBlockState(pos).isIn(Blocks.SNOW_BLOCK) ? false : super.generate(reader, generator, rand, pos, config);
    }
 }

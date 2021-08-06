@@ -11,43 +11,43 @@ import org.apache.logging.log4j.Logger;
 
 public class DelegatedTaskExecutor<T> implements ITaskExecutor<T>, AutoCloseable, Runnable {
    private static final Logger LOGGER = LogManager.getLogger();
-   private final AtomicInteger status = new AtomicInteger(0);
+   private final AtomicInteger flags = new AtomicInteger(0);
    public final ITaskQueue<? super T, ? extends Runnable> queue;
-   private final Executor dispatcher;
+   private final Executor delegate;
    private final String name;
 
    public static DelegatedTaskExecutor<Runnable> create(Executor p_213144_0_, String p_213144_1_) {
       return new DelegatedTaskExecutor<>(new ITaskQueue.Single<>(new ConcurrentLinkedQueue<>()), p_213144_0_, p_213144_1_);
    }
 
-   public DelegatedTaskExecutor(ITaskQueue<? super T, ? extends Runnable> p_i50402_1_, Executor p_i50402_2_, String p_i50402_3_) {
-      this.dispatcher = p_i50402_2_;
-      this.queue = p_i50402_1_;
-      this.name = p_i50402_3_;
+   public DelegatedTaskExecutor(ITaskQueue<? super T, ? extends Runnable> queueIn, Executor delegateIn, String nameIn) {
+      this.delegate = delegateIn;
+      this.queue = queueIn;
+      this.name = nameIn;
    }
 
-   private boolean setAsScheduled() {
+   private boolean setActive() {
       int i;
       do {
-         i = this.status.get();
+         i = this.flags.get();
          if ((i & 3) != 0) {
             return false;
          }
-      } while(!this.status.compareAndSet(i, i | 2));
+      } while(!this.flags.compareAndSet(i, i | 2));
 
       return true;
    }
 
-   private void setAsIdle() {
+   private void clearActive() {
       int i;
       do {
-         i = this.status.get();
-      } while(!this.status.compareAndSet(i, i & -3));
+         i = this.flags.get();
+      } while(!this.flags.compareAndSet(i, i & -3));
 
    }
 
-   private boolean canBeScheduled() {
-      if ((this.status.get() & 1) != 0) {
+   private boolean shouldSchedule() {
+      if ((this.flags.get() & 1) != 0) {
          return false;
       } else {
          return !this.queue.isEmpty();
@@ -57,26 +57,26 @@ public class DelegatedTaskExecutor<T> implements ITaskExecutor<T>, AutoCloseable
    public void close() {
       int i;
       do {
-         i = this.status.get();
-      } while(!this.status.compareAndSet(i, i | 1));
+         i = this.flags.get();
+      } while(!this.flags.compareAndSet(i, i | 1));
 
    }
 
-   private boolean shouldProcess() {
-      return (this.status.get() & 2) != 0;
+   private boolean isActive() {
+      return (this.flags.get() & 2) != 0;
    }
 
-   private boolean pollTask() {
-      if (!this.shouldProcess()) {
+   private boolean driveOne() {
+      if (!this.isActive()) {
          return false;
       } else {
-         Runnable runnable = this.queue.pop();
+         Runnable runnable = this.queue.poll();
          if (runnable == null) {
             return false;
          } else {
             String s;
             Thread thread;
-            if (SharedConstants.IS_RUNNING_IN_IDE) {
+            if (SharedConstants.developmentMode) {
                thread = Thread.currentThread();
                s = thread.getName();
                thread.setName(this.name);
@@ -97,28 +97,28 @@ public class DelegatedTaskExecutor<T> implements ITaskExecutor<T>, AutoCloseable
 
    public void run() {
       try {
-         this.pollUntil((p_213147_0_) -> {
+         this.driveWhile((p_213147_0_) -> {
             return p_213147_0_ == 0;
          });
       } finally {
-         this.setAsIdle();
-         this.registerForExecution();
+         this.clearActive();
+         this.reschedule();
       }
 
    }
 
-   public void tell(T p_212871_1_) {
-      this.queue.push(p_212871_1_);
-      this.registerForExecution();
+   public void enqueue(T taskIn) {
+      this.queue.enqueue(taskIn);
+      this.reschedule();
    }
 
-   private void registerForExecution() {
-      if (this.canBeScheduled() && this.setAsScheduled()) {
+   private void reschedule() {
+      if (this.shouldSchedule() && this.setActive()) {
          try {
-            this.dispatcher.execute(this);
+            this.delegate.execute(this);
          } catch (RejectedExecutionException rejectedexecutionexception1) {
             try {
-               this.dispatcher.execute(this);
+               this.delegate.execute(this);
             } catch (RejectedExecutionException rejectedexecutionexception) {
                LOGGER.error("Cound not schedule mailbox", (Throwable)rejectedexecutionexception);
             }
@@ -127,19 +127,19 @@ public class DelegatedTaskExecutor<T> implements ITaskExecutor<T>, AutoCloseable
 
    }
 
-   private int pollUntil(Int2BooleanFunction p_213145_1_) {
+   private int driveWhile(Int2BooleanFunction p_213145_1_) {
       int i;
-      for(i = 0; p_213145_1_.get(i) && this.pollTask(); ++i) {
+      for(i = 0; p_213145_1_.get(i) && this.driveOne(); ++i) {
       }
 
       return i;
    }
 
    public String toString() {
-      return this.name + " " + this.status.get() + " " + this.queue.isEmpty();
+      return this.name + " " + this.flags.get() + " " + this.queue.isEmpty();
    }
 
-   public String name() {
+   public String getName() {
       return this.name;
    }
 }

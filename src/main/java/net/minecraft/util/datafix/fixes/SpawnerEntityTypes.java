@@ -15,8 +15,8 @@ import java.util.stream.Stream;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class SpawnerEntityTypes extends DataFix {
-   public SpawnerEntityTypes(Schema p_i49626_1_, boolean p_i49626_2_) {
-      super(p_i49626_1_, p_i49626_2_);
+   public SpawnerEntityTypes(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    private Dynamic<?> fix(Dynamic<?> p_209659_1_) {

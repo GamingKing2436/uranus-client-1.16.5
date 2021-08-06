@@ -9,13 +9,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class OverlayChatListener implements IChatListener {
-   private final Minecraft minecraft;
+   private final Minecraft mc;
 
-   public OverlayChatListener(Minecraft p_i47394_1_) {
-      this.minecraft = p_i47394_1_;
+   public OverlayChatListener(Minecraft minecraftIn) {
+      this.mc = minecraftIn;
    }
 
-   public void handle(ChatType p_192576_1_, ITextComponent p_192576_2_, UUID p_192576_3_) {
-      this.minecraft.gui.setOverlayMessage(p_192576_2_, false);
+   public void say(ChatType chatTypeIn, ITextComponent message, UUID sender) {
+      this.mc.ingameGUI.setOverlayMessage(message, false);
    }
 }

@@ -12,76 +12,76 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class RemoteClientPlayerEntity extends AbstractClientPlayerEntity {
-   public RemoteClientPlayerEntity(ClientWorld p_i50989_1_, GameProfile p_i50989_2_) {
-      super(p_i50989_1_, p_i50989_2_);
-      this.maxUpStep = 1.0F;
-      this.noPhysics = true;
+   public RemoteClientPlayerEntity(ClientWorld world, GameProfile profile) {
+      super(world, profile);
+      this.stepHeight = 1.0F;
+      this.noClip = true;
    }
 
-   public boolean shouldRenderAtSqrDistance(double p_70112_1_) {
-      double d0 = this.getBoundingBox().getSize() * 10.0D;
+   public boolean isInRangeToRenderDist(double distance) {
+      double d0 = this.getBoundingBox().getAverageEdgeLength() * 10.0D;
       if (Double.isNaN(d0)) {
          d0 = 1.0D;
       }
 
-      d0 = d0 * 64.0D * getViewScale();
-      return p_70112_1_ < d0 * d0;
+      d0 = d0 * 64.0D * getRenderDistanceWeight();
+      return distance < d0 * d0;
    }
 
-   public boolean hurt(DamageSource p_70097_1_, float p_70097_2_) {
+   public boolean attackEntityFrom(DamageSource source, float amount) {
       return true;
    }
 
    public void tick() {
       super.tick();
-      this.calculateEntityAnimation(this, false);
+      this.func_233629_a_(this, false);
    }
 
-   public void aiStep() {
-      if (this.lerpSteps > 0) {
-         double d0 = this.getX() + (this.lerpX - this.getX()) / (double)this.lerpSteps;
-         double d1 = this.getY() + (this.lerpY - this.getY()) / (double)this.lerpSteps;
-         double d2 = this.getZ() + (this.lerpZ - this.getZ()) / (double)this.lerpSteps;
-         this.yRot = (float)((double)this.yRot + MathHelper.wrapDegrees(this.lerpYRot - (double)this.yRot) / (double)this.lerpSteps);
-         this.xRot = (float)((double)this.xRot + (this.lerpXRot - (double)this.xRot) / (double)this.lerpSteps);
-         --this.lerpSteps;
-         this.setPos(d0, d1, d2);
-         this.setRot(this.yRot, this.xRot);
+   public void livingTick() {
+      if (this.newPosRotationIncrements > 0) {
+         double d0 = this.getPosX() + (this.interpTargetX - this.getPosX()) / (double)this.newPosRotationIncrements;
+         double d1 = this.getPosY() + (this.interpTargetY - this.getPosY()) / (double)this.newPosRotationIncrements;
+         double d2 = this.getPosZ() + (this.interpTargetZ - this.getPosZ()) / (double)this.newPosRotationIncrements;
+         this.rotationYaw = (float)((double)this.rotationYaw + MathHelper.wrapDegrees(this.interpTargetYaw - (double)this.rotationYaw) / (double)this.newPosRotationIncrements);
+         this.rotationPitch = (float)((double)this.rotationPitch + (this.interpTargetPitch - (double)this.rotationPitch) / (double)this.newPosRotationIncrements);
+         --this.newPosRotationIncrements;
+         this.setPosition(d0, d1, d2);
+         this.setRotation(this.rotationYaw, this.rotationPitch);
       }
 
-      if (this.lerpHeadSteps > 0) {
-         this.yHeadRot = (float)((double)this.yHeadRot + MathHelper.wrapDegrees(this.lyHeadRot - (double)this.yHeadRot) / (double)this.lerpHeadSteps);
-         --this.lerpHeadSteps;
+      if (this.interpTicksHead > 0) {
+         this.rotationYawHead = (float)((double)this.rotationYawHead + MathHelper.wrapDegrees(this.interpTargetHeadYaw - (double)this.rotationYawHead) / (double)this.interpTicksHead);
+         --this.interpTicksHead;
       }
 
-      this.oBob = this.bob;
-      this.updateSwingTime();
+      this.prevCameraYaw = this.cameraYaw;
+      this.updateArmSwingProgress();
       float f1;
-      if (this.onGround && !this.isDeadOrDying()) {
-         f1 = Math.min(0.1F, MathHelper.sqrt(getHorizontalDistanceSqr(this.getDeltaMovement())));
+      if (this.onGround && !this.getShouldBeDead()) {
+         f1 = Math.min(0.1F, MathHelper.sqrt(horizontalMag(this.getMotion())));
       } else {
          f1 = 0.0F;
       }
 
-      if (!this.onGround && !this.isDeadOrDying()) {
-         float f2 = (float)Math.atan(-this.getDeltaMovement().y * (double)0.2F) * 15.0F;
+      if (!this.onGround && !this.getShouldBeDead()) {
+         float f2 = (float)Math.atan(-this.getMotion().y * (double)0.2F) * 15.0F;
       } else {
          float f = 0.0F;
       }
 
-      this.bob += (f1 - this.bob) * 0.4F;
-      this.level.getProfiler().push("push");
-      this.pushEntities();
-      this.level.getProfiler().pop();
+      this.cameraYaw += (f1 - this.cameraYaw) * 0.4F;
+      this.world.getProfiler().startSection("push");
+      this.collideWithNearbyEntities();
+      this.world.getProfiler().endSection();
    }
 
-   protected void updatePlayerPose() {
+   protected void updatePose() {
    }
 
-   public void sendMessage(ITextComponent p_145747_1_, UUID p_145747_2_) {
+   public void sendMessage(ITextComponent component, UUID senderUUID) {
       Minecraft minecraft = Minecraft.getInstance();
-      if (!minecraft.isBlocked(p_145747_2_)) {
-         minecraft.gui.getChat().addMessage(p_145747_1_);
+      if (!minecraft.cannotSendChatMessages(senderUUID)) {
+         minecraft.ingameGUI.getChatGUI().printChatMessage(component);
       }
 
    }

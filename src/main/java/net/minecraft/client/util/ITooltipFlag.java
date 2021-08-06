@@ -12,14 +12,14 @@ public interface ITooltipFlag {
       NORMAL(false),
       ADVANCED(true);
 
-      private final boolean advanced;
+      private final boolean isAdvanced;
 
-      private TooltipFlags(boolean p_i47611_3_) {
-         this.advanced = p_i47611_3_;
+      private TooltipFlags(boolean advanced) {
+         this.isAdvanced = advanced;
       }
 
       public boolean isAdvanced() {
-         return this.advanced;
+         return this.isAdvanced;
       }
    }
 }

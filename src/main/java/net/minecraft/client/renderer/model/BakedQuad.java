@@ -7,25 +7,25 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BakedQuad {
-   protected final int[] vertices;
+   protected final int[] vertexData;
    protected final int tintIndex;
-   protected final Direction direction;
+   protected final Direction face;
    protected final TextureAtlasSprite sprite;
-   private final boolean shade;
+   private final boolean applyDiffuseLighting;
 
-   public BakedQuad(int[] p_i232466_1_, int p_i232466_2_, Direction p_i232466_3_, TextureAtlasSprite p_i232466_4_, boolean p_i232466_5_) {
-      this.vertices = p_i232466_1_;
-      this.tintIndex = p_i232466_2_;
-      this.direction = p_i232466_3_;
-      this.sprite = p_i232466_4_;
-      this.shade = p_i232466_5_;
+   public BakedQuad(int[] vertexData, int tintIndex, Direction face, TextureAtlasSprite sprite, boolean applyDiffuseLighting) {
+      this.vertexData = vertexData;
+      this.tintIndex = tintIndex;
+      this.face = face;
+      this.sprite = sprite;
+      this.applyDiffuseLighting = applyDiffuseLighting;
    }
 
-   public int[] getVertices() {
-      return this.vertices;
+   public int[] getVertexData() {
+      return this.vertexData;
    }
 
-   public boolean isTinted() {
+   public boolean hasTintIndex() {
       return this.tintIndex != -1;
    }
 
@@ -33,11 +33,11 @@ public class BakedQuad {
       return this.tintIndex;
    }
 
-   public Direction getDirection() {
-      return this.direction;
+   public Direction getFace() {
+      return this.face;
    }
 
-   public boolean isShade() {
-      return this.shade;
+   public boolean applyDiffuseLighting() {
+      return this.applyDiffuseLighting;
    }
 }

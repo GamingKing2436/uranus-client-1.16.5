@@ -21,14 +21,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class VariantList implements IUnbakedModel {
-   private final List<Variant> variants;
+   private final List<Variant> variantList;
 
-   public VariantList(List<Variant> p_i46568_1_) {
-      this.variants = p_i46568_1_;
+   public VariantList(List<Variant> variantListIn) {
+      this.variantList = variantListIn;
    }
 
-   public List<Variant> getVariants() {
-      return this.variants;
+   public List<Variant> getVariantList() {
+      return this.variantList;
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -36,35 +36,35 @@ public class VariantList implements IUnbakedModel {
          return true;
       } else if (p_equals_1_ instanceof VariantList) {
          VariantList variantlist = (VariantList)p_equals_1_;
-         return this.variants.equals(variantlist.variants);
+         return this.variantList.equals(variantlist.variantList);
       } else {
          return false;
       }
    }
 
    public int hashCode() {
-      return this.variants.hashCode();
+      return this.variantList.hashCode();
    }
 
    public Collection<ResourceLocation> getDependencies() {
-      return this.getVariants().stream().map(Variant::getModelLocation).collect(Collectors.toSet());
+      return this.getVariantList().stream().map(Variant::getModelLocation).collect(Collectors.toSet());
    }
 
-   public Collection<RenderMaterial> getMaterials(Function<ResourceLocation, IUnbakedModel> p_225614_1_, Set<Pair<String, String>> p_225614_2_) {
-      return this.getVariants().stream().map(Variant::getModelLocation).distinct().flatMap((p_228831_2_) -> {
-         return p_225614_1_.apply(p_228831_2_).getMaterials(p_225614_1_, p_225614_2_).stream();
+   public Collection<RenderMaterial> getTextures(Function<ResourceLocation, IUnbakedModel> modelGetter, Set<Pair<String, String>> missingTextureErrors) {
+      return this.getVariantList().stream().map(Variant::getModelLocation).distinct().flatMap((p_228831_2_) -> {
+         return modelGetter.apply(p_228831_2_).getTextures(modelGetter, missingTextureErrors).stream();
       }).collect(Collectors.toSet());
    }
 
    @Nullable
-   public IBakedModel bake(ModelBakery p_225613_1_, Function<RenderMaterial, TextureAtlasSprite> p_225613_2_, IModelTransform p_225613_3_, ResourceLocation p_225613_4_) {
-      if (this.getVariants().isEmpty()) {
+   public IBakedModel bakeModel(ModelBakery modelBakeryIn, Function<RenderMaterial, TextureAtlasSprite> spriteGetterIn, IModelTransform transformIn, ResourceLocation locationIn) {
+      if (this.getVariantList().isEmpty()) {
          return null;
       } else {
          WeightedBakedModel.Builder weightedbakedmodel$builder = new WeightedBakedModel.Builder();
 
-         for(Variant variant : this.getVariants()) {
-            IBakedModel ibakedmodel = p_225613_1_.bake(variant.getModelLocation(), variant);
+         for(Variant variant : this.getVariantList()) {
+            IBakedModel ibakedmodel = modelBakeryIn.bake(variant.getModelLocation(), variant);
             weightedbakedmodel$builder.add(ibakedmodel, variant.getWeight());
          }
 

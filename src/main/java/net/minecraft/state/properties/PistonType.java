@@ -8,15 +8,15 @@ public enum PistonType implements IStringSerializable {
 
    private final String name;
 
-   private PistonType(String p_i49335_3_) {
-      this.name = p_i49335_3_;
+   private PistonType(String name) {
+      this.name = name;
    }
 
    public String toString() {
       return this.name;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 }

@@ -14,8 +14,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 
 public class ObjectiveDisplayName extends DataFix {
-   public ObjectiveDisplayName(Schema p_i49782_1_, boolean p_i49782_2_) {
-      super(p_i49782_1_, p_i49782_2_);
+   public ObjectiveDisplayName(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    protected TypeRewriteRule makeRule() {

@@ -22,27 +22,27 @@ public class BonusChestFeature extends Feature<NoFeatureConfig> {
       super(p_i231934_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, NoFeatureConfig p_241855_5_) {
-      ChunkPos chunkpos = new ChunkPos(p_241855_4_);
-      List<Integer> list = IntStream.rangeClosed(chunkpos.getMinBlockX(), chunkpos.getMaxBlockX()).boxed().collect(Collectors.toList());
-      Collections.shuffle(list, p_241855_3_);
-      List<Integer> list1 = IntStream.rangeClosed(chunkpos.getMinBlockZ(), chunkpos.getMaxBlockZ()).boxed().collect(Collectors.toList());
-      Collections.shuffle(list1, p_241855_3_);
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, NoFeatureConfig config) {
+      ChunkPos chunkpos = new ChunkPos(pos);
+      List<Integer> list = IntStream.rangeClosed(chunkpos.getXStart(), chunkpos.getXEnd()).boxed().collect(Collectors.toList());
+      Collections.shuffle(list, rand);
+      List<Integer> list1 = IntStream.rangeClosed(chunkpos.getZStart(), chunkpos.getZEnd()).boxed().collect(Collectors.toList());
+      Collections.shuffle(list1, rand);
       BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
 
       for(Integer integer : list) {
          for(Integer integer1 : list1) {
-            blockpos$mutable.set(integer, 0, integer1);
-            BlockPos blockpos = p_241855_1_.getHeightmapPos(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, blockpos$mutable);
-            if (p_241855_1_.isEmptyBlock(blockpos) || p_241855_1_.getBlockState(blockpos).getCollisionShape(p_241855_1_, blockpos).isEmpty()) {
-               p_241855_1_.setBlock(blockpos, Blocks.CHEST.defaultBlockState(), 2);
-               LockableLootTileEntity.setLootTable(p_241855_1_, p_241855_3_, blockpos, LootTables.SPAWN_BONUS_CHEST);
-               BlockState blockstate = Blocks.TORCH.defaultBlockState();
+            blockpos$mutable.setPos(integer, 0, integer1);
+            BlockPos blockpos = reader.getHeight(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, blockpos$mutable);
+            if (reader.isAirBlock(blockpos) || reader.getBlockState(blockpos).getCollisionShape(reader, blockpos).isEmpty()) {
+               reader.setBlockState(blockpos, Blocks.CHEST.getDefaultState(), 2);
+               LockableLootTileEntity.setLootTable(reader, rand, blockpos, LootTables.CHESTS_SPAWN_BONUS_CHEST);
+               BlockState blockstate = Blocks.TORCH.getDefaultState();
 
                for(Direction direction : Direction.Plane.HORIZONTAL) {
-                  BlockPos blockpos1 = blockpos.relative(direction);
-                  if (blockstate.canSurvive(p_241855_1_, blockpos1)) {
-                     p_241855_1_.setBlock(blockpos1, blockstate, 2);
+                  BlockPos blockpos1 = blockpos.offset(direction);
+                  if (blockstate.isValidPosition(reader, blockpos1)) {
+                     reader.setBlockState(blockpos1, blockstate, 2);
                   }
                }
 

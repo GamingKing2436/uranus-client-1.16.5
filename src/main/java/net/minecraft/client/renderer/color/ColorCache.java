@@ -11,42 +11,42 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ColorCache {
-   private final ThreadLocal<ColorCache.Entry> latestChunkOnThread = ThreadLocal.withInitial(() -> {
+   private final ThreadLocal<ColorCache.Entry> threadCacheEntry = ThreadLocal.withInitial(() -> {
       return new ColorCache.Entry();
    });
    private final Long2ObjectLinkedOpenHashMap<int[]> cache = new Long2ObjectLinkedOpenHashMap<>(256, 0.25F);
    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-   public int getColor(BlockPos p_228071_1_, IntSupplier p_228071_2_) {
-      int i = p_228071_1_.getX() >> 4;
-      int j = p_228071_1_.getZ() >> 4;
-      ColorCache.Entry colorcache$entry = this.latestChunkOnThread.get();
-      if (colorcache$entry.x != i || colorcache$entry.z != j) {
-         colorcache$entry.x = i;
-         colorcache$entry.z = j;
-         colorcache$entry.cache = this.findOrCreateChunkCache(i, j);
+   public int getColor(BlockPos blockPosIn, IntSupplier colorSupplier) {
+      int i = blockPosIn.getX() >> 4;
+      int j = blockPosIn.getZ() >> 4;
+      ColorCache.Entry colorcache$entry = this.threadCacheEntry.get();
+      if (colorcache$entry.chunkX != i || colorcache$entry.chunkZ != j) {
+         colorcache$entry.chunkX = i;
+         colorcache$entry.chunkZ = j;
+         colorcache$entry.colorCache = this.getChunkCache(i, j);
       }
 
-      int k = p_228071_1_.getX() & 15;
-      int l = p_228071_1_.getZ() & 15;
+      int k = blockPosIn.getX() & 15;
+      int l = blockPosIn.getZ() & 15;
       int i1 = l << 4 | k;
-      int j1 = colorcache$entry.cache[i1];
+      int j1 = colorcache$entry.colorCache[i1];
       if (j1 != -1) {
          return j1;
       } else {
-         int k1 = p_228071_2_.getAsInt();
-         colorcache$entry.cache[i1] = k1;
+         int k1 = colorSupplier.getAsInt();
+         colorcache$entry.colorCache[i1] = k1;
          return k1;
       }
    }
 
-   public void invalidateForChunk(int p_228070_1_, int p_228070_2_) {
+   public void invalidateChunk(int chunkX, int chunkZ) {
       try {
          this.lock.writeLock().lock();
 
          for(int i = -1; i <= 1; ++i) {
             for(int j = -1; j <= 1; ++j) {
-               long k = ChunkPos.asLong(p_228070_1_ + i, p_228070_2_ + j);
+               long k = ChunkPos.asLong(chunkX + i, chunkZ + j);
                this.cache.remove(k);
             }
          }
@@ -66,8 +66,8 @@ public class ColorCache {
 
    }
 
-   private int[] findOrCreateChunkCache(int p_228073_1_, int p_228073_2_) {
-      long i = ChunkPos.asLong(p_228073_1_, p_228073_2_);
+   private int[] getChunkCache(int chunkX, int chunkZ) {
+      long i = ChunkPos.asLong(chunkX, chunkZ);
       this.lock.readLock().lock();
 
       int[] aint;
@@ -100,9 +100,9 @@ public class ColorCache {
 
    @OnlyIn(Dist.CLIENT)
    static class Entry {
-      public int x = Integer.MIN_VALUE;
-      public int z = Integer.MIN_VALUE;
-      public int[] cache;
+      public int chunkX = Integer.MIN_VALUE;
+      public int chunkZ = Integer.MIN_VALUE;
+      public int[] colorCache;
 
       private Entry() {
       }

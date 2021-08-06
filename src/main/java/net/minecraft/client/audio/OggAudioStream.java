@@ -21,31 +21,31 @@ import org.lwjgl.system.MemoryUtil;
 
 @OnlyIn(Dist.CLIENT)
 public class OggAudioStream implements IAudioStream {
-   private long handle;
-   private final AudioFormat audioFormat;
-   private final InputStream input;
+   private long pointer;
+   private final AudioFormat format;
+   private final InputStream stream;
    private ByteBuffer buffer = MemoryUtil.memAlloc(8192);
 
-   public OggAudioStream(InputStream p_i51177_1_) throws IOException {
-      this.input = p_i51177_1_;
+   public OggAudioStream(InputStream oggInputStream) throws IOException {
+      this.stream = oggInputStream;
       ((java.nio.Buffer)this.buffer).limit(0);
 
       try (MemoryStack memorystack = MemoryStack.stackPush()) {
          IntBuffer intbuffer = memorystack.mallocInt(1);
          IntBuffer intbuffer1 = memorystack.mallocInt(1);
 
-         while(this.handle == 0L) {
-            if (!this.refillFromStream()) {
+         while(this.pointer == 0L) {
+            if (!this.readToBuffer()) {
                throw new IOException("Failed to find Ogg header");
             }
 
             int i = this.buffer.position();
             ((java.nio.Buffer)this.buffer).position(0);
-            this.handle = STBVorbis.stb_vorbis_open_pushdata(this.buffer, intbuffer, intbuffer1, (STBVorbisAlloc)null);
+            this.pointer = STBVorbis.stb_vorbis_open_pushdata(this.buffer, intbuffer, intbuffer1, (STBVorbisAlloc)null);
             ((java.nio.Buffer)this.buffer).position(i);
             int j = intbuffer1.get(0);
             if (j == 1) {
-               this.forwardBuffer();
+               this.clearInputBuffer();
             } else if (j != 0) {
                throw new IOException("Failed to read Ogg file " + j);
             }
@@ -53,20 +53,20 @@ public class OggAudioStream implements IAudioStream {
 
          ((java.nio.Buffer)this.buffer).position(this.buffer.position() + intbuffer.get(0));
          STBVorbisInfo stbvorbisinfo = STBVorbisInfo.mallocStack(memorystack);
-         STBVorbis.stb_vorbis_get_info(this.handle, stbvorbisinfo);
-         this.audioFormat = new AudioFormat((float)stbvorbisinfo.sample_rate(), 16, stbvorbisinfo.channels(), true, false);
+         STBVorbis.stb_vorbis_get_info(this.pointer, stbvorbisinfo);
+         this.format = new AudioFormat((float)stbvorbisinfo.sample_rate(), 16, stbvorbisinfo.channels(), true, false);
       }
 
    }
 
-   private boolean refillFromStream() throws IOException {
+   private boolean readToBuffer() throws IOException {
       int i = this.buffer.limit();
       int j = this.buffer.capacity() - i;
       if (j == 0) {
          return true;
       } else {
          byte[] abyte = new byte[j];
-         int k = this.input.read(abyte);
+         int k = this.stream.read(abyte);
          if (k == -1) {
             return false;
          } else {
@@ -80,7 +80,7 @@ public class OggAudioStream implements IAudioStream {
       }
    }
 
-   private void forwardBuffer() {
+   private void clearInputBuffer() {
       boolean flag = this.buffer.position() == 0;
       boolean flag1 = this.buffer.position() == this.buffer.limit();
       if (flag1 && !flag) {
@@ -96,8 +96,8 @@ public class OggAudioStream implements IAudioStream {
 
    }
 
-   private boolean readFrame(OggAudioStream.Buffer p_216460_1_) throws IOException {
-      if (this.handle == 0L) {
+   private boolean readOgg(OggAudioStream.Buffer oggAudioBuffer) throws IOException {
+      if (this.pointer == 0L) {
          return false;
       } else {
          try (MemoryStack memorystack = MemoryStack.stackPush()) {
@@ -106,12 +106,12 @@ public class OggAudioStream implements IAudioStream {
             IntBuffer intbuffer1 = memorystack.mallocInt(1);
 
             while(true) {
-               int i = STBVorbis.stb_vorbis_decode_frame_pushdata(this.handle, this.buffer, intbuffer, pointerbuffer, intbuffer1);
+               int i = STBVorbis.stb_vorbis_decode_frame_pushdata(this.pointer, this.buffer, intbuffer, pointerbuffer, intbuffer1);
                ((java.nio.Buffer)this.buffer).position(this.buffer.position() + i);
-               int j = STBVorbis.stb_vorbis_get_error(this.handle);
+               int j = STBVorbis.stb_vorbis_get_error(this.pointer);
                if (j == 1) {
-                  this.forwardBuffer();
-                  if (!this.refillFromStream()) {
+                  this.clearInputBuffer();
+                  if (!this.readToBuffer()) {
                      return false;
                   }
                } else {
@@ -125,14 +125,14 @@ public class OggAudioStream implements IAudioStream {
                      PointerBuffer pointerbuffer1 = pointerbuffer.getPointerBuffer(l);
                      if (l != 1) {
                         if (l == 2) {
-                           this.convertStereo(pointerbuffer1.getFloatBuffer(0, k), pointerbuffer1.getFloatBuffer(1, k), p_216460_1_);
+                           this.copyFromDualChannels(pointerbuffer1.getFloatBuffer(0, k), pointerbuffer1.getFloatBuffer(1, k), oggAudioBuffer);
                            return true;
                         }
 
                         throw new IllegalStateException("Invalid number of channels: " + l);
                      }
 
-                     this.convertMono(pointerbuffer1.getFloatBuffer(0, k), p_216460_1_);
+                     this.copyFromSingleChannel(pointerbuffer1.getFloatBuffer(0, k), oggAudioBuffer);
                      return true;
                   }
                }
@@ -141,88 +141,88 @@ public class OggAudioStream implements IAudioStream {
       }
    }
 
-   private void convertMono(FloatBuffer p_216457_1_, OggAudioStream.Buffer p_216457_2_) {
-      while(p_216457_1_.hasRemaining()) {
-         p_216457_2_.put(p_216457_1_.get());
+   private void copyFromSingleChannel(FloatBuffer floatBuffer, OggAudioStream.Buffer oggAudioBuffer) {
+      while(floatBuffer.hasRemaining()) {
+         oggAudioBuffer.appendOggAudioBytes(floatBuffer.get());
       }
 
    }
 
-   private void convertStereo(FloatBuffer p_216458_1_, FloatBuffer p_216458_2_, OggAudioStream.Buffer p_216458_3_) {
-      while(p_216458_1_.hasRemaining() && p_216458_2_.hasRemaining()) {
-         p_216458_3_.put(p_216458_1_.get());
-         p_216458_3_.put(p_216458_2_.get());
+   private void copyFromDualChannels(FloatBuffer soundChannel1, FloatBuffer soundChannel2, OggAudioStream.Buffer oggAudioBuffer) {
+      while(soundChannel1.hasRemaining() && soundChannel2.hasRemaining()) {
+         oggAudioBuffer.appendOggAudioBytes(soundChannel1.get());
+         oggAudioBuffer.appendOggAudioBytes(soundChannel2.get());
       }
 
    }
 
    public void close() throws IOException {
-      if (this.handle != 0L) {
-         STBVorbis.stb_vorbis_close(this.handle);
-         this.handle = 0L;
+      if (this.pointer != 0L) {
+         STBVorbis.stb_vorbis_close(this.pointer);
+         this.pointer = 0L;
       }
 
       MemoryUtil.memFree(this.buffer);
-      this.input.close();
+      this.stream.close();
    }
 
-   public AudioFormat getFormat() {
-      return this.audioFormat;
+   public AudioFormat getAudioFormat() {
+      return this.format;
    }
 
-   public ByteBuffer read(int p_216455_1_) throws IOException {
-      OggAudioStream.Buffer oggaudiostream$buffer = new OggAudioStream.Buffer(p_216455_1_ + 8192);
+   public ByteBuffer readOggSoundWithCapacity(int size) throws IOException {
+      OggAudioStream.Buffer oggaudiostream$buffer = new OggAudioStream.Buffer(size + 8192);
 
-      while(this.readFrame(oggaudiostream$buffer) && oggaudiostream$buffer.byteCount < p_216455_1_) {
+      while(this.readOgg(oggaudiostream$buffer) && oggaudiostream$buffer.filledBytes < size) {
       }
 
-      return oggaudiostream$buffer.get();
+      return oggaudiostream$buffer.mergeBuffers();
    }
 
-   public ByteBuffer readAll() throws IOException {
+   public ByteBuffer readOggSound() throws IOException {
       OggAudioStream.Buffer oggaudiostream$buffer = new OggAudioStream.Buffer(16384);
 
-      while(this.readFrame(oggaudiostream$buffer)) {
+      while(this.readOgg(oggaudiostream$buffer)) {
       }
 
-      return oggaudiostream$buffer.get();
+      return oggaudiostream$buffer.mergeBuffers();
    }
 
    @OnlyIn(Dist.CLIENT)
    static class Buffer {
-      private final List<ByteBuffer> buffers = Lists.newArrayList();
-      private final int bufferSize;
-      private int byteCount;
+      private final List<ByteBuffer> storedBuffers = Lists.newArrayList();
+      private final int bufferCapacity;
+      private int filledBytes;
       private ByteBuffer currentBuffer;
 
-      public Buffer(int p_i50626_1_) {
-         this.bufferSize = p_i50626_1_ + 1 & -2;
-         this.createNewBuffer();
+      public Buffer(int capacity) {
+         this.bufferCapacity = capacity + 1 & -2;
+         this.createBuffer();
       }
 
-      private void createNewBuffer() {
-         this.currentBuffer = BufferUtils.createByteBuffer(this.bufferSize);
+      private void createBuffer() {
+         this.currentBuffer = BufferUtils.createByteBuffer(this.bufferCapacity);
       }
 
-      public void put(float p_216446_1_) {
+      public void appendOggAudioBytes(float floatValue) {
          if (this.currentBuffer.remaining() == 0) {
             ((java.nio.Buffer)this.currentBuffer).flip();
-            this.buffers.add(this.currentBuffer);
-            this.createNewBuffer();
+            this.storedBuffers.add(this.currentBuffer);
+            this.createBuffer();
          }
 
-         int i = MathHelper.clamp((int)(p_216446_1_ * 32767.5F - 0.5F), -32768, 32767);
+         int i = MathHelper.clamp((int)(floatValue * 32767.5F - 0.5F), -32768, 32767);
          this.currentBuffer.putShort((short)i);
-         this.byteCount += 2;
+         this.filledBytes += 2;
       }
 
-      public ByteBuffer get() {
+      public ByteBuffer mergeBuffers() {
          ((java.nio.Buffer)this.currentBuffer).flip();
-         if (this.buffers.isEmpty()) {
+         if (this.storedBuffers.isEmpty()) {
             return this.currentBuffer;
          } else {
-            ByteBuffer bytebuffer = BufferUtils.createByteBuffer(this.byteCount);
-            this.buffers.forEach(bytebuffer::put);
+            ByteBuffer bytebuffer = BufferUtils.createByteBuffer(this.filledBytes);
+            this.storedBuffers.forEach(bytebuffer::put);
             bytebuffer.put(this.currentBuffer);
             ((java.nio.Buffer)bytebuffer).flip();
             return bytebuffer;

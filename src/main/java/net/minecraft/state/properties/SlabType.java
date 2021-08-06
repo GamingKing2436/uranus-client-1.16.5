@@ -9,15 +9,15 @@ public enum SlabType implements IStringSerializable {
 
    private final String name;
 
-   private SlabType(String p_i49332_3_) {
-      this.name = p_i49332_3_;
+   private SlabType(String name) {
+      this.name = name;
    }
 
    public String toString() {
       return this.name;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 }

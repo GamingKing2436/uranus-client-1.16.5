@@ -18,8 +18,8 @@ import java.util.stream.Stream;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class AddBedTileEntity extends DataFix {
-   public AddBedTileEntity(Schema p_i49690_1_, boolean p_i49690_2_) {
-      super(p_i49690_1_, p_i49690_2_);
+   public AddBedTileEntity(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {

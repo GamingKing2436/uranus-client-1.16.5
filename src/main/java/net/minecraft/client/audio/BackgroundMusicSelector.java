@@ -9,7 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class BackgroundMusicSelector {
    public static final Codec<BackgroundMusicSelector> CODEC = RecordCodecBuilder.create((p_232663_0_) -> {
       return p_232663_0_.group(SoundEvent.CODEC.fieldOf("sound").forGetter((p_232669_0_) -> {
-         return p_232669_0_.event;
+         return p_232669_0_.soundEvent;
       }), Codec.INT.fieldOf("min_delay").forGetter((p_232667_0_) -> {
          return p_232667_0_.minDelay;
       }), Codec.INT.fieldOf("max_delay").forGetter((p_232665_0_) -> {
@@ -18,21 +18,21 @@ public class BackgroundMusicSelector {
          return p_232662_0_.replaceCurrentMusic;
       })).apply(p_232663_0_, BackgroundMusicSelector::new);
    });
-   private final SoundEvent event;
+   private final SoundEvent soundEvent;
    private final int minDelay;
    private final int maxDelay;
    private final boolean replaceCurrentMusic;
 
-   public BackgroundMusicSelector(SoundEvent p_i231428_1_, int p_i231428_2_, int p_i231428_3_, boolean p_i231428_4_) {
-      this.event = p_i231428_1_;
-      this.minDelay = p_i231428_2_;
-      this.maxDelay = p_i231428_3_;
-      this.replaceCurrentMusic = p_i231428_4_;
+   public BackgroundMusicSelector(SoundEvent soundEvent, int minDelay, int maxDelay, boolean replaceCurrentMusic) {
+      this.soundEvent = soundEvent;
+      this.minDelay = minDelay;
+      this.maxDelay = maxDelay;
+      this.replaceCurrentMusic = replaceCurrentMusic;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public SoundEvent getEvent() {
-      return this.event;
+   public SoundEvent getSoundEvent() {
+      return this.soundEvent;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -46,7 +46,7 @@ public class BackgroundMusicSelector {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean replaceCurrentMusic() {
+   public boolean shouldReplaceCurrentMusic() {
       return this.replaceCurrentMusic;
    }
 }

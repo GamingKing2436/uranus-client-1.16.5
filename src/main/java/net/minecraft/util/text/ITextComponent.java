@@ -32,18 +32,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public interface ITextComponent extends Message, ITextProperties {
    Style getStyle();
 
-   String getContents();
+   String getUnformattedComponentText();
 
    default String getString() {
       return ITextProperties.super.getString();
    }
 
-   default String getString(int p_212636_1_) {
+   default String getStringTruncated(int maxLen) {
       StringBuilder stringbuilder = new StringBuilder();
-      this.visit((p_240639_2_) -> {
-         int i = p_212636_1_ - stringbuilder.length();
+      this.getComponent((p_240639_2_) -> {
+         int i = maxLen - stringbuilder.length();
          if (i <= 0) {
-            return STOP_ITERATION;
+            return field_240650_b_;
          } else {
             stringbuilder.append(p_240639_2_.length() <= i ? p_240639_2_ : p_240639_2_.substring(0, i));
             return Optional.empty();
@@ -54,22 +54,22 @@ public interface ITextComponent extends Message, ITextProperties {
 
    List<ITextComponent> getSiblings();
 
-   IFormattableTextComponent plainCopy();
+   IFormattableTextComponent copyRaw();
 
-   IFormattableTextComponent copy();
-
-   @OnlyIn(Dist.CLIENT)
-   IReorderingProcessor getVisualOrderText();
+   IFormattableTextComponent deepCopy();
 
    @OnlyIn(Dist.CLIENT)
-   default <T> Optional<T> visit(ITextProperties.IStyledTextAcceptor<T> p_230439_1_, Style p_230439_2_) {
-      Style style = this.getStyle().applyTo(p_230439_2_);
-      Optional<T> optional = this.visitSelf(p_230439_1_, style);
+   IReorderingProcessor func_241878_f();
+
+   @OnlyIn(Dist.CLIENT)
+   default <T> Optional<T> getComponentWithStyle(ITextProperties.IStyledTextAcceptor<T> acceptor, Style styleIn) {
+      Style style = this.getStyle().mergeStyle(styleIn);
+      Optional<T> optional = this.func_230534_b_(acceptor, style);
       if (optional.isPresent()) {
          return optional;
       } else {
          for(ITextComponent itextcomponent : this.getSiblings()) {
-            Optional<T> optional1 = itextcomponent.visit(p_230439_1_, style);
+            Optional<T> optional1 = itextcomponent.getComponentWithStyle(acceptor, style);
             if (optional1.isPresent()) {
                return optional1;
             }
@@ -79,13 +79,13 @@ public interface ITextComponent extends Message, ITextProperties {
       }
    }
 
-   default <T> Optional<T> visit(ITextProperties.ITextAcceptor<T> p_230438_1_) {
-      Optional<T> optional = this.visitSelf(p_230438_1_);
+   default <T> Optional<T> getComponent(ITextProperties.ITextAcceptor<T> acceptor) {
+      Optional<T> optional = this.func_230533_b_(acceptor);
       if (optional.isPresent()) {
          return optional;
       } else {
          for(ITextComponent itextcomponent : this.getSiblings()) {
-            Optional<T> optional1 = itextcomponent.visit(p_230438_1_);
+            Optional<T> optional1 = itextcomponent.getComponent(acceptor);
             if (optional1.isPresent()) {
                return optional1;
             }
@@ -96,16 +96,16 @@ public interface ITextComponent extends Message, ITextProperties {
    }
 
    @OnlyIn(Dist.CLIENT)
-   default <T> Optional<T> visitSelf(ITextProperties.IStyledTextAcceptor<T> p_230534_1_, Style p_230534_2_) {
-      return p_230534_1_.accept(p_230534_2_, this.getContents());
+   default <T> Optional<T> func_230534_b_(ITextProperties.IStyledTextAcceptor<T> acceptor, Style style) {
+      return acceptor.accept(style, this.getUnformattedComponentText());
    }
 
-   default <T> Optional<T> visitSelf(ITextProperties.ITextAcceptor<T> p_230533_1_) {
-      return p_230533_1_.accept(this.getContents());
+   default <T> Optional<T> func_230533_b_(ITextProperties.ITextAcceptor<T> acceptor) {
+      return acceptor.accept(this.getUnformattedComponentText());
    }
 
    @OnlyIn(Dist.CLIENT)
-   static ITextComponent nullToEmpty(@Nullable String p_244388_0_) {
+   static ITextComponent getTextComponentOrEmpty(@Nullable String p_244388_0_) {
       return (ITextComponent)(p_244388_0_ != null ? new StringTextComponent(p_244388_0_) : StringTextComponent.EMPTY);
    }
 
@@ -118,7 +118,7 @@ public interface ITextComponent extends Message, ITextProperties {
          gsonbuilder.registerTypeAdapterFactory(new EnumTypeAdapterFactory());
          return gsonbuilder.create();
       });
-      private static final Field JSON_READER_POS = Util.make(() -> {
+      private static final Field JSON_READER_POS_FIELD = Util.make(() -> {
          try {
             new JsonReader(new StringReader(""));
             Field field = JsonReader.class.getDeclaredField("pos");
@@ -128,7 +128,7 @@ public interface ITextComponent extends Message, ITextProperties {
             throw new IllegalStateException("Couldn't get field 'pos' for JsonReader", nosuchfieldexception);
          }
       });
-      private static final Field JSON_READER_LINESTART = Util.make(() -> {
+      private static final Field JSON_READER_LINESTART_FIELD = Util.make(() -> {
          try {
             new JsonReader(new StringReader(""));
             Field field = JsonReader.class.getDeclaredField("lineStart");
@@ -164,11 +164,11 @@ public interface ITextComponent extends Message, ITextProperties {
             JsonObject jsonobject = p_deserialize_1_.getAsJsonObject();
             IFormattableTextComponent iformattabletextcomponent;
             if (jsonobject.has("text")) {
-               iformattabletextcomponent = new StringTextComponent(JSONUtils.getAsString(jsonobject, "text"));
+               iformattabletextcomponent = new StringTextComponent(JSONUtils.getString(jsonobject, "text"));
             } else if (jsonobject.has("translate")) {
-               String s = JSONUtils.getAsString(jsonobject, "translate");
+               String s = JSONUtils.getString(jsonobject, "translate");
                if (jsonobject.has("with")) {
-                  JsonArray jsonarray = JSONUtils.getAsJsonArray(jsonobject, "with");
+                  JsonArray jsonarray = JSONUtils.getJsonArray(jsonobject, "with");
                   Object[] aobject = new Object[jsonarray.size()];
 
                   for(int i = 0; i < aobject.length; ++i) {
@@ -186,38 +186,38 @@ public interface ITextComponent extends Message, ITextProperties {
                   iformattabletextcomponent = new TranslationTextComponent(s);
                }
             } else if (jsonobject.has("score")) {
-               JsonObject jsonobject1 = JSONUtils.getAsJsonObject(jsonobject, "score");
+               JsonObject jsonobject1 = JSONUtils.getJsonObject(jsonobject, "score");
                if (!jsonobject1.has("name") || !jsonobject1.has("objective")) {
                   throw new JsonParseException("A score component needs a least a name and an objective");
                }
 
-               iformattabletextcomponent = new ScoreTextComponent(JSONUtils.getAsString(jsonobject1, "name"), JSONUtils.getAsString(jsonobject1, "objective"));
+               iformattabletextcomponent = new ScoreTextComponent(JSONUtils.getString(jsonobject1, "name"), JSONUtils.getString(jsonobject1, "objective"));
             } else if (jsonobject.has("selector")) {
-               iformattabletextcomponent = new SelectorTextComponent(JSONUtils.getAsString(jsonobject, "selector"));
+               iformattabletextcomponent = new SelectorTextComponent(JSONUtils.getString(jsonobject, "selector"));
             } else if (jsonobject.has("keybind")) {
-               iformattabletextcomponent = new KeybindTextComponent(JSONUtils.getAsString(jsonobject, "keybind"));
+               iformattabletextcomponent = new KeybindTextComponent(JSONUtils.getString(jsonobject, "keybind"));
             } else {
                if (!jsonobject.has("nbt")) {
                   throw new JsonParseException("Don't know how to turn " + p_deserialize_1_ + " into a Component");
                }
 
-               String s1 = JSONUtils.getAsString(jsonobject, "nbt");
-               boolean flag = JSONUtils.getAsBoolean(jsonobject, "interpret", false);
+               String s1 = JSONUtils.getString(jsonobject, "nbt");
+               boolean flag = JSONUtils.getBoolean(jsonobject, "interpret", false);
                if (jsonobject.has("block")) {
-                  iformattabletextcomponent = new NBTTextComponent.Block(s1, flag, JSONUtils.getAsString(jsonobject, "block"));
+                  iformattabletextcomponent = new NBTTextComponent.Block(s1, flag, JSONUtils.getString(jsonobject, "block"));
                } else if (jsonobject.has("entity")) {
-                  iformattabletextcomponent = new NBTTextComponent.Entity(s1, flag, JSONUtils.getAsString(jsonobject, "entity"));
+                  iformattabletextcomponent = new NBTTextComponent.Entity(s1, flag, JSONUtils.getString(jsonobject, "entity"));
                } else {
                   if (!jsonobject.has("storage")) {
                      throw new JsonParseException("Don't know how to turn " + p_deserialize_1_ + " into a Component");
                   }
 
-                  iformattabletextcomponent = new NBTTextComponent.Storage(s1, flag, new ResourceLocation(JSONUtils.getAsString(jsonobject, "storage")));
+                  iformattabletextcomponent = new NBTTextComponent.Storage(s1, flag, new ResourceLocation(JSONUtils.getString(jsonobject, "storage")));
                }
             }
 
             if (jsonobject.has("extra")) {
-               JsonArray jsonarray2 = JSONUtils.getAsJsonArray(jsonobject, "extra");
+               JsonArray jsonarray2 = JSONUtils.getJsonArray(jsonobject, "extra");
                if (jsonarray2.size() <= 0) {
                   throw new JsonParseException("Unexpected empty array of components");
                }
@@ -232,13 +232,13 @@ public interface ITextComponent extends Message, ITextProperties {
          }
       }
 
-      private void serializeStyle(Style p_150695_1_, JsonObject p_150695_2_, JsonSerializationContext p_150695_3_) {
-         JsonElement jsonelement = p_150695_3_.serialize(p_150695_1_);
+      private void serializeChatStyle(Style style, JsonObject object, JsonSerializationContext ctx) {
+         JsonElement jsonelement = ctx.serialize(style);
          if (jsonelement.isJsonObject()) {
             JsonObject jsonobject = (JsonObject)jsonelement;
 
             for(Entry<String, JsonElement> entry : jsonobject.entrySet()) {
-               p_150695_2_.add(entry.getKey(), entry.getValue());
+               object.add(entry.getKey(), entry.getValue());
             }
          }
 
@@ -247,7 +247,7 @@ public interface ITextComponent extends Message, ITextProperties {
       public JsonElement serialize(ITextComponent p_serialize_1_, Type p_serialize_2_, JsonSerializationContext p_serialize_3_) {
          JsonObject jsonobject = new JsonObject();
          if (!p_serialize_1_.getStyle().isEmpty()) {
-            this.serializeStyle(p_serialize_1_.getStyle(), jsonobject, p_serialize_3_);
+            this.serializeChatStyle(p_serialize_1_.getStyle(), jsonobject, p_serialize_3_);
          }
 
          if (!p_serialize_1_.getSiblings().isEmpty()) {
@@ -265,10 +265,10 @@ public interface ITextComponent extends Message, ITextProperties {
          } else if (p_serialize_1_ instanceof TranslationTextComponent) {
             TranslationTextComponent translationtextcomponent = (TranslationTextComponent)p_serialize_1_;
             jsonobject.addProperty("translate", translationtextcomponent.getKey());
-            if (translationtextcomponent.getArgs() != null && translationtextcomponent.getArgs().length > 0) {
+            if (translationtextcomponent.getFormatArgs() != null && translationtextcomponent.getFormatArgs().length > 0) {
                JsonArray jsonarray1 = new JsonArray();
 
-               for(Object object : translationtextcomponent.getArgs()) {
+               for(Object object : translationtextcomponent.getFormatArgs()) {
                   if (object instanceof ITextComponent) {
                      jsonarray1.add(this.serialize((ITextComponent)object, object.getClass(), p_serialize_3_));
                   } else {
@@ -286,75 +286,75 @@ public interface ITextComponent extends Message, ITextProperties {
             jsonobject.add("score", jsonobject1);
          } else if (p_serialize_1_ instanceof SelectorTextComponent) {
             SelectorTextComponent selectortextcomponent = (SelectorTextComponent)p_serialize_1_;
-            jsonobject.addProperty("selector", selectortextcomponent.getPattern());
+            jsonobject.addProperty("selector", selectortextcomponent.getSelector());
          } else if (p_serialize_1_ instanceof KeybindTextComponent) {
             KeybindTextComponent keybindtextcomponent = (KeybindTextComponent)p_serialize_1_;
-            jsonobject.addProperty("keybind", keybindtextcomponent.getName());
+            jsonobject.addProperty("keybind", keybindtextcomponent.getKeybind());
          } else {
             if (!(p_serialize_1_ instanceof NBTTextComponent)) {
                throw new IllegalArgumentException("Don't know how to serialize " + p_serialize_1_ + " as a Component");
             }
 
             NBTTextComponent nbttextcomponent = (NBTTextComponent)p_serialize_1_;
-            jsonobject.addProperty("nbt", nbttextcomponent.getNbtPath());
-            jsonobject.addProperty("interpret", nbttextcomponent.isInterpreting());
+            jsonobject.addProperty("nbt", nbttextcomponent.func_218676_i());
+            jsonobject.addProperty("interpret", nbttextcomponent.func_218677_j());
             if (p_serialize_1_ instanceof NBTTextComponent.Block) {
                NBTTextComponent.Block nbttextcomponent$block = (NBTTextComponent.Block)p_serialize_1_;
-               jsonobject.addProperty("block", nbttextcomponent$block.getPos());
+               jsonobject.addProperty("block", nbttextcomponent$block.func_218683_k());
             } else if (p_serialize_1_ instanceof NBTTextComponent.Entity) {
                NBTTextComponent.Entity nbttextcomponent$entity = (NBTTextComponent.Entity)p_serialize_1_;
-               jsonobject.addProperty("entity", nbttextcomponent$entity.getSelector());
+               jsonobject.addProperty("entity", nbttextcomponent$entity.func_218687_k());
             } else {
                if (!(p_serialize_1_ instanceof NBTTextComponent.Storage)) {
                   throw new IllegalArgumentException("Don't know how to serialize " + p_serialize_1_ + " as a Component");
                }
 
                NBTTextComponent.Storage nbttextcomponent$storage = (NBTTextComponent.Storage)p_serialize_1_;
-               jsonobject.addProperty("storage", nbttextcomponent$storage.getId().toString());
+               jsonobject.addProperty("storage", nbttextcomponent$storage.func_229726_k_().toString());
             }
          }
 
          return jsonobject;
       }
 
-      public static String toJson(ITextComponent p_150696_0_) {
-         return GSON.toJson(p_150696_0_);
+      public static String toJson(ITextComponent component) {
+         return GSON.toJson(component);
       }
 
-      public static JsonElement toJsonTree(ITextComponent p_200528_0_) {
-         return GSON.toJsonTree(p_200528_0_);
+      public static JsonElement toJsonTree(ITextComponent component) {
+         return GSON.toJsonTree(component);
       }
 
       @Nullable
-      public static IFormattableTextComponent fromJson(String p_240643_0_) {
+      public static IFormattableTextComponent getComponentFromJson(String p_240643_0_) {
          return JSONUtils.fromJson(GSON, p_240643_0_, IFormattableTextComponent.class, false);
       }
 
       @Nullable
-      public static IFormattableTextComponent fromJson(JsonElement p_240641_0_) {
-         return GSON.fromJson(p_240641_0_, IFormattableTextComponent.class);
+      public static IFormattableTextComponent getComponentFromJson(JsonElement json) {
+         return GSON.fromJson(json, IFormattableTextComponent.class);
       }
 
       @Nullable
-      public static IFormattableTextComponent fromJsonLenient(String p_240644_0_) {
+      public static IFormattableTextComponent getComponentFromJsonLenient(String p_240644_0_) {
          return JSONUtils.fromJson(GSON, p_240644_0_, IFormattableTextComponent.class, true);
       }
 
-      public static IFormattableTextComponent fromJson(com.mojang.brigadier.StringReader p_240642_0_) {
+      public static IFormattableTextComponent getComponentFromReader(com.mojang.brigadier.StringReader reader) {
          try {
-            JsonReader jsonreader = new JsonReader(new StringReader(p_240642_0_.getRemaining()));
+            JsonReader jsonreader = new JsonReader(new StringReader(reader.getRemaining()));
             jsonreader.setLenient(false);
             IFormattableTextComponent iformattabletextcomponent = GSON.getAdapter(IFormattableTextComponent.class).read(jsonreader);
-            p_240642_0_.setCursor(p_240642_0_.getCursor() + getPos(jsonreader));
+            reader.setCursor(reader.getCursor() + getPos(jsonreader));
             return iformattabletextcomponent;
          } catch (StackOverflowError | IOException ioexception) {
             throw new JsonParseException(ioexception);
          }
       }
 
-      private static int getPos(JsonReader p_197673_0_) {
+      private static int getPos(JsonReader reader) {
          try {
-            return JSON_READER_POS.getInt(p_197673_0_) - JSON_READER_LINESTART.getInt(p_197673_0_) + 1;
+            return JSON_READER_POS_FIELD.getInt(reader) - JSON_READER_LINESTART_FIELD.getInt(reader) + 1;
          } catch (IllegalAccessException illegalaccessexception) {
             throw new IllegalStateException("Couldn't read position of JsonReader", illegalaccessexception);
          }

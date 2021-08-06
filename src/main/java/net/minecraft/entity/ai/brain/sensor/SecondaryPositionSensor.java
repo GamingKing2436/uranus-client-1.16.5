@@ -18,33 +18,33 @@ public class SecondaryPositionSensor extends Sensor<VillagerEntity> {
       super(40);
    }
 
-   protected void doTick(ServerWorld p_212872_1_, VillagerEntity p_212872_2_) {
-      RegistryKey<World> registrykey = p_212872_1_.dimension();
-      BlockPos blockpos = p_212872_2_.blockPosition();
+   protected void update(ServerWorld worldIn, VillagerEntity entityIn) {
+      RegistryKey<World> registrykey = worldIn.getDimensionKey();
+      BlockPos blockpos = entityIn.getPosition();
       List<GlobalPos> list = Lists.newArrayList();
       int i = 4;
 
       for(int j = -4; j <= 4; ++j) {
          for(int k = -2; k <= 2; ++k) {
             for(int l = -4; l <= 4; ++l) {
-               BlockPos blockpos1 = blockpos.offset(j, k, l);
-               if (p_212872_2_.getVillagerData().getProfession().getSecondaryPoi().contains(p_212872_1_.getBlockState(blockpos1).getBlock())) {
-                  list.add(GlobalPos.of(registrykey, blockpos1));
+               BlockPos blockpos1 = blockpos.add(j, k, l);
+               if (entityIn.getVillagerData().getProfession().getRelatedWorldBlocks().contains(worldIn.getBlockState(blockpos1).getBlock())) {
+                  list.add(GlobalPos.getPosition(registrykey, blockpos1));
                }
             }
          }
       }
 
-      Brain<?> brain = p_212872_2_.getBrain();
+      Brain<?> brain = entityIn.getBrain();
       if (!list.isEmpty()) {
          brain.setMemory(MemoryModuleType.SECONDARY_JOB_SITE, list);
       } else {
-         brain.eraseMemory(MemoryModuleType.SECONDARY_JOB_SITE);
+         brain.removeMemory(MemoryModuleType.SECONDARY_JOB_SITE);
       }
 
    }
 
-   public Set<MemoryModuleType<?>> requires() {
+   public Set<MemoryModuleType<?>> getUsedMemories() {
       return ImmutableSet.of(MemoryModuleType.SECONDARY_JOB_SITE);
    }
 }

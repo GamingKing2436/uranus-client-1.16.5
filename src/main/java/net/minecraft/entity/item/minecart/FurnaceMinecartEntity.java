@@ -24,96 +24,96 @@ import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
 public class FurnaceMinecartEntity extends AbstractMinecartEntity {
-   private static final DataParameter<Boolean> DATA_ID_FUEL = EntityDataManager.defineId(FurnaceMinecartEntity.class, DataSerializers.BOOLEAN);
+   private static final DataParameter<Boolean> POWERED = EntityDataManager.createKey(FurnaceMinecartEntity.class, DataSerializers.BOOLEAN);
    private int fuel;
-   public double xPush;
-   public double zPush;
-   private static final Ingredient INGREDIENT = Ingredient.of(Items.COAL, Items.CHARCOAL);
+   public double pushX;
+   public double pushZ;
+   private static final Ingredient BURNABLE_FUELS = Ingredient.fromItems(Items.COAL, Items.CHARCOAL);
 
-   public FurnaceMinecartEntity(EntityType<? extends FurnaceMinecartEntity> p_i50119_1_, World p_i50119_2_) {
-      super(p_i50119_1_, p_i50119_2_);
+   public FurnaceMinecartEntity(EntityType<? extends FurnaceMinecartEntity> furnaceCart, World world) {
+      super(furnaceCart, world);
    }
 
-   public FurnaceMinecartEntity(World p_i1719_1_, double p_i1719_2_, double p_i1719_4_, double p_i1719_6_) {
-      super(EntityType.FURNACE_MINECART, p_i1719_1_, p_i1719_2_, p_i1719_4_, p_i1719_6_);
+   public FurnaceMinecartEntity(World worldIn, double x, double y, double z) {
+      super(EntityType.FURNACE_MINECART, worldIn, x, y, z);
    }
 
    public AbstractMinecartEntity.Type getMinecartType() {
       return AbstractMinecartEntity.Type.FURNACE;
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_ID_FUEL, false);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(POWERED, false);
    }
 
    public void tick() {
       super.tick();
-      if (!this.level.isClientSide()) {
+      if (!this.world.isRemote()) {
          if (this.fuel > 0) {
             --this.fuel;
          }
 
          if (this.fuel <= 0) {
-            this.xPush = 0.0D;
-            this.zPush = 0.0D;
+            this.pushX = 0.0D;
+            this.pushZ = 0.0D;
          }
 
-         this.setHasFuel(this.fuel > 0);
+         this.setMinecartPowered(this.fuel > 0);
       }
 
-      if (this.hasFuel() && this.random.nextInt(4) == 0) {
-         this.level.addParticle(ParticleTypes.LARGE_SMOKE, this.getX(), this.getY() + 0.8D, this.getZ(), 0.0D, 0.0D, 0.0D);
+      if (this.isMinecartPowered() && this.rand.nextInt(4) == 0) {
+         this.world.addParticle(ParticleTypes.LARGE_SMOKE, this.getPosX(), this.getPosY() + 0.8D, this.getPosZ(), 0.0D, 0.0D, 0.0D);
       }
 
    }
 
-   protected double getMaxSpeed() {
+   protected double getMaximumSpeed() {
       return 0.2D;
    }
 
-   public void destroy(DamageSource p_94095_1_) {
-      super.destroy(p_94095_1_);
-      if (!p_94095_1_.isExplosion() && this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
-         this.spawnAtLocation(Blocks.FURNACE);
+   public void killMinecart(DamageSource source) {
+      super.killMinecart(source);
+      if (!source.isExplosion() && this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
+         this.entityDropItem(Blocks.FURNACE);
       }
 
    }
 
-   protected void moveAlongTrack(BlockPos p_180460_1_, BlockState p_180460_2_) {
+   protected void moveAlongTrack(BlockPos pos, BlockState state) {
       double d0 = 1.0E-4D;
       double d1 = 0.001D;
-      super.moveAlongTrack(p_180460_1_, p_180460_2_);
-      Vector3d vector3d = this.getDeltaMovement();
-      double d2 = getHorizontalDistanceSqr(vector3d);
-      double d3 = this.xPush * this.xPush + this.zPush * this.zPush;
+      super.moveAlongTrack(pos, state);
+      Vector3d vector3d = this.getMotion();
+      double d2 = horizontalMag(vector3d);
+      double d3 = this.pushX * this.pushX + this.pushZ * this.pushZ;
       if (d3 > 1.0E-4D && d2 > 0.001D) {
          double d4 = (double)MathHelper.sqrt(d2);
          double d5 = (double)MathHelper.sqrt(d3);
-         this.xPush = vector3d.x / d4 * d5;
-         this.zPush = vector3d.z / d4 * d5;
+         this.pushX = vector3d.x / d4 * d5;
+         this.pushZ = vector3d.z / d4 * d5;
       }
 
    }
 
-   protected void applyNaturalSlowdown() {
-      double d0 = this.xPush * this.xPush + this.zPush * this.zPush;
+   protected void applyDrag() {
+      double d0 = this.pushX * this.pushX + this.pushZ * this.pushZ;
       if (d0 > 1.0E-7D) {
          d0 = (double)MathHelper.sqrt(d0);
-         this.xPush /= d0;
-         this.zPush /= d0;
-         this.setDeltaMovement(this.getDeltaMovement().multiply(0.8D, 0.0D, 0.8D).add(this.xPush, 0.0D, this.zPush));
+         this.pushX /= d0;
+         this.pushZ /= d0;
+         this.setMotion(this.getMotion().mul(0.8D, 0.0D, 0.8D).add(this.pushX, 0.0D, this.pushZ));
       } else {
-         this.setDeltaMovement(this.getDeltaMovement().multiply(0.98D, 0.0D, 0.98D));
+         this.setMotion(this.getMotion().mul(0.98D, 0.0D, 0.98D));
       }
 
-      super.applyNaturalSlowdown();
+      super.applyDrag();
    }
 
-   public ActionResultType interact(PlayerEntity p_184230_1_, Hand p_184230_2_) {
-      ItemStack itemstack = p_184230_1_.getItemInHand(p_184230_2_);
-      if (INGREDIENT.test(itemstack) && this.fuel + 3600 <= 32000) {
-         if (!p_184230_1_.abilities.instabuild) {
+   public ActionResultType processInitialInteract(PlayerEntity player, Hand hand) {
+      ItemStack itemstack = player.getHeldItem(hand);
+      if (BURNABLE_FUELS.test(itemstack) && this.fuel + 3600 <= 32000) {
+         if (!player.abilities.isCreativeMode) {
             itemstack.shrink(1);
          }
 
@@ -121,36 +121,36 @@ public class FurnaceMinecartEntity extends AbstractMinecartEntity {
       }
 
       if (this.fuel > 0) {
-         this.xPush = this.getX() - p_184230_1_.getX();
-         this.zPush = this.getZ() - p_184230_1_.getZ();
+         this.pushX = this.getPosX() - player.getPosX();
+         this.pushZ = this.getPosZ() - player.getPosZ();
       }
 
-      return ActionResultType.sidedSuccess(this.level.isClientSide);
+      return ActionResultType.func_233537_a_(this.world.isRemote);
    }
 
-   protected void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      p_213281_1_.putDouble("PushX", this.xPush);
-      p_213281_1_.putDouble("PushZ", this.zPush);
-      p_213281_1_.putShort("Fuel", (short)this.fuel);
+   protected void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      compound.putDouble("PushX", this.pushX);
+      compound.putDouble("PushZ", this.pushZ);
+      compound.putShort("Fuel", (short)this.fuel);
    }
 
-   protected void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.xPush = p_70037_1_.getDouble("PushX");
-      this.zPush = p_70037_1_.getDouble("PushZ");
-      this.fuel = p_70037_1_.getShort("Fuel");
+   protected void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.pushX = compound.getDouble("PushX");
+      this.pushZ = compound.getDouble("PushZ");
+      this.fuel = compound.getShort("Fuel");
    }
 
-   protected boolean hasFuel() {
-      return this.entityData.get(DATA_ID_FUEL);
+   protected boolean isMinecartPowered() {
+      return this.dataManager.get(POWERED);
    }
 
-   protected void setHasFuel(boolean p_94107_1_) {
-      this.entityData.set(DATA_ID_FUEL, p_94107_1_);
+   protected void setMinecartPowered(boolean powered) {
+      this.dataManager.set(POWERED, powered);
    }
 
-   public BlockState getDefaultDisplayBlockState() {
-      return Blocks.FURNACE.defaultBlockState().setValue(FurnaceBlock.FACING, Direction.NORTH).setValue(FurnaceBlock.LIT, Boolean.valueOf(this.hasFuel()));
+   public BlockState getDefaultDisplayTile() {
+      return Blocks.FURNACE.getDefaultState().with(FurnaceBlock.FACING, Direction.NORTH).with(FurnaceBlock.LIT, Boolean.valueOf(this.isMinecartPowered()));
    }
 }

@@ -55,35 +55,35 @@ public enum BannerPattern {
    MOJANG("mojang", "moj", true),
    PIGLIN("piglin", "pig", true);
 
-   private static final BannerPattern[] VALUES = values();
-   public static final int COUNT = VALUES.length;
-   public static final int PATTERN_ITEM_COUNT = (int)Arrays.stream(VALUES).filter((p_235649_0_) -> {
+   private static final BannerPattern[] BANNER_PATTERNS = values();
+   public static final int BANNER_PATTERNS_COUNT = BANNER_PATTERNS.length;
+   public static final int BANNERS_WITH_ITEMS = (int)Arrays.stream(BANNER_PATTERNS).filter((p_235649_0_) -> {
       return p_235649_0_.hasPatternItem;
    }).count();
-   public static final int AVAILABLE_PATTERNS = COUNT - PATTERN_ITEM_COUNT - 1;
+   public static final int PATTERN_ITEM_INDEX = BANNER_PATTERNS_COUNT - BANNERS_WITH_ITEMS - 1;
    private final boolean hasPatternItem;
-   private final String filename;
+   private final String fileName;
    private final String hashname;
 
-   private BannerPattern(String p_i47245_3_, String p_i47245_4_) {
-      this(p_i47245_3_, p_i47245_4_, false);
+   private BannerPattern(String fileNameIn, String hashNameIn) {
+      this(fileNameIn, hashNameIn, false);
    }
 
-   private BannerPattern(String p_i231861_3_, String p_i231861_4_, boolean p_i231861_5_) {
-      this.filename = p_i231861_3_;
-      this.hashname = p_i231861_4_;
-      this.hasPatternItem = p_i231861_5_;
-   }
-
-   @OnlyIn(Dist.CLIENT)
-   public ResourceLocation location(boolean p_226957_1_) {
-      String s = p_226957_1_ ? "banner" : "shield";
-      return new ResourceLocation("entity/" + s + "/" + this.getFilename());
+   private BannerPattern(String fileName, String hashname, boolean hasPatternItem) {
+      this.fileName = fileName;
+      this.hashname = hashname;
+      this.hasPatternItem = hasPatternItem;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public String getFilename() {
-      return this.filename;
+   public ResourceLocation getTextureLocation(boolean isBanner) {
+      String s = isBanner ? "banner" : "shield";
+      return new ResourceLocation("entity/" + s + "/" + this.getFileName());
+   }
+
+   @OnlyIn(Dist.CLIENT)
+   public String getFileName() {
+      return this.fileName;
    }
 
    public String getHashname() {
@@ -92,9 +92,9 @@ public enum BannerPattern {
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public static BannerPattern byHash(String p_190994_0_) {
+   public static BannerPattern byHash(String hash) {
       for(BannerPattern bannerpattern : values()) {
-         if (bannerpattern.hashname.equals(p_190994_0_)) {
+         if (bannerpattern.hashname.equals(hash)) {
             return bannerpattern;
          }
       }
@@ -103,17 +103,17 @@ public enum BannerPattern {
    }
 
    public static class Builder {
-      private final List<Pair<BannerPattern, DyeColor>> patterns = Lists.newArrayList();
+      private final List<Pair<BannerPattern, DyeColor>> patternColors = Lists.newArrayList();
 
-      public BannerPattern.Builder addPattern(BannerPattern p_222477_1_, DyeColor p_222477_2_) {
-         this.patterns.add(Pair.of(p_222477_1_, p_222477_2_));
+      public BannerPattern.Builder setPatternWithColor(BannerPattern pattern, DyeColor color) {
+         this.patternColors.add(Pair.of(pattern, color));
          return this;
       }
 
-      public ListNBT toListTag() {
+      public ListNBT buildNBT() {
          ListNBT listnbt = new ListNBT();
 
-         for(Pair<BannerPattern, DyeColor> pair : this.patterns) {
+         for(Pair<BannerPattern, DyeColor> pair : this.patternColors) {
             CompoundNBT compoundnbt = new CompoundNBT();
             compoundnbt.putString("Pattern", (pair.getLeft()).hashname);
             compoundnbt.putInt("Color", pair.getRight().getId());

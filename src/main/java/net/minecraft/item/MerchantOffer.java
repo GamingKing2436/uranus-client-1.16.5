@@ -5,93 +5,93 @@ import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.math.MathHelper;
 
 public class MerchantOffer {
-   private final ItemStack baseCostA;
-   private final ItemStack costB;
-   private final ItemStack result;
+   private final ItemStack buyingStackFirst;
+   private final ItemStack buyingStackSecond;
+   private final ItemStack sellingStack;
    private int uses;
    private final int maxUses;
-   private boolean rewardExp = true;
-   private int specialPriceDiff;
+   private boolean doesRewardEXP = true;
+   private int specialPrice;
    private int demand;
    private float priceMultiplier;
-   private int xp = 1;
+   private int givenEXP = 1;
 
-   public MerchantOffer(CompoundNBT p_i50012_1_) {
-      this.baseCostA = ItemStack.of(p_i50012_1_.getCompound("buy"));
-      this.costB = ItemStack.of(p_i50012_1_.getCompound("buyB"));
-      this.result = ItemStack.of(p_i50012_1_.getCompound("sell"));
-      this.uses = p_i50012_1_.getInt("uses");
-      if (p_i50012_1_.contains("maxUses", 99)) {
-         this.maxUses = p_i50012_1_.getInt("maxUses");
+   public MerchantOffer(CompoundNBT dataTag) {
+      this.buyingStackFirst = ItemStack.read(dataTag.getCompound("buy"));
+      this.buyingStackSecond = ItemStack.read(dataTag.getCompound("buyB"));
+      this.sellingStack = ItemStack.read(dataTag.getCompound("sell"));
+      this.uses = dataTag.getInt("uses");
+      if (dataTag.contains("maxUses", 99)) {
+         this.maxUses = dataTag.getInt("maxUses");
       } else {
          this.maxUses = 4;
       }
 
-      if (p_i50012_1_.contains("rewardExp", 1)) {
-         this.rewardExp = p_i50012_1_.getBoolean("rewardExp");
+      if (dataTag.contains("rewardExp", 1)) {
+         this.doesRewardEXP = dataTag.getBoolean("rewardExp");
       }
 
-      if (p_i50012_1_.contains("xp", 3)) {
-         this.xp = p_i50012_1_.getInt("xp");
+      if (dataTag.contains("xp", 3)) {
+         this.givenEXP = dataTag.getInt("xp");
       }
 
-      if (p_i50012_1_.contains("priceMultiplier", 5)) {
-         this.priceMultiplier = p_i50012_1_.getFloat("priceMultiplier");
+      if (dataTag.contains("priceMultiplier", 5)) {
+         this.priceMultiplier = dataTag.getFloat("priceMultiplier");
       }
 
-      this.specialPriceDiff = p_i50012_1_.getInt("specialPrice");
-      this.demand = p_i50012_1_.getInt("demand");
+      this.specialPrice = dataTag.getInt("specialPrice");
+      this.demand = dataTag.getInt("demand");
    }
 
-   public MerchantOffer(ItemStack p_i50013_1_, ItemStack p_i50013_2_, int p_i50013_3_, int p_i50013_4_, float p_i50013_5_) {
-      this(p_i50013_1_, ItemStack.EMPTY, p_i50013_2_, p_i50013_3_, p_i50013_4_, p_i50013_5_);
+   public MerchantOffer(ItemStack buyingStackFirstIn, ItemStack sellingStackIn, int maxUsesIn, int givenEXPIn, float priceMultiplierIn) {
+      this(buyingStackFirstIn, ItemStack.EMPTY, sellingStackIn, maxUsesIn, givenEXPIn, priceMultiplierIn);
    }
 
-   public MerchantOffer(ItemStack p_i50014_1_, ItemStack p_i50014_2_, ItemStack p_i50014_3_, int p_i50014_4_, int p_i50014_5_, float p_i50014_6_) {
-      this(p_i50014_1_, p_i50014_2_, p_i50014_3_, 0, p_i50014_4_, p_i50014_5_, p_i50014_6_);
+   public MerchantOffer(ItemStack buyingStackFirstIn, ItemStack buyingStackSecondIn, ItemStack sellingStackIn, int maxUsesIn, int givenEXPIn, float priceMultiplierIn) {
+      this(buyingStackFirstIn, buyingStackSecondIn, sellingStackIn, 0, maxUsesIn, givenEXPIn, priceMultiplierIn);
    }
 
-   public MerchantOffer(ItemStack p_i50015_1_, ItemStack p_i50015_2_, ItemStack p_i50015_3_, int p_i50015_4_, int p_i50015_5_, int p_i50015_6_, float p_i50015_7_) {
-      this(p_i50015_1_, p_i50015_2_, p_i50015_3_, p_i50015_4_, p_i50015_5_, p_i50015_6_, p_i50015_7_, 0);
+   public MerchantOffer(ItemStack buyingStackFirstIn, ItemStack buyingStackSecondIn, ItemStack sellingStackIn, int usesIn, int maxUsesIn, int givenEXPIn, float priceMultiplierIn) {
+      this(buyingStackFirstIn, buyingStackSecondIn, sellingStackIn, usesIn, maxUsesIn, givenEXPIn, priceMultiplierIn, 0);
    }
 
-   public MerchantOffer(ItemStack p_i51550_1_, ItemStack p_i51550_2_, ItemStack p_i51550_3_, int p_i51550_4_, int p_i51550_5_, int p_i51550_6_, float p_i51550_7_, int p_i51550_8_) {
-      this.baseCostA = p_i51550_1_;
-      this.costB = p_i51550_2_;
-      this.result = p_i51550_3_;
-      this.uses = p_i51550_4_;
-      this.maxUses = p_i51550_5_;
-      this.xp = p_i51550_6_;
-      this.priceMultiplier = p_i51550_7_;
-      this.demand = p_i51550_8_;
+   public MerchantOffer(ItemStack buyingStackFirstIn, ItemStack buyingStackSecondIn, ItemStack sellingStackIn, int usesIn, int maxUsesIn, int givenEXPIn, float priceMultiplierIn, int demandIn) {
+      this.buyingStackFirst = buyingStackFirstIn;
+      this.buyingStackSecond = buyingStackSecondIn;
+      this.sellingStack = sellingStackIn;
+      this.uses = usesIn;
+      this.maxUses = maxUsesIn;
+      this.givenEXP = givenEXPIn;
+      this.priceMultiplier = priceMultiplierIn;
+      this.demand = demandIn;
    }
 
-   public ItemStack getBaseCostA() {
-      return this.baseCostA;
+   public ItemStack getBuyingStackFirst() {
+      return this.buyingStackFirst;
    }
 
-   public ItemStack getCostA() {
-      int i = this.baseCostA.getCount();
-      ItemStack itemstack = this.baseCostA.copy();
+   public ItemStack getDiscountedBuyingStackFirst() {
+      int i = this.buyingStackFirst.getCount();
+      ItemStack itemstack = this.buyingStackFirst.copy();
       int j = Math.max(0, MathHelper.floor((float)(i * this.demand) * this.priceMultiplier));
-      itemstack.setCount(MathHelper.clamp(i + j + this.specialPriceDiff, 1, this.baseCostA.getItem().getMaxStackSize()));
+      itemstack.setCount(MathHelper.clamp(i + j + this.specialPrice, 1, this.buyingStackFirst.getItem().getMaxStackSize()));
       return itemstack;
    }
 
-   public ItemStack getCostB() {
-      return this.costB;
+   public ItemStack getBuyingStackSecond() {
+      return this.buyingStackSecond;
    }
 
-   public ItemStack getResult() {
-      return this.result;
+   public ItemStack getSellingStack() {
+      return this.sellingStack;
    }
 
-   public void updateDemand() {
+   public void calculateDemand() {
       this.demand = this.demand + this.uses - (this.maxUses - this.uses);
    }
 
-   public ItemStack assemble() {
-      return this.result.copy();
+   public ItemStack getCopyOfSellingStack() {
+      return this.sellingStack.copy();
    }
 
    public int getUses() {
@@ -114,85 +114,85 @@ public class MerchantOffer {
       return this.demand;
    }
 
-   public void addToSpecialPriceDiff(int p_222207_1_) {
-      this.specialPriceDiff += p_222207_1_;
+   public void increaseSpecialPrice(int add) {
+      this.specialPrice += add;
    }
 
-   public void resetSpecialPriceDiff() {
-      this.specialPriceDiff = 0;
+   public void resetSpecialPrice() {
+      this.specialPrice = 0;
    }
 
-   public int getSpecialPriceDiff() {
-      return this.specialPriceDiff;
+   public int getSpecialPrice() {
+      return this.specialPrice;
    }
 
-   public void setSpecialPriceDiff(int p_222209_1_) {
-      this.specialPriceDiff = p_222209_1_;
+   public void setSpecialPrice(int price) {
+      this.specialPrice = price;
    }
 
    public float getPriceMultiplier() {
       return this.priceMultiplier;
    }
 
-   public int getXp() {
-      return this.xp;
+   public int getGivenExp() {
+      return this.givenEXP;
    }
 
-   public boolean isOutOfStock() {
+   public boolean hasNoUsesLeft() {
       return this.uses >= this.maxUses;
    }
 
-   public void setToOutOfStock() {
+   public void makeUnavailable() {
       this.uses = this.maxUses;
    }
 
-   public boolean needsRestock() {
+   public boolean hasBeenUsed() {
       return this.uses > 0;
    }
 
-   public boolean shouldRewardExp() {
-      return this.rewardExp;
+   public boolean getDoesRewardExp() {
+      return this.doesRewardEXP;
    }
 
-   public CompoundNBT createTag() {
+   public CompoundNBT write() {
       CompoundNBT compoundnbt = new CompoundNBT();
-      compoundnbt.put("buy", this.baseCostA.save(new CompoundNBT()));
-      compoundnbt.put("sell", this.result.save(new CompoundNBT()));
-      compoundnbt.put("buyB", this.costB.save(new CompoundNBT()));
+      compoundnbt.put("buy", this.buyingStackFirst.write(new CompoundNBT()));
+      compoundnbt.put("sell", this.sellingStack.write(new CompoundNBT()));
+      compoundnbt.put("buyB", this.buyingStackSecond.write(new CompoundNBT()));
       compoundnbt.putInt("uses", this.uses);
       compoundnbt.putInt("maxUses", this.maxUses);
-      compoundnbt.putBoolean("rewardExp", this.rewardExp);
-      compoundnbt.putInt("xp", this.xp);
+      compoundnbt.putBoolean("rewardExp", this.doesRewardEXP);
+      compoundnbt.putInt("xp", this.givenEXP);
       compoundnbt.putFloat("priceMultiplier", this.priceMultiplier);
-      compoundnbt.putInt("specialPrice", this.specialPriceDiff);
+      compoundnbt.putInt("specialPrice", this.specialPrice);
       compoundnbt.putInt("demand", this.demand);
       return compoundnbt;
    }
 
-   public boolean satisfiedBy(ItemStack p_222204_1_, ItemStack p_222204_2_) {
-      return this.isRequiredItem(p_222204_1_, this.getCostA()) && p_222204_1_.getCount() >= this.getCostA().getCount() && this.isRequiredItem(p_222204_2_, this.costB) && p_222204_2_.getCount() >= this.costB.getCount();
+   public boolean matches(ItemStack p_222204_1_, ItemStack p_222204_2_) {
+      return this.equalIgnoringDamage(p_222204_1_, this.getDiscountedBuyingStackFirst()) && p_222204_1_.getCount() >= this.getDiscountedBuyingStackFirst().getCount() && this.equalIgnoringDamage(p_222204_2_, this.buyingStackSecond) && p_222204_2_.getCount() >= this.buyingStackSecond.getCount();
    }
 
-   private boolean isRequiredItem(ItemStack p_222201_1_, ItemStack p_222201_2_) {
-      if (p_222201_2_.isEmpty() && p_222201_1_.isEmpty()) {
+   private boolean equalIgnoringDamage(ItemStack left, ItemStack right) {
+      if (right.isEmpty() && left.isEmpty()) {
          return true;
       } else {
-         ItemStack itemstack = p_222201_1_.copy();
-         if (itemstack.getItem().canBeDepleted()) {
-            itemstack.setDamageValue(itemstack.getDamageValue());
+         ItemStack itemstack = left.copy();
+         if (itemstack.getItem().isDamageable()) {
+            itemstack.setDamage(itemstack.getDamage());
          }
 
-         return ItemStack.isSame(itemstack, p_222201_2_) && (!p_222201_2_.hasTag() || itemstack.hasTag() && NBTUtil.compareNbt(p_222201_2_.getTag(), itemstack.getTag(), false));
+         return ItemStack.areItemsEqual(itemstack, right) && (!right.hasTag() || itemstack.hasTag() && NBTUtil.areNBTEquals(right.getTag(), itemstack.getTag(), false));
       }
    }
 
-   public boolean take(ItemStack p_222215_1_, ItemStack p_222215_2_) {
-      if (!this.satisfiedBy(p_222215_1_, p_222215_2_)) {
+   public boolean doTransaction(ItemStack p_222215_1_, ItemStack p_222215_2_) {
+      if (!this.matches(p_222215_1_, p_222215_2_)) {
          return false;
       } else {
-         p_222215_1_.shrink(this.getCostA().getCount());
-         if (!this.getCostB().isEmpty()) {
-            p_222215_2_.shrink(this.getCostB().getCount());
+         p_222215_1_.shrink(this.getDiscountedBuyingStackFirst().getCount());
+         if (!this.getBuyingStackSecond().isEmpty()) {
+            p_222215_2_.shrink(this.getBuyingStackSecond().getCount());
          }
 
          return true;

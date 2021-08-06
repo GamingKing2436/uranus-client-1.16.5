@@ -45,25 +45,25 @@ import org.apache.logging.log4j.Logger;
 @OnlyIn(Dist.CLIENT)
 public class FileDownload {
    private static final Logger LOGGER = LogManager.getLogger();
-   private volatile boolean cancelled;
-   private volatile boolean finished;
-   private volatile boolean error;
-   private volatile boolean extracting;
-   private volatile File tempFile;
-   private volatile File resourcePackPath;
-   private volatile HttpGet request;
-   private Thread currentThread;
-   private final RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(120000).setConnectTimeout(120000).build();
-   private static final String[] INVALID_FILE_NAMES = new String[]{"CON", "COM", "PRN", "AUX", "CLOCK$", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"};
+   private volatile boolean field_224844_b;
+   private volatile boolean field_224845_c;
+   private volatile boolean field_224846_d;
+   private volatile boolean field_224847_e;
+   private volatile File field_224848_f;
+   private volatile File field_224849_g;
+   private volatile HttpGet field_224850_h;
+   private Thread field_224851_i;
+   private final RequestConfig field_224852_j = RequestConfig.custom().setSocketTimeout(120000).setConnectTimeout(120000).build();
+   private static final String[] field_224853_k = new String[]{"CON", "COM", "PRN", "AUX", "CLOCK$", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"};
 
-   public long contentLength(String p_224827_1_) {
+   public long func_224827_a(String p_224827_1_) {
       CloseableHttpClient closeablehttpclient = null;
       HttpGet httpget = null;
 
       long i;
       try {
          httpget = new HttpGet(p_224827_1_);
-         closeablehttpclient = HttpClientBuilder.create().setDefaultRequestConfig(this.requestConfig).build();
+         closeablehttpclient = HttpClientBuilder.create().setDefaultRequestConfig(this.field_224852_j).build();
          CloseableHttpResponse closeablehttpresponse = closeablehttpclient.execute(httpget);
          return Long.parseLong(closeablehttpresponse.getFirstHeader("Content-Length").getValue());
       } catch (Throwable throwable) {
@@ -87,68 +87,68 @@ public class FileDownload {
       return i;
    }
 
-   public void download(WorldDownload p_237688_1_, String p_237688_2_, RealmsDownloadLatestWorldScreen.DownloadStatus p_237688_3_, SaveFormat p_237688_4_) {
-      if (this.currentThread == null) {
-         this.currentThread = new Thread(() -> {
+   public void func_237688_a_(WorldDownload p_237688_1_, String p_237688_2_, RealmsDownloadLatestWorldScreen.DownloadStatus p_237688_3_, SaveFormat p_237688_4_) {
+      if (this.field_224851_i == null) {
+         this.field_224851_i = new Thread(() -> {
             CloseableHttpClient closeablehttpclient = null;
 
             try {
-               this.tempFile = File.createTempFile("backup", ".tar.gz");
-               this.request = new HttpGet(p_237688_1_.downloadLink);
-               closeablehttpclient = HttpClientBuilder.create().setDefaultRequestConfig(this.requestConfig).build();
-               HttpResponse httpresponse = closeablehttpclient.execute(this.request);
-               p_237688_3_.totalBytes = Long.parseLong(httpresponse.getFirstHeader("Content-Length").getValue());
+               this.field_224848_f = File.createTempFile("backup", ".tar.gz");
+               this.field_224850_h = new HttpGet(p_237688_1_.field_230643_a_);
+               closeablehttpclient = HttpClientBuilder.create().setDefaultRequestConfig(this.field_224852_j).build();
+               HttpResponse httpresponse = closeablehttpclient.execute(this.field_224850_h);
+               p_237688_3_.field_225140_b = Long.parseLong(httpresponse.getFirstHeader("Content-Length").getValue());
                if (httpresponse.getStatusLine().getStatusCode() == 200) {
-                  OutputStream outputstream = new FileOutputStream(this.tempFile);
-                  FileDownload.ProgressListener filedownload$progresslistener = new FileDownload.ProgressListener(p_237688_2_.trim(), this.tempFile, p_237688_4_, p_237688_3_);
+                  OutputStream outputstream = new FileOutputStream(this.field_224848_f);
+                  FileDownload.ProgressListener filedownload$progresslistener = new FileDownload.ProgressListener(p_237688_2_.trim(), this.field_224848_f, p_237688_4_, p_237688_3_);
                   FileDownload.DownloadCountingOutputStream filedownload$downloadcountingoutputstream = new FileDownload.DownloadCountingOutputStream(outputstream);
-                  filedownload$downloadcountingoutputstream.setListener(filedownload$progresslistener);
+                  filedownload$downloadcountingoutputstream.func_224804_a(filedownload$progresslistener);
                   IOUtils.copy(httpresponse.getEntity().getContent(), filedownload$downloadcountingoutputstream);
                   return;
                }
 
-               this.error = true;
-               this.request.abort();
+               this.field_224846_d = true;
+               this.field_224850_h.abort();
             } catch (Exception exception1) {
                LOGGER.error("Caught exception while downloading: " + exception1.getMessage());
-               this.error = true;
+               this.field_224846_d = true;
                return;
             } finally {
-               this.request.releaseConnection();
-               if (this.tempFile != null) {
-                  this.tempFile.delete();
+               this.field_224850_h.releaseConnection();
+               if (this.field_224848_f != null) {
+                  this.field_224848_f.delete();
                }
 
-               if (!this.error) {
-                  if (!p_237688_1_.resourcePackUrl.isEmpty() && !p_237688_1_.resourcePackHash.isEmpty()) {
+               if (!this.field_224846_d) {
+                  if (!p_237688_1_.field_230644_b_.isEmpty() && !p_237688_1_.field_230645_c_.isEmpty()) {
                      try {
-                        this.tempFile = File.createTempFile("resources", ".tar.gz");
-                        this.request = new HttpGet(p_237688_1_.resourcePackUrl);
-                        HttpResponse httpresponse1 = closeablehttpclient.execute(this.request);
-                        p_237688_3_.totalBytes = Long.parseLong(httpresponse1.getFirstHeader("Content-Length").getValue());
+                        this.field_224848_f = File.createTempFile("resources", ".tar.gz");
+                        this.field_224850_h = new HttpGet(p_237688_1_.field_230644_b_);
+                        HttpResponse httpresponse1 = closeablehttpclient.execute(this.field_224850_h);
+                        p_237688_3_.field_225140_b = Long.parseLong(httpresponse1.getFirstHeader("Content-Length").getValue());
                         if (httpresponse1.getStatusLine().getStatusCode() != 200) {
-                           this.error = true;
-                           this.request.abort();
+                           this.field_224846_d = true;
+                           this.field_224850_h.abort();
                            return;
                         }
 
-                        OutputStream outputstream1 = new FileOutputStream(this.tempFile);
-                        FileDownload.ResourcePackProgressListener filedownload$resourcepackprogresslistener = new FileDownload.ResourcePackProgressListener(this.tempFile, p_237688_3_, p_237688_1_);
+                        OutputStream outputstream1 = new FileOutputStream(this.field_224848_f);
+                        FileDownload.ResourcePackProgressListener filedownload$resourcepackprogresslistener = new FileDownload.ResourcePackProgressListener(this.field_224848_f, p_237688_3_, p_237688_1_);
                         FileDownload.DownloadCountingOutputStream filedownload$downloadcountingoutputstream1 = new FileDownload.DownloadCountingOutputStream(outputstream1);
-                        filedownload$downloadcountingoutputstream1.setListener(filedownload$resourcepackprogresslistener);
+                        filedownload$downloadcountingoutputstream1.func_224804_a(filedownload$resourcepackprogresslistener);
                         IOUtils.copy(httpresponse1.getEntity().getContent(), filedownload$downloadcountingoutputstream1);
                      } catch (Exception exception) {
                         LOGGER.error("Caught exception while downloading: " + exception.getMessage());
-                        this.error = true;
+                        this.field_224846_d = true;
                      } finally {
-                        this.request.releaseConnection();
-                        if (this.tempFile != null) {
-                           this.tempFile.delete();
+                        this.field_224850_h.releaseConnection();
+                        if (this.field_224848_f != null) {
+                           this.field_224848_f.delete();
                         }
 
                      }
                   } else {
-                     this.finished = true;
+                     this.field_224845_c = true;
                   }
                }
 
@@ -163,39 +163,39 @@ public class FileDownload {
             }
 
          });
-         this.currentThread.setUncaughtExceptionHandler(new RealmsDefaultUncaughtExceptionHandler(LOGGER));
-         this.currentThread.start();
+         this.field_224851_i.setUncaughtExceptionHandler(new RealmsDefaultUncaughtExceptionHandler(LOGGER));
+         this.field_224851_i.start();
       }
    }
 
-   public void cancel() {
-      if (this.request != null) {
-         this.request.abort();
+   public void func_224834_a() {
+      if (this.field_224850_h != null) {
+         this.field_224850_h.abort();
       }
 
-      if (this.tempFile != null) {
-         this.tempFile.delete();
+      if (this.field_224848_f != null) {
+         this.field_224848_f.delete();
       }
 
-      this.cancelled = true;
+      this.field_224844_b = true;
    }
 
-   public boolean isFinished() {
-      return this.finished;
+   public boolean func_224835_b() {
+      return this.field_224845_c;
    }
 
-   public boolean isError() {
-      return this.error;
+   public boolean func_224836_c() {
+      return this.field_224846_d;
    }
 
-   public boolean isExtracting() {
-      return this.extracting;
+   public boolean func_224837_d() {
+      return this.field_224847_e;
    }
 
-   public static String findAvailableFolderName(String p_224828_0_) {
+   public static String func_224828_b(String p_224828_0_) {
       p_224828_0_ = p_224828_0_.replaceAll("[\\./\"]", "_");
 
-      for(String s : INVALID_FILE_NAMES) {
+      for(String s : field_224853_k) {
          if (p_224828_0_.equalsIgnoreCase(s)) {
             p_224828_0_ = "_" + p_224828_0_ + "_";
          }
@@ -204,7 +204,7 @@ public class FileDownload {
       return p_224828_0_;
    }
 
-   private void untarGzipArchive(String p_237690_1_, File p_237690_2_, SaveFormat p_237690_3_) throws IOException {
+   private void func_237690_a_(String p_237690_1_, File p_237690_2_, SaveFormat p_237690_3_) throws IOException {
       Pattern pattern = Pattern.compile(".*-([0-9]+)$");
       int i = 1;
 
@@ -216,12 +216,12 @@ public class FileDownload {
          p_237690_1_ = "Realm";
       }
 
-      p_237690_1_ = findAvailableFolderName(p_237690_1_);
+      p_237690_1_ = func_224828_b(p_237690_1_);
 
       try {
-         for(WorldSummary worldsummary : p_237690_3_.getLevelList()) {
-            if (worldsummary.getLevelId().toLowerCase(Locale.ROOT).startsWith(p_237690_1_.toLowerCase(Locale.ROOT))) {
-               Matcher matcher = pattern.matcher(worldsummary.getLevelId());
+         for(WorldSummary worldsummary : p_237690_3_.getSaveList()) {
+            if (worldsummary.getFileName().toLowerCase(Locale.ROOT).startsWith(p_237690_1_.toLowerCase(Locale.ROOT))) {
+               Matcher matcher = pattern.matcher(worldsummary.getFileName());
                if (matcher.matches()) {
                   if (Integer.valueOf(matcher.group(1)) > i) {
                      i = Integer.valueOf(matcher.group(1));
@@ -233,7 +233,7 @@ public class FileDownload {
          }
       } catch (Exception exception1) {
          LOGGER.error("Error getting level list", (Throwable)exception1);
-         this.error = true;
+         this.field_224846_d = true;
          return;
       }
 
@@ -256,7 +256,7 @@ public class FileDownload {
       }
 
       TarArchiveInputStream tararchiveinputstream = null;
-      File file1 = new File(Minecraft.getInstance().gameDirectory.getAbsolutePath(), "saves");
+      File file1 = new File(Minecraft.getInstance().gameDir.getAbsolutePath(), "saves");
 
       try {
          file1.mkdir();
@@ -276,7 +276,7 @@ public class FileDownload {
          }
       } catch (Exception exception) {
          LOGGER.error("Error extracting world", (Throwable)exception);
-         this.error = true;
+         this.field_224846_d = true;
       } finally {
          if (tararchiveinputstream != null) {
             tararchiveinputstream.close();
@@ -286,20 +286,20 @@ public class FileDownload {
             p_237690_2_.delete();
          }
 
-         try (SaveFormat.LevelSave saveformat$levelsave = p_237690_3_.createAccess(s)) {
-            saveformat$levelsave.renameLevel(s.trim());
-            Path path = saveformat$levelsave.getLevelPath(FolderName.LEVEL_DATA_FILE);
-            deletePlayerTag(path.toFile());
+         try (SaveFormat.LevelSave saveformat$levelsave = p_237690_3_.getLevelSave(s)) {
+            saveformat$levelsave.updateSaveName(s.trim());
+            Path path = saveformat$levelsave.resolveFilePath(FolderName.LEVEL_DAT);
+            func_237689_a_(path.toFile());
          } catch (IOException ioexception) {
             LOGGER.error("Failed to rename unpacked realms level {}", s, ioexception);
          }
 
-         this.resourcePackPath = new File(file1, s + File.separator + "resources.zip");
+         this.field_224849_g = new File(file1, s + File.separator + "resources.zip");
       }
 
    }
 
-   private static void deletePlayerTag(File p_237689_0_) {
+   private static void func_237689_a_(File p_237689_0_) {
       if (p_237689_0_.exists()) {
          try {
             CompoundNBT compoundnbt = CompressedStreamTools.readCompressed(p_237689_0_);
@@ -315,20 +315,20 @@ public class FileDownload {
 
    @OnlyIn(Dist.CLIENT)
    class DownloadCountingOutputStream extends CountingOutputStream {
-      private ActionListener listener;
+      private ActionListener field_224806_b;
 
       public DownloadCountingOutputStream(OutputStream p_i51649_2_) {
          super(p_i51649_2_);
       }
 
-      public void setListener(ActionListener p_224804_1_) {
-         this.listener = p_224804_1_;
+      public void func_224804_a(ActionListener p_224804_1_) {
+         this.field_224806_b = p_224804_1_;
       }
 
       protected void afterWrite(int p_afterWrite_1_) throws IOException {
          super.afterWrite(p_afterWrite_1_);
-         if (this.listener != null) {
-            this.listener.actionPerformed(new ActionEvent(this, 0, (String)null));
+         if (this.field_224806_b != null) {
+            this.field_224806_b.actionPerformed(new ActionEvent(this, 0, (String)null));
          }
 
       }
@@ -336,27 +336,27 @@ public class FileDownload {
 
    @OnlyIn(Dist.CLIENT)
    class ProgressListener implements ActionListener {
-      private final String worldName;
-      private final File tempFile;
-      private final SaveFormat levelStorageSource;
-      private final RealmsDownloadLatestWorldScreen.DownloadStatus downloadStatus;
+      private final String field_224813_b;
+      private final File field_224814_c;
+      private final SaveFormat field_224815_d;
+      private final RealmsDownloadLatestWorldScreen.DownloadStatus field_224816_e;
 
       private ProgressListener(String p_i232192_2_, File p_i232192_3_, SaveFormat p_i232192_4_, RealmsDownloadLatestWorldScreen.DownloadStatus p_i232192_5_) {
-         this.worldName = p_i232192_2_;
-         this.tempFile = p_i232192_3_;
-         this.levelStorageSource = p_i232192_4_;
-         this.downloadStatus = p_i232192_5_;
+         this.field_224813_b = p_i232192_2_;
+         this.field_224814_c = p_i232192_3_;
+         this.field_224815_d = p_i232192_4_;
+         this.field_224816_e = p_i232192_5_;
       }
 
       public void actionPerformed(ActionEvent p_actionPerformed_1_) {
-         this.downloadStatus.bytesWritten = ((FileDownload.DownloadCountingOutputStream)p_actionPerformed_1_.getSource()).getByteCount();
-         if (this.downloadStatus.bytesWritten >= this.downloadStatus.totalBytes && !FileDownload.this.cancelled && !FileDownload.this.error) {
+         this.field_224816_e.field_225139_a = ((FileDownload.DownloadCountingOutputStream)p_actionPerformed_1_.getSource()).getByteCount();
+         if (this.field_224816_e.field_225139_a >= this.field_224816_e.field_225140_b && !FileDownload.this.field_224844_b && !FileDownload.this.field_224846_d) {
             try {
-               FileDownload.this.extracting = true;
-               FileDownload.this.untarGzipArchive(this.worldName, this.tempFile, this.levelStorageSource);
+               FileDownload.this.field_224847_e = true;
+               FileDownload.this.func_237690_a_(this.field_224813_b, this.field_224814_c, this.field_224815_d);
             } catch (IOException ioexception) {
                FileDownload.LOGGER.error("Error extracting archive", (Throwable)ioexception);
-               FileDownload.this.error = true;
+               FileDownload.this.field_224846_d = true;
             }
          }
 
@@ -365,32 +365,32 @@ public class FileDownload {
 
    @OnlyIn(Dist.CLIENT)
    class ResourcePackProgressListener implements ActionListener {
-      private final File tempFile;
-      private final RealmsDownloadLatestWorldScreen.DownloadStatus downloadStatus;
-      private final WorldDownload worldDownload;
+      private final File field_224819_b;
+      private final RealmsDownloadLatestWorldScreen.DownloadStatus field_224820_c;
+      private final WorldDownload field_224821_d;
 
       private ResourcePackProgressListener(File p_i51645_2_, RealmsDownloadLatestWorldScreen.DownloadStatus p_i51645_3_, WorldDownload p_i51645_4_) {
-         this.tempFile = p_i51645_2_;
-         this.downloadStatus = p_i51645_3_;
-         this.worldDownload = p_i51645_4_;
+         this.field_224819_b = p_i51645_2_;
+         this.field_224820_c = p_i51645_3_;
+         this.field_224821_d = p_i51645_4_;
       }
 
       public void actionPerformed(ActionEvent p_actionPerformed_1_) {
-         this.downloadStatus.bytesWritten = ((FileDownload.DownloadCountingOutputStream)p_actionPerformed_1_.getSource()).getByteCount();
-         if (this.downloadStatus.bytesWritten >= this.downloadStatus.totalBytes && !FileDownload.this.cancelled) {
+         this.field_224820_c.field_225139_a = ((FileDownload.DownloadCountingOutputStream)p_actionPerformed_1_.getSource()).getByteCount();
+         if (this.field_224820_c.field_225139_a >= this.field_224820_c.field_225140_b && !FileDownload.this.field_224844_b) {
             try {
-               String s = Hashing.sha1().hashBytes(Files.toByteArray(this.tempFile)).toString();
-               if (s.equals(this.worldDownload.resourcePackHash)) {
-                  FileUtils.copyFile(this.tempFile, FileDownload.this.resourcePackPath);
-                  FileDownload.this.finished = true;
+               String s = Hashing.sha1().hashBytes(Files.toByteArray(this.field_224819_b)).toString();
+               if (s.equals(this.field_224821_d.field_230645_c_)) {
+                  FileUtils.copyFile(this.field_224819_b, FileDownload.this.field_224849_g);
+                  FileDownload.this.field_224845_c = true;
                } else {
-                  FileDownload.LOGGER.error("Resourcepack had wrong hash (expected " + this.worldDownload.resourcePackHash + ", found " + s + "). Deleting it.");
-                  FileUtils.deleteQuietly(this.tempFile);
-                  FileDownload.this.error = true;
+                  FileDownload.LOGGER.error("Resourcepack had wrong hash (expected " + this.field_224821_d.field_230645_c_ + ", found " + s + "). Deleting it.");
+                  FileUtils.deleteQuietly(this.field_224819_b);
+                  FileDownload.this.field_224846_d = true;
                }
             } catch (IOException ioexception) {
                FileDownload.LOGGER.error("Error copying resourcepack file", (Object)ioexception.getMessage());
-               FileDownload.this.error = true;
+               FileDownload.this.field_224846_d = true;
             }
          }
 

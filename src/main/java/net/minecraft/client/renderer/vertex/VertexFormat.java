@@ -15,13 +15,13 @@ public class VertexFormat {
    private final IntList offsets = new IntArrayList();
    private final int vertexSize;
 
-   public VertexFormat(ImmutableList<VertexFormatElement> p_i225911_1_) {
-      this.elements = p_i225911_1_;
+   public VertexFormat(ImmutableList<VertexFormatElement> elementsIn) {
+      this.elements = elementsIn;
       int i = 0;
 
-      for(VertexFormatElement vertexformatelement : p_i225911_1_) {
+      for(VertexFormatElement vertexformatelement : elementsIn) {
          this.offsets.add(i);
-         i += vertexformatelement.getByteSize();
+         i += vertexformatelement.getSize();
       }
 
       this.vertexSize = i;
@@ -32,10 +32,10 @@ public class VertexFormat {
    }
 
    public int getIntegerSize() {
-      return this.getVertexSize() / 4;
+      return this.getSize() / 4;
    }
 
-   public int getVertexSize() {
+   public int getSize() {
       return this.vertexSize;
    }
 
@@ -58,17 +58,17 @@ public class VertexFormat {
       return this.elements.hashCode();
    }
 
-   public void setupBufferState(long p_227892_1_) {
+   public void setupBufferState(long pointerIn) {
       if (!RenderSystem.isOnRenderThread()) {
          RenderSystem.recordRenderCall(() -> {
-            this.setupBufferState(p_227892_1_);
+            this.setupBufferState(pointerIn);
          });
       } else {
-         int i = this.getVertexSize();
+         int i = this.getSize();
          List<VertexFormatElement> list = this.getElements();
 
          for(int j = 0; j < list.size(); ++j) {
-            list.get(j).setupBufferState(p_227892_1_ + (long)this.offsets.getInt(j), i);
+            list.get(j).setupBufferState(pointerIn + (long)this.offsets.getInt(j), i);
          }
 
       }

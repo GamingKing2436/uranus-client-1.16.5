@@ -12,62 +12,62 @@ public class SpringFeature extends Feature<LiquidsConfig> {
       super(p_i231995_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, LiquidsConfig p_241855_5_) {
-      if (!p_241855_5_.validBlocks.contains(p_241855_1_.getBlockState(p_241855_4_.above()).getBlock())) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, LiquidsConfig config) {
+      if (!config.acceptedBlocks.contains(reader.getBlockState(pos.up()).getBlock())) {
          return false;
-      } else if (p_241855_5_.requiresBlockBelow && !p_241855_5_.validBlocks.contains(p_241855_1_.getBlockState(p_241855_4_.below()).getBlock())) {
+      } else if (config.needsBlockBelow && !config.acceptedBlocks.contains(reader.getBlockState(pos.down()).getBlock())) {
          return false;
       } else {
-         BlockState blockstate = p_241855_1_.getBlockState(p_241855_4_);
-         if (!blockstate.isAir() && !p_241855_5_.validBlocks.contains(blockstate.getBlock())) {
+         BlockState blockstate = reader.getBlockState(pos);
+         if (!blockstate.isAir() && !config.acceptedBlocks.contains(blockstate.getBlock())) {
             return false;
          } else {
             int i = 0;
             int j = 0;
-            if (p_241855_5_.validBlocks.contains(p_241855_1_.getBlockState(p_241855_4_.west()).getBlock())) {
+            if (config.acceptedBlocks.contains(reader.getBlockState(pos.west()).getBlock())) {
                ++j;
             }
 
-            if (p_241855_5_.validBlocks.contains(p_241855_1_.getBlockState(p_241855_4_.east()).getBlock())) {
+            if (config.acceptedBlocks.contains(reader.getBlockState(pos.east()).getBlock())) {
                ++j;
             }
 
-            if (p_241855_5_.validBlocks.contains(p_241855_1_.getBlockState(p_241855_4_.north()).getBlock())) {
+            if (config.acceptedBlocks.contains(reader.getBlockState(pos.north()).getBlock())) {
                ++j;
             }
 
-            if (p_241855_5_.validBlocks.contains(p_241855_1_.getBlockState(p_241855_4_.south()).getBlock())) {
+            if (config.acceptedBlocks.contains(reader.getBlockState(pos.south()).getBlock())) {
                ++j;
             }
 
-            if (p_241855_5_.validBlocks.contains(p_241855_1_.getBlockState(p_241855_4_.below()).getBlock())) {
+            if (config.acceptedBlocks.contains(reader.getBlockState(pos.down()).getBlock())) {
                ++j;
             }
 
             int k = 0;
-            if (p_241855_1_.isEmptyBlock(p_241855_4_.west())) {
+            if (reader.isAirBlock(pos.west())) {
                ++k;
             }
 
-            if (p_241855_1_.isEmptyBlock(p_241855_4_.east())) {
+            if (reader.isAirBlock(pos.east())) {
                ++k;
             }
 
-            if (p_241855_1_.isEmptyBlock(p_241855_4_.north())) {
+            if (reader.isAirBlock(pos.north())) {
                ++k;
             }
 
-            if (p_241855_1_.isEmptyBlock(p_241855_4_.south())) {
+            if (reader.isAirBlock(pos.south())) {
                ++k;
             }
 
-            if (p_241855_1_.isEmptyBlock(p_241855_4_.below())) {
+            if (reader.isAirBlock(pos.down())) {
                ++k;
             }
 
-            if (j == p_241855_5_.rockCount && k == p_241855_5_.holeCount) {
-               p_241855_1_.setBlock(p_241855_4_, p_241855_5_.state.createLegacyBlock(), 2);
-               p_241855_1_.getLiquidTicks().scheduleTick(p_241855_4_, p_241855_5_.state.getType(), 0);
+            if (j == config.rockAmount && k == config.holeAmount) {
+               reader.setBlockState(pos, config.state.getBlockState(), 2);
+               reader.getPendingFluidTicks().scheduleTick(pos, config.state.getFluid(), 0);
                ++i;
             }
 

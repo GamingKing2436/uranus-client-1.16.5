@@ -5,8 +5,8 @@ public class TrappedChestTileEntity extends ChestTileEntity {
       super(TileEntityType.TRAPPED_CHEST);
    }
 
-   protected void signalOpenCount() {
-      super.signalOpenCount();
-      this.level.updateNeighborsAt(this.worldPosition.below(), this.getBlockState().getBlock());
+   protected void onOpenOrClose() {
+      super.onOpenOrClose();
+      this.world.notifyNeighborsOfStateChange(this.pos.down(), this.getBlockState().getBlock());
    }
 }

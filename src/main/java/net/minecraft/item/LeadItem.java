@@ -11,41 +11,41 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class LeadItem extends Item {
-   public LeadItem(Item.Properties p_i48484_1_) {
-      super(p_i48484_1_);
+   public LeadItem(Item.Properties builder) {
+      super(builder);
    }
 
-   public ActionResultType useOn(ItemUseContext p_195939_1_) {
-      World world = p_195939_1_.getLevel();
-      BlockPos blockpos = p_195939_1_.getClickedPos();
+   public ActionResultType onItemUse(ItemUseContext context) {
+      World world = context.getWorld();
+      BlockPos blockpos = context.getPos();
       Block block = world.getBlockState(blockpos).getBlock();
-      if (block.is(BlockTags.FENCES)) {
-         PlayerEntity playerentity = p_195939_1_.getPlayer();
-         if (!world.isClientSide && playerentity != null) {
+      if (block.isIn(BlockTags.FENCES)) {
+         PlayerEntity playerentity = context.getPlayer();
+         if (!world.isRemote && playerentity != null) {
             bindPlayerMobs(playerentity, world, blockpos);
          }
 
-         return ActionResultType.sidedSuccess(world.isClientSide);
+         return ActionResultType.func_233537_a_(world.isRemote);
       } else {
          return ActionResultType.PASS;
       }
    }
 
-   public static ActionResultType bindPlayerMobs(PlayerEntity p_226641_0_, World p_226641_1_, BlockPos p_226641_2_) {
+   public static ActionResultType bindPlayerMobs(PlayerEntity player, World world, BlockPos pos) {
       LeashKnotEntity leashknotentity = null;
       boolean flag = false;
       double d0 = 7.0D;
-      int i = p_226641_2_.getX();
-      int j = p_226641_2_.getY();
-      int k = p_226641_2_.getZ();
+      int i = pos.getX();
+      int j = pos.getY();
+      int k = pos.getZ();
 
-      for(MobEntity mobentity : p_226641_1_.getEntitiesOfClass(MobEntity.class, new AxisAlignedBB((double)i - 7.0D, (double)j - 7.0D, (double)k - 7.0D, (double)i + 7.0D, (double)j + 7.0D, (double)k + 7.0D))) {
-         if (mobentity.getLeashHolder() == p_226641_0_) {
+      for(MobEntity mobentity : world.getEntitiesWithinAABB(MobEntity.class, new AxisAlignedBB((double)i - 7.0D, (double)j - 7.0D, (double)k - 7.0D, (double)i + 7.0D, (double)j + 7.0D, (double)k + 7.0D))) {
+         if (mobentity.getLeashHolder() == player) {
             if (leashknotentity == null) {
-               leashknotentity = LeashKnotEntity.getOrCreateKnot(p_226641_1_, p_226641_2_);
+               leashknotentity = LeashKnotEntity.create(world, pos);
             }
 
-            mobentity.setLeashedTo(leashknotentity, true);
+            mobentity.setLeashHolder(leashknotentity, true);
             flag = true;
          }
       }

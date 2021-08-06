@@ -10,18 +10,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class TextComponent implements IFormattableTextComponent {
    protected final List<ITextComponent> siblings = Lists.newArrayList();
-   private IReorderingProcessor visualOrderText = IReorderingProcessor.EMPTY;
+   private IReorderingProcessor field_244278_d = IReorderingProcessor.field_242232_a;
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   private LanguageMap decomposedWith;
+   private LanguageMap field_244279_e;
    private Style style = Style.EMPTY;
 
-   public IFormattableTextComponent append(ITextComponent p_230529_1_) {
-      this.siblings.add(p_230529_1_);
+   public IFormattableTextComponent append(ITextComponent sibling) {
+      this.siblings.add(sibling);
       return this;
    }
 
-   public String getContents() {
+   public String getUnformattedComponentText() {
       return "";
    }
 
@@ -29,8 +29,8 @@ public abstract class TextComponent implements IFormattableTextComponent {
       return this.siblings;
    }
 
-   public IFormattableTextComponent setStyle(Style p_230530_1_) {
-      this.style = p_230530_1_;
+   public IFormattableTextComponent setStyle(Style style) {
+      this.style = style;
       return this;
    }
 
@@ -38,24 +38,24 @@ public abstract class TextComponent implements IFormattableTextComponent {
       return this.style;
    }
 
-   public abstract TextComponent plainCopy();
+   public abstract TextComponent copyRaw();
 
-   public final IFormattableTextComponent copy() {
-      TextComponent textcomponent = this.plainCopy();
+   public final IFormattableTextComponent deepCopy() {
+      TextComponent textcomponent = this.copyRaw();
       textcomponent.siblings.addAll(this.siblings);
       textcomponent.setStyle(this.style);
       return textcomponent;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public IReorderingProcessor getVisualOrderText() {
+   public IReorderingProcessor func_241878_f() {
       LanguageMap languagemap = LanguageMap.getInstance();
-      if (this.decomposedWith != languagemap) {
-         this.visualOrderText = languagemap.getVisualOrder(this);
-         this.decomposedWith = languagemap;
+      if (this.field_244279_e != languagemap) {
+         this.field_244278_d = languagemap.func_241870_a(this);
+         this.field_244279_e = languagemap;
       }
 
-      return this.visualOrderText;
+      return this.field_244278_d;
    }
 
    public boolean equals(Object p_equals_1_) {

@@ -9,16 +9,16 @@ public abstract class SittingPhase extends Phase {
       super(p_i46794_1_);
    }
 
-   public boolean isSitting() {
+   public boolean getIsStationary() {
       return true;
    }
 
-   public float onHurt(DamageSource p_221113_1_, float p_221113_2_) {
-      if (p_221113_1_.getDirectEntity() instanceof AbstractArrowEntity) {
-         p_221113_1_.getDirectEntity().setSecondsOnFire(1);
+   public float func_221113_a(DamageSource p_221113_1_, float p_221113_2_) {
+      if (p_221113_1_.getImmediateSource() instanceof AbstractArrowEntity) {
+         p_221113_1_.getImmediateSource().setFire(1);
          return 0.0F;
       } else {
-         return super.onHurt(p_221113_1_, p_221113_2_);
+         return super.func_221113_a(p_221113_1_, p_221113_2_);
       }
    }
 }

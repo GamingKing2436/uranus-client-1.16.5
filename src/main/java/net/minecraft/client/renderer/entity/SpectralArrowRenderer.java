@@ -7,13 +7,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class SpectralArrowRenderer extends ArrowRenderer<SpectralArrowEntity> {
-   public static final ResourceLocation SPECTRAL_ARROW_LOCATION = new ResourceLocation("textures/entity/projectiles/spectral_arrow.png");
+   public static final ResourceLocation RES_SPECTRAL_ARROW = new ResourceLocation("textures/entity/projectiles/spectral_arrow.png");
 
-   public SpectralArrowRenderer(EntityRendererManager p_i46549_1_) {
-      super(p_i46549_1_);
+   public SpectralArrowRenderer(EntityRendererManager manager) {
+      super(manager);
    }
 
-   public ResourceLocation getTextureLocation(SpectralArrowEntity p_110775_1_) {
-      return SPECTRAL_ARROW_LOCATION;
+   public ResourceLocation getEntityTexture(SpectralArrowEntity entity) {
+      return RES_SPECTRAL_ARROW;
    }
 }

@@ -19,8 +19,8 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class SuffixArray<T> {
-   private static final boolean DEBUG_COMPARISONS = Boolean.parseBoolean(System.getProperty("SuffixArray.printComparisons", "false"));
-   private static final boolean DEBUG_ARRAY = Boolean.parseBoolean(System.getProperty("SuffixArray.printArray", "false"));
+   private static final boolean DEBUG_PRINT_COMPARISONS = Boolean.parseBoolean(System.getProperty("SuffixArray.printComparisons", "false"));
+   private static final boolean DEBUG_PRINT_ARRAY = Boolean.parseBoolean(System.getProperty("SuffixArray.printArray", "false"));
    private static final Logger LOGGER = LogManager.getLogger();
    protected final List<T> list = Lists.newArrayList();
    private final IntList chars = new IntArrayList();
@@ -110,13 +110,13 @@ public class SuffixArray<T> {
          this.offsets.add(intlist.getInt(j1));
       }
 
-      if (DEBUG_ARRAY) {
-         this.print();
+      if (DEBUG_PRINT_ARRAY) {
+         this.printArray();
       }
 
    }
 
-   private void print() {
+   private void printArray() {
       for(int i = 0; i < this.suffixToT.size(); ++i) {
          LOGGER.debug("{} {}", i, this.getString(i));
       }
@@ -177,7 +177,7 @@ public class SuffixArray<T> {
       while(j < k) {
          int l = j + (k - j) / 2;
          int i1 = this.compare(p_194055_1_, l);
-         if (DEBUG_COMPARISONS) {
+         if (DEBUG_PRINT_COMPARISONS) {
             LOGGER.debug("comparing lower \"{}\" with {} \"{}\": {}", p_194055_1_, l, this.getString(l), i1);
          }
 
@@ -195,7 +195,7 @@ public class SuffixArray<T> {
          while(j < k) {
             int j2 = j + (k - j) / 2;
             int j1 = this.compare(p_194055_1_, j2);
-            if (DEBUG_COMPARISONS) {
+            if (DEBUG_PRINT_COMPARISONS) {
                LOGGER.debug("comparing upper \"{}\" with {} \"{}\": {}", p_194055_1_, j2, this.getString(j2), j1);
             }
 

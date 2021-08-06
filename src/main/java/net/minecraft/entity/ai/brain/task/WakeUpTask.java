@@ -10,11 +10,11 @@ public class WakeUpTask extends Task<LivingEntity> {
       super(ImmutableMap.of());
    }
 
-   protected boolean checkExtraStartConditions(ServerWorld p_212832_1_, LivingEntity p_212832_2_) {
-      return !p_212832_2_.getBrain().isActive(Activity.REST) && p_212832_2_.isSleeping();
+   protected boolean shouldExecute(ServerWorld worldIn, LivingEntity owner) {
+      return !owner.getBrain().hasActivity(Activity.REST) && owner.isSleeping();
    }
 
-   protected void start(ServerWorld p_212831_1_, LivingEntity p_212831_2_, long p_212831_3_) {
-      p_212831_2_.stopSleeping();
+   protected void startExecuting(ServerWorld worldIn, LivingEntity entityIn, long gameTimeIn) {
+      entityIn.wakeUp();
    }
 }

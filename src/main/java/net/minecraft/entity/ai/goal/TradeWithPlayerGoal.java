@@ -5,39 +5,39 @@ import net.minecraft.entity.merchant.villager.AbstractVillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 
 public class TradeWithPlayerGoal extends Goal {
-   private final AbstractVillagerEntity mob;
+   private final AbstractVillagerEntity villager;
 
-   public TradeWithPlayerGoal(AbstractVillagerEntity p_i50320_1_) {
-      this.mob = p_i50320_1_;
-      this.setFlags(EnumSet.of(Goal.Flag.JUMP, Goal.Flag.MOVE));
+   public TradeWithPlayerGoal(AbstractVillagerEntity villager) {
+      this.villager = villager;
+      this.setMutexFlags(EnumSet.of(Goal.Flag.JUMP, Goal.Flag.MOVE));
    }
 
-   public boolean canUse() {
-      if (!this.mob.isAlive()) {
+   public boolean shouldExecute() {
+      if (!this.villager.isAlive()) {
          return false;
-      } else if (this.mob.isInWater()) {
+      } else if (this.villager.isInWater()) {
          return false;
-      } else if (!this.mob.isOnGround()) {
+      } else if (!this.villager.isOnGround()) {
          return false;
-      } else if (this.mob.hurtMarked) {
+      } else if (this.villager.velocityChanged) {
          return false;
       } else {
-         PlayerEntity playerentity = this.mob.getTradingPlayer();
+         PlayerEntity playerentity = this.villager.getCustomer();
          if (playerentity == null) {
             return false;
-         } else if (this.mob.distanceToSqr(playerentity) > 16.0D) {
+         } else if (this.villager.getDistanceSq(playerentity) > 16.0D) {
             return false;
          } else {
-            return playerentity.containerMenu != null;
+            return playerentity.openContainer != null;
          }
       }
    }
 
-   public void start() {
-      this.mob.getNavigation().stop();
+   public void startExecuting() {
+      this.villager.getNavigator().clearPath();
    }
 
-   public void stop() {
-      this.mob.setTradingPlayer((PlayerEntity)null);
+   public void resetTask() {
+      this.villager.setCustomer((PlayerEntity)null);
    }
 }

@@ -29,46 +29,46 @@ import org.apache.logging.log4j.Logger;
 
 public class TemplateManager {
    private static final Logger LOGGER = LogManager.getLogger();
-   private final Map<ResourceLocation, Template> structureRepository = Maps.newHashMap();
-   private final DataFixer fixerUpper;
-   private IResourceManager resourceManager;
-   private final Path generatedDir;
+   private final Map<ResourceLocation, Template> templates = Maps.newHashMap();
+   private final DataFixer fixer;
+   private IResourceManager field_237130_d_;
+   private final Path pathGenerated;
 
    public TemplateManager(IResourceManager p_i232119_1_, SaveFormat.LevelSave p_i232119_2_, DataFixer p_i232119_3_) {
-      this.resourceManager = p_i232119_1_;
-      this.fixerUpper = p_i232119_3_;
-      this.generatedDir = p_i232119_2_.getLevelPath(FolderName.GENERATED_DIR).normalize();
+      this.field_237130_d_ = p_i232119_1_;
+      this.fixer = p_i232119_3_;
+      this.pathGenerated = p_i232119_2_.resolveFilePath(FolderName.GENERATED).normalize();
    }
 
-   public Template getOrCreate(ResourceLocation p_200220_1_) {
-      Template template = this.get(p_200220_1_);
+   public Template getTemplateDefaulted(ResourceLocation p_200220_1_) {
+      Template template = this.getTemplate(p_200220_1_);
       if (template == null) {
          template = new Template();
-         this.structureRepository.put(p_200220_1_, template);
+         this.templates.put(p_200220_1_, template);
       }
 
       return template;
    }
 
    @Nullable
-   public Template get(ResourceLocation p_200219_1_) {
-      return this.structureRepository.computeIfAbsent(p_200219_1_, (p_209204_1_) -> {
-         Template template = this.loadFromGenerated(p_209204_1_);
-         return template != null ? template : this.loadFromResource(p_209204_1_);
+   public Template getTemplate(ResourceLocation p_200219_1_) {
+      return this.templates.computeIfAbsent(p_200219_1_, (p_209204_1_) -> {
+         Template template = this.loadTemplateFile(p_209204_1_);
+         return template != null ? template : this.loadTemplateResource(p_209204_1_);
       });
    }
 
-   public void onResourceManagerReload(IResourceManager p_195410_1_) {
-      this.resourceManager = p_195410_1_;
-      this.structureRepository.clear();
+   public void onResourceManagerReload(IResourceManager resourceManager) {
+      this.field_237130_d_ = resourceManager;
+      this.templates.clear();
    }
 
    @Nullable
-   private Template loadFromResource(ResourceLocation p_209201_1_) {
+   private Template loadTemplateResource(ResourceLocation p_209201_1_) {
       ResourceLocation resourcelocation = new ResourceLocation(p_209201_1_.getNamespace(), "structures/" + p_209201_1_.getPath() + ".nbt");
 
-      try (IResource iresource = this.resourceManager.getResource(resourcelocation)) {
-         return this.readStructure(iresource.getInputStream());
+      try (IResource iresource = this.field_237130_d_.getResource(resourcelocation)) {
+         return this.loadTemplate(iresource.getInputStream());
       } catch (FileNotFoundException filenotfoundexception) {
          return null;
       } catch (Throwable throwable) {
@@ -78,14 +78,14 @@ public class TemplateManager {
    }
 
    @Nullable
-   private Template loadFromGenerated(ResourceLocation p_195428_1_) {
-      if (!this.generatedDir.toFile().isDirectory()) {
+   private Template loadTemplateFile(ResourceLocation locationIn) {
+      if (!this.pathGenerated.toFile().isDirectory()) {
          return null;
       } else {
-         Path path = this.createAndValidatePathToStructure(p_195428_1_, ".nbt");
+         Path path = this.resolvePath(locationIn, ".nbt");
 
          try (InputStream inputstream = new FileInputStream(path.toFile())) {
-            return this.readStructure(inputstream);
+            return this.loadTemplate(inputstream);
          } catch (FileNotFoundException filenotfoundexception) {
             return null;
          } catch (IOException ioexception) {
@@ -95,27 +95,27 @@ public class TemplateManager {
       }
    }
 
-   private Template readStructure(InputStream p_209205_1_) throws IOException {
-      CompoundNBT compoundnbt = CompressedStreamTools.readCompressed(p_209205_1_);
-      return this.readStructure(compoundnbt);
+   private Template loadTemplate(InputStream inputStreamIn) throws IOException {
+      CompoundNBT compoundnbt = CompressedStreamTools.readCompressed(inputStreamIn);
+      return this.func_227458_a_(compoundnbt);
    }
 
-   public Template readStructure(CompoundNBT p_227458_1_) {
+   public Template func_227458_a_(CompoundNBT p_227458_1_) {
       if (!p_227458_1_.contains("DataVersion", 99)) {
          p_227458_1_.putInt("DataVersion", 500);
       }
 
       Template template = new Template();
-      template.load(NBTUtil.update(this.fixerUpper, DefaultTypeReferences.STRUCTURE, p_227458_1_, p_227458_1_.getInt("DataVersion")));
+      template.read(NBTUtil.update(this.fixer, DefaultTypeReferences.STRUCTURE, p_227458_1_, p_227458_1_.getInt("DataVersion")));
       return template;
    }
 
-   public boolean save(ResourceLocation p_195429_1_) {
-      Template template = this.structureRepository.get(p_195429_1_);
+   public boolean writeToFile(ResourceLocation templateName) {
+      Template template = this.templates.get(templateName);
       if (template == null) {
          return false;
       } else {
-         Path path = this.createAndValidatePathToStructure(p_195429_1_, ".nbt");
+         Path path = this.resolvePath(templateName, ".nbt");
          Path path1 = path.getParent();
          if (path1 == null) {
             return false;
@@ -127,7 +127,7 @@ public class TemplateManager {
                return false;
             }
 
-            CompoundNBT compoundnbt = template.save(new CompoundNBT());
+            CompoundNBT compoundnbt = template.writeToNBT(new CompoundNBT());
 
             try (OutputStream outputstream = new FileOutputStream(path.toFile())) {
                CompressedStreamTools.writeCompressed(compoundnbt, outputstream);
@@ -139,22 +139,22 @@ public class TemplateManager {
       }
    }
 
-   public Path createPathToStructure(ResourceLocation p_209509_1_, String p_209509_2_) {
+   public Path resolvePathStructures(ResourceLocation locationIn, String extIn) {
       try {
-         Path path = this.generatedDir.resolve(p_209509_1_.getNamespace());
+         Path path = this.pathGenerated.resolve(locationIn.getNamespace());
          Path path1 = path.resolve("structures");
-         return FileUtil.createPathToResource(path1, p_209509_1_.getPath(), p_209509_2_);
+         return FileUtil.resolveResourcePath(path1, locationIn.getPath(), extIn);
       } catch (InvalidPathException invalidpathexception) {
-         throw new ResourceLocationException("Invalid resource path: " + p_209509_1_, invalidpathexception);
+         throw new ResourceLocationException("Invalid resource path: " + locationIn, invalidpathexception);
       }
    }
 
-   private Path createAndValidatePathToStructure(ResourceLocation p_209510_1_, String p_209510_2_) {
-      if (p_209510_1_.getPath().contains("//")) {
-         throw new ResourceLocationException("Invalid resource path: " + p_209510_1_);
+   private Path resolvePath(ResourceLocation locationIn, String extIn) {
+      if (locationIn.getPath().contains("//")) {
+         throw new ResourceLocationException("Invalid resource path: " + locationIn);
       } else {
-         Path path = this.createPathToStructure(p_209510_1_, p_209510_2_);
-         if (path.startsWith(this.generatedDir) && FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path)) {
+         Path path = this.resolvePathStructures(locationIn, extIn);
+         if (path.startsWith(this.pathGenerated) && FileUtil.isNormalized(path) && FileUtil.containsReservedName(path)) {
             return path;
          } else {
             throw new ResourceLocationException("Invalid resource path: " + path);
@@ -162,7 +162,7 @@ public class TemplateManager {
       }
    }
 
-   public void remove(ResourceLocation p_189941_1_) {
-      this.structureRepository.remove(p_189941_1_);
+   public void remove(ResourceLocation templatePath) {
+      this.templates.remove(templatePath);
    }
 }

@@ -9,20 +9,20 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class DownloadTerrainScreen extends Screen {
-   private static final ITextComponent DOWNLOADING_TERRAIN_TEXT = new TranslationTextComponent("multiplayer.downloadingTerrain");
+   private static final ITextComponent field_243307_a = new TranslationTextComponent("multiplayer.downloadingTerrain");
 
    public DownloadTerrainScreen() {
-      super(NarratorChatListener.NO_TITLE);
+      super(NarratorChatListener.EMPTY);
    }
 
    public boolean shouldCloseOnEsc() {
       return false;
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
       this.renderDirtBackground(0);
-      drawCenteredString(p_230430_1_, this.font, DOWNLOADING_TERRAIN_TEXT, this.width / 2, this.height / 2 - 50, 16777215);
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+      drawCenteredString(matrixStack, this.font, field_243307_a, this.width / 2, this.height / 2 - 50, 16777215);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
    }
 
    public boolean isPauseScreen() {

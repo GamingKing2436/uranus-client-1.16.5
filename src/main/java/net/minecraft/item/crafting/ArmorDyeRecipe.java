@@ -13,16 +13,16 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ArmorDyeRecipe extends SpecialRecipe {
-   public ArmorDyeRecipe(ResourceLocation p_i48173_1_) {
-      super(p_i48173_1_);
+   public ArmorDyeRecipe(ResourceLocation idIn) {
+      super(idIn);
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
       ItemStack itemstack = ItemStack.EMPTY;
       List<ItemStack> list = Lists.newArrayList();
 
-      for(int i = 0; i < p_77569_1_.getContainerSize(); ++i) {
-         ItemStack itemstack1 = p_77569_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack1 = inv.getStackInSlot(i);
          if (!itemstack1.isEmpty()) {
             if (itemstack1.getItem() instanceof IDyeableArmorItem) {
                if (!itemstack.isEmpty()) {
@@ -43,12 +43,12 @@ public class ArmorDyeRecipe extends SpecialRecipe {
       return !itemstack.isEmpty() && !list.isEmpty();
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
+   public ItemStack getCraftingResult(CraftingInventory inv) {
       List<DyeItem> list = Lists.newArrayList();
       ItemStack itemstack = ItemStack.EMPTY;
 
-      for(int i = 0; i < p_77572_1_.getContainerSize(); ++i) {
-         ItemStack itemstack1 = p_77572_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack1 = inv.getStackInSlot(i);
          if (!itemstack1.isEmpty()) {
             Item item = itemstack1.getItem();
             if (item instanceof IDyeableArmorItem) {
@@ -67,15 +67,15 @@ public class ArmorDyeRecipe extends SpecialRecipe {
          }
       }
 
-      return !itemstack.isEmpty() && !list.isEmpty() ? IDyeableArmorItem.dyeArmor(itemstack, list) : ItemStack.EMPTY;
+      return !itemstack.isEmpty() && !list.isEmpty() ? IDyeableArmorItem.dyeItem(itemstack, list) : ItemStack.EMPTY;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ * p_194133_2_ >= 2;
+   public boolean canFit(int width, int height) {
+      return width * height >= 2;
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.ARMOR_DYE;
+      return IRecipeSerializer.CRAFTING_SPECIAL_ARMORDYE;
    }
 }

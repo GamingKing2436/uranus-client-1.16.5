@@ -10,86 +10,86 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class Slot {
-   private final int slot;
-   public final IInventory container;
-   public int index;
-   public final int x;
-   public final int y;
+   private final int slotIndex;
+   public final IInventory inventory;
+   public int slotNumber;
+   public final int xPos;
+   public final int yPos;
 
-   public Slot(IInventory p_i1824_1_, int p_i1824_2_, int p_i1824_3_, int p_i1824_4_) {
-      this.container = p_i1824_1_;
-      this.slot = p_i1824_2_;
-      this.x = p_i1824_3_;
-      this.y = p_i1824_4_;
+   public Slot(IInventory inventoryIn, int index, int xPosition, int yPosition) {
+      this.inventory = inventoryIn;
+      this.slotIndex = index;
+      this.xPos = xPosition;
+      this.yPos = yPosition;
    }
 
-   public void onQuickCraft(ItemStack p_75220_1_, ItemStack p_75220_2_) {
-      int i = p_75220_2_.getCount() - p_75220_1_.getCount();
+   public void onSlotChange(ItemStack oldStackIn, ItemStack newStackIn) {
+      int i = newStackIn.getCount() - oldStackIn.getCount();
       if (i > 0) {
-         this.onQuickCraft(p_75220_2_, i);
+         this.onCrafting(newStackIn, i);
       }
 
    }
 
-   protected void onQuickCraft(ItemStack p_75210_1_, int p_75210_2_) {
+   protected void onCrafting(ItemStack stack, int amount) {
    }
 
-   protected void onSwapCraft(int p_190900_1_) {
+   protected void onSwapCraft(int numItemsCrafted) {
    }
 
-   protected void checkTakeAchievements(ItemStack p_75208_1_) {
+   protected void onCrafting(ItemStack stack) {
    }
 
-   public ItemStack onTake(PlayerEntity p_190901_1_, ItemStack p_190901_2_) {
-      this.setChanged();
-      return p_190901_2_;
+   public ItemStack onTake(PlayerEntity thePlayer, ItemStack stack) {
+      this.onSlotChanged();
+      return stack;
    }
 
-   public boolean mayPlace(ItemStack p_75214_1_) {
+   public boolean isItemValid(ItemStack stack) {
       return true;
    }
 
-   public ItemStack getItem() {
-      return this.container.getItem(this.slot);
+   public ItemStack getStack() {
+      return this.inventory.getStackInSlot(this.slotIndex);
    }
 
-   public boolean hasItem() {
-      return !this.getItem().isEmpty();
+   public boolean getHasStack() {
+      return !this.getStack().isEmpty();
    }
 
-   public void set(ItemStack p_75215_1_) {
-      this.container.setItem(this.slot, p_75215_1_);
-      this.setChanged();
+   public void putStack(ItemStack stack) {
+      this.inventory.setInventorySlotContents(this.slotIndex, stack);
+      this.onSlotChanged();
    }
 
-   public void setChanged() {
-      this.container.setChanged();
+   public void onSlotChanged() {
+      this.inventory.markDirty();
    }
 
-   public int getMaxStackSize() {
-      return this.container.getMaxStackSize();
+   public int getSlotStackLimit() {
+      return this.inventory.getInventoryStackLimit();
    }
 
-   public int getMaxStackSize(ItemStack p_178170_1_) {
-      return this.getMaxStackSize();
+   public int getItemStackLimit(ItemStack stack) {
+      return this.getSlotStackLimit();
    }
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+   public Pair<ResourceLocation, ResourceLocation> getBackground() {
       return null;
    }
 
-   public ItemStack remove(int p_75209_1_) {
-      return this.container.removeItem(this.slot, p_75209_1_);
+   public ItemStack decrStackSize(int amount) {
+      return this.inventory.decrStackSize(this.slotIndex, amount);
    }
 
-   public boolean mayPickup(PlayerEntity p_82869_1_) {
+   public boolean canTakeStack(PlayerEntity playerIn) {
       return true;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean isActive() {
+   public boolean isEnabled() {
       return true;
    }
 }

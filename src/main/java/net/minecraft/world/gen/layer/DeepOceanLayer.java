@@ -6,43 +6,43 @@ import net.minecraft.world.gen.layer.traits.ICastleTransformer;
 public enum DeepOceanLayer implements ICastleTransformer {
    INSTANCE;
 
-   public int apply(INoiseRandom p_202748_1_, int p_202748_2_, int p_202748_3_, int p_202748_4_, int p_202748_5_, int p_202748_6_) {
-      if (LayerUtil.isShallowOcean(p_202748_6_)) {
+   public int apply(INoiseRandom context, int north, int west, int south, int east, int center) {
+      if (LayerUtil.isShallowOcean(center)) {
          int i = 0;
-         if (LayerUtil.isShallowOcean(p_202748_2_)) {
+         if (LayerUtil.isShallowOcean(north)) {
             ++i;
          }
 
-         if (LayerUtil.isShallowOcean(p_202748_3_)) {
+         if (LayerUtil.isShallowOcean(west)) {
             ++i;
          }
 
-         if (LayerUtil.isShallowOcean(p_202748_5_)) {
+         if (LayerUtil.isShallowOcean(east)) {
             ++i;
          }
 
-         if (LayerUtil.isShallowOcean(p_202748_4_)) {
+         if (LayerUtil.isShallowOcean(south)) {
             ++i;
          }
 
          if (i > 3) {
-            if (p_202748_6_ == 44) {
+            if (center == 44) {
                return 47;
             }
 
-            if (p_202748_6_ == 45) {
+            if (center == 45) {
                return 48;
             }
 
-            if (p_202748_6_ == 0) {
+            if (center == 0) {
                return 24;
             }
 
-            if (p_202748_6_ == 46) {
+            if (center == 46) {
                return 49;
             }
 
-            if (p_202748_6_ == 10) {
+            if (center == 10) {
                return 50;
             }
 
@@ -50,6 +50,6 @@ public enum DeepOceanLayer implements ICastleTransformer {
          }
       }
 
-      return p_202748_6_;
+      return center;
    }
 }

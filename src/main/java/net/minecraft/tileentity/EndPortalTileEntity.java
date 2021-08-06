@@ -14,7 +14,7 @@ public class EndPortalTileEntity extends TileEntity {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean shouldRenderFace(Direction p_184313_1_) {
-      return p_184313_1_ == Direction.UP;
+   public boolean shouldRenderFace(Direction face) {
+      return face == Direction.UP;
    }
 }

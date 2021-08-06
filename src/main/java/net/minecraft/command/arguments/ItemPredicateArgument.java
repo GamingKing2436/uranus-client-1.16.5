@@ -24,7 +24,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class ItemPredicateArgument implements ArgumentType<ItemPredicateArgument.IResult> {
    private static final Collection<String> EXAMPLES = Arrays.asList("stick", "minecraft:stick", "#stick", "#stick{foo=bar}");
-   private static final DynamicCommandExceptionType ERROR_UNKNOWN_TAG = new DynamicCommandExceptionType((p_208699_0_) -> {
+   private static final DynamicCommandExceptionType UNKNOWN_TAG = new DynamicCommandExceptionType((p_208699_0_) -> {
       return new TranslationTextComponent("arguments.item.tag.unknown", p_208699_0_);
    });
 
@@ -42,9 +42,9 @@ public class ItemPredicateArgument implements ArgumentType<ItemPredicateArgument
       } else {
          ResourceLocation resourcelocation = itemparser.getTag();
          return (p_199845_2_) -> {
-            ITag<Item> itag = p_199845_2_.getSource().getServer().getTags().getItems().getTag(resourcelocation);
+            ITag<Item> itag = p_199845_2_.getSource().getServer().func_244266_aF().getItemTags().get(resourcelocation);
             if (itag == null) {
-               throw ERROR_UNKNOWN_TAG.create(resourcelocation.toString());
+               throw UNKNOWN_TAG.create(resourcelocation.toString());
             } else {
                return new ItemPredicateArgument.TagPredicate(itag, itemparser.getNbt());
             }
@@ -52,8 +52,8 @@ public class ItemPredicateArgument implements ArgumentType<ItemPredicateArgument
       }
    }
 
-   public static Predicate<ItemStack> getItemPredicate(CommandContext<CommandSource> p_199847_0_, String p_199847_1_) throws CommandSyntaxException {
-      return p_199847_0_.getArgument(p_199847_1_, ItemPredicateArgument.IResult.class).create(p_199847_0_);
+   public static Predicate<ItemStack> getItemPredicate(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      return context.getArgument(name, ItemPredicateArgument.IResult.class).create(context);
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
@@ -66,7 +66,7 @@ public class ItemPredicateArgument implements ArgumentType<ItemPredicateArgument
       } catch (CommandSyntaxException commandsyntaxexception) {
       }
 
-      return itemparser.fillSuggestions(p_listSuggestions_2_, ItemTags.getAllTags());
+      return itemparser.fillSuggestions(p_listSuggestions_2_, ItemTags.getCollection());
    }
 
    public Collection<String> getExamples() {
@@ -82,13 +82,13 @@ public class ItemPredicateArgument implements ArgumentType<ItemPredicateArgument
       @Nullable
       private final CompoundNBT nbt;
 
-      public ItemPredicate(Item p_i48221_1_, @Nullable CompoundNBT p_i48221_2_) {
-         this.item = p_i48221_1_;
-         this.nbt = p_i48221_2_;
+      public ItemPredicate(Item itemIn, @Nullable CompoundNBT nbtIn) {
+         this.item = itemIn;
+         this.nbt = nbtIn;
       }
 
       public boolean test(ItemStack p_test_1_) {
-         return p_test_1_.getItem() == this.item && NBTUtil.compareNbt(this.nbt, p_test_1_.getTag(), true);
+         return p_test_1_.getItem() == this.item && NBTUtil.areNBTEquals(this.nbt, p_test_1_.getTag(), true);
       }
    }
 
@@ -97,13 +97,13 @@ public class ItemPredicateArgument implements ArgumentType<ItemPredicateArgument
       @Nullable
       private final CompoundNBT nbt;
 
-      public TagPredicate(ITag<Item> p_i48220_1_, @Nullable CompoundNBT p_i48220_2_) {
-         this.tag = p_i48220_1_;
-         this.nbt = p_i48220_2_;
+      public TagPredicate(ITag<Item> tagIn, @Nullable CompoundNBT nbtIn) {
+         this.tag = tagIn;
+         this.nbt = nbtIn;
       }
 
       public boolean test(ItemStack p_test_1_) {
-         return this.tag.contains(p_test_1_.getItem()) && NBTUtil.compareNbt(this.nbt, p_test_1_.getTag(), true);
+         return this.tag.contains(p_test_1_.getItem()) && NBTUtil.areNBTEquals(this.nbt, p_test_1_.getTag(), true);
       }
    }
 }

@@ -13,22 +13,22 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class Team {
-   public boolean isAlliedTo(@Nullable Team p_142054_1_) {
-      if (p_142054_1_ == null) {
+   public boolean isSameTeam(@Nullable Team other) {
+      if (other == null) {
          return false;
       } else {
-         return this == p_142054_1_;
+         return this == other;
       }
    }
 
    public abstract String getName();
 
-   public abstract IFormattableTextComponent getFormattedName(ITextComponent p_230427_1_);
+   public abstract IFormattableTextComponent func_230427_d_(ITextComponent p_230427_1_);
 
    @OnlyIn(Dist.CLIENT)
-   public abstract boolean canSeeFriendlyInvisibles();
+   public abstract boolean getSeeFriendlyInvisiblesEnabled();
 
-   public abstract boolean isAllowFriendlyFire();
+   public abstract boolean getAllowFriendlyFire();
 
    @OnlyIn(Dist.CLIENT)
    public abstract Team.Visible getNameTagVisibility();
@@ -36,7 +36,7 @@ public abstract class Team {
    @OnlyIn(Dist.CLIENT)
    public abstract TextFormatting getColor();
 
-   public abstract Collection<String> getPlayers();
+   public abstract Collection<String> getMembershipCollection();
 
    public abstract Team.Visible getDeathMessageVisibility();
 
@@ -48,7 +48,7 @@ public abstract class Team {
       PUSH_OTHER_TEAMS("pushOtherTeams", 2),
       PUSH_OWN_TEAM("pushOwnTeam", 3);
 
-      private static final Map<String, Team.CollisionRule> BY_NAME = Arrays.stream(values()).collect(Collectors.toMap((p_199871_0_) -> {
+      private static final Map<String, Team.CollisionRule> nameMap = Arrays.stream(values()).collect(Collectors.toMap((p_199871_0_) -> {
          return p_199871_0_.name;
       }, (p_199870_0_) -> {
          return p_199870_0_;
@@ -57,13 +57,13 @@ public abstract class Team {
       public final int id;
 
       @Nullable
-      public static Team.CollisionRule byName(String p_186686_0_) {
-         return BY_NAME.get(p_186686_0_);
+      public static Team.CollisionRule getByName(String nameIn) {
+         return nameMap.get(nameIn);
       }
 
-      private CollisionRule(String p_i47053_3_, int p_i47053_4_) {
-         this.name = p_i47053_3_;
-         this.id = p_i47053_4_;
+      private CollisionRule(String nameIn, int idIn) {
+         this.name = nameIn;
+         this.id = idIn;
       }
 
       public ITextComponent getDisplayName() {
@@ -77,26 +77,26 @@ public abstract class Team {
       HIDE_FOR_OTHER_TEAMS("hideForOtherTeams", 2),
       HIDE_FOR_OWN_TEAM("hideForOwnTeam", 3);
 
-      private static final Map<String, Team.Visible> BY_NAME = Arrays.stream(values()).collect(Collectors.toMap((p_199873_0_) -> {
-         return p_199873_0_.name;
+      private static final Map<String, Team.Visible> nameMap = Arrays.stream(values()).collect(Collectors.toMap((p_199873_0_) -> {
+         return p_199873_0_.internalName;
       }, (p_199872_0_) -> {
          return p_199872_0_;
       }));
-      public final String name;
+      public final String internalName;
       public final int id;
 
       @Nullable
-      public static Team.Visible byName(String p_178824_0_) {
-         return BY_NAME.get(p_178824_0_);
+      public static Team.Visible getByName(String nameIn) {
+         return nameMap.get(nameIn);
       }
 
-      private Visible(String p_i45550_3_, int p_i45550_4_) {
-         this.name = p_i45550_3_;
-         this.id = p_i45550_4_;
+      private Visible(String nameIn, int idIn) {
+         this.internalName = nameIn;
+         this.id = idIn;
       }
 
       public ITextComponent getDisplayName() {
-         return new TranslationTextComponent("team.visibility." + this.name);
+         return new TranslationTextComponent("team.visibility." + this.internalName);
       }
    }
 }

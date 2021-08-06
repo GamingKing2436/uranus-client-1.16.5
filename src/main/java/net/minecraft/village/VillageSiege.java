@@ -22,24 +22,24 @@ public class VillageSiege implements ISpecialSpawner {
    private static final Logger LOGGER = LogManager.getLogger();
    private boolean hasSetupSiege;
    private VillageSiege.State siegeState = VillageSiege.State.SIEGE_DONE;
-   private int zombiesToSpawn;
+   private int siegeCount;
    private int nextSpawnTime;
    private int spawnX;
    private int spawnY;
    private int spawnZ;
 
-   public int tick(ServerWorld p_230253_1_, boolean p_230253_2_, boolean p_230253_3_) {
-      if (!p_230253_1_.isDay() && p_230253_2_) {
-         float f = p_230253_1_.getTimeOfDay(0.0F);
+   public int func_230253_a_(ServerWorld p_230253_1_, boolean p_230253_2_, boolean p_230253_3_) {
+      if (!p_230253_1_.isDaytime() && p_230253_2_) {
+         float f = p_230253_1_.func_242415_f(0.0F);
          if ((double)f == 0.5D) {
-            this.siegeState = p_230253_1_.random.nextInt(10) == 0 ? VillageSiege.State.SIEGE_TONIGHT : VillageSiege.State.SIEGE_DONE;
+            this.siegeState = p_230253_1_.rand.nextInt(10) == 0 ? VillageSiege.State.SIEGE_TONIGHT : VillageSiege.State.SIEGE_DONE;
          }
 
          if (this.siegeState == VillageSiege.State.SIEGE_DONE) {
             return 0;
          } else {
             if (!this.hasSetupSiege) {
-               if (!this.tryToSetupSiege(p_230253_1_)) {
+               if (!this.trySetupSiege(p_230253_1_)) {
                   return 0;
                }
 
@@ -51,9 +51,9 @@ public class VillageSiege implements ISpecialSpawner {
                return 0;
             } else {
                this.nextSpawnTime = 2;
-               if (this.zombiesToSpawn > 0) {
-                  this.trySpawn(p_230253_1_);
-                  --this.zombiesToSpawn;
+               if (this.siegeCount > 0) {
+                  this.spawnZombie(p_230253_1_);
+                  --this.siegeCount;
                } else {
                   this.siegeState = VillageSiege.State.SIEGE_DONE;
                }
@@ -68,19 +68,19 @@ public class VillageSiege implements ISpecialSpawner {
       }
    }
 
-   private boolean tryToSetupSiege(ServerWorld p_75529_1_) {
-      for(PlayerEntity playerentity : p_75529_1_.players()) {
+   private boolean trySetupSiege(ServerWorld world) {
+      for(PlayerEntity playerentity : world.getPlayers()) {
          if (!playerentity.isSpectator()) {
-            BlockPos blockpos = playerentity.blockPosition();
-            if (p_75529_1_.isVillage(blockpos) && p_75529_1_.getBiome(blockpos).getBiomeCategory() != Biome.Category.MUSHROOM) {
+            BlockPos blockpos = playerentity.getPosition();
+            if (world.isVillage(blockpos) && world.getBiome(blockpos).getCategory() != Biome.Category.MUSHROOM) {
                for(int i = 0; i < 10; ++i) {
-                  float f = p_75529_1_.random.nextFloat() * ((float)Math.PI * 2F);
+                  float f = world.rand.nextFloat() * ((float)Math.PI * 2F);
                   this.spawnX = blockpos.getX() + MathHelper.floor(MathHelper.cos(f) * 32.0F);
                   this.spawnY = blockpos.getY();
                   this.spawnZ = blockpos.getZ() + MathHelper.floor(MathHelper.sin(f) * 32.0F);
-                  if (this.findRandomSpawnPos(p_75529_1_, new BlockPos(this.spawnX, this.spawnY, this.spawnZ)) != null) {
+                  if (this.findRandomSpawnPos(world, new BlockPos(this.spawnX, this.spawnY, this.spawnZ)) != null) {
                      this.nextSpawnTime = 0;
-                     this.zombiesToSpawn = 20;
+                     this.siegeCount = 20;
                      break;
                   }
                }
@@ -93,32 +93,32 @@ public class VillageSiege implements ISpecialSpawner {
       return false;
    }
 
-   private void trySpawn(ServerWorld p_75530_1_) {
-      Vector3d vector3d = this.findRandomSpawnPos(p_75530_1_, new BlockPos(this.spawnX, this.spawnY, this.spawnZ));
+   private void spawnZombie(ServerWorld world) {
+      Vector3d vector3d = this.findRandomSpawnPos(world, new BlockPos(this.spawnX, this.spawnY, this.spawnZ));
       if (vector3d != null) {
          ZombieEntity zombieentity;
          try {
-            zombieentity = new ZombieEntity(p_75530_1_);
-            zombieentity.finalizeSpawn(p_75530_1_, p_75530_1_.getCurrentDifficultyAt(zombieentity.blockPosition()), SpawnReason.EVENT, (ILivingEntityData)null, (CompoundNBT)null);
+            zombieentity = new ZombieEntity(world);
+            zombieentity.onInitialSpawn(world, world.getDifficultyForLocation(zombieentity.getPosition()), SpawnReason.EVENT, (ILivingEntityData)null, (CompoundNBT)null);
          } catch (Exception exception) {
             LOGGER.warn("Failed to create zombie for village siege at {}", vector3d, exception);
             return;
          }
 
-         zombieentity.moveTo(vector3d.x, vector3d.y, vector3d.z, p_75530_1_.random.nextFloat() * 360.0F, 0.0F);
-         p_75530_1_.addFreshEntityWithPassengers(zombieentity);
+         zombieentity.setLocationAndAngles(vector3d.x, vector3d.y, vector3d.z, world.rand.nextFloat() * 360.0F, 0.0F);
+         world.func_242417_l(zombieentity);
       }
    }
 
    @Nullable
-   private Vector3d findRandomSpawnPos(ServerWorld p_225476_1_, BlockPos p_225476_2_) {
+   private Vector3d findRandomSpawnPos(ServerWorld world, BlockPos pos) {
       for(int i = 0; i < 10; ++i) {
-         int j = p_225476_2_.getX() + p_225476_1_.random.nextInt(16) - 8;
-         int k = p_225476_2_.getZ() + p_225476_1_.random.nextInt(16) - 8;
-         int l = p_225476_1_.getHeight(Heightmap.Type.WORLD_SURFACE, j, k);
+         int j = pos.getX() + world.rand.nextInt(16) - 8;
+         int k = pos.getZ() + world.rand.nextInt(16) - 8;
+         int l = world.getHeight(Heightmap.Type.WORLD_SURFACE, j, k);
          BlockPos blockpos = new BlockPos(j, l, k);
-         if (p_225476_1_.isVillage(blockpos) && MonsterEntity.checkMonsterSpawnRules(EntityType.ZOMBIE, p_225476_1_, SpawnReason.EVENT, blockpos, p_225476_1_.random)) {
-            return Vector3d.atBottomCenterOf(blockpos);
+         if (world.isVillage(blockpos) && MonsterEntity.canMonsterSpawnInLight(EntityType.ZOMBIE, world, SpawnReason.EVENT, blockpos, world.rand)) {
+            return Vector3d.copyCenteredHorizontally(blockpos);
          }
       }
 

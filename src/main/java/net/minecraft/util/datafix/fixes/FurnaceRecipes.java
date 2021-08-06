@@ -22,10 +22,10 @@ public class FurnaceRecipes extends DataFix {
    }
 
    protected TypeRewriteRule makeRule() {
-      return this.cap(this.getOutputSchema().getTypeRaw(TypeReferences.RECIPE));
+      return this.func_233248_a_(this.getOutputSchema().getTypeRaw(TypeReferences.RECIPE));
    }
 
-   private <R> TypeRewriteRule cap(Type<R> p_233248_1_) {
+   private <R> TypeRewriteRule func_233248_a_(Type<R> p_233248_1_) {
       Type<Pair<Either<Pair<List<Pair<R, Integer>>, Dynamic<?>>, Unit>, Dynamic<?>>> type = DSL.and(DSL.optional(DSL.field("RecipesUsed", DSL.and(DSL.compoundList(p_233248_1_, DSL.intType()), DSL.remainderType()))), DSL.remainderType());
       OpticFinder<?> opticfinder = DSL.namedChoice("minecraft:furnace", this.getInputSchema().getChoiceType(TypeReferences.BLOCK_ENTITY, "minecraft:furnace"));
       OpticFinder<?> opticfinder1 = DSL.namedChoice("minecraft:blast_furnace", this.getInputSchema().getChoiceType(TypeReferences.BLOCK_ENTITY, "minecraft:blast_furnace"));
@@ -37,16 +37,16 @@ public class FurnaceRecipes extends DataFix {
       Type<?> type5 = this.getOutputSchema().getType(TypeReferences.BLOCK_ENTITY);
       return this.fixTypeEverywhereTyped("FurnaceRecipesFix", type4, type5, (p_233247_9_) -> {
          return p_233247_9_.updateTyped(opticfinder, type1, (p_233254_3_) -> {
-            return this.updateFurnaceContents(p_233248_1_, type, p_233254_3_);
+            return this.func_233249_a_(p_233248_1_, type, p_233254_3_);
          }).updateTyped(opticfinder1, type2, (p_233253_3_) -> {
-            return this.updateFurnaceContents(p_233248_1_, type, p_233253_3_);
+            return this.func_233249_a_(p_233248_1_, type, p_233253_3_);
          }).updateTyped(opticfinder2, type3, (p_233252_3_) -> {
-            return this.updateFurnaceContents(p_233248_1_, type, p_233252_3_);
+            return this.func_233249_a_(p_233248_1_, type, p_233252_3_);
          });
       });
    }
 
-   private <R> Typed<?> updateFurnaceContents(Type<R> p_233249_1_, Type<Pair<Either<Pair<List<Pair<R, Integer>>, Dynamic<?>>, Unit>, Dynamic<?>>> p_233249_2_, Typed<?> p_233249_3_) {
+   private <R> Typed<?> func_233249_a_(Type<R> p_233249_1_, Type<Pair<Either<Pair<List<Pair<R, Integer>>, Dynamic<?>>, Unit>, Dynamic<?>>> p_233249_2_, Typed<?> p_233249_3_) {
       Dynamic<?> dynamic = p_233249_3_.getOrCreate(DSL.remainderFinder());
       int i = dynamic.get("RecipesUsedSize").asInt(0);
       dynamic = dynamic.remove("RecipesUsedSize");

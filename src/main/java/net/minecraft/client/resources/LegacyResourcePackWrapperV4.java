@@ -25,7 +25,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class LegacyResourcePackWrapperV4 implements IResourcePack {
-   private static final Map<String, Pair<ChestType, ResourceLocation>> CHESTS = Util.make(Maps.newHashMap(), (p_229288_0_) -> {
+   private static final Map<String, Pair<ChestType, ResourceLocation>> field_239475_d_ = Util.make(Maps.newHashMap(), (p_229288_0_) -> {
       p_229288_0_.put("textures/entity/chest/normal_left.png", new Pair<>(ChestType.LEFT, new ResourceLocation("textures/entity/chest/normal_double.png")));
       p_229288_0_.put("textures/entity/chest/normal_right.png", new Pair<>(ChestType.RIGHT, new ResourceLocation("textures/entity/chest/normal_double.png")));
       p_229288_0_.put("textures/entity/chest/normal.png", new Pair<>(ChestType.SINGLE, new ResourceLocation("textures/entity/chest/normal.png")));
@@ -47,33 +47,33 @@ public class LegacyResourcePackWrapperV4 implements IResourcePack {
    public static final ResourceLocation SHIELD_BASE = new ResourceLocation("textures/entity/shield_base.png");
    public static final ResourceLocation BANNER_BASE = new ResourceLocation("textures/entity/banner_base.png");
    public static final ResourceLocation OLD_IRON_GOLEM_LOCATION = new ResourceLocation("textures/entity/iron_golem.png");
-   private final IResourcePack pack;
+   private final IResourcePack field_239479_h_;
 
    public LegacyResourcePackWrapperV4(IResourcePack p_i226053_1_) {
-      this.pack = p_i226053_1_;
+      this.field_239479_h_ = p_i226053_1_;
    }
 
-   public InputStream getRootResource(String p_195763_1_) throws IOException {
-      return this.pack.getRootResource(p_195763_1_);
+   public InputStream getRootResourceStream(String fileName) throws IOException {
+      return this.field_239479_h_.getRootResourceStream(fileName);
    }
 
-   public boolean hasResource(ResourcePackType p_195764_1_, ResourceLocation p_195764_2_) {
-      if (!"minecraft".equals(p_195764_2_.getNamespace())) {
-         return this.pack.hasResource(p_195764_1_, p_195764_2_);
+   public boolean resourceExists(ResourcePackType type, ResourceLocation location) {
+      if (!"minecraft".equals(location.getNamespace())) {
+         return this.field_239479_h_.resourceExists(type, location);
       } else {
-         String s = p_195764_2_.getPath();
+         String s = location.getPath();
          if ("textures/misc/enchanted_item_glint.png".equals(s)) {
             return false;
          } else if ("textures/entity/iron_golem/iron_golem.png".equals(s)) {
-            return this.pack.hasResource(p_195764_1_, OLD_IRON_GOLEM_LOCATION);
+            return this.field_239479_h_.resourceExists(type, OLD_IRON_GOLEM_LOCATION);
          } else if (!"textures/entity/conduit/wind.png".equals(s) && !"textures/entity/conduit/wind_vertical.png".equals(s)) {
             if (SHIELDS.contains(s)) {
-               return this.pack.hasResource(p_195764_1_, SHIELD_BASE) && this.pack.hasResource(p_195764_1_, p_195764_2_);
+               return this.field_239479_h_.resourceExists(type, SHIELD_BASE) && this.field_239479_h_.resourceExists(type, location);
             } else if (!BANNERS.contains(s)) {
-               Pair<ChestType, ResourceLocation> pair = CHESTS.get(s);
-               return pair != null && this.pack.hasResource(p_195764_1_, pair.getSecond()) ? true : this.pack.hasResource(p_195764_1_, p_195764_2_);
+               Pair<ChestType, ResourceLocation> pair = field_239475_d_.get(s);
+               return pair != null && this.field_239479_h_.resourceExists(type, pair.getSecond()) ? true : this.field_239479_h_.resourceExists(type, location);
             } else {
-               return this.pack.hasResource(p_195764_1_, BANNER_BASE) && this.pack.hasResource(p_195764_1_, p_195764_2_);
+               return this.field_239479_h_.resourceExists(type, BANNER_BASE) && this.field_239479_h_.resourceExists(type, location);
             }
          } else {
             return false;
@@ -81,28 +81,28 @@ public class LegacyResourcePackWrapperV4 implements IResourcePack {
       }
    }
 
-   public InputStream getResource(ResourcePackType p_195761_1_, ResourceLocation p_195761_2_) throws IOException {
-      if (!"minecraft".equals(p_195761_2_.getNamespace())) {
-         return this.pack.getResource(p_195761_1_, p_195761_2_);
+   public InputStream getResourceStream(ResourcePackType type, ResourceLocation location) throws IOException {
+      if (!"minecraft".equals(location.getNamespace())) {
+         return this.field_239479_h_.getResourceStream(type, location);
       } else {
-         String s = p_195761_2_.getPath();
+         String s = location.getPath();
          if ("textures/entity/iron_golem/iron_golem.png".equals(s)) {
-            return this.pack.getResource(p_195761_1_, OLD_IRON_GOLEM_LOCATION);
+            return this.field_239479_h_.getResourceStream(type, OLD_IRON_GOLEM_LOCATION);
          } else {
             if (SHIELDS.contains(s)) {
-               InputStream inputstream2 = fixPattern(this.pack.getResource(p_195761_1_, SHIELD_BASE), this.pack.getResource(p_195761_1_, p_195761_2_), 64, 2, 2, 12, 22);
+               InputStream inputstream2 = func_229286_a_(this.field_239479_h_.getResourceStream(type, SHIELD_BASE), this.field_239479_h_.getResourceStream(type, location), 64, 2, 2, 12, 22);
                if (inputstream2 != null) {
                   return inputstream2;
                }
             } else if (BANNERS.contains(s)) {
-               InputStream inputstream1 = fixPattern(this.pack.getResource(p_195761_1_, BANNER_BASE), this.pack.getResource(p_195761_1_, p_195761_2_), 64, 0, 0, 42, 41);
+               InputStream inputstream1 = func_229286_a_(this.field_239479_h_.getResourceStream(type, BANNER_BASE), this.field_239479_h_.getResourceStream(type, location), 64, 0, 0, 42, 41);
                if (inputstream1 != null) {
                   return inputstream1;
                }
             } else {
                if ("textures/entity/enderdragon/dragon.png".equals(s) || "textures/entity/enderdragon/dragon_exploding.png".equals(s)) {
                   ByteArrayInputStream bytearrayinputstream;
-                  try (NativeImage nativeimage = NativeImage.read(this.pack.getResource(p_195761_1_, p_195761_2_))) {
+                  try (NativeImage nativeimage = NativeImage.read(this.field_239479_h_.getResourceStream(type, location))) {
                      int k = nativeimage.getWidth() / 256;
 
                      for(int i = 88 * k; i < 200 * k; ++i) {
@@ -111,41 +111,41 @@ public class LegacyResourcePackWrapperV4 implements IResourcePack {
                         }
                      }
 
-                     bytearrayinputstream = new ByteArrayInputStream(nativeimage.asByteArray());
+                     bytearrayinputstream = new ByteArrayInputStream(nativeimage.getBytes());
                   }
 
                   return bytearrayinputstream;
                }
 
                if ("textures/entity/conduit/closed_eye.png".equals(s) || "textures/entity/conduit/open_eye.png".equals(s)) {
-                  return fixConduitEyeTexture(this.pack.getResource(p_195761_1_, p_195761_2_));
+                  return func_229285_a_(this.field_239479_h_.getResourceStream(type, location));
                }
 
-               Pair<ChestType, ResourceLocation> pair = CHESTS.get(s);
+               Pair<ChestType, ResourceLocation> pair = field_239475_d_.get(s);
                if (pair != null) {
                   ChestType chesttype = pair.getFirst();
-                  InputStream inputstream = this.pack.getResource(p_195761_1_, pair.getSecond());
+                  InputStream inputstream = this.field_239479_h_.getResourceStream(type, pair.getSecond());
                   if (chesttype == ChestType.SINGLE) {
-                     return fixSingleChest(inputstream);
+                     return func_229292_d_(inputstream);
                   }
 
                   if (chesttype == ChestType.LEFT) {
-                     return fixLeftChest(inputstream);
+                     return func_229289_b_(inputstream);
                   }
 
                   if (chesttype == ChestType.RIGHT) {
-                     return fixRightChest(inputstream);
+                     return func_229290_c_(inputstream);
                   }
                }
             }
 
-            return this.pack.getResource(p_195761_1_, p_195761_2_);
+            return this.field_239479_h_.getResourceStream(type, location);
          }
       }
    }
 
    @Nullable
-   public static InputStream fixPattern(InputStream p_229286_0_, InputStream p_229286_1_, int p_229286_2_, int p_229286_3_, int p_229286_4_, int p_229286_5_, int p_229286_6_) throws IOException {
+   public static InputStream func_229286_a_(InputStream p_229286_0_, InputStream p_229286_1_, int p_229286_2_, int p_229286_3_, int p_229286_4_, int p_229286_5_, int p_229286_6_) throws IOException {
       ByteArrayInputStream bytearrayinputstream;
       try (
          NativeImage nativeimage1 = NativeImage.read(p_229286_1_);
@@ -162,35 +162,35 @@ public class LegacyResourcePackWrapperV4 implements IResourcePack {
 
             for(int l = p_229286_4_ * k; l < p_229286_6_ * k; ++l) {
                for(int i1 = p_229286_3_ * k; i1 < p_229286_5_ * k; ++i1) {
-                  int j1 = NativeImage.getR(nativeimage1.getPixelRGBA(i1, l));
+                  int j1 = NativeImage.getRed(nativeimage1.getPixelRGBA(i1, l));
                   int k1 = nativeimage.getPixelRGBA(i1, l);
-                  nativeimage2.setPixelRGBA(i1, l, NativeImage.combine(j1, NativeImage.getB(k1), NativeImage.getG(k1), NativeImage.getR(k1)));
+                  nativeimage2.setPixelRGBA(i1, l, NativeImage.getCombined(j1, NativeImage.getBlue(k1), NativeImage.getGreen(k1), NativeImage.getRed(k1)));
                }
             }
 
-            bytearrayinputstream = new ByteArrayInputStream(nativeimage2.asByteArray());
+            bytearrayinputstream = new ByteArrayInputStream(nativeimage2.getBytes());
          }
       }
 
       return bytearrayinputstream;
    }
 
-   public static InputStream fixConduitEyeTexture(InputStream p_229285_0_) throws IOException {
+   public static InputStream func_229285_a_(InputStream p_229285_0_) throws IOException {
       ByteArrayInputStream bytearrayinputstream;
       try (NativeImage nativeimage = NativeImage.read(p_229285_0_)) {
          int i = nativeimage.getWidth();
          int j = nativeimage.getHeight();
 
          try (NativeImage nativeimage1 = new NativeImage(2 * i, 2 * j, true)) {
-            copyRect(nativeimage, nativeimage1, 0, 0, 0, 0, i, j, 1, false, false);
-            bytearrayinputstream = new ByteArrayInputStream(nativeimage1.asByteArray());
+            func_229284_a_(nativeimage, nativeimage1, 0, 0, 0, 0, i, j, 1, false, false);
+            bytearrayinputstream = new ByteArrayInputStream(nativeimage1.getBytes());
          }
       }
 
       return bytearrayinputstream;
    }
 
-   public static InputStream fixLeftChest(InputStream p_229289_0_) throws IOException {
+   public static InputStream func_229289_b_(InputStream p_229289_0_) throws IOException {
       ByteArrayInputStream bytearrayinputstream;
       try (NativeImage nativeimage = NativeImage.read(p_229289_0_)) {
          int i = nativeimage.getWidth();
@@ -198,29 +198,29 @@ public class LegacyResourcePackWrapperV4 implements IResourcePack {
 
          try (NativeImage nativeimage1 = new NativeImage(i / 2, j, true)) {
             int k = j / 64;
-            copyRect(nativeimage, nativeimage1, 29, 0, 29, 0, 15, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 59, 0, 14, 0, 15, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 29, 14, 43, 14, 15, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 44, 14, 29, 14, 14, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 58, 14, 14, 14, 15, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 29, 19, 29, 19, 15, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 59, 19, 14, 19, 15, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 29, 33, 43, 33, 15, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 44, 33, 29, 33, 14, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 58, 33, 14, 33, 15, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 2, 0, 2, 0, 1, 1, k, false, true);
-            copyRect(nativeimage, nativeimage1, 4, 0, 1, 0, 1, 1, k, false, true);
-            copyRect(nativeimage, nativeimage1, 2, 1, 3, 1, 1, 4, k, true, true);
-            copyRect(nativeimage, nativeimage1, 3, 1, 2, 1, 1, 4, k, true, true);
-            copyRect(nativeimage, nativeimage1, 4, 1, 1, 1, 1, 4, k, true, true);
-            bytearrayinputstream = new ByteArrayInputStream(nativeimage1.asByteArray());
+            func_229284_a_(nativeimage, nativeimage1, 29, 0, 29, 0, 15, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 59, 0, 14, 0, 15, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 29, 14, 43, 14, 15, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 44, 14, 29, 14, 14, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 58, 14, 14, 14, 15, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 29, 19, 29, 19, 15, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 59, 19, 14, 19, 15, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 29, 33, 43, 33, 15, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 44, 33, 29, 33, 14, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 58, 33, 14, 33, 15, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 2, 0, 2, 0, 1, 1, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 4, 0, 1, 0, 1, 1, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 2, 1, 3, 1, 1, 4, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 3, 1, 2, 1, 1, 4, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 4, 1, 1, 1, 1, 4, k, true, true);
+            bytearrayinputstream = new ByteArrayInputStream(nativeimage1.getBytes());
          }
       }
 
       return bytearrayinputstream;
    }
 
-   public static InputStream fixRightChest(InputStream p_229290_0_) throws IOException {
+   public static InputStream func_229290_c_(InputStream p_229290_0_) throws IOException {
       ByteArrayInputStream bytearrayinputstream;
       try (NativeImage nativeimage = NativeImage.read(p_229290_0_)) {
          int i = nativeimage.getWidth();
@@ -228,29 +228,29 @@ public class LegacyResourcePackWrapperV4 implements IResourcePack {
 
          try (NativeImage nativeimage1 = new NativeImage(i / 2, j, true)) {
             int k = j / 64;
-            copyRect(nativeimage, nativeimage1, 14, 0, 29, 0, 15, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 44, 0, 14, 0, 15, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 0, 14, 0, 14, 14, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 14, 14, 43, 14, 15, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 73, 14, 14, 14, 15, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 14, 19, 29, 19, 15, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 44, 19, 14, 19, 15, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 0, 33, 0, 33, 14, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 14, 33, 43, 33, 15, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 73, 33, 14, 33, 15, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 1, 0, 2, 0, 1, 1, k, false, true);
-            copyRect(nativeimage, nativeimage1, 3, 0, 1, 0, 1, 1, k, false, true);
-            copyRect(nativeimage, nativeimage1, 0, 1, 0, 1, 1, 4, k, true, true);
-            copyRect(nativeimage, nativeimage1, 1, 1, 3, 1, 1, 4, k, true, true);
-            copyRect(nativeimage, nativeimage1, 5, 1, 1, 1, 1, 4, k, true, true);
-            bytearrayinputstream = new ByteArrayInputStream(nativeimage1.asByteArray());
+            func_229284_a_(nativeimage, nativeimage1, 14, 0, 29, 0, 15, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 44, 0, 14, 0, 15, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 0, 14, 0, 14, 14, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 14, 14, 43, 14, 15, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 73, 14, 14, 14, 15, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 14, 19, 29, 19, 15, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 44, 19, 14, 19, 15, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 0, 33, 0, 33, 14, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 14, 33, 43, 33, 15, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 73, 33, 14, 33, 15, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 1, 0, 2, 0, 1, 1, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 3, 0, 1, 0, 1, 1, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 0, 1, 0, 1, 1, 4, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 1, 1, 3, 1, 1, 4, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 5, 1, 1, 1, 1, 4, k, true, true);
+            bytearrayinputstream = new ByteArrayInputStream(nativeimage1.getBytes());
          }
       }
 
       return bytearrayinputstream;
    }
 
-   public static InputStream fixSingleChest(InputStream p_229292_0_) throws IOException {
+   public static InputStream func_229292_d_(InputStream p_229292_0_) throws IOException {
       ByteArrayInputStream bytearrayinputstream;
       try (NativeImage nativeimage = NativeImage.read(p_229292_0_)) {
          int i = nativeimage.getWidth();
@@ -258,53 +258,53 @@ public class LegacyResourcePackWrapperV4 implements IResourcePack {
 
          try (NativeImage nativeimage1 = new NativeImage(i, j, true)) {
             int k = j / 64;
-            copyRect(nativeimage, nativeimage1, 14, 0, 28, 0, 14, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 28, 0, 14, 0, 14, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 0, 14, 0, 14, 14, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 14, 14, 42, 14, 14, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 28, 14, 28, 14, 14, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 42, 14, 14, 14, 14, 5, k, true, true);
-            copyRect(nativeimage, nativeimage1, 14, 19, 28, 19, 14, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 28, 19, 14, 19, 14, 14, k, false, true);
-            copyRect(nativeimage, nativeimage1, 0, 33, 0, 33, 14, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 14, 33, 42, 33, 14, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 28, 33, 28, 33, 14, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 42, 33, 14, 33, 14, 10, k, true, true);
-            copyRect(nativeimage, nativeimage1, 1, 0, 3, 0, 2, 1, k, false, true);
-            copyRect(nativeimage, nativeimage1, 3, 0, 1, 0, 2, 1, k, false, true);
-            copyRect(nativeimage, nativeimage1, 0, 1, 0, 1, 1, 4, k, true, true);
-            copyRect(nativeimage, nativeimage1, 1, 1, 4, 1, 2, 4, k, true, true);
-            copyRect(nativeimage, nativeimage1, 3, 1, 3, 1, 1, 4, k, true, true);
-            copyRect(nativeimage, nativeimage1, 4, 1, 1, 1, 2, 4, k, true, true);
-            bytearrayinputstream = new ByteArrayInputStream(nativeimage1.asByteArray());
+            func_229284_a_(nativeimage, nativeimage1, 14, 0, 28, 0, 14, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 28, 0, 14, 0, 14, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 0, 14, 0, 14, 14, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 14, 14, 42, 14, 14, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 28, 14, 28, 14, 14, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 42, 14, 14, 14, 14, 5, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 14, 19, 28, 19, 14, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 28, 19, 14, 19, 14, 14, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 0, 33, 0, 33, 14, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 14, 33, 42, 33, 14, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 28, 33, 28, 33, 14, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 42, 33, 14, 33, 14, 10, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 1, 0, 3, 0, 2, 1, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 3, 0, 1, 0, 2, 1, k, false, true);
+            func_229284_a_(nativeimage, nativeimage1, 0, 1, 0, 1, 1, 4, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 1, 1, 4, 1, 2, 4, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 3, 1, 3, 1, 1, 4, k, true, true);
+            func_229284_a_(nativeimage, nativeimage1, 4, 1, 1, 1, 2, 4, k, true, true);
+            bytearrayinputstream = new ByteArrayInputStream(nativeimage1.getBytes());
          }
       }
 
       return bytearrayinputstream;
    }
 
-   public Collection<ResourceLocation> getResources(ResourcePackType p_225637_1_, String p_225637_2_, String p_225637_3_, int p_225637_4_, Predicate<String> p_225637_5_) {
-      return this.pack.getResources(p_225637_1_, p_225637_2_, p_225637_3_, p_225637_4_, p_225637_5_);
+   public Collection<ResourceLocation> getAllResourceLocations(ResourcePackType type, String namespaceIn, String pathIn, int maxDepthIn, Predicate<String> filterIn) {
+      return this.field_239479_h_.getAllResourceLocations(type, namespaceIn, pathIn, maxDepthIn, filterIn);
    }
 
-   public Set<String> getNamespaces(ResourcePackType p_195759_1_) {
-      return this.pack.getNamespaces(p_195759_1_);
+   public Set<String> getResourceNamespaces(ResourcePackType type) {
+      return this.field_239479_h_.getResourceNamespaces(type);
    }
 
    @Nullable
-   public <T> T getMetadataSection(IMetadataSectionSerializer<T> p_195760_1_) throws IOException {
-      return this.pack.getMetadataSection(p_195760_1_);
+   public <T> T getMetadata(IMetadataSectionSerializer<T> deserializer) throws IOException {
+      return this.field_239479_h_.getMetadata(deserializer);
    }
 
    public String getName() {
-      return this.pack.getName();
+      return this.field_239479_h_.getName();
    }
 
    public void close() {
-      this.pack.close();
+      this.field_239479_h_.close();
    }
 
-   private static void copyRect(NativeImage p_229284_0_, NativeImage p_229284_1_, int p_229284_2_, int p_229284_3_, int p_229284_4_, int p_229284_5_, int p_229284_6_, int p_229284_7_, int p_229284_8_, boolean p_229284_9_, boolean p_229284_10_) {
+   private static void func_229284_a_(NativeImage p_229284_0_, NativeImage p_229284_1_, int p_229284_2_, int p_229284_3_, int p_229284_4_, int p_229284_5_, int p_229284_6_, int p_229284_7_, int p_229284_8_, boolean p_229284_9_, boolean p_229284_10_) {
       p_229284_7_ = p_229284_7_ * p_229284_8_;
       p_229284_6_ = p_229284_6_ * p_229284_8_;
       p_229284_4_ = p_229284_4_ * p_229284_8_;

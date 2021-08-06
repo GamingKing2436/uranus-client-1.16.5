@@ -24,13 +24,13 @@ public class IglooStructure extends Structure<NoFeatureConfig> {
          super(p_i225806_1_, p_i225806_2_, p_i225806_3_, p_i225806_4_, p_i225806_5_, p_i225806_6_);
       }
 
-      public void generatePieces(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
+      public void func_230364_a_(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
          int i = p_230364_4_ * 16;
          int j = p_230364_5_ * 16;
          BlockPos blockpos = new BlockPos(i, 90, j);
-         Rotation rotation = Rotation.getRandom(this.random);
-         IglooPieces.addPieces(p_230364_3_, blockpos, rotation, this.pieces, this.random);
-         this.calculateBoundingBox();
+         Rotation rotation = Rotation.randomRotation(this.rand);
+         IglooPieces.func_236991_a_(p_230364_3_, blockpos, rotation, this.components, this.rand);
+         this.recalculateStructureSize();
       }
    }
 }

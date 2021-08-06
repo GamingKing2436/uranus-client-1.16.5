@@ -24,20 +24,20 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ShapedRecipe implements ICraftingRecipe {
-   private final int width;
-   private final int height;
+   private final int recipeWidth;
+   private final int recipeHeight;
    private final NonNullList<Ingredient> recipeItems;
-   private final ItemStack result;
+   private final ItemStack recipeOutput;
    private final ResourceLocation id;
    private final String group;
 
-   public ShapedRecipe(ResourceLocation p_i48162_1_, String p_i48162_2_, int p_i48162_3_, int p_i48162_4_, NonNullList<Ingredient> p_i48162_5_, ItemStack p_i48162_6_) {
-      this.id = p_i48162_1_;
-      this.group = p_i48162_2_;
-      this.width = p_i48162_3_;
-      this.height = p_i48162_4_;
-      this.recipeItems = p_i48162_5_;
-      this.result = p_i48162_6_;
+   public ShapedRecipe(ResourceLocation idIn, String groupIn, int recipeWidthIn, int recipeHeightIn, NonNullList<Ingredient> recipeItemsIn, ItemStack recipeOutputIn) {
+      this.id = idIn;
+      this.group = groupIn;
+      this.recipeWidth = recipeWidthIn;
+      this.recipeHeight = recipeHeightIn;
+      this.recipeItems = recipeItemsIn;
+      this.recipeOutput = recipeOutputIn;
    }
 
    public ResourceLocation getId() {
@@ -45,7 +45,7 @@ public class ShapedRecipe implements ICraftingRecipe {
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.SHAPED_RECIPE;
+      return IRecipeSerializer.CRAFTING_SHAPED;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -53,8 +53,8 @@ public class ShapedRecipe implements ICraftingRecipe {
       return this.group;
    }
 
-   public ItemStack getResultItem() {
-      return this.result;
+   public ItemStack getRecipeOutput() {
+      return this.recipeOutput;
    }
 
    public NonNullList<Ingredient> getIngredients() {
@@ -62,18 +62,18 @@ public class ShapedRecipe implements ICraftingRecipe {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ >= this.width && p_194133_2_ >= this.height;
+   public boolean canFit(int width, int height) {
+      return width >= this.recipeWidth && height >= this.recipeHeight;
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
-      for(int i = 0; i <= p_77569_1_.getWidth() - this.width; ++i) {
-         for(int j = 0; j <= p_77569_1_.getHeight() - this.height; ++j) {
-            if (this.matches(p_77569_1_, i, j, true)) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
+      for(int i = 0; i <= inv.getWidth() - this.recipeWidth; ++i) {
+         for(int j = 0; j <= inv.getHeight() - this.recipeHeight; ++j) {
+            if (this.checkMatch(inv, i, j, true)) {
                return true;
             }
 
-            if (this.matches(p_77569_1_, i, j, false)) {
+            if (this.checkMatch(inv, i, j, false)) {
                return true;
             }
          }
@@ -82,21 +82,21 @@ public class ShapedRecipe implements ICraftingRecipe {
       return false;
    }
 
-   private boolean matches(CraftingInventory p_77573_1_, int p_77573_2_, int p_77573_3_, boolean p_77573_4_) {
-      for(int i = 0; i < p_77573_1_.getWidth(); ++i) {
-         for(int j = 0; j < p_77573_1_.getHeight(); ++j) {
-            int k = i - p_77573_2_;
-            int l = j - p_77573_3_;
+   private boolean checkMatch(CraftingInventory craftingInventory, int width, int height, boolean p_77573_4_) {
+      for(int i = 0; i < craftingInventory.getWidth(); ++i) {
+         for(int j = 0; j < craftingInventory.getHeight(); ++j) {
+            int k = i - width;
+            int l = j - height;
             Ingredient ingredient = Ingredient.EMPTY;
-            if (k >= 0 && l >= 0 && k < this.width && l < this.height) {
+            if (k >= 0 && l >= 0 && k < this.recipeWidth && l < this.recipeHeight) {
                if (p_77573_4_) {
-                  ingredient = this.recipeItems.get(this.width - k - 1 + l * this.width);
+                  ingredient = this.recipeItems.get(this.recipeWidth - k - 1 + l * this.recipeWidth);
                } else {
-                  ingredient = this.recipeItems.get(k + l * this.width);
+                  ingredient = this.recipeItems.get(k + l * this.recipeWidth);
                }
             }
 
-            if (!ingredient.test(p_77573_1_.getItem(i + j * p_77573_1_.getWidth()))) {
+            if (!ingredient.test(craftingInventory.getStackInSlot(i + j * craftingInventory.getWidth()))) {
                return false;
             }
          }
@@ -105,33 +105,33 @@ public class ShapedRecipe implements ICraftingRecipe {
       return true;
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
-      return this.getResultItem().copy();
+   public ItemStack getCraftingResult(CraftingInventory inv) {
+      return this.getRecipeOutput().copy();
    }
 
    public int getWidth() {
-      return this.width;
+      return this.recipeWidth;
    }
 
    public int getHeight() {
-      return this.height;
+      return this.recipeHeight;
    }
 
-   private static NonNullList<Ingredient> dissolvePattern(String[] p_192402_0_, Map<String, Ingredient> p_192402_1_, int p_192402_2_, int p_192402_3_) {
-      NonNullList<Ingredient> nonnulllist = NonNullList.withSize(p_192402_2_ * p_192402_3_, Ingredient.EMPTY);
-      Set<String> set = Sets.newHashSet(p_192402_1_.keySet());
+   private static NonNullList<Ingredient> deserializeIngredients(String[] pattern, Map<String, Ingredient> keys, int patternWidth, int patternHeight) {
+      NonNullList<Ingredient> nonnulllist = NonNullList.withSize(patternWidth * patternHeight, Ingredient.EMPTY);
+      Set<String> set = Sets.newHashSet(keys.keySet());
       set.remove(" ");
 
-      for(int i = 0; i < p_192402_0_.length; ++i) {
-         for(int j = 0; j < p_192402_0_[i].length(); ++j) {
-            String s = p_192402_0_[i].substring(j, j + 1);
-            Ingredient ingredient = p_192402_1_.get(s);
+      for(int i = 0; i < pattern.length; ++i) {
+         for(int j = 0; j < pattern[i].length(); ++j) {
+            String s = pattern[i].substring(j, j + 1);
+            Ingredient ingredient = keys.get(s);
             if (ingredient == null) {
                throw new JsonSyntaxException("Pattern references symbol '" + s + "' but it's not defined in the key");
             }
 
             set.remove(s);
-            nonnulllist.set(j + p_192402_2_ * i, ingredient);
+            nonnulllist.set(j + patternWidth * i, ingredient);
          }
       }
 
@@ -143,14 +143,14 @@ public class ShapedRecipe implements ICraftingRecipe {
    }
 
    @VisibleForTesting
-   static String[] shrink(String... p_194134_0_) {
+   static String[] shrink(String... toShrink) {
       int i = Integer.MAX_VALUE;
       int j = 0;
       int k = 0;
       int l = 0;
 
-      for(int i1 = 0; i1 < p_194134_0_.length; ++i1) {
-         String s = p_194134_0_[i1];
+      for(int i1 = 0; i1 < toShrink.length; ++i1) {
+         String s = toShrink[i1];
          i = Math.min(i, firstNonSpace(s));
          int j1 = lastNonSpace(s);
          j = Math.max(j, j1);
@@ -165,44 +165,44 @@ public class ShapedRecipe implements ICraftingRecipe {
          }
       }
 
-      if (p_194134_0_.length == l) {
+      if (toShrink.length == l) {
          return new String[0];
       } else {
-         String[] astring = new String[p_194134_0_.length - l - k];
+         String[] astring = new String[toShrink.length - l - k];
 
          for(int k1 = 0; k1 < astring.length; ++k1) {
-            astring[k1] = p_194134_0_[k1 + k].substring(i, j + 1);
+            astring[k1] = toShrink[k1 + k].substring(i, j + 1);
          }
 
          return astring;
       }
    }
 
-   private static int firstNonSpace(String p_194135_0_) {
+   private static int firstNonSpace(String str) {
       int i;
-      for(i = 0; i < p_194135_0_.length() && p_194135_0_.charAt(i) == ' '; ++i) {
+      for(i = 0; i < str.length() && str.charAt(i) == ' '; ++i) {
       }
 
       return i;
    }
 
-   private static int lastNonSpace(String p_194136_0_) {
+   private static int lastNonSpace(String str) {
       int i;
-      for(i = p_194136_0_.length() - 1; i >= 0 && p_194136_0_.charAt(i) == ' '; --i) {
+      for(i = str.length() - 1; i >= 0 && str.charAt(i) == ' '; --i) {
       }
 
       return i;
    }
 
-   private static String[] patternFromJson(JsonArray p_192407_0_) {
-      String[] astring = new String[p_192407_0_.size()];
+   private static String[] patternFromJson(JsonArray jsonArr) {
+      String[] astring = new String[jsonArr.size()];
       if (astring.length > 3) {
          throw new JsonSyntaxException("Invalid pattern: too many rows, 3 is maximum");
       } else if (astring.length == 0) {
          throw new JsonSyntaxException("Invalid pattern: empty pattern not allowed");
       } else {
          for(int i = 0; i < astring.length; ++i) {
-            String s = JSONUtils.convertToString(p_192407_0_.get(i), "pattern[" + i + "]");
+            String s = JSONUtils.getString(jsonArr.get(i), "pattern[" + i + "]");
             if (s.length() > 3) {
                throw new JsonSyntaxException("Invalid pattern: too many columns, 3 is maximum");
             }
@@ -218,10 +218,10 @@ public class ShapedRecipe implements ICraftingRecipe {
       }
    }
 
-   private static Map<String, Ingredient> keyFromJson(JsonObject p_192408_0_) {
+   private static Map<String, Ingredient> deserializeKey(JsonObject json) {
       Map<String, Ingredient> map = Maps.newHashMap();
 
-      for(Entry<String, JsonElement> entry : p_192408_0_.entrySet()) {
+      for(Entry<String, JsonElement> entry : json.entrySet()) {
          if (entry.getKey().length() != 1) {
             throw new JsonSyntaxException("Invalid key entry: '" + (String)entry.getKey() + "' is an invalid symbol (must be 1 character only).");
          }
@@ -230,62 +230,62 @@ public class ShapedRecipe implements ICraftingRecipe {
             throw new JsonSyntaxException("Invalid key entry: ' ' is a reserved symbol.");
          }
 
-         map.put(entry.getKey(), Ingredient.fromJson(entry.getValue()));
+         map.put(entry.getKey(), Ingredient.deserialize(entry.getValue()));
       }
 
       map.put(" ", Ingredient.EMPTY);
       return map;
    }
 
-   public static ItemStack itemFromJson(JsonObject p_199798_0_) {
-      String s = JSONUtils.getAsString(p_199798_0_, "item");
+   public static ItemStack deserializeItem(JsonObject object) {
+      String s = JSONUtils.getString(object, "item");
       Item item = Registry.ITEM.getOptional(new ResourceLocation(s)).orElseThrow(() -> {
          return new JsonSyntaxException("Unknown item '" + s + "'");
       });
-      if (p_199798_0_.has("data")) {
+      if (object.has("data")) {
          throw new JsonParseException("Disallowed data tag found");
       } else {
-         int i = JSONUtils.getAsInt(p_199798_0_, "count", 1);
+         int i = JSONUtils.getInt(object, "count", 1);
          return new ItemStack(item, i);
       }
    }
 
    public static class Serializer implements IRecipeSerializer<ShapedRecipe> {
-      public ShapedRecipe fromJson(ResourceLocation p_199425_1_, JsonObject p_199425_2_) {
-         String s = JSONUtils.getAsString(p_199425_2_, "group", "");
-         Map<String, Ingredient> map = ShapedRecipe.keyFromJson(JSONUtils.getAsJsonObject(p_199425_2_, "key"));
-         String[] astring = ShapedRecipe.shrink(ShapedRecipe.patternFromJson(JSONUtils.getAsJsonArray(p_199425_2_, "pattern")));
+      public ShapedRecipe read(ResourceLocation recipeId, JsonObject json) {
+         String s = JSONUtils.getString(json, "group", "");
+         Map<String, Ingredient> map = ShapedRecipe.deserializeKey(JSONUtils.getJsonObject(json, "key"));
+         String[] astring = ShapedRecipe.shrink(ShapedRecipe.patternFromJson(JSONUtils.getJsonArray(json, "pattern")));
          int i = astring[0].length();
          int j = astring.length;
-         NonNullList<Ingredient> nonnulllist = ShapedRecipe.dissolvePattern(astring, map, i, j);
-         ItemStack itemstack = ShapedRecipe.itemFromJson(JSONUtils.getAsJsonObject(p_199425_2_, "result"));
-         return new ShapedRecipe(p_199425_1_, s, i, j, nonnulllist, itemstack);
+         NonNullList<Ingredient> nonnulllist = ShapedRecipe.deserializeIngredients(astring, map, i, j);
+         ItemStack itemstack = ShapedRecipe.deserializeItem(JSONUtils.getJsonObject(json, "result"));
+         return new ShapedRecipe(recipeId, s, i, j, nonnulllist, itemstack);
       }
 
-      public ShapedRecipe fromNetwork(ResourceLocation p_199426_1_, PacketBuffer p_199426_2_) {
-         int i = p_199426_2_.readVarInt();
-         int j = p_199426_2_.readVarInt();
-         String s = p_199426_2_.readUtf(32767);
+      public ShapedRecipe read(ResourceLocation recipeId, PacketBuffer buffer) {
+         int i = buffer.readVarInt();
+         int j = buffer.readVarInt();
+         String s = buffer.readString(32767);
          NonNullList<Ingredient> nonnulllist = NonNullList.withSize(i * j, Ingredient.EMPTY);
 
          for(int k = 0; k < nonnulllist.size(); ++k) {
-            nonnulllist.set(k, Ingredient.fromNetwork(p_199426_2_));
+            nonnulllist.set(k, Ingredient.read(buffer));
          }
 
-         ItemStack itemstack = p_199426_2_.readItem();
-         return new ShapedRecipe(p_199426_1_, s, i, j, nonnulllist, itemstack);
+         ItemStack itemstack = buffer.readItemStack();
+         return new ShapedRecipe(recipeId, s, i, j, nonnulllist, itemstack);
       }
 
-      public void toNetwork(PacketBuffer p_199427_1_, ShapedRecipe p_199427_2_) {
-         p_199427_1_.writeVarInt(p_199427_2_.width);
-         p_199427_1_.writeVarInt(p_199427_2_.height);
-         p_199427_1_.writeUtf(p_199427_2_.group);
+      public void write(PacketBuffer buffer, ShapedRecipe recipe) {
+         buffer.writeVarInt(recipe.recipeWidth);
+         buffer.writeVarInt(recipe.recipeHeight);
+         buffer.writeString(recipe.group);
 
-         for(Ingredient ingredient : p_199427_2_.recipeItems) {
-            ingredient.toNetwork(p_199427_1_);
+         for(Ingredient ingredient : recipe.recipeItems) {
+            ingredient.write(buffer);
          }
 
-         p_199427_1_.writeItem(p_199427_2_.result);
+         buffer.writeItemStack(recipe.recipeOutput);
       }
    }
 }

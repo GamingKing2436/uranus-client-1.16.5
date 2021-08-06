@@ -19,10 +19,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class RenderTypeLookup {
-   private static final Map<Block, RenderType> TYPE_BY_BLOCK = Util.make(Maps.newHashMap(), (p_228395_0_) -> {
-      RenderType rendertype = RenderType.tripwire();
+   private static final Map<Block, RenderType> TYPES_BY_BLOCK = Util.make(Maps.newHashMap(), (p_228395_0_) -> {
+      RenderType rendertype = RenderType.getTripwire();
       p_228395_0_.put(Blocks.TRIPWIRE, rendertype);
-      RenderType rendertype1 = RenderType.cutoutMipped();
+      RenderType rendertype1 = RenderType.getCutoutMipped();
       p_228395_0_.put(Blocks.GRASS_BLOCK, rendertype1);
       p_228395_0_.put(Blocks.IRON_BARS, rendertype1);
       p_228395_0_.put(Blocks.GLASS_PANE, rendertype1);
@@ -35,7 +35,7 @@ public class RenderTypeLookup {
       p_228395_0_.put(Blocks.ACACIA_LEAVES, rendertype1);
       p_228395_0_.put(Blocks.BIRCH_LEAVES, rendertype1);
       p_228395_0_.put(Blocks.DARK_OAK_LEAVES, rendertype1);
-      RenderType rendertype2 = RenderType.cutout();
+      RenderType rendertype2 = RenderType.getCutout();
       p_228395_0_.put(Blocks.OAK_SAPLING, rendertype2);
       p_228395_0_.put(Blocks.SPRUCE_SAPLING, rendertype2);
       p_228395_0_.put(Blocks.BIRCH_SAPLING, rendertype2);
@@ -223,7 +223,7 @@ public class RenderTypeLookup {
       p_228395_0_.put(Blocks.POTTED_WARPED_ROOTS, rendertype2);
       p_228395_0_.put(Blocks.CRIMSON_DOOR, rendertype2);
       p_228395_0_.put(Blocks.WARPED_DOOR, rendertype2);
-      RenderType rendertype3 = RenderType.translucent();
+      RenderType rendertype3 = RenderType.getTranslucent();
       p_228395_0_.put(Blocks.ICE, rendertype3);
       p_228395_0_.put(Blocks.NETHER_PORTAL, rendertype3);
       p_228395_0_.put(Blocks.WHITE_STAINED_GLASS, rendertype3);
@@ -263,66 +263,66 @@ public class RenderTypeLookup {
       p_228395_0_.put(Blocks.FROSTED_ICE, rendertype3);
       p_228395_0_.put(Blocks.BUBBLE_COLUMN, rendertype3);
    });
-   private static final Map<Fluid, RenderType> TYPE_BY_FLUID = Util.make(Maps.newHashMap(), (p_228392_0_) -> {
-      RenderType rendertype = RenderType.translucent();
+   private static final Map<Fluid, RenderType> TYPES_BY_FLUID = Util.make(Maps.newHashMap(), (p_228392_0_) -> {
+      RenderType rendertype = RenderType.getTranslucent();
       p_228392_0_.put(Fluids.FLOWING_WATER, rendertype);
       p_228392_0_.put(Fluids.WATER, rendertype);
    });
-   private static boolean renderCutout;
+   private static boolean fancyGraphics;
 
-   public static RenderType getChunkRenderType(BlockState p_228390_0_) {
-      Block block = p_228390_0_.getBlock();
+   public static RenderType getChunkRenderType(BlockState blockStateIn) {
+      Block block = blockStateIn.getBlock();
       if (block instanceof LeavesBlock) {
-         return renderCutout ? RenderType.cutoutMipped() : RenderType.solid();
+         return fancyGraphics ? RenderType.getCutoutMipped() : RenderType.getSolid();
       } else {
-         RenderType rendertype = TYPE_BY_BLOCK.get(block);
-         return rendertype != null ? rendertype : RenderType.solid();
+         RenderType rendertype = TYPES_BY_BLOCK.get(block);
+         return rendertype != null ? rendertype : RenderType.getSolid();
       }
    }
 
-   public static RenderType getMovingBlockRenderType(BlockState p_239221_0_) {
+   public static RenderType func_239221_b_(BlockState p_239221_0_) {
       Block block = p_239221_0_.getBlock();
       if (block instanceof LeavesBlock) {
-         return renderCutout ? RenderType.cutoutMipped() : RenderType.solid();
+         return fancyGraphics ? RenderType.getCutoutMipped() : RenderType.getSolid();
       } else {
-         RenderType rendertype = TYPE_BY_BLOCK.get(block);
+         RenderType rendertype = TYPES_BY_BLOCK.get(block);
          if (rendertype != null) {
-            return rendertype == RenderType.translucent() ? RenderType.translucentMovingBlock() : rendertype;
+            return rendertype == RenderType.getTranslucent() ? RenderType.getTranslucentMovingBlock() : rendertype;
          } else {
-            return RenderType.solid();
+            return RenderType.getSolid();
          }
       }
    }
 
-   public static RenderType getRenderType(BlockState p_239220_0_, boolean p_239220_1_) {
+   public static RenderType func_239220_a_(BlockState p_239220_0_, boolean p_239220_1_) {
       RenderType rendertype = getChunkRenderType(p_239220_0_);
-      if (rendertype == RenderType.translucent()) {
-         if (!Minecraft.useShaderTransparency()) {
-            return Atlases.translucentCullBlockSheet();
+      if (rendertype == RenderType.getTranslucent()) {
+         if (!Minecraft.isFabulousGraphicsEnabled()) {
+            return Atlases.getTranslucentCullBlockType();
          } else {
-            return p_239220_1_ ? Atlases.translucentCullBlockSheet() : Atlases.translucentItemSheet();
+            return p_239220_1_ ? Atlases.getTranslucentCullBlockType() : Atlases.getItemEntityTranslucentCullType();
          }
       } else {
-         return Atlases.cutoutBlockSheet();
+         return Atlases.getCutoutBlockType();
       }
    }
 
-   public static RenderType getRenderType(ItemStack p_239219_0_, boolean p_239219_1_) {
+   public static RenderType func_239219_a_(ItemStack p_239219_0_, boolean p_239219_1_) {
       Item item = p_239219_0_.getItem();
       if (item instanceof BlockItem) {
          Block block = ((BlockItem)item).getBlock();
-         return getRenderType(block.defaultBlockState(), p_239219_1_);
+         return func_239220_a_(block.getDefaultState(), p_239219_1_);
       } else {
-         return p_239219_1_ ? Atlases.translucentCullBlockSheet() : Atlases.translucentItemSheet();
+         return p_239219_1_ ? Atlases.getTranslucentCullBlockType() : Atlases.getItemEntityTranslucentCullType();
       }
    }
 
-   public static RenderType getRenderLayer(FluidState p_228391_0_) {
-      RenderType rendertype = TYPE_BY_FLUID.get(p_228391_0_.getType());
-      return rendertype != null ? rendertype : RenderType.solid();
+   public static RenderType getRenderType(FluidState fluidStateIn) {
+      RenderType rendertype = TYPES_BY_FLUID.get(fluidStateIn.getFluid());
+      return rendertype != null ? rendertype : RenderType.getSolid();
    }
 
-   public static void setFancy(boolean p_228393_0_) {
-      renderCutout = p_228393_0_;
+   public static void setFancyGraphics(boolean fancyIn) {
+      fancyGraphics = fancyIn;
    }
 }

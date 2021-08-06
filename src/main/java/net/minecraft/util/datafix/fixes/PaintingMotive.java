@@ -19,8 +19,8 @@ public class PaintingMotive extends NamedEntityFix {
       p_201153_0_.put("skullandroses", "skull_and_roses");
    });
 
-   public PaintingMotive(Schema p_i49659_1_, boolean p_i49659_2_) {
-      super(p_i49659_1_, p_i49659_2_, "EntityPaintingMotiveFix", TypeReferences.ENTITY, "minecraft:painting");
+   public PaintingMotive(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "EntityPaintingMotiveFix", TypeReferences.ENTITY, "minecraft:painting");
    }
 
    public Dynamic<?> fixTag(Dynamic<?> p_209652_1_) {

@@ -18,25 +18,25 @@ public class BlockListReport implements IDataProvider {
    private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
    private final DataGenerator generator;
 
-   public BlockListReport(DataGenerator p_i48265_1_) {
-      this.generator = p_i48265_1_;
+   public BlockListReport(DataGenerator generatorIn) {
+      this.generator = generatorIn;
    }
 
-   public void run(DirectoryCache p_200398_1_) throws IOException {
+   public void act(DirectoryCache cache) throws IOException {
       JsonObject jsonobject = new JsonObject();
 
       for(Block block : Registry.BLOCK) {
          ResourceLocation resourcelocation = Registry.BLOCK.getKey(block);
          JsonObject jsonobject1 = new JsonObject();
-         StateContainer<Block, BlockState> statecontainer = block.getStateDefinition();
+         StateContainer<Block, BlockState> statecontainer = block.getStateContainer();
          if (!statecontainer.getProperties().isEmpty()) {
             JsonObject jsonobject2 = new JsonObject();
 
             for(Property<?> property : statecontainer.getProperties()) {
                JsonArray jsonarray = new JsonArray();
 
-               for(Comparable<?> comparable : property.getPossibleValues()) {
-                  jsonarray.add(Util.getPropertyName(property, comparable));
+               for(Comparable<?> comparable : property.getAllowedValues()) {
+                  jsonarray.add(Util.getValueName(property, comparable));
                }
 
                jsonobject2.add(property.getName(), jsonarray);
@@ -47,20 +47,20 @@ public class BlockListReport implements IDataProvider {
 
          JsonArray jsonarray1 = new JsonArray();
 
-         for(BlockState blockstate : statecontainer.getPossibleStates()) {
+         for(BlockState blockstate : statecontainer.getValidStates()) {
             JsonObject jsonobject3 = new JsonObject();
             JsonObject jsonobject4 = new JsonObject();
 
             for(Property<?> property1 : statecontainer.getProperties()) {
-               jsonobject4.addProperty(property1.getName(), Util.getPropertyName(property1, blockstate.getValue(property1)));
+               jsonobject4.addProperty(property1.getName(), Util.getValueName(property1, blockstate.get(property1)));
             }
 
             if (jsonobject4.size() > 0) {
                jsonobject3.add("properties", jsonobject4);
             }
 
-            jsonobject3.addProperty("id", Block.getId(blockstate));
-            if (blockstate == block.defaultBlockState()) {
+            jsonobject3.addProperty("id", Block.getStateId(blockstate));
+            if (blockstate == block.getDefaultState()) {
                jsonobject3.addProperty("default", true);
             }
 
@@ -72,7 +72,7 @@ public class BlockListReport implements IDataProvider {
       }
 
       Path path = this.generator.getOutputFolder().resolve("reports/blocks.json");
-      IDataProvider.save(GSON, p_200398_1_, jsonobject, path);
+      IDataProvider.save(GSON, cache, jsonobject, path);
    }
 
    public String getName() {

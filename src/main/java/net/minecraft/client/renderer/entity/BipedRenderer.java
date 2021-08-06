@@ -11,10 +11,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BipedRenderer<T extends MobEntity, M extends BipedModel<T>> extends MobRenderer<T, M> {
-   private static final ResourceLocation DEFAULT_LOCATION = new ResourceLocation("textures/entity/steve.png");
+   private static final ResourceLocation DEFAULT_RES_LOC = new ResourceLocation("textures/entity/steve.png");
 
-   public BipedRenderer(EntityRendererManager p_i46168_1_, M p_i46168_2_, float p_i46168_3_) {
-      this(p_i46168_1_, p_i46168_2_, p_i46168_3_, 1.0F, 1.0F, 1.0F);
+   public BipedRenderer(EntityRendererManager renderManagerIn, M modelBipedIn, float shadowSize) {
+      this(renderManagerIn, modelBipedIn, shadowSize, 1.0F, 1.0F, 1.0F);
    }
 
    public BipedRenderer(EntityRendererManager p_i232471_1_, M p_i232471_2_, float p_i232471_3_, float p_i232471_4_, float p_i232471_5_, float p_i232471_6_) {
@@ -24,7 +24,7 @@ public class BipedRenderer<T extends MobEntity, M extends BipedModel<T>> extends
       this.addLayer(new HeldItemLayer<>(this));
    }
 
-   public ResourceLocation getTextureLocation(T p_110775_1_) {
-      return DEFAULT_LOCATION;
+   public ResourceLocation getEntityTexture(T entity) {
+      return DEFAULT_RES_LOC;
    }
 }

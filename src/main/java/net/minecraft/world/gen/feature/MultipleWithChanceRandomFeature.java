@@ -11,13 +11,13 @@ public class MultipleWithChanceRandomFeature extends Feature<MultipleRandomFeatu
       super(p_i231981_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, MultipleRandomFeatureConfig p_241855_5_) {
-      for(ConfiguredRandomFeatureList configuredrandomfeaturelist : p_241855_5_.features) {
-         if (p_241855_3_.nextFloat() < configuredrandomfeaturelist.chance) {
-            return configuredrandomfeaturelist.place(p_241855_1_, p_241855_2_, p_241855_3_, p_241855_4_);
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, MultipleRandomFeatureConfig config) {
+      for(ConfiguredRandomFeatureList configuredrandomfeaturelist : config.features) {
+         if (rand.nextFloat() < configuredrandomfeaturelist.chance) {
+            return configuredrandomfeaturelist.func_242787_a(reader, generator, rand, pos);
          }
       }
 
-      return p_241855_5_.defaultFeature.get().place(p_241855_1_, p_241855_2_, p_241855_3_, p_241855_4_);
+      return config.defaultFeature.get().generate(reader, generator, rand, pos);
    }
 }

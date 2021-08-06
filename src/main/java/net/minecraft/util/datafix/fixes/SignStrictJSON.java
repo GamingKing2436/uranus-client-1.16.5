@@ -44,8 +44,8 @@ public class SignStrictJSON extends NamedEntityFix {
       }
    }).create();
 
-   public SignStrictJSON(Schema p_i49680_1_, boolean p_i49680_2_) {
-      super(p_i49680_1_, p_i49680_2_, "BlockEntitySignTextStrictJsonFix", TypeReferences.BLOCK_ENTITY, "Sign");
+   public SignStrictJSON(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "BlockEntitySignTextStrictJsonFix", TypeReferences.BLOCK_ENTITY, "Sign");
    }
 
    private Dynamic<?> updateLine(Dynamic<?> p_209647_1_, String p_209647_2_) {
@@ -63,14 +63,14 @@ public class SignStrictJSON extends NamedEntityFix {
 
             if (itextcomponent == null) {
                try {
-                  itextcomponent = ITextComponent.Serializer.fromJson(s);
+                  itextcomponent = ITextComponent.Serializer.getComponentFromJson(s);
                } catch (JsonParseException jsonparseexception1) {
                }
             }
 
             if (itextcomponent == null) {
                try {
-                  itextcomponent = ITextComponent.Serializer.fromJsonLenient(s);
+                  itextcomponent = ITextComponent.Serializer.getComponentFromJsonLenient(s);
                } catch (JsonParseException jsonparseexception) {
                }
             }

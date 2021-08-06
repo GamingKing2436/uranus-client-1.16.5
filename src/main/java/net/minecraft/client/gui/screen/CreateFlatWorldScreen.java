@@ -25,84 +25,84 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class CreateFlatWorldScreen extends Screen {
-   protected final CreateWorldScreen parent;
-   private final Consumer<FlatGenerationSettings> applySettings;
-   private FlatGenerationSettings generator;
-   private ITextComponent columnType;
-   private ITextComponent columnHeight;
-   private CreateFlatWorldScreen.DetailsList list;
-   private Button deleteLayerButton;
+   protected final CreateWorldScreen createWorldGui;
+   private final Consumer<FlatGenerationSettings> field_238601_b_;
+   private FlatGenerationSettings generatorInfo;
+   private ITextComponent materialText;
+   private ITextComponent heightText;
+   private CreateFlatWorldScreen.DetailsList createFlatWorldListSlotGui;
+   private Button removeLayerButton;
 
    public CreateFlatWorldScreen(CreateWorldScreen p_i242055_1_, Consumer<FlatGenerationSettings> p_i242055_2_, FlatGenerationSettings p_i242055_3_) {
       super(new TranslationTextComponent("createWorld.customize.flat.title"));
-      this.parent = p_i242055_1_;
-      this.applySettings = p_i242055_2_;
-      this.generator = p_i242055_3_;
+      this.createWorldGui = p_i242055_1_;
+      this.field_238601_b_ = p_i242055_2_;
+      this.generatorInfo = p_i242055_3_;
    }
 
-   public FlatGenerationSettings settings() {
-      return this.generator;
+   public FlatGenerationSettings func_238603_g_() {
+      return this.generatorInfo;
    }
 
-   public void setConfig(FlatGenerationSettings p_238602_1_) {
-      this.generator = p_238602_1_;
+   public void func_238602_a_(FlatGenerationSettings p_238602_1_) {
+      this.generatorInfo = p_238602_1_;
    }
 
    protected void init() {
-      this.columnType = new TranslationTextComponent("createWorld.customize.flat.tile");
-      this.columnHeight = new TranslationTextComponent("createWorld.customize.flat.height");
-      this.list = new CreateFlatWorldScreen.DetailsList();
-      this.children.add(this.list);
-      this.deleteLayerButton = this.addButton(new Button(this.width / 2 - 155, this.height - 52, 150, 20, new TranslationTextComponent("createWorld.customize.flat.removeLayer"), (p_213007_1_) -> {
-         if (this.hasValidSelection()) {
-            List<FlatLayerInfo> list = this.generator.getLayersInfo();
-            int i = this.list.children().indexOf(this.list.getSelected());
+      this.materialText = new TranslationTextComponent("createWorld.customize.flat.tile");
+      this.heightText = new TranslationTextComponent("createWorld.customize.flat.height");
+      this.createFlatWorldListSlotGui = new CreateFlatWorldScreen.DetailsList();
+      this.children.add(this.createFlatWorldListSlotGui);
+      this.removeLayerButton = this.addButton(new Button(this.width / 2 - 155, this.height - 52, 150, 20, new TranslationTextComponent("createWorld.customize.flat.removeLayer"), (p_213007_1_) -> {
+         if (this.hasSelectedLayer()) {
+            List<FlatLayerInfo> list = this.generatorInfo.getFlatLayers();
+            int i = this.createFlatWorldListSlotGui.getEventListeners().indexOf(this.createFlatWorldListSlotGui.getSelected());
             int j = list.size() - i - 1;
             list.remove(j);
-            this.list.setSelected(list.isEmpty() ? null : this.list.children().get(Math.min(i, list.size() - 1)));
-            this.generator.updateLayers();
-            this.list.resetRows();
-            this.updateButtonValidity();
+            this.createFlatWorldListSlotGui.setSelected(list.isEmpty() ? null : this.createFlatWorldListSlotGui.getEventListeners().get(Math.min(i, list.size() - 1)));
+            this.generatorInfo.updateLayers();
+            this.createFlatWorldListSlotGui.func_214345_a();
+            this.onLayersChanged();
          }
       }));
       this.addButton(new Button(this.width / 2 + 5, this.height - 52, 150, 20, new TranslationTextComponent("createWorld.customize.presets"), (p_213011_1_) -> {
-         this.minecraft.setScreen(new FlatPresetsScreen(this));
-         this.generator.updateLayers();
-         this.updateButtonValidity();
+         this.minecraft.displayGuiScreen(new FlatPresetsScreen(this));
+         this.generatorInfo.updateLayers();
+         this.onLayersChanged();
       }));
       this.addButton(new Button(this.width / 2 - 155, this.height - 28, 150, 20, DialogTexts.GUI_DONE, (p_213010_1_) -> {
-         this.applySettings.accept(this.generator);
-         this.minecraft.setScreen(this.parent);
-         this.generator.updateLayers();
+         this.field_238601_b_.accept(this.generatorInfo);
+         this.minecraft.displayGuiScreen(this.createWorldGui);
+         this.generatorInfo.updateLayers();
       }));
       this.addButton(new Button(this.width / 2 + 5, this.height - 28, 150, 20, DialogTexts.GUI_CANCEL, (p_213009_1_) -> {
-         this.minecraft.setScreen(this.parent);
-         this.generator.updateLayers();
+         this.minecraft.displayGuiScreen(this.createWorldGui);
+         this.generatorInfo.updateLayers();
       }));
-      this.generator.updateLayers();
-      this.updateButtonValidity();
+      this.generatorInfo.updateLayers();
+      this.onLayersChanged();
    }
 
-   private void updateButtonValidity() {
-      this.deleteLayerButton.active = this.hasValidSelection();
+   private void onLayersChanged() {
+      this.removeLayerButton.active = this.hasSelectedLayer();
    }
 
-   private boolean hasValidSelection() {
-      return this.list.getSelected() != null;
+   private boolean hasSelectedLayer() {
+      return this.createFlatWorldListSlotGui.getSelected() != null;
    }
 
-   public void onClose() {
-      this.minecraft.setScreen(this.parent);
+   public void closeScreen() {
+      this.minecraft.displayGuiScreen(this.createWorldGui);
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.renderBackground(p_230430_1_);
-      this.list.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
-      drawCenteredString(p_230430_1_, this.font, this.title, this.width / 2, 8, 16777215);
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.renderBackground(matrixStack);
+      this.createFlatWorldListSlotGui.render(matrixStack, mouseX, mouseY, partialTicks);
+      drawCenteredString(matrixStack, this.font, this.title, this.width / 2, 8, 16777215);
       int i = this.width / 2 - 92 - 16;
-      drawString(p_230430_1_, this.font, this.columnType, i, 32, 16777215);
-      drawString(p_230430_1_, this.font, this.columnHeight, i + 2 + 213 - this.font.width(this.columnHeight), 32, 16777215);
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+      drawString(matrixStack, this.font, this.materialText, i, 32, 16777215);
+      drawString(matrixStack, this.font, this.heightText, i + 2 + 213 - this.font.getStringPropertyWidth(this.heightText), 32, 16777215);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -110,42 +110,42 @@ public class CreateFlatWorldScreen extends Screen {
       public DetailsList() {
          super(CreateFlatWorldScreen.this.minecraft, CreateFlatWorldScreen.this.width, CreateFlatWorldScreen.this.height, 43, CreateFlatWorldScreen.this.height - 60, 24);
 
-         for(int i = 0; i < CreateFlatWorldScreen.this.generator.getLayersInfo().size(); ++i) {
+         for(int i = 0; i < CreateFlatWorldScreen.this.generatorInfo.getFlatLayers().size(); ++i) {
             this.addEntry(new CreateFlatWorldScreen.DetailsList.LayerEntry());
          }
 
       }
 
-      public void setSelected(@Nullable CreateFlatWorldScreen.DetailsList.LayerEntry p_241215_1_) {
-         super.setSelected(p_241215_1_);
-         if (p_241215_1_ != null) {
-            FlatLayerInfo flatlayerinfo = CreateFlatWorldScreen.this.generator.getLayersInfo().get(CreateFlatWorldScreen.this.generator.getLayersInfo().size() - this.children().indexOf(p_241215_1_) - 1);
-            Item item = flatlayerinfo.getBlockState().getBlock().asItem();
+      public void setSelected(@Nullable CreateFlatWorldScreen.DetailsList.LayerEntry entry) {
+         super.setSelected(entry);
+         if (entry != null) {
+            FlatLayerInfo flatlayerinfo = CreateFlatWorldScreen.this.generatorInfo.getFlatLayers().get(CreateFlatWorldScreen.this.generatorInfo.getFlatLayers().size() - this.getEventListeners().indexOf(entry) - 1);
+            Item item = flatlayerinfo.getLayerMaterial().getBlock().asItem();
             if (item != Items.AIR) {
-               NarratorChatListener.INSTANCE.sayNow((new TranslationTextComponent("narrator.select", item.getName(new ItemStack(item)))).getString());
+               NarratorChatListener.INSTANCE.say((new TranslationTextComponent("narrator.select", item.getDisplayName(new ItemStack(item)))).getString());
             }
          }
 
-         CreateFlatWorldScreen.this.updateButtonValidity();
+         CreateFlatWorldScreen.this.onLayersChanged();
       }
 
       protected boolean isFocused() {
-         return CreateFlatWorldScreen.this.getFocused() == this;
+         return CreateFlatWorldScreen.this.getListener() == this;
       }
 
       protected int getScrollbarPosition() {
          return this.width - 70;
       }
 
-      public void resetRows() {
-         int i = this.children().indexOf(this.getSelected());
+      public void func_214345_a() {
+         int i = this.getEventListeners().indexOf(this.getSelected());
          this.clearEntries();
 
-         for(int j = 0; j < CreateFlatWorldScreen.this.generator.getLayersInfo().size(); ++j) {
+         for(int j = 0; j < CreateFlatWorldScreen.this.generatorInfo.getFlatLayers().size(); ++j) {
             this.addEntry(new CreateFlatWorldScreen.DetailsList.LayerEntry());
          }
 
-         List<CreateFlatWorldScreen.DetailsList.LayerEntry> list = this.children();
+         List<CreateFlatWorldScreen.DetailsList.LayerEntry> list = this.getEventListeners();
          if (i >= 0 && i < list.size()) {
             this.setSelected(list.get(i));
          }
@@ -158,34 +158,34 @@ public class CreateFlatWorldScreen extends Screen {
          }
 
          public void render(MatrixStack p_230432_1_, int p_230432_2_, int p_230432_3_, int p_230432_4_, int p_230432_5_, int p_230432_6_, int p_230432_7_, int p_230432_8_, boolean p_230432_9_, float p_230432_10_) {
-            FlatLayerInfo flatlayerinfo = CreateFlatWorldScreen.this.generator.getLayersInfo().get(CreateFlatWorldScreen.this.generator.getLayersInfo().size() - p_230432_2_ - 1);
-            BlockState blockstate = flatlayerinfo.getBlockState();
+            FlatLayerInfo flatlayerinfo = CreateFlatWorldScreen.this.generatorInfo.getFlatLayers().get(CreateFlatWorldScreen.this.generatorInfo.getFlatLayers().size() - p_230432_2_ - 1);
+            BlockState blockstate = flatlayerinfo.getLayerMaterial();
             Item item = blockstate.getBlock().asItem();
             if (item == Items.AIR) {
-               if (blockstate.is(Blocks.WATER)) {
+               if (blockstate.isIn(Blocks.WATER)) {
                   item = Items.WATER_BUCKET;
-               } else if (blockstate.is(Blocks.LAVA)) {
+               } else if (blockstate.isIn(Blocks.LAVA)) {
                   item = Items.LAVA_BUCKET;
                }
             }
 
             ItemStack itemstack = new ItemStack(item);
-            this.blitSlot(p_230432_1_, p_230432_4_, p_230432_3_, itemstack);
-            CreateFlatWorldScreen.this.font.draw(p_230432_1_, item.getName(itemstack), (float)(p_230432_4_ + 18 + 5), (float)(p_230432_3_ + 3), 16777215);
+            this.func_238605_a_(p_230432_1_, p_230432_4_, p_230432_3_, itemstack);
+            CreateFlatWorldScreen.this.font.func_243248_b(p_230432_1_, item.getDisplayName(itemstack), (float)(p_230432_4_ + 18 + 5), (float)(p_230432_3_ + 3), 16777215);
             String s;
             if (p_230432_2_ == 0) {
-               s = I18n.get("createWorld.customize.flat.layer.top", flatlayerinfo.getHeight());
-            } else if (p_230432_2_ == CreateFlatWorldScreen.this.generator.getLayersInfo().size() - 1) {
-               s = I18n.get("createWorld.customize.flat.layer.bottom", flatlayerinfo.getHeight());
+               s = I18n.format("createWorld.customize.flat.layer.top", flatlayerinfo.getLayerCount());
+            } else if (p_230432_2_ == CreateFlatWorldScreen.this.generatorInfo.getFlatLayers().size() - 1) {
+               s = I18n.format("createWorld.customize.flat.layer.bottom", flatlayerinfo.getLayerCount());
             } else {
-               s = I18n.get("createWorld.customize.flat.layer", flatlayerinfo.getHeight());
+               s = I18n.format("createWorld.customize.flat.layer", flatlayerinfo.getLayerCount());
             }
 
-            CreateFlatWorldScreen.this.font.draw(p_230432_1_, s, (float)(p_230432_4_ + 2 + 213 - CreateFlatWorldScreen.this.font.width(s)), (float)(p_230432_3_ + 3), 16777215);
+            CreateFlatWorldScreen.this.font.drawString(p_230432_1_, s, (float)(p_230432_4_ + 2 + 213 - CreateFlatWorldScreen.this.font.getStringWidth(s)), (float)(p_230432_3_ + 3), 16777215);
          }
 
-         public boolean mouseClicked(double p_231044_1_, double p_231044_3_, int p_231044_5_) {
-            if (p_231044_5_ == 0) {
+         public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (button == 0) {
                DetailsList.this.setSelected(this);
                return true;
             } else {
@@ -193,19 +193,19 @@ public class CreateFlatWorldScreen extends Screen {
             }
          }
 
-         private void blitSlot(MatrixStack p_238605_1_, int p_238605_2_, int p_238605_3_, ItemStack p_238605_4_) {
-            this.blitSlotBg(p_238605_1_, p_238605_2_ + 1, p_238605_3_ + 1);
+         private void func_238605_a_(MatrixStack p_238605_1_, int p_238605_2_, int p_238605_3_, ItemStack p_238605_4_) {
+            this.func_238604_a_(p_238605_1_, p_238605_2_ + 1, p_238605_3_ + 1);
             RenderSystem.enableRescaleNormal();
             if (!p_238605_4_.isEmpty()) {
-               CreateFlatWorldScreen.this.itemRenderer.renderGuiItem(p_238605_4_, p_238605_2_ + 2, p_238605_3_ + 2);
+               CreateFlatWorldScreen.this.itemRenderer.renderItemIntoGUI(p_238605_4_, p_238605_2_ + 2, p_238605_3_ + 2);
             }
 
             RenderSystem.disableRescaleNormal();
          }
 
-         private void blitSlotBg(MatrixStack p_238604_1_, int p_238604_2_, int p_238604_3_) {
+         private void func_238604_a_(MatrixStack p_238604_1_, int p_238604_2_, int p_238604_3_) {
             RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-            DetailsList.this.minecraft.getTextureManager().bind(AbstractGui.STATS_ICON_LOCATION);
+            DetailsList.this.minecraft.getTextureManager().bindTexture(AbstractGui.STATS_ICON_LOCATION);
             AbstractGui.blit(p_238604_1_, p_238604_2_, p_238604_3_, CreateFlatWorldScreen.this.getBlitOffset(), 0.0F, 0.0F, 18, 18, 128, 128);
          }
       }

@@ -16,22 +16,22 @@ public enum ParticleStatus {
       return new ParticleStatus[p_216834_0_];
    });
    private final int id;
-   private final String key;
+   private final String resourceKey;
 
-   private ParticleStatus(int p_i51156_3_, String p_i51156_4_) {
-      this.id = p_i51156_3_;
-      this.key = p_i51156_4_;
+   private ParticleStatus(int id, String resourceKeyIn) {
+      this.id = id;
+      this.resourceKey = resourceKeyIn;
    }
 
-   public String getKey() {
-      return this.key;
+   public String getResourceKey() {
+      return this.resourceKey;
    }
 
    public int getId() {
       return this.id;
    }
 
-   public static ParticleStatus byId(int p_216833_0_) {
-      return BY_ID[MathHelper.positiveModulo(p_216833_0_, BY_ID.length)];
+   public static ParticleStatus byId(int id) {
+      return BY_ID[MathHelper.normalizeAngle(id, BY_ID.length)];
    }
 }

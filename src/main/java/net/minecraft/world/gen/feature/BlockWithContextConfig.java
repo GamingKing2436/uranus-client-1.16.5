@@ -6,7 +6,7 @@ import java.util.List;
 import net.minecraft.block.BlockState;
 
 public class BlockWithContextConfig implements IFeatureConfig {
-   public static final Codec<BlockWithContextConfig> CODEC = RecordCodecBuilder.create((p_236638_0_) -> {
+   public static final Codec<BlockWithContextConfig> field_236636_a_ = RecordCodecBuilder.create((p_236638_0_) -> {
       return p_236638_0_.group(BlockState.CODEC.fieldOf("to_place").forGetter((p_236641_0_) -> {
          return p_236641_0_.toPlace;
       }), BlockState.CODEC.listOf().fieldOf("place_on").forGetter((p_236640_0_) -> {
@@ -22,10 +22,10 @@ public class BlockWithContextConfig implements IFeatureConfig {
    public final List<BlockState> placeIn;
    public final List<BlockState> placeUnder;
 
-   public BlockWithContextConfig(BlockState p_i51439_1_, List<BlockState> p_i51439_2_, List<BlockState> p_i51439_3_, List<BlockState> p_i51439_4_) {
-      this.toPlace = p_i51439_1_;
-      this.placeOn = p_i51439_2_;
-      this.placeIn = p_i51439_3_;
-      this.placeUnder = p_i51439_4_;
+   public BlockWithContextConfig(BlockState toPlace, List<BlockState> placeOn, List<BlockState> placeIn, List<BlockState> placeUnder) {
+      this.toPlace = toPlace;
+      this.placeOn = placeOn;
+      this.placeIn = placeIn;
+      this.placeUnder = placeUnder;
    }
 }

@@ -7,20 +7,20 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ToggleableKeyBinding extends KeyBinding {
-   private final BooleanSupplier needsToggle;
+   private final BooleanSupplier getterToggle;
 
-   public ToggleableKeyBinding(String p_i225917_1_, int p_i225917_2_, String p_i225917_3_, BooleanSupplier p_i225917_4_) {
-      super(p_i225917_1_, InputMappings.Type.KEYSYM, p_i225917_2_, p_i225917_3_);
-      this.needsToggle = p_i225917_4_;
+   public ToggleableKeyBinding(String descriptionIn, int codeIn, String categoryIn, BooleanSupplier getterIn) {
+      super(descriptionIn, InputMappings.Type.KEYSYM, codeIn, categoryIn);
+      this.getterToggle = getterIn;
    }
 
-   public void setDown(boolean p_225593_1_) {
-      if (this.needsToggle.getAsBoolean()) {
-         if (p_225593_1_) {
-            super.setDown(!this.isDown());
+   public void setPressed(boolean valueIn) {
+      if (this.getterToggle.getAsBoolean()) {
+         if (valueIn) {
+            super.setPressed(!this.isKeyDown());
          }
       } else {
-         super.setDown(p_225593_1_);
+         super.setPressed(valueIn);
       }
 
    }

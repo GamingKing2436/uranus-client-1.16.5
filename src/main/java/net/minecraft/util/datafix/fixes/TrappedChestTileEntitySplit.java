@@ -23,8 +23,8 @@ import org.apache.logging.log4j.Logger;
 public class TrappedChestTileEntitySplit extends DataFix {
    private static final Logger LOGGER = LogManager.getLogger();
 
-   public TrappedChestTileEntitySplit(Schema p_i49815_1_, boolean p_i49815_2_) {
-      super(p_i49815_1_, p_i49815_2_);
+   public TrappedChestTileEntitySplit(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
@@ -59,7 +59,7 @@ public class TrappedChestTileEntitySplit extends DataFix {
                         if (!trappedchesttileentitysplit$section.isSkippable()) {
                            for(int i = 0; i < 4096; ++i) {
                               int j = trappedchesttileentitysplit$section.getBlock(i);
-                              if (trappedchesttileentitysplit$section.isTrappedChest(j)) {
+                              if (trappedchesttileentitysplit$section.func_212511_a(j)) {
                                  intset.add(trappedchesttileentitysplit$section.getIndex() << 12 | i);
                               }
                            }
@@ -96,28 +96,28 @@ public class TrappedChestTileEntitySplit extends DataFix {
 
    public static final class Section extends LeavesFix.Section {
       @Nullable
-      private IntSet chestIds;
+      private IntSet field_212512_f;
 
       public Section(Typed<?> p_i49831_1_, Schema p_i49831_2_) {
          super(p_i49831_1_, p_i49831_2_);
       }
 
-      protected boolean skippable() {
-         this.chestIds = new IntOpenHashSet();
+      protected boolean func_212508_a() {
+         this.field_212512_f = new IntOpenHashSet();
 
          for(int i = 0; i < this.palette.size(); ++i) {
             Dynamic<?> dynamic = this.palette.get(i);
             String s = dynamic.get("Name").asString("");
             if (Objects.equals(s, "minecraft:trapped_chest")) {
-               this.chestIds.add(i);
+               this.field_212512_f.add(i);
             }
          }
 
-         return this.chestIds.isEmpty();
+         return this.field_212512_f.isEmpty();
       }
 
-      public boolean isTrappedChest(int p_212511_1_) {
-         return this.chestIds.contains(p_212511_1_);
+      public boolean func_212511_a(int p_212511_1_) {
+         return this.field_212512_f.contains(p_212511_1_);
       }
    }
 }

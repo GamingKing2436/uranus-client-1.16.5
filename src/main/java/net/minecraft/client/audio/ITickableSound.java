@@ -5,7 +5,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface ITickableSound extends ISound {
-   boolean isStopped();
+   boolean isDonePlaying();
 
    void tick();
 }

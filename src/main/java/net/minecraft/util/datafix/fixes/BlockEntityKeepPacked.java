@@ -7,8 +7,8 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class BlockEntityKeepPacked extends NamedEntityFix {
-   public BlockEntityKeepPacked(Schema p_i49682_1_, boolean p_i49682_2_) {
-      super(p_i49682_1_, p_i49682_2_, "BlockEntityKeepPacked", TypeReferences.BLOCK_ENTITY, "DUMMY");
+   public BlockEntityKeepPacked(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "BlockEntityKeepPacked", TypeReferences.BLOCK_ENTITY, "DUMMY");
    }
 
    private static Dynamic<?> fixTag(Dynamic<?> p_209645_0_) {

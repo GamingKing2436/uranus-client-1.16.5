@@ -15,10 +15,10 @@ public class VillagerProfessionFix extends NamedEntityFix {
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
       Dynamic<?> dynamic = p_207419_1_.get(DSL.remainderFinder());
-      return p_207419_1_.set(DSL.remainderFinder(), dynamic.remove("Profession").remove("Career").remove("CareerLevel").set("VillagerData", dynamic.createMap(ImmutableMap.of(dynamic.createString("type"), dynamic.createString("minecraft:plains"), dynamic.createString("profession"), dynamic.createString(upgradeData(dynamic.get("Profession").asInt(0), dynamic.get("Career").asInt(0))), dynamic.createString("level"), DataFixUtils.orElse(dynamic.get("CareerLevel").result(), dynamic.createInt(1))))));
+      return p_207419_1_.set(DSL.remainderFinder(), dynamic.remove("Profession").remove("Career").remove("CareerLevel").set("VillagerData", dynamic.createMap(ImmutableMap.of(dynamic.createString("type"), dynamic.createString("minecraft:plains"), dynamic.createString("profession"), dynamic.createString(func_219811_a(dynamic.get("Profession").asInt(0), dynamic.get("Career").asInt(0))), dynamic.createString("level"), DataFixUtils.orElse(dynamic.get("CareerLevel").result(), dynamic.createInt(1))))));
    }
 
-   private static String upgradeData(int p_219811_0_, int p_219811_1_) {
+   private static String func_219811_a(int p_219811_0_, int p_219811_1_) {
       if (p_219811_0_ == 0) {
          if (p_219811_1_ == 2) {
             return "minecraft:fisherman";

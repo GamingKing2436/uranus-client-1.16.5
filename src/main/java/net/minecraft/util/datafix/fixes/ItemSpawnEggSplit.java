@@ -17,7 +17,7 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ItemSpawnEggSplit extends DataFix {
-   private static final Map<String, String> MAP = DataFixUtils.make(Maps.newHashMap(), (p_209279_0_) -> {
+   private static final Map<String, String> field_199421_a = DataFixUtils.make(Maps.newHashMap(), (p_209279_0_) -> {
       p_209279_0_.put("minecraft:bat", "minecraft:bat_spawn_egg");
       p_209279_0_.put("minecraft:blaze", "minecraft:blaze_spawn_egg");
       p_209279_0_.put("minecraft:cave_spider", "minecraft:cave_spider_spawn_egg");
@@ -65,14 +65,14 @@ public class ItemSpawnEggSplit extends DataFix {
       p_209279_0_.put("minecraft:zombie_villager", "minecraft:zombie_villager_spawn_egg");
    });
 
-   public ItemSpawnEggSplit(Schema p_i49636_1_, boolean p_i49636_2_) {
-      super(p_i49636_1_, p_i49636_2_);
+   public ItemSpawnEggSplit(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
       Type<?> type = this.getInputSchema().getType(TypeReferences.ITEM_STACK);
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
-      OpticFinder<String> opticfinder1 = DSL.fieldFinder("id", NamespacedSchema.namespacedString());
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
+      OpticFinder<String> opticfinder1 = DSL.fieldFinder("id", NamespacedSchema.func_233457_a_());
       OpticFinder<?> opticfinder2 = type.findField("tag");
       OpticFinder<?> opticfinder3 = opticfinder2.type().findField("EntityTag");
       return this.fixTypeEverywhereTyped("ItemInstanceSpawnEggFix", type, (p_206361_4_) -> {
@@ -82,7 +82,7 @@ public class ItemSpawnEggSplit extends DataFix {
             Typed<?> typed1 = typed.getOrCreateTyped(opticfinder3);
             Optional<String> optional1 = typed1.getOptional(opticfinder1);
             if (optional1.isPresent()) {
-               return p_206361_4_.set(opticfinder, Pair.of(TypeReferences.ITEM_NAME.typeName(), MAP.getOrDefault(optional1.get(), "minecraft:pig_spawn_egg")));
+               return p_206361_4_.set(opticfinder, Pair.of(TypeReferences.ITEM_NAME.typeName(), field_199421_a.getOrDefault(optional1.get(), "minecraft:pig_spawn_egg")));
             }
          }
 

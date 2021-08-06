@@ -30,66 +30,66 @@ import org.apache.logging.log4j.Logger;
 public class TagCollectionReader<T> {
    private static final Logger LOGGER = LogManager.getLogger();
    private static final Gson GSON = new Gson();
-   private static final int PATH_SUFFIX_LENGTH = ".json".length();
-   private final Function<ResourceLocation, Optional<T>> idToValue;
-   private final String directory;
-   private final String name;
+   private static final int FILE_TYPE_LENGHT_VALUE = ".json".length();
+   private final Function<ResourceLocation, Optional<T>> idToTagFunction;
+   private final String path;
+   private final String tagType;
 
-   public TagCollectionReader(Function<ResourceLocation, Optional<T>> p_i241899_1_, String p_i241899_2_, String p_i241899_3_) {
-      this.idToValue = p_i241899_1_;
-      this.directory = p_i241899_2_;
-      this.name = p_i241899_3_;
+   public TagCollectionReader(Function<ResourceLocation, Optional<T>> idToTagFunction, String path, String tagType) {
+      this.idToTagFunction = idToTagFunction;
+      this.path = path;
+      this.tagType = tagType;
    }
 
-   public CompletableFuture<Map<ResourceLocation, ITag.Builder>> prepare(IResourceManager p_242224_1_, Executor p_242224_2_) {
+   public CompletableFuture<Map<ResourceLocation, ITag.Builder>> readTagsFromManager(IResourceManager manager, Executor executor) {
       return CompletableFuture.supplyAsync(() -> {
          Map<ResourceLocation, ITag.Builder> map = Maps.newHashMap();
 
-         for(ResourceLocation resourcelocation : p_242224_1_.listResources(this.directory, (p_242225_0_) -> {
+         for(ResourceLocation resourcelocation : manager.getAllResourceLocations(this.path, (p_242225_0_) -> {
             return p_242225_0_.endsWith(".json");
          })) {
             String s = resourcelocation.getPath();
-            ResourceLocation resourcelocation1 = new ResourceLocation(resourcelocation.getNamespace(), s.substring(this.directory.length() + 1, s.length() - PATH_SUFFIX_LENGTH));
+            ResourceLocation resourcelocation1 = new ResourceLocation(resourcelocation.getNamespace(), s.substring(this.path.length() + 1, s.length() - FILE_TYPE_LENGHT_VALUE));
 
             try {
-               for(IResource iresource : p_242224_1_.getResources(resourcelocation)) {
+               for(IResource iresource : manager.getAllResources(resourcelocation)) {
                   try (
                      InputStream inputstream = iresource.getInputStream();
                      Reader reader = new BufferedReader(new InputStreamReader(inputstream, StandardCharsets.UTF_8));
                   ) {
                      JsonObject jsonobject = JSONUtils.fromJson(GSON, reader, JsonObject.class);
                      if (jsonobject == null) {
-                        LOGGER.error("Couldn't load {} tag list {} from {} in data pack {} as it is empty or null", this.name, resourcelocation1, resourcelocation, iresource.getSourceName());
+                        LOGGER.error("Couldn't load {} tag list {} from {} in data pack {} as it is empty or null", this.tagType, resourcelocation1, resourcelocation, iresource.getPackName());
                      } else {
                         map.computeIfAbsent(resourcelocation1, (p_242229_0_) -> {
-                           return ITag.Builder.tag();
-                        }).addFromJson(jsonobject, iresource.getSourceName());
+                           return ITag.Builder.create();
+                        }).deserialize(jsonobject, iresource.getPackName());
                      }
                   } catch (RuntimeException | IOException ioexception) {
-                     LOGGER.error("Couldn't read {} tag list {} from {} in data pack {}", this.name, resourcelocation1, resourcelocation, iresource.getSourceName(), ioexception);
+                     LOGGER.error("Couldn't read {} tag list {} from {} in data pack {}", this.tagType, resourcelocation1, resourcelocation, iresource.getPackName(), ioexception);
                   } finally {
                      IOUtils.closeQuietly((Closeable)iresource);
                   }
                }
             } catch (IOException ioexception1) {
-               LOGGER.error("Couldn't read {} tag list {} from {}", this.name, resourcelocation1, resourcelocation, ioexception1);
+               LOGGER.error("Couldn't read {} tag list {} from {}", this.tagType, resourcelocation1, resourcelocation, ioexception1);
             }
          }
 
          return map;
-      }, p_242224_2_);
+      }, executor);
    }
 
-   public ITagCollection<T> load(Map<ResourceLocation, ITag.Builder> p_242226_1_) {
+   public ITagCollection<T> buildTagCollectionFromMap(Map<ResourceLocation, ITag.Builder> idToBuilderMap) {
       Map<ResourceLocation, ITag<T>> map = Maps.newHashMap();
       Function<ResourceLocation, ITag<T>> function = map::get;
       Function<ResourceLocation, T> function1 = (p_242228_1_) -> {
-         return this.idToValue.apply(p_242228_1_).orElse((T)null);
+         return this.idToTagFunction.apply(p_242228_1_).orElse((T)null);
       };
 
-      while(!p_242226_1_.isEmpty()) {
+      while(!idToBuilderMap.isEmpty()) {
          boolean flag = false;
-         Iterator<Entry<ResourceLocation, ITag.Builder>> iterator = p_242226_1_.entrySet().iterator();
+         Iterator<Entry<ResourceLocation, ITag.Builder>> iterator = idToBuilderMap.entrySet().iterator();
 
          while(iterator.hasNext()) {
             Entry<ResourceLocation, ITag.Builder> entry = iterator.next();
@@ -106,9 +106,9 @@ public class TagCollectionReader<T> {
          }
       }
 
-      p_242226_1_.forEach((p_242227_3_, p_242227_4_) -> {
-         LOGGER.error("Couldn't load {} tag {} as it is missing following references: {}", this.name, p_242227_3_, p_242227_4_.getUnresolvedEntries(function, function1).map(Objects::toString).collect(Collectors.joining(",")));
+      idToBuilderMap.forEach((p_242227_3_, p_242227_4_) -> {
+         LOGGER.error("Couldn't load {} tag {} as it is missing following references: {}", this.tagType, p_242227_3_, p_242227_4_.getProxyTags(function, function1).map(Objects::toString).collect(Collectors.joining(",")));
       });
-      return ITagCollection.of(map);
+      return ITagCollection.getTagCollectionFromMap(map);
    }
 }

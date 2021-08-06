@@ -8,29 +8,29 @@ public class LandOnOwnersShoulderGoal extends Goal {
    private ServerPlayerEntity owner;
    private boolean isSittingOnShoulder;
 
-   public LandOnOwnersShoulderGoal(ShoulderRidingEntity p_i47415_1_) {
-      this.entity = p_i47415_1_;
+   public LandOnOwnersShoulderGoal(ShoulderRidingEntity entityIn) {
+      this.entity = entityIn;
    }
 
-   public boolean canUse() {
+   public boolean shouldExecute() {
       ServerPlayerEntity serverplayerentity = (ServerPlayerEntity)this.entity.getOwner();
-      boolean flag = serverplayerentity != null && !serverplayerentity.isSpectator() && !serverplayerentity.abilities.flying && !serverplayerentity.isInWater();
-      return !this.entity.isOrderedToSit() && flag && this.entity.canSitOnShoulder();
+      boolean flag = serverplayerentity != null && !serverplayerentity.isSpectator() && !serverplayerentity.abilities.isFlying && !serverplayerentity.isInWater();
+      return !this.entity.isSitting() && flag && this.entity.canSitOnShoulder();
    }
 
-   public boolean isInterruptable() {
+   public boolean isPreemptible() {
       return !this.isSittingOnShoulder;
    }
 
-   public void start() {
+   public void startExecuting() {
       this.owner = (ServerPlayerEntity)this.entity.getOwner();
       this.isSittingOnShoulder = false;
    }
 
    public void tick() {
-      if (!this.isSittingOnShoulder && !this.entity.isInSittingPose() && !this.entity.isLeashed()) {
+      if (!this.isSittingOnShoulder && !this.entity.isEntitySleeping() && !this.entity.getLeashed()) {
          if (this.entity.getBoundingBox().intersects(this.owner.getBoundingBox())) {
-            this.isSittingOnShoulder = this.entity.setEntityOnShoulder(this.owner);
+            this.isSittingOnShoulder = this.entity.func_213439_d(this.owner);
          }
 
       }

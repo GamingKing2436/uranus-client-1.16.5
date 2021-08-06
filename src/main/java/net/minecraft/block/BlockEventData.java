@@ -3,32 +3,32 @@ package net.minecraft.block;
 import net.minecraft.util.math.BlockPos;
 
 public class BlockEventData {
-   private final BlockPos pos;
-   private final Block block;
-   private final int paramA;
-   private final int paramB;
+   private final BlockPos position;
+   private final Block blockType;
+   private final int eventID;
+   private final int eventParameter;
 
-   public BlockEventData(BlockPos p_i45756_1_, Block p_i45756_2_, int p_i45756_3_, int p_i45756_4_) {
-      this.pos = p_i45756_1_;
-      this.block = p_i45756_2_;
-      this.paramA = p_i45756_3_;
-      this.paramB = p_i45756_4_;
+   public BlockEventData(BlockPos pos, Block blockType, int eventId, int eventParameterIn) {
+      this.position = pos;
+      this.blockType = blockType;
+      this.eventID = eventId;
+      this.eventParameter = eventParameterIn;
    }
 
-   public BlockPos getPos() {
-      return this.pos;
+   public BlockPos getPosition() {
+      return this.position;
    }
 
    public Block getBlock() {
-      return this.block;
+      return this.blockType;
    }
 
-   public int getParamA() {
-      return this.paramA;
+   public int getEventID() {
+      return this.eventID;
    }
 
-   public int getParamB() {
-      return this.paramB;
+   public int getEventParameter() {
+      return this.eventParameter;
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -36,18 +36,18 @@ public class BlockEventData {
          return false;
       } else {
          BlockEventData blockeventdata = (BlockEventData)p_equals_1_;
-         return this.pos.equals(blockeventdata.pos) && this.paramA == blockeventdata.paramA && this.paramB == blockeventdata.paramB && this.block == blockeventdata.block;
+         return this.position.equals(blockeventdata.position) && this.eventID == blockeventdata.eventID && this.eventParameter == blockeventdata.eventParameter && this.blockType == blockeventdata.blockType;
       }
    }
 
    public int hashCode() {
-      int i = this.pos.hashCode();
-      i = 31 * i + this.block.hashCode();
-      i = 31 * i + this.paramA;
-      return 31 * i + this.paramB;
+      int i = this.position.hashCode();
+      i = 31 * i + this.blockType.hashCode();
+      i = 31 * i + this.eventID;
+      return 31 * i + this.eventParameter;
    }
 
    public String toString() {
-      return "TE(" + this.pos + ")," + this.paramA + "," + this.paramB + "," + this.block;
+      return "TE(" + this.position + ")," + this.eventID + "," + this.eventParameter + "," + this.blockType;
    }
 }

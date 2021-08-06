@@ -6,16 +6,16 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SoundEvent {
    public static final Codec<SoundEvent> CODEC = ResourceLocation.CODEC.xmap(SoundEvent::new, (p_232679_0_) -> {
-      return p_232679_0_.location;
+      return p_232679_0_.name;
    });
-   private final ResourceLocation location;
+   private final ResourceLocation name;
 
-   public SoundEvent(ResourceLocation p_i46834_1_) {
-      this.location = p_i46834_1_;
+   public SoundEvent(ResourceLocation name) {
+      this.name = name;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ResourceLocation getLocation() {
-      return this.location;
+   public ResourceLocation getName() {
+      return this.name;
    }
 }

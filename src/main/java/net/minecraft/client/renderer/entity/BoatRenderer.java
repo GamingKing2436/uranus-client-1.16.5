@@ -16,48 +16,48 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BoatRenderer extends EntityRenderer<BoatEntity> {
-   private static final ResourceLocation[] BOAT_TEXTURE_LOCATIONS = new ResourceLocation[]{new ResourceLocation("textures/entity/boat/oak.png"), new ResourceLocation("textures/entity/boat/spruce.png"), new ResourceLocation("textures/entity/boat/birch.png"), new ResourceLocation("textures/entity/boat/jungle.png"), new ResourceLocation("textures/entity/boat/acacia.png"), new ResourceLocation("textures/entity/boat/dark_oak.png")};
-   protected final BoatModel model = new BoatModel();
+   private static final ResourceLocation[] BOAT_TEXTURES = new ResourceLocation[]{new ResourceLocation("textures/entity/boat/oak.png"), new ResourceLocation("textures/entity/boat/spruce.png"), new ResourceLocation("textures/entity/boat/birch.png"), new ResourceLocation("textures/entity/boat/jungle.png"), new ResourceLocation("textures/entity/boat/acacia.png"), new ResourceLocation("textures/entity/boat/dark_oak.png")};
+   protected final BoatModel modelBoat = new BoatModel();
 
-   public BoatRenderer(EntityRendererManager p_i46190_1_) {
-      super(p_i46190_1_);
-      this.shadowRadius = 0.8F;
+   public BoatRenderer(EntityRendererManager renderManagerIn) {
+      super(renderManagerIn);
+      this.shadowSize = 0.8F;
    }
 
-   public void render(BoatEntity p_225623_1_, float p_225623_2_, float p_225623_3_, MatrixStack p_225623_4_, IRenderTypeBuffer p_225623_5_, int p_225623_6_) {
-      p_225623_4_.pushPose();
-      p_225623_4_.translate(0.0D, 0.375D, 0.0D);
-      p_225623_4_.mulPose(Vector3f.YP.rotationDegrees(180.0F - p_225623_2_));
-      float f = (float)p_225623_1_.getHurtTime() - p_225623_3_;
-      float f1 = p_225623_1_.getDamage() - p_225623_3_;
+   public void render(BoatEntity entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
+      matrixStackIn.push();
+      matrixStackIn.translate(0.0D, 0.375D, 0.0D);
+      matrixStackIn.rotate(Vector3f.YP.rotationDegrees(180.0F - entityYaw));
+      float f = (float)entityIn.getTimeSinceHit() - partialTicks;
+      float f1 = entityIn.getDamageTaken() - partialTicks;
       if (f1 < 0.0F) {
          f1 = 0.0F;
       }
 
       if (f > 0.0F) {
-         p_225623_4_.mulPose(Vector3f.XP.rotationDegrees(MathHelper.sin(f) * f * f1 / 10.0F * (float)p_225623_1_.getHurtDir()));
+         matrixStackIn.rotate(Vector3f.XP.rotationDegrees(MathHelper.sin(f) * f * f1 / 10.0F * (float)entityIn.getForwardDirection()));
       }
 
-      float f2 = p_225623_1_.getBubbleAngle(p_225623_3_);
-      if (!MathHelper.equal(f2, 0.0F)) {
-         p_225623_4_.mulPose(new Quaternion(new Vector3f(1.0F, 0.0F, 1.0F), p_225623_1_.getBubbleAngle(p_225623_3_), true));
+      float f2 = entityIn.getRockingAngle(partialTicks);
+      if (!MathHelper.epsilonEquals(f2, 0.0F)) {
+         matrixStackIn.rotate(new Quaternion(new Vector3f(1.0F, 0.0F, 1.0F), entityIn.getRockingAngle(partialTicks), true));
       }
 
-      p_225623_4_.scale(-1.0F, -1.0F, 1.0F);
-      p_225623_4_.mulPose(Vector3f.YP.rotationDegrees(90.0F));
-      this.model.setupAnim(p_225623_1_, p_225623_3_, 0.0F, -0.1F, 0.0F, 0.0F);
-      IVertexBuilder ivertexbuilder = p_225623_5_.getBuffer(this.model.renderType(this.getTextureLocation(p_225623_1_)));
-      this.model.renderToBuffer(p_225623_4_, ivertexbuilder, p_225623_6_, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
-      if (!p_225623_1_.isUnderWater()) {
-         IVertexBuilder ivertexbuilder1 = p_225623_5_.getBuffer(RenderType.waterMask());
-         this.model.waterPatch().render(p_225623_4_, ivertexbuilder1, p_225623_6_, OverlayTexture.NO_OVERLAY);
+      matrixStackIn.scale(-1.0F, -1.0F, 1.0F);
+      matrixStackIn.rotate(Vector3f.YP.rotationDegrees(90.0F));
+      this.modelBoat.setRotationAngles(entityIn, partialTicks, 0.0F, -0.1F, 0.0F, 0.0F);
+      IVertexBuilder ivertexbuilder = bufferIn.getBuffer(this.modelBoat.getRenderType(this.getEntityTexture(entityIn)));
+      this.modelBoat.render(matrixStackIn, ivertexbuilder, packedLightIn, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
+      if (!entityIn.canSwim()) {
+         IVertexBuilder ivertexbuilder1 = bufferIn.getBuffer(RenderType.getWaterMask());
+         this.modelBoat.func_228245_c_().render(matrixStackIn, ivertexbuilder1, packedLightIn, OverlayTexture.NO_OVERLAY);
       }
 
-      p_225623_4_.popPose();
-      super.render(p_225623_1_, p_225623_2_, p_225623_3_, p_225623_4_, p_225623_5_, p_225623_6_);
+      matrixStackIn.pop();
+      super.render(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
    }
 
-   public ResourceLocation getTextureLocation(BoatEntity p_110775_1_) {
-      return BOAT_TEXTURE_LOCATIONS[p_110775_1_.getBoatType().ordinal()];
+   public ResourceLocation getEntityTexture(BoatEntity entity) {
+      return BOAT_TEXTURES[entity.getBoatType().ordinal()];
    }
 }

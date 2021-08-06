@@ -84,59 +84,59 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class FoxEntity extends AnimalEntity {
-   private static final DataParameter<Integer> DATA_TYPE_ID = EntityDataManager.defineId(FoxEntity.class, DataSerializers.INT);
-   private static final DataParameter<Byte> DATA_FLAGS_ID = EntityDataManager.defineId(FoxEntity.class, DataSerializers.BYTE);
-   private static final DataParameter<Optional<UUID>> DATA_TRUSTED_ID_0 = EntityDataManager.defineId(FoxEntity.class, DataSerializers.OPTIONAL_UUID);
-   private static final DataParameter<Optional<UUID>> DATA_TRUSTED_ID_1 = EntityDataManager.defineId(FoxEntity.class, DataSerializers.OPTIONAL_UUID);
-   private static final Predicate<ItemEntity> ALLOWED_ITEMS = (p_213489_0_) -> {
-      return !p_213489_0_.hasPickUpDelay() && p_213489_0_.isAlive();
+   private static final DataParameter<Integer> FOX_TYPE = EntityDataManager.createKey(FoxEntity.class, DataSerializers.VARINT);
+   private static final DataParameter<Byte> FOX_FLAGS = EntityDataManager.createKey(FoxEntity.class, DataSerializers.BYTE);
+   private static final DataParameter<Optional<UUID>> TRUSTED_UUID_SECONDARY = EntityDataManager.createKey(FoxEntity.class, DataSerializers.OPTIONAL_UNIQUE_ID);
+   private static final DataParameter<Optional<UUID>> TRUSTED_UUID_MAIN = EntityDataManager.createKey(FoxEntity.class, DataSerializers.OPTIONAL_UNIQUE_ID);
+   private static final Predicate<ItemEntity> TRUSTED_TARGET_SELECTOR = (p_213489_0_) -> {
+      return !p_213489_0_.cannotPickup() && p_213489_0_.isAlive();
    };
-   private static final Predicate<Entity> TRUSTED_TARGET_SELECTOR = (p_213470_0_) -> {
+   private static final Predicate<Entity> STALKABLE_PREY = (p_213470_0_) -> {
       if (!(p_213470_0_ instanceof LivingEntity)) {
          return false;
       } else {
          LivingEntity livingentity = (LivingEntity)p_213470_0_;
-         return livingentity.getLastHurtMob() != null && livingentity.getLastHurtMobTimestamp() < livingentity.tickCount + 600;
+         return livingentity.getLastAttackedEntity() != null && livingentity.getLastAttackedEntityTime() < livingentity.ticksExisted + 600;
       }
    };
-   private static final Predicate<Entity> STALKABLE_PREY = (p_213498_0_) -> {
+   private static final Predicate<Entity> IS_PREY = (p_213498_0_) -> {
       return p_213498_0_ instanceof ChickenEntity || p_213498_0_ instanceof RabbitEntity;
    };
-   private static final Predicate<Entity> AVOID_PLAYERS = (p_213463_0_) -> {
-      return !p_213463_0_.isDiscrete() && EntityPredicates.NO_CREATIVE_OR_SPECTATOR.test(p_213463_0_);
+   private static final Predicate<Entity> SHOULD_AVOID = (p_213463_0_) -> {
+      return !p_213463_0_.isDiscrete() && EntityPredicates.CAN_AI_TARGET.test(p_213463_0_);
    };
-   private Goal landTargetGoal;
-   private Goal turtleEggTargetGoal;
-   private Goal fishTargetGoal;
+   private Goal attackAnimals;
+   private Goal attackTurtles;
+   private Goal attackFish;
    private float interestedAngle;
    private float interestedAngleO;
    private float crouchAmount;
    private float crouchAmountO;
-   private int ticksSinceEaten;
+   private int eatTicks;
 
-   public FoxEntity(EntityType<? extends FoxEntity> p_i50271_1_, World p_i50271_2_) {
-      super(p_i50271_1_, p_i50271_2_);
-      this.lookControl = new FoxEntity.LookHelperController();
-      this.moveControl = new FoxEntity.MoveHelperController();
-      this.setPathfindingMalus(PathNodeType.DANGER_OTHER, 0.0F);
-      this.setPathfindingMalus(PathNodeType.DAMAGE_OTHER, 0.0F);
+   public FoxEntity(EntityType<? extends FoxEntity> type, World worldIn) {
+      super(type, worldIn);
+      this.lookController = new FoxEntity.LookHelperController();
+      this.moveController = new FoxEntity.MoveHelperController();
+      this.setPathPriority(PathNodeType.DANGER_OTHER, 0.0F);
+      this.setPathPriority(PathNodeType.DAMAGE_OTHER, 0.0F);
       this.setCanPickUpLoot(true);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_TRUSTED_ID_0, Optional.empty());
-      this.entityData.define(DATA_TRUSTED_ID_1, Optional.empty());
-      this.entityData.define(DATA_TYPE_ID, 0);
-      this.entityData.define(DATA_FLAGS_ID, (byte)0);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(TRUSTED_UUID_SECONDARY, Optional.empty());
+      this.dataManager.register(TRUSTED_UUID_MAIN, Optional.empty());
+      this.dataManager.register(FOX_TYPE, 0);
+      this.dataManager.register(FOX_FLAGS, (byte)0);
    }
 
    protected void registerGoals() {
-      this.landTargetGoal = new NearestAttackableTargetGoal<>(this, AnimalEntity.class, 10, false, false, (p_213487_0_) -> {
+      this.attackAnimals = new NearestAttackableTargetGoal<>(this, AnimalEntity.class, 10, false, false, (p_213487_0_) -> {
          return p_213487_0_ instanceof ChickenEntity || p_213487_0_ instanceof RabbitEntity;
       });
-      this.turtleEggTargetGoal = new NearestAttackableTargetGoal<>(this, TurtleEntity.class, 10, false, false, TurtleEntity.BABY_ON_LAND_SELECTOR);
-      this.fishTargetGoal = new NearestAttackableTargetGoal<>(this, AbstractFishEntity.class, 20, false, false, (p_213456_0_) -> {
+      this.attackTurtles = new NearestAttackableTargetGoal<>(this, TurtleEntity.class, 10, false, false, TurtleEntity.TARGET_DRY_BABY);
+      this.attackFish = new NearestAttackableTargetGoal<>(this, AbstractFishEntity.class, 20, false, false, (p_213456_0_) -> {
          return p_213456_0_ instanceof AbstractGroupFishEntity;
       });
       this.goalSelector.addGoal(0, new FoxEntity.SwimGoal());
@@ -144,13 +144,13 @@ public class FoxEntity extends AnimalEntity {
       this.goalSelector.addGoal(2, new FoxEntity.PanicGoal(2.2D));
       this.goalSelector.addGoal(3, new FoxEntity.MateGoal(1.0D));
       this.goalSelector.addGoal(4, new AvoidEntityGoal<>(this, PlayerEntity.class, 16.0F, 1.6D, 1.4D, (p_213497_1_) -> {
-         return AVOID_PLAYERS.test(p_213497_1_) && !this.trusts(p_213497_1_.getUUID()) && !this.isDefending();
+         return SHOULD_AVOID.test(p_213497_1_) && !this.isTrustedUUID(p_213497_1_.getUniqueID()) && !this.isFoxAggroed();
       }));
       this.goalSelector.addGoal(4, new AvoidEntityGoal<>(this, WolfEntity.class, 8.0F, 1.6D, 1.4D, (p_213469_1_) -> {
-         return !((WolfEntity)p_213469_1_).isTame() && !this.isDefending();
+         return !((WolfEntity)p_213469_1_).isTamed() && !this.isFoxAggroed();
       }));
       this.goalSelector.addGoal(4, new AvoidEntityGoal<>(this, PolarBearEntity.class, 8.0F, 1.6D, 1.4D, (p_213493_1_) -> {
-         return !this.isDefending();
+         return !this.isFoxAggroed();
       }));
       this.goalSelector.addGoal(5, new FoxEntity.FollowTargetGoal());
       this.goalSelector.addGoal(6, new FoxEntity.PounceGoal());
@@ -166,70 +166,70 @@ public class FoxEntity extends AnimalEntity {
       this.goalSelector.addGoal(12, new FoxEntity.WatchGoal(this, PlayerEntity.class, 24.0F));
       this.goalSelector.addGoal(13, new FoxEntity.SitAndLookGoal());
       this.targetSelector.addGoal(3, new FoxEntity.RevengeGoal(LivingEntity.class, false, false, (p_234193_1_) -> {
-         return TRUSTED_TARGET_SELECTOR.test(p_234193_1_) && !this.trusts(p_234193_1_.getUUID());
+         return STALKABLE_PREY.test(p_234193_1_) && !this.isTrustedUUID(p_234193_1_.getUniqueID());
       }));
    }
 
-   public SoundEvent getEatingSound(ItemStack p_213353_1_) {
-      return SoundEvents.FOX_EAT;
+   public SoundEvent getEatSound(ItemStack itemStackIn) {
+      return SoundEvents.ENTITY_FOX_EAT;
    }
 
-   public void aiStep() {
-      if (!this.level.isClientSide && this.isAlive() && this.isEffectiveAi()) {
-         ++this.ticksSinceEaten;
-         ItemStack itemstack = this.getItemBySlot(EquipmentSlotType.MAINHAND);
-         if (this.canEat(itemstack)) {
-            if (this.ticksSinceEaten > 600) {
-               ItemStack itemstack1 = itemstack.finishUsingItem(this.level, this);
+   public void livingTick() {
+      if (!this.world.isRemote && this.isAlive() && this.isServerWorld()) {
+         ++this.eatTicks;
+         ItemStack itemstack = this.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
+         if (this.canEatItem(itemstack)) {
+            if (this.eatTicks > 600) {
+               ItemStack itemstack1 = itemstack.onItemUseFinish(this.world, this);
                if (!itemstack1.isEmpty()) {
-                  this.setItemSlot(EquipmentSlotType.MAINHAND, itemstack1);
+                  this.setItemStackToSlot(EquipmentSlotType.MAINHAND, itemstack1);
                }
 
-               this.ticksSinceEaten = 0;
-            } else if (this.ticksSinceEaten > 560 && this.random.nextFloat() < 0.1F) {
-               this.playSound(this.getEatingSound(itemstack), 1.0F, 1.0F);
-               this.level.broadcastEntityEvent(this, (byte)45);
+               this.eatTicks = 0;
+            } else if (this.eatTicks > 560 && this.rand.nextFloat() < 0.1F) {
+               this.playSound(this.getEatSound(itemstack), 1.0F, 1.0F);
+               this.world.setEntityState(this, (byte)45);
             }
          }
 
-         LivingEntity livingentity = this.getTarget();
+         LivingEntity livingentity = this.getAttackTarget();
          if (livingentity == null || !livingentity.isAlive()) {
-            this.setIsCrouching(false);
-            this.setIsInterested(false);
+            this.setCrouching(false);
+            this.func_213502_u(false);
          }
       }
 
-      if (this.isSleeping() || this.isImmobile()) {
-         this.jumping = false;
-         this.xxa = 0.0F;
-         this.zza = 0.0F;
+      if (this.isSleeping() || this.isMovementBlocked()) {
+         this.isJumping = false;
+         this.moveStrafing = 0.0F;
+         this.moveForward = 0.0F;
       }
 
-      super.aiStep();
-      if (this.isDefending() && this.random.nextFloat() < 0.05F) {
-         this.playSound(SoundEvents.FOX_AGGRO, 1.0F, 1.0F);
+      super.livingTick();
+      if (this.isFoxAggroed() && this.rand.nextFloat() < 0.05F) {
+         this.playSound(SoundEvents.ENTITY_FOX_AGGRO, 1.0F, 1.0F);
       }
 
    }
 
-   protected boolean isImmobile() {
-      return this.isDeadOrDying();
+   protected boolean isMovementBlocked() {
+      return this.getShouldBeDead();
    }
 
-   private boolean canEat(ItemStack p_213464_1_) {
-      return p_213464_1_.getItem().isEdible() && this.getTarget() == null && this.onGround && !this.isSleeping();
+   private boolean canEatItem(ItemStack itemStackIn) {
+      return itemStackIn.getItem().isFood() && this.getAttackTarget() == null && this.onGround && !this.isSleeping();
    }
 
-   protected void populateDefaultEquipmentSlots(DifficultyInstance p_180481_1_) {
-      if (this.random.nextFloat() < 0.2F) {
-         float f = this.random.nextFloat();
+   protected void setEquipmentBasedOnDifficulty(DifficultyInstance difficulty) {
+      if (this.rand.nextFloat() < 0.2F) {
+         float f = this.rand.nextFloat();
          ItemStack itemstack;
          if (f < 0.05F) {
             itemstack = new ItemStack(Items.EMERALD);
          } else if (f < 0.2F) {
             itemstack = new ItemStack(Items.EGG);
          } else if (f < 0.4F) {
-            itemstack = this.random.nextBoolean() ? new ItemStack(Items.RABBIT_FOOT) : new ItemStack(Items.RABBIT_HIDE);
+            itemstack = this.rand.nextBoolean() ? new ItemStack(Items.RABBIT_FOOT) : new ItemStack(Items.RABBIT_HIDE);
          } else if (f < 0.6F) {
             itemstack = new ItemStack(Items.WHEAT);
          } else if (f < 0.8F) {
@@ -238,264 +238,264 @@ public class FoxEntity extends AnimalEntity {
             itemstack = new ItemStack(Items.FEATHER);
          }
 
-         this.setItemSlot(EquipmentSlotType.MAINHAND, itemstack);
+         this.setItemStackToSlot(EquipmentSlotType.MAINHAND, itemstack);
       }
 
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void handleEntityEvent(byte p_70103_1_) {
-      if (p_70103_1_ == 45) {
-         ItemStack itemstack = this.getItemBySlot(EquipmentSlotType.MAINHAND);
+   public void handleStatusUpdate(byte id) {
+      if (id == 45) {
+         ItemStack itemstack = this.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
          if (!itemstack.isEmpty()) {
             for(int i = 0; i < 8; ++i) {
-               Vector3d vector3d = (new Vector3d(((double)this.random.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D)).xRot(-this.xRot * ((float)Math.PI / 180F)).yRot(-this.yRot * ((float)Math.PI / 180F));
-               this.level.addParticle(new ItemParticleData(ParticleTypes.ITEM, itemstack), this.getX() + this.getLookAngle().x / 2.0D, this.getY(), this.getZ() + this.getLookAngle().z / 2.0D, vector3d.x, vector3d.y + 0.05D, vector3d.z);
+               Vector3d vector3d = (new Vector3d(((double)this.rand.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D)).rotatePitch(-this.rotationPitch * ((float)Math.PI / 180F)).rotateYaw(-this.rotationYaw * ((float)Math.PI / 180F));
+               this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, itemstack), this.getPosX() + this.getLookVec().x / 2.0D, this.getPosY(), this.getPosZ() + this.getLookVec().z / 2.0D, vector3d.x, vector3d.y + 0.05D, vector3d.z);
             }
          }
       } else {
-         super.handleEntityEvent(p_70103_1_);
+         super.handleStatusUpdate(id);
       }
 
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return MobEntity.createMobAttributes().add(Attributes.MOVEMENT_SPEED, (double)0.3F).add(Attributes.MAX_HEALTH, 10.0D).add(Attributes.FOLLOW_RANGE, 32.0D).add(Attributes.ATTACK_DAMAGE, 2.0D);
+   public static AttributeModifierMap.MutableAttribute func_234192_eI_() {
+      return MobEntity.func_233666_p_().createMutableAttribute(Attributes.MOVEMENT_SPEED, (double)0.3F).createMutableAttribute(Attributes.MAX_HEALTH, 10.0D).createMutableAttribute(Attributes.FOLLOW_RANGE, 32.0D).createMutableAttribute(Attributes.ATTACK_DAMAGE, 2.0D);
    }
 
-   public FoxEntity getBreedOffspring(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
+   public FoxEntity func_241840_a(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
       FoxEntity foxentity = EntityType.FOX.create(p_241840_1_);
-      foxentity.setFoxType(this.random.nextBoolean() ? this.getFoxType() : ((FoxEntity)p_241840_2_).getFoxType());
+      foxentity.setVariantType(this.rand.nextBoolean() ? this.getVariantType() : ((FoxEntity)p_241840_2_).getVariantType());
       return foxentity;
    }
 
    @Nullable
-   public ILivingEntityData finalizeSpawn(IServerWorld p_213386_1_, DifficultyInstance p_213386_2_, SpawnReason p_213386_3_, @Nullable ILivingEntityData p_213386_4_, @Nullable CompoundNBT p_213386_5_) {
-      Optional<RegistryKey<Biome>> optional = p_213386_1_.getBiomeName(this.blockPosition());
-      FoxEntity.Type foxentity$type = FoxEntity.Type.byBiome(optional);
+   public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+      Optional<RegistryKey<Biome>> optional = worldIn.func_242406_i(this.getPosition());
+      FoxEntity.Type foxentity$type = FoxEntity.Type.func_242325_a(optional);
       boolean flag = false;
-      if (p_213386_4_ instanceof FoxEntity.FoxData) {
-         foxentity$type = ((FoxEntity.FoxData)p_213386_4_).type;
-         if (((FoxEntity.FoxData)p_213386_4_).getGroupSize() >= 2) {
+      if (spawnDataIn instanceof FoxEntity.FoxData) {
+         foxentity$type = ((FoxEntity.FoxData)spawnDataIn).field_220366_a;
+         if (((FoxEntity.FoxData)spawnDataIn).getIndexInGroup() >= 2) {
             flag = true;
          }
       } else {
-         p_213386_4_ = new FoxEntity.FoxData(foxentity$type);
+         spawnDataIn = new FoxEntity.FoxData(foxentity$type);
       }
 
-      this.setFoxType(foxentity$type);
+      this.setVariantType(foxentity$type);
       if (flag) {
-         this.setAge(-24000);
+         this.setGrowingAge(-24000);
       }
 
-      if (p_213386_1_ instanceof ServerWorld) {
-         this.setTargetGoals();
+      if (worldIn instanceof ServerWorld) {
+         this.setAttackGoals();
       }
 
-      this.populateDefaultEquipmentSlots(p_213386_2_);
-      return super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, p_213386_4_, p_213386_5_);
+      this.setEquipmentBasedOnDifficulty(difficultyIn);
+      return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
    }
 
-   private void setTargetGoals() {
-      if (this.getFoxType() == FoxEntity.Type.RED) {
-         this.targetSelector.addGoal(4, this.landTargetGoal);
-         this.targetSelector.addGoal(4, this.turtleEggTargetGoal);
-         this.targetSelector.addGoal(6, this.fishTargetGoal);
+   private void setAttackGoals() {
+      if (this.getVariantType() == FoxEntity.Type.RED) {
+         this.targetSelector.addGoal(4, this.attackAnimals);
+         this.targetSelector.addGoal(4, this.attackTurtles);
+         this.targetSelector.addGoal(6, this.attackFish);
       } else {
-         this.targetSelector.addGoal(4, this.fishTargetGoal);
-         this.targetSelector.addGoal(6, this.landTargetGoal);
-         this.targetSelector.addGoal(6, this.turtleEggTargetGoal);
+         this.targetSelector.addGoal(4, this.attackFish);
+         this.targetSelector.addGoal(6, this.attackAnimals);
+         this.targetSelector.addGoal(6, this.attackTurtles);
       }
 
    }
 
-   protected void usePlayerItem(PlayerEntity p_175505_1_, ItemStack p_175505_2_) {
-      if (this.isFood(p_175505_2_)) {
-         this.playSound(this.getEatingSound(p_175505_2_), 1.0F, 1.0F);
+   protected void consumeItemFromStack(PlayerEntity player, ItemStack stack) {
+      if (this.isBreedingItem(stack)) {
+         this.playSound(this.getEatSound(stack), 1.0F, 1.0F);
       }
 
-      super.usePlayerItem(p_175505_1_, p_175505_2_);
+      super.consumeItemFromStack(player, stack);
    }
 
-   protected float getStandingEyeHeight(Pose p_213348_1_, EntitySize p_213348_2_) {
-      return this.isBaby() ? p_213348_2_.height * 0.85F : 0.4F;
+   protected float getStandingEyeHeight(Pose poseIn, EntitySize sizeIn) {
+      return this.isChild() ? sizeIn.height * 0.85F : 0.4F;
    }
 
-   public FoxEntity.Type getFoxType() {
-      return FoxEntity.Type.byId(this.entityData.get(DATA_TYPE_ID));
+   public FoxEntity.Type getVariantType() {
+      return FoxEntity.Type.getTypeByIndex(this.dataManager.get(FOX_TYPE));
    }
 
-   private void setFoxType(FoxEntity.Type p_213474_1_) {
-      this.entityData.set(DATA_TYPE_ID, p_213474_1_.getId());
+   private void setVariantType(FoxEntity.Type typeIn) {
+      this.dataManager.set(FOX_TYPE, typeIn.getIndex());
    }
 
    private List<UUID> getTrustedUUIDs() {
       List<UUID> list = Lists.newArrayList();
-      list.add(this.entityData.get(DATA_TRUSTED_ID_0).orElse((UUID)null));
-      list.add(this.entityData.get(DATA_TRUSTED_ID_1).orElse((UUID)null));
+      list.add(this.dataManager.get(TRUSTED_UUID_SECONDARY).orElse((UUID)null));
+      list.add(this.dataManager.get(TRUSTED_UUID_MAIN).orElse((UUID)null));
       return list;
    }
 
-   private void addTrustedUUID(@Nullable UUID p_213465_1_) {
-      if (this.entityData.get(DATA_TRUSTED_ID_0).isPresent()) {
-         this.entityData.set(DATA_TRUSTED_ID_1, Optional.ofNullable(p_213465_1_));
+   private void addTrustedUUID(@Nullable UUID uuidIn) {
+      if (this.dataManager.get(TRUSTED_UUID_SECONDARY).isPresent()) {
+         this.dataManager.set(TRUSTED_UUID_MAIN, Optional.ofNullable(uuidIn));
       } else {
-         this.entityData.set(DATA_TRUSTED_ID_0, Optional.ofNullable(p_213465_1_));
+         this.dataManager.set(TRUSTED_UUID_SECONDARY, Optional.ofNullable(uuidIn));
       }
 
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
       List<UUID> list = this.getTrustedUUIDs();
       ListNBT listnbt = new ListNBT();
 
       for(UUID uuid : list) {
          if (uuid != null) {
-            listnbt.add(NBTUtil.createUUID(uuid));
+            listnbt.add(NBTUtil.func_240626_a_(uuid));
          }
       }
 
-      p_213281_1_.put("Trusted", listnbt);
-      p_213281_1_.putBoolean("Sleeping", this.isSleeping());
-      p_213281_1_.putString("Type", this.getFoxType().getName());
-      p_213281_1_.putBoolean("Sitting", this.isSitting());
-      p_213281_1_.putBoolean("Crouching", this.isCrouching());
+      compound.put("Trusted", listnbt);
+      compound.putBoolean("Sleeping", this.isSleeping());
+      compound.putString("Type", this.getVariantType().getName());
+      compound.putBoolean("Sitting", this.isSitting());
+      compound.putBoolean("Crouching", this.isCrouching());
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      ListNBT listnbt = p_70037_1_.getList("Trusted", 11);
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      ListNBT listnbt = compound.getList("Trusted", 11);
 
       for(int i = 0; i < listnbt.size(); ++i) {
-         this.addTrustedUUID(NBTUtil.loadUUID(listnbt.get(i)));
+         this.addTrustedUUID(NBTUtil.readUniqueId(listnbt.get(i)));
       }
 
-      this.setSleeping(p_70037_1_.getBoolean("Sleeping"));
-      this.setFoxType(FoxEntity.Type.byName(p_70037_1_.getString("Type")));
-      this.setSitting(p_70037_1_.getBoolean("Sitting"));
-      this.setIsCrouching(p_70037_1_.getBoolean("Crouching"));
-      if (this.level instanceof ServerWorld) {
-         this.setTargetGoals();
+      this.setSleeping(compound.getBoolean("Sleeping"));
+      this.setVariantType(FoxEntity.Type.getTypeByName(compound.getString("Type")));
+      this.setSitting(compound.getBoolean("Sitting"));
+      this.setCrouching(compound.getBoolean("Crouching"));
+      if (this.world instanceof ServerWorld) {
+         this.setAttackGoals();
       }
 
    }
 
    public boolean isSitting() {
-      return this.getFlag(1);
+      return this.getFoxFlag(1);
    }
 
    public void setSitting(boolean p_213466_1_) {
-      this.setFlag(1, p_213466_1_);
+      this.setFoxFlag(1, p_213466_1_);
    }
 
-   public boolean isFaceplanted() {
-      return this.getFlag(64);
+   public boolean isStuck() {
+      return this.getFoxFlag(64);
    }
 
-   private void setFaceplanted(boolean p_213492_1_) {
-      this.setFlag(64, p_213492_1_);
+   private void setStuck(boolean p_213492_1_) {
+      this.setFoxFlag(64, p_213492_1_);
    }
 
-   private boolean isDefending() {
-      return this.getFlag(128);
+   private boolean isFoxAggroed() {
+      return this.getFoxFlag(128);
    }
 
-   private void setDefending(boolean p_213482_1_) {
-      this.setFlag(128, p_213482_1_);
+   private void setFoxAggroed(boolean p_213482_1_) {
+      this.setFoxFlag(128, p_213482_1_);
    }
 
    public boolean isSleeping() {
-      return this.getFlag(32);
+      return this.getFoxFlag(32);
    }
 
    private void setSleeping(boolean p_213485_1_) {
-      this.setFlag(32, p_213485_1_);
+      this.setFoxFlag(32, p_213485_1_);
    }
 
-   private void setFlag(int p_213505_1_, boolean p_213505_2_) {
+   private void setFoxFlag(int p_213505_1_, boolean p_213505_2_) {
       if (p_213505_2_) {
-         this.entityData.set(DATA_FLAGS_ID, (byte)(this.entityData.get(DATA_FLAGS_ID) | p_213505_1_));
+         this.dataManager.set(FOX_FLAGS, (byte)(this.dataManager.get(FOX_FLAGS) | p_213505_1_));
       } else {
-         this.entityData.set(DATA_FLAGS_ID, (byte)(this.entityData.get(DATA_FLAGS_ID) & ~p_213505_1_));
+         this.dataManager.set(FOX_FLAGS, (byte)(this.dataManager.get(FOX_FLAGS) & ~p_213505_1_));
       }
 
    }
 
-   private boolean getFlag(int p_213507_1_) {
-      return (this.entityData.get(DATA_FLAGS_ID) & p_213507_1_) != 0;
+   private boolean getFoxFlag(int p_213507_1_) {
+      return (this.dataManager.get(FOX_FLAGS) & p_213507_1_) != 0;
    }
 
-   public boolean canTakeItem(ItemStack p_213365_1_) {
-      EquipmentSlotType equipmentslottype = MobEntity.getEquipmentSlotForItem(p_213365_1_);
-      if (!this.getItemBySlot(equipmentslottype).isEmpty()) {
+   public boolean canPickUpItem(ItemStack itemstackIn) {
+      EquipmentSlotType equipmentslottype = MobEntity.getSlotForItemStack(itemstackIn);
+      if (!this.getItemStackFromSlot(equipmentslottype).isEmpty()) {
          return false;
       } else {
-         return equipmentslottype == EquipmentSlotType.MAINHAND && super.canTakeItem(p_213365_1_);
+         return equipmentslottype == EquipmentSlotType.MAINHAND && super.canPickUpItem(itemstackIn);
       }
    }
 
-   public boolean canHoldItem(ItemStack p_175448_1_) {
-      Item item = p_175448_1_.getItem();
-      ItemStack itemstack = this.getItemBySlot(EquipmentSlotType.MAINHAND);
-      return itemstack.isEmpty() || this.ticksSinceEaten > 0 && item.isEdible() && !itemstack.getItem().isEdible();
+   public boolean canEquipItem(ItemStack stack) {
+      Item item = stack.getItem();
+      ItemStack itemstack = this.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
+      return itemstack.isEmpty() || this.eatTicks > 0 && item.isFood() && !itemstack.getItem().isFood();
    }
 
-   private void spitOutItem(ItemStack p_213495_1_) {
-      if (!p_213495_1_.isEmpty() && !this.level.isClientSide) {
-         ItemEntity itementity = new ItemEntity(this.level, this.getX() + this.getLookAngle().x, this.getY() + 1.0D, this.getZ() + this.getLookAngle().z, p_213495_1_);
-         itementity.setPickUpDelay(40);
-         itementity.setThrower(this.getUUID());
-         this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
-         this.level.addFreshEntity(itementity);
+   private void spitOutItem(ItemStack stackIn) {
+      if (!stackIn.isEmpty() && !this.world.isRemote) {
+         ItemEntity itementity = new ItemEntity(this.world, this.getPosX() + this.getLookVec().x, this.getPosY() + 1.0D, this.getPosZ() + this.getLookVec().z, stackIn);
+         itementity.setPickupDelay(40);
+         itementity.setThrowerId(this.getUniqueID());
+         this.playSound(SoundEvents.ENTITY_FOX_SPIT, 1.0F, 1.0F);
+         this.world.addEntity(itementity);
       }
    }
 
-   private void dropItemStack(ItemStack p_213486_1_) {
-      ItemEntity itementity = new ItemEntity(this.level, this.getX(), this.getY(), this.getZ(), p_213486_1_);
-      this.level.addFreshEntity(itementity);
+   private void spawnItem(ItemStack stackIn) {
+      ItemEntity itementity = new ItemEntity(this.world, this.getPosX(), this.getPosY(), this.getPosZ(), stackIn);
+      this.world.addEntity(itementity);
    }
 
-   protected void pickUpItem(ItemEntity p_175445_1_) {
-      ItemStack itemstack = p_175445_1_.getItem();
-      if (this.canHoldItem(itemstack)) {
+   protected void updateEquipmentIfNeeded(ItemEntity itemEntity) {
+      ItemStack itemstack = itemEntity.getItem();
+      if (this.canEquipItem(itemstack)) {
          int i = itemstack.getCount();
          if (i > 1) {
-            this.dropItemStack(itemstack.split(i - 1));
+            this.spawnItem(itemstack.split(i - 1));
          }
 
-         this.spitOutItem(this.getItemBySlot(EquipmentSlotType.MAINHAND));
-         this.onItemPickup(p_175445_1_);
-         this.setItemSlot(EquipmentSlotType.MAINHAND, itemstack.split(1));
-         this.handDropChances[EquipmentSlotType.MAINHAND.getIndex()] = 2.0F;
-         this.take(p_175445_1_, itemstack.getCount());
-         p_175445_1_.remove();
-         this.ticksSinceEaten = 0;
+         this.spitOutItem(this.getItemStackFromSlot(EquipmentSlotType.MAINHAND));
+         this.triggerItemPickupTrigger(itemEntity);
+         this.setItemStackToSlot(EquipmentSlotType.MAINHAND, itemstack.split(1));
+         this.inventoryHandsDropChances[EquipmentSlotType.MAINHAND.getIndex()] = 2.0F;
+         this.onItemPickup(itemEntity, itemstack.getCount());
+         itemEntity.remove();
+         this.eatTicks = 0;
       }
 
    }
 
    public void tick() {
       super.tick();
-      if (this.isEffectiveAi()) {
+      if (this.isServerWorld()) {
          boolean flag = this.isInWater();
-         if (flag || this.getTarget() != null || this.level.isThundering()) {
-            this.wakeUp();
+         if (flag || this.getAttackTarget() != null || this.world.isThundering()) {
+            this.func_213454_em();
          }
 
          if (flag || this.isSleeping()) {
             this.setSitting(false);
          }
 
-         if (this.isFaceplanted() && this.level.random.nextFloat() < 0.2F) {
-            BlockPos blockpos = this.blockPosition();
-            BlockState blockstate = this.level.getBlockState(blockpos);
-            this.level.levelEvent(2001, blockpos, Block.getId(blockstate));
+         if (this.isStuck() && this.world.rand.nextFloat() < 0.2F) {
+            BlockPos blockpos = this.getPosition();
+            BlockState blockstate = this.world.getBlockState(blockpos);
+            this.world.playEvent(2001, blockpos, Block.getStateId(blockstate));
          }
       }
 
       this.interestedAngleO = this.interestedAngle;
-      if (this.isInterested()) {
+      if (this.func_213467_eg()) {
          this.interestedAngle += (1.0F - this.interestedAngle) * 0.4F;
       } else {
          this.interestedAngle += (0.0F - this.interestedAngle) * 0.4F;
@@ -513,85 +513,85 @@ public class FoxEntity extends AnimalEntity {
 
    }
 
-   public boolean isFood(ItemStack p_70877_1_) {
-      return p_70877_1_.getItem() == Items.SWEET_BERRIES;
+   public boolean isBreedingItem(ItemStack stack) {
+      return stack.getItem() == Items.SWEET_BERRIES;
    }
 
-   protected void onOffspringSpawnedFromEgg(PlayerEntity p_213406_1_, MobEntity p_213406_2_) {
-      ((FoxEntity)p_213406_2_).addTrustedUUID(p_213406_1_.getUUID());
+   protected void onChildSpawnFromEgg(PlayerEntity playerIn, MobEntity child) {
+      ((FoxEntity)child).addTrustedUUID(playerIn.getUniqueID());
    }
 
-   public boolean isPouncing() {
-      return this.getFlag(16);
+   public boolean func_213480_dY() {
+      return this.getFoxFlag(16);
    }
 
-   public void setIsPouncing(boolean p_213461_1_) {
-      this.setFlag(16, p_213461_1_);
+   public void func_213461_s(boolean p_213461_1_) {
+      this.setFoxFlag(16, p_213461_1_);
    }
 
-   public boolean isFullyCrouched() {
+   public boolean func_213490_ee() {
       return this.crouchAmount == 3.0F;
    }
 
-   public void setIsCrouching(boolean p_213451_1_) {
-      this.setFlag(4, p_213451_1_);
+   public void setCrouching(boolean p_213451_1_) {
+      this.setFoxFlag(4, p_213451_1_);
    }
 
    public boolean isCrouching() {
-      return this.getFlag(4);
+      return this.getFoxFlag(4);
    }
 
-   public void setIsInterested(boolean p_213502_1_) {
-      this.setFlag(8, p_213502_1_);
+   public void func_213502_u(boolean p_213502_1_) {
+      this.setFoxFlag(8, p_213502_1_);
    }
 
-   public boolean isInterested() {
-      return this.getFlag(8);
+   public boolean func_213467_eg() {
+      return this.getFoxFlag(8);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getHeadRollAngle(float p_213475_1_) {
+   public float func_213475_v(float p_213475_1_) {
       return MathHelper.lerp(p_213475_1_, this.interestedAngleO, this.interestedAngle) * 0.11F * (float)Math.PI;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getCrouchAmount(float p_213503_1_) {
+   public float func_213503_w(float p_213503_1_) {
       return MathHelper.lerp(p_213503_1_, this.crouchAmountO, this.crouchAmount);
    }
 
-   public void setTarget(@Nullable LivingEntity p_70624_1_) {
-      if (this.isDefending() && p_70624_1_ == null) {
-         this.setDefending(false);
+   public void setAttackTarget(@Nullable LivingEntity entitylivingbaseIn) {
+      if (this.isFoxAggroed() && entitylivingbaseIn == null) {
+         this.setFoxAggroed(false);
       }
 
-      super.setTarget(p_70624_1_);
+      super.setAttackTarget(entitylivingbaseIn);
    }
 
-   protected int calculateFallDamage(float p_225508_1_, float p_225508_2_) {
-      return MathHelper.ceil((p_225508_1_ - 5.0F) * p_225508_2_);
+   protected int calculateFallDamage(float distance, float damageMultiplier) {
+      return MathHelper.ceil((distance - 5.0F) * damageMultiplier);
    }
 
-   private void wakeUp() {
+   private void func_213454_em() {
       this.setSleeping(false);
    }
 
-   private void clearStates() {
-      this.setIsInterested(false);
-      this.setIsCrouching(false);
+   private void func_213499_en() {
+      this.func_213502_u(false);
+      this.setCrouching(false);
       this.setSitting(false);
       this.setSleeping(false);
-      this.setDefending(false);
-      this.setFaceplanted(false);
+      this.setFoxAggroed(false);
+      this.setStuck(false);
    }
 
-   private boolean canMove() {
-      return !this.isSleeping() && !this.isSitting() && !this.isFaceplanted();
+   private boolean func_213478_eo() {
+      return !this.isSleeping() && !this.isSitting() && !this.isStuck();
    }
 
    public void playAmbientSound() {
       SoundEvent soundevent = this.getAmbientSound();
-      if (soundevent == SoundEvents.FOX_SCREECH) {
-         this.playSound(soundevent, 2.0F, this.getVoicePitch());
+      if (soundevent == SoundEvents.ENTITY_FOX_SCREECH) {
+         this.playSound(soundevent, 2.0F, this.getSoundPitch());
       } else {
          super.playAmbientSound();
       }
@@ -601,46 +601,46 @@ public class FoxEntity extends AnimalEntity {
    @Nullable
    protected SoundEvent getAmbientSound() {
       if (this.isSleeping()) {
-         return SoundEvents.FOX_SLEEP;
+         return SoundEvents.ENTITY_FOX_SLEEP;
       } else {
-         if (!this.level.isDay() && this.random.nextFloat() < 0.1F) {
-            List<PlayerEntity> list = this.level.getEntitiesOfClass(PlayerEntity.class, this.getBoundingBox().inflate(16.0D, 16.0D, 16.0D), EntityPredicates.NO_SPECTATORS);
+         if (!this.world.isDaytime() && this.rand.nextFloat() < 0.1F) {
+            List<PlayerEntity> list = this.world.getEntitiesWithinAABB(PlayerEntity.class, this.getBoundingBox().grow(16.0D, 16.0D, 16.0D), EntityPredicates.NOT_SPECTATING);
             if (list.isEmpty()) {
-               return SoundEvents.FOX_SCREECH;
+               return SoundEvents.ENTITY_FOX_SCREECH;
             }
          }
 
-         return SoundEvents.FOX_AMBIENT;
+         return SoundEvents.ENTITY_FOX_AMBIENT;
       }
    }
 
    @Nullable
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.FOX_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_FOX_HURT;
    }
 
    @Nullable
    protected SoundEvent getDeathSound() {
-      return SoundEvents.FOX_DEATH;
+      return SoundEvents.ENTITY_FOX_DEATH;
    }
 
-   private boolean trusts(UUID p_213468_1_) {
+   private boolean isTrustedUUID(UUID p_213468_1_) {
       return this.getTrustedUUIDs().contains(p_213468_1_);
    }
 
-   protected void dropAllDeathLoot(DamageSource p_213345_1_) {
-      ItemStack itemstack = this.getItemBySlot(EquipmentSlotType.MAINHAND);
+   protected void spawnDrops(DamageSource damageSourceIn) {
+      ItemStack itemstack = this.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
       if (!itemstack.isEmpty()) {
-         this.spawnAtLocation(itemstack);
-         this.setItemSlot(EquipmentSlotType.MAINHAND, ItemStack.EMPTY);
+         this.entityDropItem(itemstack);
+         this.setItemStackToSlot(EquipmentSlotType.MAINHAND, ItemStack.EMPTY);
       }
 
-      super.dropAllDeathLoot(p_213345_1_);
+      super.spawnDrops(damageSourceIn);
    }
 
-   public static boolean isPathClear(FoxEntity p_213481_0_, LivingEntity p_213481_1_) {
-      double d0 = p_213481_1_.getZ() - p_213481_0_.getZ();
-      double d1 = p_213481_1_.getX() - p_213481_0_.getX();
+   public static boolean func_213481_a(FoxEntity p_213481_0_, LivingEntity p_213481_1_) {
+      double d0 = p_213481_1_.getPosZ() - p_213481_0_.getPosZ();
+      double d1 = p_213481_1_.getPosX() - p_213481_0_.getPosX();
       double d2 = d0 / d1;
       int i = 6;
 
@@ -649,7 +649,7 @@ public class FoxEntity extends AnimalEntity {
          double d4 = d2 == 0.0D ? d1 * (double)((float)j / 6.0F) : d3 / d2;
 
          for(int k = 1; k < 4; ++k) {
-            if (!p_213481_0_.level.getBlockState(new BlockPos(p_213481_0_.getX() + d4, p_213481_0_.getY() + (double)k, p_213481_0_.getZ() + d3)).getMaterial().isReplaceable()) {
+            if (!p_213481_0_.world.getBlockState(new BlockPos(p_213481_0_.getPosX() + d4, p_213481_0_.getPosY() + (double)k, p_213481_0_.getPosZ() + d3)).getMaterial().isReplaceable()) {
                return false;
             }
          }
@@ -659,8 +659,8 @@ public class FoxEntity extends AnimalEntity {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Vector3d getLeashOffset() {
-      return new Vector3d(0.0D, (double)(0.55F * this.getEyeHeight()), (double)(this.getBbWidth() * 0.4F));
+   public Vector3d func_241205_ce_() {
+      return new Vector3d(0.0D, (double)(0.55F * this.getEyeHeight()), (double)(this.getWidth() * 0.4F));
    }
 
    public class AlertablePredicate implements Predicate<LivingEntity> {
@@ -669,9 +669,9 @@ public class FoxEntity extends AnimalEntity {
             return false;
          } else if (!(p_test_1_ instanceof ChickenEntity) && !(p_test_1_ instanceof RabbitEntity) && !(p_test_1_ instanceof MonsterEntity)) {
             if (p_test_1_ instanceof TameableEntity) {
-               return !((TameableEntity)p_test_1_).isTame();
+               return !((TameableEntity)p_test_1_).isTamed();
             } else if (!(p_test_1_ instanceof PlayerEntity) || !p_test_1_.isSpectator() && !((PlayerEntity)p_test_1_).isCreative()) {
-               if (FoxEntity.this.trusts(p_test_1_.getUUID())) {
+               if (FoxEntity.this.isTrustedUUID(p_test_1_.getUniqueID())) {
                   return false;
                } else {
                   return !p_test_1_.isSleeping() && !p_test_1_.isDiscrete();
@@ -686,18 +686,18 @@ public class FoxEntity extends AnimalEntity {
    }
 
    abstract class BaseGoal extends Goal {
-      private final EntityPredicate alertableTargeting = (new EntityPredicate()).range(12.0D).allowUnseeable().selector(FoxEntity.this.new AlertablePredicate());
+      private final EntityPredicate field_220816_b = (new EntityPredicate()).setDistance(12.0D).setLineOfSiteRequired().setCustomPredicate(FoxEntity.this.new AlertablePredicate());
 
       private BaseGoal() {
       }
 
-      protected boolean hasShelter() {
-         BlockPos blockpos = new BlockPos(FoxEntity.this.getX(), FoxEntity.this.getBoundingBox().maxY, FoxEntity.this.getZ());
-         return !FoxEntity.this.level.canSeeSky(blockpos) && FoxEntity.this.getWalkTargetValue(blockpos) >= 0.0F;
+      protected boolean func_220813_g() {
+         BlockPos blockpos = new BlockPos(FoxEntity.this.getPosX(), FoxEntity.this.getBoundingBox().maxY, FoxEntity.this.getPosZ());
+         return !FoxEntity.this.world.canSeeSky(blockpos) && FoxEntity.this.getBlockPathWeight(blockpos) >= 0.0F;
       }
 
-      protected boolean alertable() {
-         return !FoxEntity.this.level.getNearbyEntities(LivingEntity.class, this.alertableTargeting, FoxEntity.this, FoxEntity.this.getBoundingBox().inflate(12.0D, 6.0D, 12.0D)).isEmpty();
+      protected boolean func_220814_h() {
+         return !FoxEntity.this.world.getTargettableEntitiesWithinAABB(LivingEntity.class, this.field_220816_b, FoxEntity.this, FoxEntity.this.getBoundingBox().grow(12.0D, 6.0D, 12.0D)).isEmpty();
       }
    }
 
@@ -706,110 +706,110 @@ public class FoxEntity extends AnimalEntity {
          super(FoxEntity.this, p_i50731_2_, p_i50731_4_);
       }
 
-      protected void checkAndPerformAttack(LivingEntity p_190102_1_, double p_190102_2_) {
-         double d0 = this.getAttackReachSqr(p_190102_1_);
-         if (p_190102_2_ <= d0 && this.isTimeToAttack()) {
-            this.resetAttackCooldown();
-            this.mob.doHurtTarget(p_190102_1_);
-            FoxEntity.this.playSound(SoundEvents.FOX_BITE, 1.0F, 1.0F);
+      protected void checkAndPerformAttack(LivingEntity enemy, double distToEnemySqr) {
+         double d0 = this.getAttackReachSqr(enemy);
+         if (distToEnemySqr <= d0 && this.func_234040_h_()) {
+            this.func_234039_g_();
+            this.attacker.attackEntityAsMob(enemy);
+            FoxEntity.this.playSound(SoundEvents.ENTITY_FOX_BITE, 1.0F, 1.0F);
          }
 
       }
 
-      public void start() {
-         FoxEntity.this.setIsInterested(false);
-         super.start();
+      public void startExecuting() {
+         FoxEntity.this.func_213502_u(false);
+         super.startExecuting();
       }
 
-      public boolean canUse() {
-         return !FoxEntity.this.isSitting() && !FoxEntity.this.isSleeping() && !FoxEntity.this.isCrouching() && !FoxEntity.this.isFaceplanted() && super.canUse();
+      public boolean shouldExecute() {
+         return !FoxEntity.this.isSitting() && !FoxEntity.this.isSleeping() && !FoxEntity.this.isCrouching() && !FoxEntity.this.isStuck() && super.shouldExecute();
       }
    }
 
    public class EatBerriesGoal extends MoveToBlockGoal {
-      protected int ticksWaited;
+      protected int field_220731_g;
 
       public EatBerriesGoal(double p_i50737_2_, int p_i50737_4_, int p_i50737_5_) {
          super(FoxEntity.this, p_i50737_2_, p_i50737_4_, p_i50737_5_);
       }
 
-      public double acceptedDistance() {
+      public double getTargetDistanceSq() {
          return 2.0D;
       }
 
-      public boolean shouldRecalculatePath() {
-         return this.tryTicks % 100 == 0;
+      public boolean shouldMove() {
+         return this.timeoutCounter % 100 == 0;
       }
 
-      protected boolean isValidTarget(IWorldReader p_179488_1_, BlockPos p_179488_2_) {
-         BlockState blockstate = p_179488_1_.getBlockState(p_179488_2_);
-         return blockstate.is(Blocks.SWEET_BERRY_BUSH) && blockstate.getValue(SweetBerryBushBlock.AGE) >= 2;
+      protected boolean shouldMoveTo(IWorldReader worldIn, BlockPos pos) {
+         BlockState blockstate = worldIn.getBlockState(pos);
+         return blockstate.isIn(Blocks.SWEET_BERRY_BUSH) && blockstate.get(SweetBerryBushBlock.AGE) >= 2;
       }
 
       public void tick() {
-         if (this.isReachedTarget()) {
-            if (this.ticksWaited >= 40) {
-               this.onReachedTarget();
+         if (this.getIsAboveDestination()) {
+            if (this.field_220731_g >= 40) {
+               this.eatBerry();
             } else {
-               ++this.ticksWaited;
+               ++this.field_220731_g;
             }
-         } else if (!this.isReachedTarget() && FoxEntity.this.random.nextFloat() < 0.05F) {
-            FoxEntity.this.playSound(SoundEvents.FOX_SNIFF, 1.0F, 1.0F);
+         } else if (!this.getIsAboveDestination() && FoxEntity.this.rand.nextFloat() < 0.05F) {
+            FoxEntity.this.playSound(SoundEvents.ENTITY_FOX_SNIFF, 1.0F, 1.0F);
          }
 
          super.tick();
       }
 
-      protected void onReachedTarget() {
-         if (FoxEntity.this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-            BlockState blockstate = FoxEntity.this.level.getBlockState(this.blockPos);
-            if (blockstate.is(Blocks.SWEET_BERRY_BUSH)) {
-               int i = blockstate.getValue(SweetBerryBushBlock.AGE);
-               blockstate.setValue(SweetBerryBushBlock.AGE, Integer.valueOf(1));
-               int j = 1 + FoxEntity.this.level.random.nextInt(2) + (i == 3 ? 1 : 0);
-               ItemStack itemstack = FoxEntity.this.getItemBySlot(EquipmentSlotType.MAINHAND);
+      protected void eatBerry() {
+         if (FoxEntity.this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
+            BlockState blockstate = FoxEntity.this.world.getBlockState(this.destinationBlock);
+            if (blockstate.isIn(Blocks.SWEET_BERRY_BUSH)) {
+               int i = blockstate.get(SweetBerryBushBlock.AGE);
+               blockstate.with(SweetBerryBushBlock.AGE, Integer.valueOf(1));
+               int j = 1 + FoxEntity.this.world.rand.nextInt(2) + (i == 3 ? 1 : 0);
+               ItemStack itemstack = FoxEntity.this.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
                if (itemstack.isEmpty()) {
-                  FoxEntity.this.setItemSlot(EquipmentSlotType.MAINHAND, new ItemStack(Items.SWEET_BERRIES));
+                  FoxEntity.this.setItemStackToSlot(EquipmentSlotType.MAINHAND, new ItemStack(Items.SWEET_BERRIES));
                   --j;
                }
 
                if (j > 0) {
-                  Block.popResource(FoxEntity.this.level, this.blockPos, new ItemStack(Items.SWEET_BERRIES, j));
+                  Block.spawnAsEntity(FoxEntity.this.world, this.destinationBlock, new ItemStack(Items.SWEET_BERRIES, j));
                }
 
-               FoxEntity.this.playSound(SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, 1.0F, 1.0F);
-               FoxEntity.this.level.setBlock(this.blockPos, blockstate.setValue(SweetBerryBushBlock.AGE, Integer.valueOf(1)), 2);
+               FoxEntity.this.playSound(SoundEvents.ITEM_SWEET_BERRIES_PICK_FROM_BUSH, 1.0F, 1.0F);
+               FoxEntity.this.world.setBlockState(this.destinationBlock, blockstate.with(SweetBerryBushBlock.AGE, Integer.valueOf(1)), 2);
             }
          }
       }
 
-      public boolean canUse() {
-         return !FoxEntity.this.isSleeping() && super.canUse();
+      public boolean shouldExecute() {
+         return !FoxEntity.this.isSleeping() && super.shouldExecute();
       }
 
-      public void start() {
-         this.ticksWaited = 0;
+      public void startExecuting() {
+         this.field_220731_g = 0;
          FoxEntity.this.setSitting(false);
-         super.start();
+         super.startExecuting();
       }
    }
 
    class FindItemsGoal extends Goal {
       public FindItemsGoal() {
-         this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+         this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE));
       }
 
-      public boolean canUse() {
-         if (!FoxEntity.this.getItemBySlot(EquipmentSlotType.MAINHAND).isEmpty()) {
+      public boolean shouldExecute() {
+         if (!FoxEntity.this.getItemStackFromSlot(EquipmentSlotType.MAINHAND).isEmpty()) {
             return false;
-         } else if (FoxEntity.this.getTarget() == null && FoxEntity.this.getLastHurtByMob() == null) {
-            if (!FoxEntity.this.canMove()) {
+         } else if (FoxEntity.this.getAttackTarget() == null && FoxEntity.this.getRevengeTarget() == null) {
+            if (!FoxEntity.this.func_213478_eo()) {
                return false;
-            } else if (FoxEntity.this.getRandom().nextInt(10) != 0) {
+            } else if (FoxEntity.this.getRNG().nextInt(10) != 0) {
                return false;
             } else {
-               List<ItemEntity> list = FoxEntity.this.level.getEntitiesOfClass(ItemEntity.class, FoxEntity.this.getBoundingBox().inflate(8.0D, 8.0D, 8.0D), FoxEntity.ALLOWED_ITEMS);
-               return !list.isEmpty() && FoxEntity.this.getItemBySlot(EquipmentSlotType.MAINHAND).isEmpty();
+               List<ItemEntity> list = FoxEntity.this.world.getEntitiesWithinAABB(ItemEntity.class, FoxEntity.this.getBoundingBox().grow(8.0D, 8.0D, 8.0D), FoxEntity.TRUSTED_TARGET_SELECTOR);
+               return !list.isEmpty() && FoxEntity.this.getItemStackFromSlot(EquipmentSlotType.MAINHAND).isEmpty();
             }
          } else {
             return false;
@@ -817,156 +817,156 @@ public class FoxEntity extends AnimalEntity {
       }
 
       public void tick() {
-         List<ItemEntity> list = FoxEntity.this.level.getEntitiesOfClass(ItemEntity.class, FoxEntity.this.getBoundingBox().inflate(8.0D, 8.0D, 8.0D), FoxEntity.ALLOWED_ITEMS);
-         ItemStack itemstack = FoxEntity.this.getItemBySlot(EquipmentSlotType.MAINHAND);
+         List<ItemEntity> list = FoxEntity.this.world.getEntitiesWithinAABB(ItemEntity.class, FoxEntity.this.getBoundingBox().grow(8.0D, 8.0D, 8.0D), FoxEntity.TRUSTED_TARGET_SELECTOR);
+         ItemStack itemstack = FoxEntity.this.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
          if (itemstack.isEmpty() && !list.isEmpty()) {
-            FoxEntity.this.getNavigation().moveTo(list.get(0), (double)1.2F);
+            FoxEntity.this.getNavigator().tryMoveToEntityLiving(list.get(0), (double)1.2F);
          }
 
       }
 
-      public void start() {
-         List<ItemEntity> list = FoxEntity.this.level.getEntitiesOfClass(ItemEntity.class, FoxEntity.this.getBoundingBox().inflate(8.0D, 8.0D, 8.0D), FoxEntity.ALLOWED_ITEMS);
+      public void startExecuting() {
+         List<ItemEntity> list = FoxEntity.this.world.getEntitiesWithinAABB(ItemEntity.class, FoxEntity.this.getBoundingBox().grow(8.0D, 8.0D, 8.0D), FoxEntity.TRUSTED_TARGET_SELECTOR);
          if (!list.isEmpty()) {
-            FoxEntity.this.getNavigation().moveTo(list.get(0), (double)1.2F);
+            FoxEntity.this.getNavigator().tryMoveToEntityLiving(list.get(0), (double)1.2F);
          }
 
       }
    }
 
    class FindShelterGoal extends FleeSunGoal {
-      private int interval = 100;
+      private int cooldown = 100;
 
       public FindShelterGoal(double p_i50724_2_) {
          super(FoxEntity.this, p_i50724_2_);
       }
 
-      public boolean canUse() {
-         if (!FoxEntity.this.isSleeping() && this.mob.getTarget() == null) {
-            if (FoxEntity.this.level.isThundering()) {
+      public boolean shouldExecute() {
+         if (!FoxEntity.this.isSleeping() && this.creature.getAttackTarget() == null) {
+            if (FoxEntity.this.world.isThundering()) {
                return true;
-            } else if (this.interval > 0) {
-               --this.interval;
+            } else if (this.cooldown > 0) {
+               --this.cooldown;
                return false;
             } else {
-               this.interval = 100;
-               BlockPos blockpos = this.mob.blockPosition();
-               return FoxEntity.this.level.isDay() && FoxEntity.this.level.canSeeSky(blockpos) && !((ServerWorld)FoxEntity.this.level).isVillage(blockpos) && this.setWantedPos();
+               this.cooldown = 100;
+               BlockPos blockpos = this.creature.getPosition();
+               return FoxEntity.this.world.isDaytime() && FoxEntity.this.world.canSeeSky(blockpos) && !((ServerWorld)FoxEntity.this.world).isVillage(blockpos) && this.isPossibleShelter();
             }
          } else {
             return false;
          }
       }
 
-      public void start() {
-         FoxEntity.this.clearStates();
-         super.start();
+      public void startExecuting() {
+         FoxEntity.this.func_213499_en();
+         super.startExecuting();
       }
    }
 
    class FollowGoal extends FollowParentGoal {
-      private final FoxEntity fox;
+      private final FoxEntity owner;
 
       public FollowGoal(FoxEntity p_i50735_2_, double p_i50735_3_) {
          super(p_i50735_2_, p_i50735_3_);
-         this.fox = p_i50735_2_;
+         this.owner = p_i50735_2_;
       }
 
-      public boolean canUse() {
-         return !this.fox.isDefending() && super.canUse();
+      public boolean shouldExecute() {
+         return !this.owner.isFoxAggroed() && super.shouldExecute();
       }
 
-      public boolean canContinueToUse() {
-         return !this.fox.isDefending() && super.canContinueToUse();
+      public boolean shouldContinueExecuting() {
+         return !this.owner.isFoxAggroed() && super.shouldContinueExecuting();
       }
 
-      public void start() {
-         this.fox.clearStates();
-         super.start();
+      public void startExecuting() {
+         this.owner.func_213499_en();
+         super.startExecuting();
       }
    }
 
    class FollowTargetGoal extends Goal {
       public FollowTargetGoal() {
-         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+         this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
       }
 
-      public boolean canUse() {
+      public boolean shouldExecute() {
          if (FoxEntity.this.isSleeping()) {
             return false;
          } else {
-            LivingEntity livingentity = FoxEntity.this.getTarget();
-            return livingentity != null && livingentity.isAlive() && FoxEntity.STALKABLE_PREY.test(livingentity) && FoxEntity.this.distanceToSqr(livingentity) > 36.0D && !FoxEntity.this.isCrouching() && !FoxEntity.this.isInterested() && !FoxEntity.this.jumping;
+            LivingEntity livingentity = FoxEntity.this.getAttackTarget();
+            return livingentity != null && livingentity.isAlive() && FoxEntity.IS_PREY.test(livingentity) && FoxEntity.this.getDistanceSq(livingentity) > 36.0D && !FoxEntity.this.isCrouching() && !FoxEntity.this.func_213467_eg() && !FoxEntity.this.isJumping;
          }
       }
 
-      public void start() {
+      public void startExecuting() {
          FoxEntity.this.setSitting(false);
-         FoxEntity.this.setFaceplanted(false);
+         FoxEntity.this.setStuck(false);
       }
 
-      public void stop() {
-         LivingEntity livingentity = FoxEntity.this.getTarget();
-         if (livingentity != null && FoxEntity.isPathClear(FoxEntity.this, livingentity)) {
-            FoxEntity.this.setIsInterested(true);
-            FoxEntity.this.setIsCrouching(true);
-            FoxEntity.this.getNavigation().stop();
-            FoxEntity.this.getLookControl().setLookAt(livingentity, (float)FoxEntity.this.getMaxHeadYRot(), (float)FoxEntity.this.getMaxHeadXRot());
+      public void resetTask() {
+         LivingEntity livingentity = FoxEntity.this.getAttackTarget();
+         if (livingentity != null && FoxEntity.func_213481_a(FoxEntity.this, livingentity)) {
+            FoxEntity.this.func_213502_u(true);
+            FoxEntity.this.setCrouching(true);
+            FoxEntity.this.getNavigator().clearPath();
+            FoxEntity.this.getLookController().setLookPositionWithEntity(livingentity, (float)FoxEntity.this.getHorizontalFaceSpeed(), (float)FoxEntity.this.getVerticalFaceSpeed());
          } else {
-            FoxEntity.this.setIsInterested(false);
-            FoxEntity.this.setIsCrouching(false);
+            FoxEntity.this.func_213502_u(false);
+            FoxEntity.this.setCrouching(false);
          }
 
       }
 
       public void tick() {
-         LivingEntity livingentity = FoxEntity.this.getTarget();
-         FoxEntity.this.getLookControl().setLookAt(livingentity, (float)FoxEntity.this.getMaxHeadYRot(), (float)FoxEntity.this.getMaxHeadXRot());
-         if (FoxEntity.this.distanceToSqr(livingentity) <= 36.0D) {
-            FoxEntity.this.setIsInterested(true);
-            FoxEntity.this.setIsCrouching(true);
-            FoxEntity.this.getNavigation().stop();
+         LivingEntity livingentity = FoxEntity.this.getAttackTarget();
+         FoxEntity.this.getLookController().setLookPositionWithEntity(livingentity, (float)FoxEntity.this.getHorizontalFaceSpeed(), (float)FoxEntity.this.getVerticalFaceSpeed());
+         if (FoxEntity.this.getDistanceSq(livingentity) <= 36.0D) {
+            FoxEntity.this.func_213502_u(true);
+            FoxEntity.this.setCrouching(true);
+            FoxEntity.this.getNavigator().clearPath();
          } else {
-            FoxEntity.this.getNavigation().moveTo(livingentity, 1.5D);
+            FoxEntity.this.getNavigator().tryMoveToEntityLiving(livingentity, 1.5D);
          }
 
       }
    }
 
    public static class FoxData extends AgeableEntity.AgeableData {
-      public final FoxEntity.Type type;
+      public final FoxEntity.Type field_220366_a;
 
       public FoxData(FoxEntity.Type p_i50734_1_) {
          super(false);
-         this.type = p_i50734_1_;
+         this.field_220366_a = p_i50734_1_;
       }
    }
 
    class JumpGoal extends Goal {
-      int countdown;
+      int delay;
 
       public JumpGoal() {
-         this.setFlags(EnumSet.of(Goal.Flag.LOOK, Goal.Flag.JUMP, Goal.Flag.MOVE));
+         this.setMutexFlags(EnumSet.of(Goal.Flag.LOOK, Goal.Flag.JUMP, Goal.Flag.MOVE));
       }
 
-      public boolean canUse() {
-         return FoxEntity.this.isFaceplanted();
+      public boolean shouldExecute() {
+         return FoxEntity.this.isStuck();
       }
 
-      public boolean canContinueToUse() {
-         return this.canUse() && this.countdown > 0;
+      public boolean shouldContinueExecuting() {
+         return this.shouldExecute() && this.delay > 0;
       }
 
-      public void start() {
-         this.countdown = 40;
+      public void startExecuting() {
+         this.delay = 40;
       }
 
-      public void stop() {
-         FoxEntity.this.setFaceplanted(false);
+      public void resetTask() {
+         FoxEntity.this.setStuck(false);
       }
 
       public void tick() {
-         --this.countdown;
+         --this.delay;
       }
    }
 
@@ -982,8 +982,8 @@ public class FoxEntity extends AnimalEntity {
 
       }
 
-      protected boolean resetXRotOnTick() {
-         return !FoxEntity.this.isPouncing() && !FoxEntity.this.isCrouching() && !FoxEntity.this.isInterested() & !FoxEntity.this.isFaceplanted();
+      protected boolean shouldResetPitch() {
+         return !FoxEntity.this.func_213480_dY() && !FoxEntity.this.isCrouching() && !FoxEntity.this.func_213467_eg() & !FoxEntity.this.isStuck();
       }
    }
 
@@ -992,44 +992,44 @@ public class FoxEntity extends AnimalEntity {
          super(FoxEntity.this, p_i50738_2_);
       }
 
-      public void start() {
-         ((FoxEntity)this.animal).clearStates();
-         ((FoxEntity)this.partner).clearStates();
-         super.start();
+      public void startExecuting() {
+         ((FoxEntity)this.animal).func_213499_en();
+         ((FoxEntity)this.targetMate).func_213499_en();
+         super.startExecuting();
       }
 
-      protected void breed() {
-         ServerWorld serverworld = (ServerWorld)this.level;
-         FoxEntity foxentity = (FoxEntity)this.animal.getBreedOffspring(serverworld, this.partner);
+      protected void spawnBaby() {
+         ServerWorld serverworld = (ServerWorld)this.world;
+         FoxEntity foxentity = (FoxEntity)this.animal.func_241840_a(serverworld, this.targetMate);
          if (foxentity != null) {
             ServerPlayerEntity serverplayerentity = this.animal.getLoveCause();
-            ServerPlayerEntity serverplayerentity1 = this.partner.getLoveCause();
+            ServerPlayerEntity serverplayerentity1 = this.targetMate.getLoveCause();
             ServerPlayerEntity serverplayerentity2 = serverplayerentity;
             if (serverplayerentity != null) {
-               foxentity.addTrustedUUID(serverplayerentity.getUUID());
+               foxentity.addTrustedUUID(serverplayerentity.getUniqueID());
             } else {
                serverplayerentity2 = serverplayerentity1;
             }
 
             if (serverplayerentity1 != null && serverplayerentity != serverplayerentity1) {
-               foxentity.addTrustedUUID(serverplayerentity1.getUUID());
+               foxentity.addTrustedUUID(serverplayerentity1.getUniqueID());
             }
 
             if (serverplayerentity2 != null) {
-               serverplayerentity2.awardStat(Stats.ANIMALS_BRED);
-               CriteriaTriggers.BRED_ANIMALS.trigger(serverplayerentity2, this.animal, this.partner, foxentity);
+               serverplayerentity2.addStat(Stats.ANIMALS_BRED);
+               CriteriaTriggers.BRED_ANIMALS.trigger(serverplayerentity2, this.animal, this.targetMate, foxentity);
             }
 
-            this.animal.setAge(6000);
-            this.partner.setAge(6000);
-            this.animal.resetLove();
-            this.partner.resetLove();
-            foxentity.setAge(-24000);
-            foxentity.moveTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
-            serverworld.addFreshEntityWithPassengers(foxentity);
-            this.level.broadcastEntityEvent(this.animal, (byte)18);
-            if (this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
-               this.level.addFreshEntity(new ExperienceOrbEntity(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), this.animal.getRandom().nextInt(7) + 1));
+            this.animal.setGrowingAge(6000);
+            this.targetMate.setGrowingAge(6000);
+            this.animal.resetInLove();
+            this.targetMate.resetInLove();
+            foxentity.setGrowingAge(-24000);
+            foxentity.setLocationAndAngles(this.animal.getPosX(), this.animal.getPosY(), this.animal.getPosZ(), 0.0F, 0.0F);
+            serverworld.func_242417_l(foxentity);
+            this.world.setEntityState(this.animal, (byte)18);
+            if (this.world.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
+               this.world.addEntity(new ExperienceOrbEntity(this.world, this.animal.getPosX(), this.animal.getPosY(), this.animal.getPosZ(), this.animal.getRNG().nextInt(7) + 1));
             }
 
          }
@@ -1042,7 +1042,7 @@ public class FoxEntity extends AnimalEntity {
       }
 
       public void tick() {
-         if (FoxEntity.this.canMove()) {
+         if (FoxEntity.this.func_213478_eo()) {
             super.tick();
          }
 
@@ -1054,26 +1054,26 @@ public class FoxEntity extends AnimalEntity {
          super(FoxEntity.this, p_i50729_2_);
       }
 
-      public boolean canUse() {
-         return !FoxEntity.this.isDefending() && super.canUse();
+      public boolean shouldExecute() {
+         return !FoxEntity.this.isFoxAggroed() && super.shouldExecute();
       }
    }
 
    public class PounceGoal extends net.minecraft.entity.ai.goal.JumpGoal {
-      public boolean canUse() {
-         if (!FoxEntity.this.isFullyCrouched()) {
+      public boolean shouldExecute() {
+         if (!FoxEntity.this.func_213490_ee()) {
             return false;
          } else {
-            LivingEntity livingentity = FoxEntity.this.getTarget();
+            LivingEntity livingentity = FoxEntity.this.getAttackTarget();
             if (livingentity != null && livingentity.isAlive()) {
-               if (livingentity.getMotionDirection() != livingentity.getDirection()) {
+               if (livingentity.getAdjustedHorizontalFacing() != livingentity.getHorizontalFacing()) {
                   return false;
                } else {
-                  boolean flag = FoxEntity.isPathClear(FoxEntity.this, livingentity);
+                  boolean flag = FoxEntity.func_213481_a(FoxEntity.this, livingentity);
                   if (!flag) {
-                     FoxEntity.this.getNavigation().createPath(livingentity, 0);
-                     FoxEntity.this.setIsCrouching(false);
-                     FoxEntity.this.setIsInterested(false);
+                     FoxEntity.this.getNavigator().getPathToEntity(livingentity, 0);
+                     FoxEntity.this.setCrouching(false);
+                     FoxEntity.this.func_213502_u(false);
                   }
 
                   return flag;
@@ -1084,62 +1084,62 @@ public class FoxEntity extends AnimalEntity {
          }
       }
 
-      public boolean canContinueToUse() {
-         LivingEntity livingentity = FoxEntity.this.getTarget();
+      public boolean shouldContinueExecuting() {
+         LivingEntity livingentity = FoxEntity.this.getAttackTarget();
          if (livingentity != null && livingentity.isAlive()) {
-            double d0 = FoxEntity.this.getDeltaMovement().y;
-            return (!(d0 * d0 < (double)0.05F) || !(Math.abs(FoxEntity.this.xRot) < 15.0F) || !FoxEntity.this.onGround) && !FoxEntity.this.isFaceplanted();
+            double d0 = FoxEntity.this.getMotion().y;
+            return (!(d0 * d0 < (double)0.05F) || !(Math.abs(FoxEntity.this.rotationPitch) < 15.0F) || !FoxEntity.this.onGround) && !FoxEntity.this.isStuck();
          } else {
             return false;
          }
       }
 
-      public boolean isInterruptable() {
+      public boolean isPreemptible() {
          return false;
       }
 
-      public void start() {
+      public void startExecuting() {
          FoxEntity.this.setJumping(true);
-         FoxEntity.this.setIsPouncing(true);
-         FoxEntity.this.setIsInterested(false);
-         LivingEntity livingentity = FoxEntity.this.getTarget();
-         FoxEntity.this.getLookControl().setLookAt(livingentity, 60.0F, 30.0F);
-         Vector3d vector3d = (new Vector3d(livingentity.getX() - FoxEntity.this.getX(), livingentity.getY() - FoxEntity.this.getY(), livingentity.getZ() - FoxEntity.this.getZ())).normalize();
-         FoxEntity.this.setDeltaMovement(FoxEntity.this.getDeltaMovement().add(vector3d.x * 0.8D, 0.9D, vector3d.z * 0.8D));
-         FoxEntity.this.getNavigation().stop();
+         FoxEntity.this.func_213461_s(true);
+         FoxEntity.this.func_213502_u(false);
+         LivingEntity livingentity = FoxEntity.this.getAttackTarget();
+         FoxEntity.this.getLookController().setLookPositionWithEntity(livingentity, 60.0F, 30.0F);
+         Vector3d vector3d = (new Vector3d(livingentity.getPosX() - FoxEntity.this.getPosX(), livingentity.getPosY() - FoxEntity.this.getPosY(), livingentity.getPosZ() - FoxEntity.this.getPosZ())).normalize();
+         FoxEntity.this.setMotion(FoxEntity.this.getMotion().add(vector3d.x * 0.8D, 0.9D, vector3d.z * 0.8D));
+         FoxEntity.this.getNavigator().clearPath();
       }
 
-      public void stop() {
-         FoxEntity.this.setIsCrouching(false);
+      public void resetTask() {
+         FoxEntity.this.setCrouching(false);
          FoxEntity.this.crouchAmount = 0.0F;
          FoxEntity.this.crouchAmountO = 0.0F;
-         FoxEntity.this.setIsInterested(false);
-         FoxEntity.this.setIsPouncing(false);
+         FoxEntity.this.func_213502_u(false);
+         FoxEntity.this.func_213461_s(false);
       }
 
       public void tick() {
-         LivingEntity livingentity = FoxEntity.this.getTarget();
+         LivingEntity livingentity = FoxEntity.this.getAttackTarget();
          if (livingentity != null) {
-            FoxEntity.this.getLookControl().setLookAt(livingentity, 60.0F, 30.0F);
+            FoxEntity.this.getLookController().setLookPositionWithEntity(livingentity, 60.0F, 30.0F);
          }
 
-         if (!FoxEntity.this.isFaceplanted()) {
-            Vector3d vector3d = FoxEntity.this.getDeltaMovement();
-            if (vector3d.y * vector3d.y < (double)0.03F && FoxEntity.this.xRot != 0.0F) {
-               FoxEntity.this.xRot = MathHelper.rotlerp(FoxEntity.this.xRot, 0.0F, 0.2F);
+         if (!FoxEntity.this.isStuck()) {
+            Vector3d vector3d = FoxEntity.this.getMotion();
+            if (vector3d.y * vector3d.y < (double)0.03F && FoxEntity.this.rotationPitch != 0.0F) {
+               FoxEntity.this.rotationPitch = MathHelper.rotLerp(FoxEntity.this.rotationPitch, 0.0F, 0.2F);
             } else {
-               double d0 = Math.sqrt(Entity.getHorizontalDistanceSqr(vector3d));
+               double d0 = Math.sqrt(Entity.horizontalMag(vector3d));
                double d1 = Math.signum(-vector3d.y) * Math.acos(d0 / vector3d.length()) * (double)(180F / (float)Math.PI);
-               FoxEntity.this.xRot = (float)d1;
+               FoxEntity.this.rotationPitch = (float)d1;
             }
          }
 
-         if (livingentity != null && FoxEntity.this.distanceTo(livingentity) <= 2.0F) {
-            FoxEntity.this.doHurtTarget(livingentity);
-         } else if (FoxEntity.this.xRot > 0.0F && FoxEntity.this.onGround && (float)FoxEntity.this.getDeltaMovement().y != 0.0F && FoxEntity.this.level.getBlockState(FoxEntity.this.blockPosition()).is(Blocks.SNOW)) {
-            FoxEntity.this.xRot = 60.0F;
-            FoxEntity.this.setTarget((LivingEntity)null);
-            FoxEntity.this.setFaceplanted(true);
+         if (livingentity != null && FoxEntity.this.getDistance(livingentity) <= 2.0F) {
+            FoxEntity.this.attackEntityAsMob(livingentity);
+         } else if (FoxEntity.this.rotationPitch > 0.0F && FoxEntity.this.onGround && (float)FoxEntity.this.getMotion().y != 0.0F && FoxEntity.this.world.getBlockState(FoxEntity.this.getPosition()).isIn(Blocks.SNOW)) {
+            FoxEntity.this.rotationPitch = 60.0F;
+            FoxEntity.this.setAttackTarget((LivingEntity)null);
+            FoxEntity.this.setStuck(true);
          }
 
       }
@@ -1147,27 +1147,27 @@ public class FoxEntity extends AnimalEntity {
 
    class RevengeGoal extends NearestAttackableTargetGoal<LivingEntity> {
       @Nullable
-      private LivingEntity trustedLastHurtBy;
-      private LivingEntity trustedLastHurt;
-      private int timestamp;
+      private LivingEntity field_220786_j;
+      private LivingEntity field_220787_k;
+      private int field_220788_l;
 
       public RevengeGoal(Class<LivingEntity> p_i50743_2_, boolean p_i50743_3_, boolean p_i50743_4_, @Nullable Predicate<LivingEntity> p_i50743_5_) {
          super(FoxEntity.this, p_i50743_2_, 10, p_i50743_3_, p_i50743_4_, p_i50743_5_);
       }
 
-      public boolean canUse() {
-         if (this.randomInterval > 0 && this.mob.getRandom().nextInt(this.randomInterval) != 0) {
+      public boolean shouldExecute() {
+         if (this.targetChance > 0 && this.goalOwner.getRNG().nextInt(this.targetChance) != 0) {
             return false;
          } else {
             for(UUID uuid : FoxEntity.this.getTrustedUUIDs()) {
-               if (uuid != null && FoxEntity.this.level instanceof ServerWorld) {
-                  Entity entity = ((ServerWorld)FoxEntity.this.level).getEntity(uuid);
+               if (uuid != null && FoxEntity.this.world instanceof ServerWorld) {
+                  Entity entity = ((ServerWorld)FoxEntity.this.world).getEntityByUuid(uuid);
                   if (entity instanceof LivingEntity) {
                      LivingEntity livingentity = (LivingEntity)entity;
-                     this.trustedLastHurt = livingentity;
-                     this.trustedLastHurtBy = livingentity.getLastHurtByMob();
-                     int i = livingentity.getLastHurtByMobTimestamp();
-                     return i != this.timestamp && this.canAttack(this.trustedLastHurtBy, this.targetConditions);
+                     this.field_220787_k = livingentity;
+                     this.field_220786_j = livingentity.getRevengeTarget();
+                     int i = livingentity.getRevengeTimer();
+                     return i != this.field_220788_l && this.isSuitableTarget(this.field_220786_j, this.targetEntitySelector);
                   }
                }
             }
@@ -1176,108 +1176,108 @@ public class FoxEntity extends AnimalEntity {
          }
       }
 
-      public void start() {
-         this.setTarget(this.trustedLastHurtBy);
-         this.target = this.trustedLastHurtBy;
-         if (this.trustedLastHurt != null) {
-            this.timestamp = this.trustedLastHurt.getLastHurtByMobTimestamp();
+      public void startExecuting() {
+         this.setNearestTarget(this.field_220786_j);
+         this.nearestTarget = this.field_220786_j;
+         if (this.field_220787_k != null) {
+            this.field_220788_l = this.field_220787_k.getRevengeTimer();
          }
 
-         FoxEntity.this.playSound(SoundEvents.FOX_AGGRO, 1.0F, 1.0F);
-         FoxEntity.this.setDefending(true);
-         FoxEntity.this.wakeUp();
-         super.start();
+         FoxEntity.this.playSound(SoundEvents.ENTITY_FOX_AGGRO, 1.0F, 1.0F);
+         FoxEntity.this.setFoxAggroed(true);
+         FoxEntity.this.func_213454_em();
+         super.startExecuting();
       }
    }
 
    class SitAndLookGoal extends FoxEntity.BaseGoal {
-      private double relX;
-      private double relZ;
-      private int lookTime;
-      private int looksRemaining;
+      private double field_220819_c;
+      private double field_220820_d;
+      private int field_220821_e;
+      private int field_220822_f;
 
       public SitAndLookGoal() {
-         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+         this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
       }
 
-      public boolean canUse() {
-         return FoxEntity.this.getLastHurtByMob() == null && FoxEntity.this.getRandom().nextFloat() < 0.02F && !FoxEntity.this.isSleeping() && FoxEntity.this.getTarget() == null && FoxEntity.this.getNavigation().isDone() && !this.alertable() && !FoxEntity.this.isPouncing() && !FoxEntity.this.isCrouching();
+      public boolean shouldExecute() {
+         return FoxEntity.this.getRevengeTarget() == null && FoxEntity.this.getRNG().nextFloat() < 0.02F && !FoxEntity.this.isSleeping() && FoxEntity.this.getAttackTarget() == null && FoxEntity.this.getNavigator().noPath() && !this.func_220814_h() && !FoxEntity.this.func_213480_dY() && !FoxEntity.this.isCrouching();
       }
 
-      public boolean canContinueToUse() {
-         return this.looksRemaining > 0;
+      public boolean shouldContinueExecuting() {
+         return this.field_220822_f > 0;
       }
 
-      public void start() {
-         this.resetLook();
-         this.looksRemaining = 2 + FoxEntity.this.getRandom().nextInt(3);
+      public void startExecuting() {
+         this.func_220817_j();
+         this.field_220822_f = 2 + FoxEntity.this.getRNG().nextInt(3);
          FoxEntity.this.setSitting(true);
-         FoxEntity.this.getNavigation().stop();
+         FoxEntity.this.getNavigator().clearPath();
       }
 
-      public void stop() {
+      public void resetTask() {
          FoxEntity.this.setSitting(false);
       }
 
       public void tick() {
-         --this.lookTime;
-         if (this.lookTime <= 0) {
-            --this.looksRemaining;
-            this.resetLook();
+         --this.field_220821_e;
+         if (this.field_220821_e <= 0) {
+            --this.field_220822_f;
+            this.func_220817_j();
          }
 
-         FoxEntity.this.getLookControl().setLookAt(FoxEntity.this.getX() + this.relX, FoxEntity.this.getEyeY(), FoxEntity.this.getZ() + this.relZ, (float)FoxEntity.this.getMaxHeadYRot(), (float)FoxEntity.this.getMaxHeadXRot());
+         FoxEntity.this.getLookController().setLookPosition(FoxEntity.this.getPosX() + this.field_220819_c, FoxEntity.this.getPosYEye(), FoxEntity.this.getPosZ() + this.field_220820_d, (float)FoxEntity.this.getHorizontalFaceSpeed(), (float)FoxEntity.this.getVerticalFaceSpeed());
       }
 
-      private void resetLook() {
-         double d0 = (Math.PI * 2D) * FoxEntity.this.getRandom().nextDouble();
-         this.relX = Math.cos(d0);
-         this.relZ = Math.sin(d0);
-         this.lookTime = 80 + FoxEntity.this.getRandom().nextInt(20);
+      private void func_220817_j() {
+         double d0 = (Math.PI * 2D) * FoxEntity.this.getRNG().nextDouble();
+         this.field_220819_c = Math.cos(d0);
+         this.field_220820_d = Math.sin(d0);
+         this.field_220821_e = 80 + FoxEntity.this.getRNG().nextInt(20);
       }
    }
 
    class SleepGoal extends FoxEntity.BaseGoal {
-      private int countdown = FoxEntity.this.random.nextInt(140);
+      private int field_220825_c = FoxEntity.this.rand.nextInt(140);
 
       public SleepGoal() {
-         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK, Goal.Flag.JUMP));
+         this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK, Goal.Flag.JUMP));
       }
 
-      public boolean canUse() {
-         if (FoxEntity.this.xxa == 0.0F && FoxEntity.this.yya == 0.0F && FoxEntity.this.zza == 0.0F) {
-            return this.canSleep() || FoxEntity.this.isSleeping();
+      public boolean shouldExecute() {
+         if (FoxEntity.this.moveStrafing == 0.0F && FoxEntity.this.moveVertical == 0.0F && FoxEntity.this.moveForward == 0.0F) {
+            return this.func_220823_j() || FoxEntity.this.isSleeping();
          } else {
             return false;
          }
       }
 
-      public boolean canContinueToUse() {
-         return this.canSleep();
+      public boolean shouldContinueExecuting() {
+         return this.func_220823_j();
       }
 
-      private boolean canSleep() {
-         if (this.countdown > 0) {
-            --this.countdown;
+      private boolean func_220823_j() {
+         if (this.field_220825_c > 0) {
+            --this.field_220825_c;
             return false;
          } else {
-            return FoxEntity.this.level.isDay() && this.hasShelter() && !this.alertable();
+            return FoxEntity.this.world.isDaytime() && this.func_220813_g() && !this.func_220814_h();
          }
       }
 
-      public void stop() {
-         this.countdown = FoxEntity.this.random.nextInt(140);
-         FoxEntity.this.clearStates();
+      public void resetTask() {
+         this.field_220825_c = FoxEntity.this.rand.nextInt(140);
+         FoxEntity.this.func_213499_en();
       }
 
-      public void start() {
+      public void startExecuting() {
          FoxEntity.this.setSitting(false);
-         FoxEntity.this.setIsCrouching(false);
-         FoxEntity.this.setIsInterested(false);
+         FoxEntity.this.setCrouching(false);
+         FoxEntity.this.func_213502_u(false);
          FoxEntity.this.setJumping(false);
          FoxEntity.this.setSleeping(true);
-         FoxEntity.this.getNavigation().stop();
-         FoxEntity.this.getMoveControl().setWantedPosition(FoxEntity.this.getX(), FoxEntity.this.getY(), FoxEntity.this.getZ(), 0.0D);
+         FoxEntity.this.getNavigator().clearPath();
+         FoxEntity.this.getMoveHelper().setMoveTo(FoxEntity.this.getPosX(), FoxEntity.this.getPosY(), FoxEntity.this.getPosZ(), 0.0D);
       }
    }
 
@@ -1286,21 +1286,21 @@ public class FoxEntity extends AnimalEntity {
          super(FoxEntity.this, p_i50726_3_);
       }
 
-      public void start() {
-         FoxEntity.this.clearStates();
-         super.start();
+      public void startExecuting() {
+         FoxEntity.this.func_213499_en();
+         super.startExecuting();
       }
 
-      public boolean canUse() {
-         return super.canUse() && this.canFoxMove();
+      public boolean shouldExecute() {
+         return super.shouldExecute() && this.func_220759_g();
       }
 
-      public boolean canContinueToUse() {
-         return super.canContinueToUse() && this.canFoxMove();
+      public boolean shouldContinueExecuting() {
+         return super.shouldContinueExecuting() && this.func_220759_g();
       }
 
-      private boolean canFoxMove() {
-         return !FoxEntity.this.isSleeping() && !FoxEntity.this.isSitting() && !FoxEntity.this.isDefending() && FoxEntity.this.getTarget() == null;
+      private boolean func_220759_g() {
+         return !FoxEntity.this.isSleeping() && !FoxEntity.this.isSitting() && !FoxEntity.this.isFoxAggroed() && FoxEntity.this.getAttackTarget() == null;
       }
    }
 
@@ -1309,13 +1309,13 @@ public class FoxEntity extends AnimalEntity {
          super(FoxEntity.this);
       }
 
-      public void start() {
-         super.start();
-         FoxEntity.this.clearStates();
+      public void startExecuting() {
+         super.startExecuting();
+         FoxEntity.this.func_213499_en();
       }
 
-      public boolean canUse() {
-         return FoxEntity.this.isInWater() && FoxEntity.this.getFluidHeight(FluidTags.WATER) > 0.25D || FoxEntity.this.isInLava();
+      public boolean shouldExecute() {
+         return FoxEntity.this.isInWater() && FoxEntity.this.func_233571_b_(FluidTags.WATER) > 0.25D || FoxEntity.this.isInLava();
       }
    }
 
@@ -1323,44 +1323,44 @@ public class FoxEntity extends AnimalEntity {
       RED(0, "red", Biomes.TAIGA, Biomes.TAIGA_HILLS, Biomes.TAIGA_MOUNTAINS, Biomes.GIANT_TREE_TAIGA, Biomes.GIANT_SPRUCE_TAIGA, Biomes.GIANT_TREE_TAIGA_HILLS, Biomes.GIANT_SPRUCE_TAIGA_HILLS),
       SNOW(1, "snow", Biomes.SNOWY_TAIGA, Biomes.SNOWY_TAIGA_HILLS, Biomes.SNOWY_TAIGA_MOUNTAINS);
 
-      private static final FoxEntity.Type[] BY_ID = Arrays.stream(values()).sorted(Comparator.comparingInt(FoxEntity.Type::getId)).toArray((p_221084_0_) -> {
+      private static final FoxEntity.Type[] field_221088_c = Arrays.stream(values()).sorted(Comparator.comparingInt(FoxEntity.Type::getIndex)).toArray((p_221084_0_) -> {
          return new FoxEntity.Type[p_221084_0_];
       });
-      private static final Map<String, FoxEntity.Type> BY_NAME = Arrays.stream(values()).collect(Collectors.toMap(FoxEntity.Type::getName, (p_221081_0_) -> {
+      private static final Map<String, FoxEntity.Type> TYPES_BY_NAME = Arrays.stream(values()).collect(Collectors.toMap(FoxEntity.Type::getName, (p_221081_0_) -> {
          return p_221081_0_;
       }));
-      private final int id;
+      private final int index;
       private final String name;
-      private final List<RegistryKey<Biome>> biomes;
+      private final List<RegistryKey<Biome>> spawnBiomes;
 
       private Type(int p_i241911_3_, String p_i241911_4_, RegistryKey<Biome>... p_i241911_5_) {
-         this.id = p_i241911_3_;
+         this.index = p_i241911_3_;
          this.name = p_i241911_4_;
-         this.biomes = Arrays.asList(p_i241911_5_);
+         this.spawnBiomes = Arrays.asList(p_i241911_5_);
       }
 
       public String getName() {
          return this.name;
       }
 
-      public int getId() {
-         return this.id;
+      public int getIndex() {
+         return this.index;
       }
 
-      public static FoxEntity.Type byName(String p_221087_0_) {
-         return BY_NAME.getOrDefault(p_221087_0_, RED);
+      public static FoxEntity.Type getTypeByName(String nameIn) {
+         return TYPES_BY_NAME.getOrDefault(nameIn, RED);
       }
 
-      public static FoxEntity.Type byId(int p_221080_0_) {
-         if (p_221080_0_ < 0 || p_221080_0_ > BY_ID.length) {
-            p_221080_0_ = 0;
+      public static FoxEntity.Type getTypeByIndex(int indexIn) {
+         if (indexIn < 0 || indexIn > field_221088_c.length) {
+            indexIn = 0;
          }
 
-         return BY_ID[p_221080_0_];
+         return field_221088_c[indexIn];
       }
 
-      public static FoxEntity.Type byBiome(Optional<RegistryKey<Biome>> p_242325_0_) {
-         return p_242325_0_.isPresent() && SNOW.biomes.contains(p_242325_0_.get()) ? SNOW : RED;
+      public static FoxEntity.Type func_242325_a(Optional<RegistryKey<Biome>> p_242325_0_) {
+         return p_242325_0_.isPresent() && SNOW.spawnBiomes.contains(p_242325_0_.get()) ? SNOW : RED;
       }
    }
 
@@ -1369,12 +1369,12 @@ public class FoxEntity extends AnimalEntity {
          super(p_i50733_2_, p_i50733_3_, p_i50733_4_);
       }
 
-      public boolean canUse() {
-         return super.canUse() && !FoxEntity.this.isFaceplanted() && !FoxEntity.this.isInterested();
+      public boolean shouldExecute() {
+         return super.shouldExecute() && !FoxEntity.this.isStuck() && !FoxEntity.this.func_213467_eg();
       }
 
-      public boolean canContinueToUse() {
-         return super.canContinueToUse() && !FoxEntity.this.isFaceplanted() && !FoxEntity.this.isInterested();
+      public boolean shouldContinueExecuting() {
+         return super.shouldContinueExecuting() && !FoxEntity.this.isStuck() && !FoxEntity.this.func_213467_eg();
       }
    }
 }

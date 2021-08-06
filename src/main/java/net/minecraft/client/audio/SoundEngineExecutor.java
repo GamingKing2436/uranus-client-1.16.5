@@ -7,14 +7,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class SoundEngineExecutor extends ThreadTaskExecutor<Runnable> {
-   private Thread thread = this.createThread();
-   private volatile boolean shutdown;
+   private Thread executionThread = this.createExecutionThread();
+   private volatile boolean stopped;
 
    public SoundEngineExecutor() {
       super("Sound executor");
    }
 
-   private Thread createThread() {
+   private Thread createExecutionThread() {
       Thread thread = new Thread(this::run);
       thread.setDaemon(true);
       thread.setName("Sound engine");
@@ -22,43 +22,43 @@ public class SoundEngineExecutor extends ThreadTaskExecutor<Runnable> {
       return thread;
    }
 
-   protected Runnable wrapRunnable(Runnable p_212875_1_) {
-      return p_212875_1_;
+   protected Runnable wrapTask(Runnable runnable) {
+      return runnable;
    }
 
-   protected boolean shouldRun(Runnable p_212874_1_) {
-      return !this.shutdown;
+   protected boolean canRun(Runnable runnable) {
+      return !this.stopped;
    }
 
-   protected Thread getRunningThread() {
-      return this.thread;
+   protected Thread getExecutionThread() {
+      return this.executionThread;
    }
 
    private void run() {
-      while(!this.shutdown) {
-         this.managedBlock(() -> {
-            return this.shutdown;
+      while(!this.stopped) {
+         this.driveUntil(() -> {
+            return this.stopped;
          });
       }
 
    }
 
-   protected void waitForTasks() {
+   protected void threadYieldPark() {
       LockSupport.park("waiting for tasks");
    }
 
-   public void flush() {
-      this.shutdown = true;
-      this.thread.interrupt();
+   public void restart() {
+      this.stopped = true;
+      this.executionThread.interrupt();
 
       try {
-         this.thread.join();
+         this.executionThread.join();
       } catch (InterruptedException interruptedexception) {
          Thread.currentThread().interrupt();
       }
 
-      this.dropAllTasks();
-      this.shutdown = false;
-      this.thread = this.createThread();
+      this.dropTasks();
+      this.stopped = false;
+      this.executionThread = this.createExecutionThread();
    }
 }

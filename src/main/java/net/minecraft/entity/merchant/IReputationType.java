@@ -7,10 +7,10 @@ public interface IReputationType {
    IReputationType VILLAGER_KILLED = register("villager_killed");
    IReputationType TRADE = register("trade");
 
-   static IReputationType register(final String p_221028_0_) {
+   static IReputationType register(final String key) {
       return new IReputationType() {
          public String toString() {
-            return p_221028_0_;
+            return key;
          }
       };
    }

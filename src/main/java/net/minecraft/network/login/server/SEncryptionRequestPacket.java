@@ -11,47 +11,47 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SEncryptionRequestPacket implements IPacket<IClientLoginNetHandler> {
-   private String serverId;
+   private String hashedServerId;
    private byte[] publicKey;
-   private byte[] nonce;
+   private byte[] verifyToken;
 
    public SEncryptionRequestPacket() {
    }
 
    public SEncryptionRequestPacket(String p_i244727_1_, byte[] p_i244727_2_, byte[] p_i244727_3_) {
-      this.serverId = p_i244727_1_;
+      this.hashedServerId = p_i244727_1_;
       this.publicKey = p_i244727_2_;
-      this.nonce = p_i244727_3_;
+      this.verifyToken = p_i244727_3_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.serverId = p_148837_1_.readUtf(20);
-      this.publicKey = p_148837_1_.readByteArray();
-      this.nonce = p_148837_1_.readByteArray();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.hashedServerId = buf.readString(20);
+      this.publicKey = buf.readByteArray();
+      this.verifyToken = buf.readByteArray();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeUtf(this.serverId);
-      p_148840_1_.writeByteArray(this.publicKey);
-      p_148840_1_.writeByteArray(this.nonce);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeString(this.hashedServerId);
+      buf.writeByteArray(this.publicKey);
+      buf.writeByteArray(this.verifyToken);
    }
 
-   public void handle(IClientLoginNetHandler p_148833_1_) {
-      p_148833_1_.handleHello(this);
+   public void processPacket(IClientLoginNetHandler handler) {
+      handler.handleEncryptionRequest(this);
    }
 
    @OnlyIn(Dist.CLIENT)
    public String getServerId() {
-      return this.serverId;
+      return this.hashedServerId;
    }
 
    @OnlyIn(Dist.CLIENT)
    public PublicKey getPublicKey() throws CryptException {
-      return CryptManager.byteToPublicKey(this.publicKey);
+      return CryptManager.decodePublicKey(this.publicKey);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public byte[] getNonce() {
-      return this.nonce;
+   public byte[] getVerifyToken() {
+      return this.verifyToken;
    }
 }

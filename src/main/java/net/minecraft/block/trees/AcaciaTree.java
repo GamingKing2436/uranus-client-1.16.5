@@ -8,7 +8,7 @@ import net.minecraft.world.gen.feature.Features;
 
 public class AcaciaTree extends Tree {
    @Nullable
-   protected ConfiguredFeature<BaseTreeFeatureConfig, ?> getConfiguredFeature(Random p_225546_1_, boolean p_225546_2_) {
+   protected ConfiguredFeature<BaseTreeFeatureConfig, ?> getTreeFeature(Random randomIn, boolean largeHive) {
       return Features.ACACIA;
    }
 }

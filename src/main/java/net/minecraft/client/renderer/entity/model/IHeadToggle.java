@@ -5,5 +5,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IHeadToggle {
-   void hatVisible(boolean p_217146_1_);
+   void func_217146_a(boolean p_217146_1_);
 }

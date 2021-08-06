@@ -31,40 +31,40 @@ public class MobSpawnInfo {
    })), ImmutableMap.of(), false);
    public static final MapCodec<MobSpawnInfo> CODEC = RecordCodecBuilder.mapCodec((p_242561_0_) -> {
       return p_242561_0_.group(Codec.FLOAT.optionalFieldOf("creature_spawn_probability", Float.valueOf(0.1F)).forGetter((p_242566_0_) -> {
-         return p_242566_0_.creatureGenerationProbability;
-      }), Codec.simpleMap(EntityClassification.CODEC, MobSpawnInfo.Spawners.CODEC.listOf().promotePartial(Util.prefix("Spawn data: ", LOGGER::error)), IStringSerializable.keys(EntityClassification.values())).fieldOf("spawners").forGetter((p_242564_0_) -> {
+         return p_242566_0_.creatureSpawnProbability;
+      }), Codec.simpleMap(EntityClassification.CODEC, MobSpawnInfo.Spawners.CODEC.listOf().promotePartial(Util.func_240982_a_("Spawn data: ", LOGGER::error)), IStringSerializable.createKeyable(EntityClassification.values())).fieldOf("spawners").forGetter((p_242564_0_) -> {
          return p_242564_0_.spawners;
       }), Codec.simpleMap(Registry.ENTITY_TYPE, MobSpawnInfo.SpawnCosts.CODEC, Registry.ENTITY_TYPE).fieldOf("spawn_costs").forGetter((p_242560_0_) -> {
-         return p_242560_0_.mobSpawnCosts;
-      }), Codec.BOOL.fieldOf("player_spawn_friendly").orElse(false).forGetter(MobSpawnInfo::playerSpawnFriendly)).apply(p_242561_0_, MobSpawnInfo::new);
+         return p_242560_0_.spawnCosts;
+      }), Codec.BOOL.fieldOf("player_spawn_friendly").orElse(false).forGetter(MobSpawnInfo::isValidSpawnBiomeForPlayer)).apply(p_242561_0_, MobSpawnInfo::new);
    });
-   private final float creatureGenerationProbability;
+   private final float creatureSpawnProbability;
    private final Map<EntityClassification, List<MobSpawnInfo.Spawners>> spawners;
-   private final Map<EntityType<?>, MobSpawnInfo.SpawnCosts> mobSpawnCosts;
-   private final boolean playerSpawnFriendly;
+   private final Map<EntityType<?>, MobSpawnInfo.SpawnCosts> spawnCosts;
+   private final boolean validSpawnBiomeForPlayer;
 
-   private MobSpawnInfo(float p_i241946_1_, Map<EntityClassification, List<MobSpawnInfo.Spawners>> p_i241946_2_, Map<EntityType<?>, MobSpawnInfo.SpawnCosts> p_i241946_3_, boolean p_i241946_4_) {
-      this.creatureGenerationProbability = p_i241946_1_;
-      this.spawners = p_i241946_2_;
-      this.mobSpawnCosts = p_i241946_3_;
-      this.playerSpawnFriendly = p_i241946_4_;
+   private MobSpawnInfo(float creatureSpawnProbability, Map<EntityClassification, List<MobSpawnInfo.Spawners>> spawners, Map<EntityType<?>, MobSpawnInfo.SpawnCosts> spawnCosts, boolean isValidSpawnBiomeForPlayer) {
+      this.creatureSpawnProbability = creatureSpawnProbability;
+      this.spawners = spawners;
+      this.spawnCosts = spawnCosts;
+      this.validSpawnBiomeForPlayer = isValidSpawnBiomeForPlayer;
    }
 
-   public List<MobSpawnInfo.Spawners> getMobs(EntityClassification p_242559_1_) {
-      return this.spawners.getOrDefault(p_242559_1_, ImmutableList.of());
+   public List<MobSpawnInfo.Spawners> getSpawners(EntityClassification classification) {
+      return this.spawners.getOrDefault(classification, ImmutableList.of());
    }
 
    @Nullable
-   public MobSpawnInfo.SpawnCosts getMobSpawnCost(EntityType<?> p_242558_1_) {
-      return this.mobSpawnCosts.get(p_242558_1_);
+   public MobSpawnInfo.SpawnCosts getSpawnCost(EntityType<?> entityType) {
+      return this.spawnCosts.get(entityType);
    }
 
-   public float getCreatureProbability() {
-      return this.creatureGenerationProbability;
+   public float getCreatureSpawnProbability() {
+      return this.creatureSpawnProbability;
    }
 
-   public boolean playerSpawnFriendly() {
-      return this.playerSpawnFriendly;
+   public boolean isValidSpawnBiomeForPlayer() {
+      return this.validSpawnBiomeForPlayer;
    }
 
    public static class Builder {
@@ -73,59 +73,59 @@ public class MobSpawnInfo {
       }, (p_242574_0_) -> {
          return Lists.newArrayList();
       }));
-      private final Map<EntityType<?>, MobSpawnInfo.SpawnCosts> mobSpawnCosts = Maps.newLinkedHashMap();
-      private float creatureGenerationProbability = 0.1F;
-      private boolean playerCanSpawn;
+      private final Map<EntityType<?>, MobSpawnInfo.SpawnCosts> spawnCosts = Maps.newLinkedHashMap();
+      private float creatureSpawnProbability = 0.1F;
+      private boolean validSpawnBiomeForPlayer;
 
-      public MobSpawnInfo.Builder addSpawn(EntityClassification p_242575_1_, MobSpawnInfo.Spawners p_242575_2_) {
-         this.spawners.get(p_242575_1_).add(p_242575_2_);
+      public MobSpawnInfo.Builder withSpawner(EntityClassification classification, MobSpawnInfo.Spawners spawner) {
+         this.spawners.get(classification).add(spawner);
          return this;
       }
 
-      public MobSpawnInfo.Builder addMobCharge(EntityType<?> p_242573_1_, double p_242573_2_, double p_242573_4_) {
-         this.mobSpawnCosts.put(p_242573_1_, new MobSpawnInfo.SpawnCosts(p_242573_4_, p_242573_2_));
+      public MobSpawnInfo.Builder withSpawnCost(EntityType<?> entityType, double spawnCostPerEntity, double maxSpawnCost) {
+         this.spawnCosts.put(entityType, new MobSpawnInfo.SpawnCosts(maxSpawnCost, spawnCostPerEntity));
          return this;
       }
 
-      public MobSpawnInfo.Builder creatureGenerationProbability(float p_242572_1_) {
-         this.creatureGenerationProbability = p_242572_1_;
+      public MobSpawnInfo.Builder withCreatureSpawnProbability(float probability) {
+         this.creatureSpawnProbability = probability;
          return this;
       }
 
-      public MobSpawnInfo.Builder setPlayerCanSpawn() {
-         this.playerCanSpawn = true;
+      public MobSpawnInfo.Builder isValidSpawnBiomeForPlayer() {
+         this.validSpawnBiomeForPlayer = true;
          return this;
       }
 
-      public MobSpawnInfo build() {
-         return new MobSpawnInfo(this.creatureGenerationProbability, this.spawners.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (p_242576_0_) -> {
+      public MobSpawnInfo copy() {
+         return new MobSpawnInfo(this.creatureSpawnProbability, this.spawners.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (p_242576_0_) -> {
             return ImmutableList.copyOf((Collection)p_242576_0_.getValue());
-         })), ImmutableMap.copyOf(this.mobSpawnCosts), this.playerCanSpawn);
+         })), ImmutableMap.copyOf(this.spawnCosts), this.validSpawnBiomeForPlayer);
       }
    }
 
    public static class SpawnCosts {
       public static final Codec<MobSpawnInfo.SpawnCosts> CODEC = RecordCodecBuilder.create((p_242584_0_) -> {
          return p_242584_0_.group(Codec.DOUBLE.fieldOf("energy_budget").forGetter((p_242586_0_) -> {
-            return p_242586_0_.energyBudget;
+            return p_242586_0_.maxSpawnCost;
          }), Codec.DOUBLE.fieldOf("charge").forGetter((p_242583_0_) -> {
-            return p_242583_0_.charge;
+            return p_242583_0_.entitySpawnCost;
          })).apply(p_242584_0_, MobSpawnInfo.SpawnCosts::new);
       });
-      private final double energyBudget;
-      private final double charge;
+      private final double maxSpawnCost;
+      private final double entitySpawnCost;
 
-      private SpawnCosts(double p_i241948_1_, double p_i241948_3_) {
-         this.energyBudget = p_i241948_1_;
-         this.charge = p_i241948_3_;
+      private SpawnCosts(double maxSpawnCost, double entitySpawnCost) {
+         this.maxSpawnCost = maxSpawnCost;
+         this.entitySpawnCost = entitySpawnCost;
       }
 
-      public double getEnergyBudget() {
-         return this.energyBudget;
+      public double getMaxSpawnCost() {
+         return this.maxSpawnCost;
       }
 
-      public double getCharge() {
-         return this.charge;
+      public double getEntitySpawnCost() {
+         return this.entitySpawnCost;
       }
    }
 
@@ -134,7 +134,7 @@ public class MobSpawnInfo {
          return p_242592_0_.group(Registry.ENTITY_TYPE.fieldOf("type").forGetter((p_242595_0_) -> {
             return p_242595_0_.type;
          }), Codec.INT.fieldOf("weight").forGetter((p_242594_0_) -> {
-            return p_242594_0_.weight;
+            return p_242594_0_.itemWeight;
          }), Codec.INT.fieldOf("minCount").forGetter((p_242593_0_) -> {
             return p_242593_0_.minCount;
          }), Codec.INT.fieldOf("maxCount").forGetter((p_242591_0_) -> {
@@ -145,15 +145,15 @@ public class MobSpawnInfo {
       public final int minCount;
       public final int maxCount;
 
-      public Spawners(EntityType<?> p_i241950_1_, int p_i241950_2_, int p_i241950_3_, int p_i241950_4_) {
-         super(p_i241950_2_);
-         this.type = p_i241950_1_.getCategory() == EntityClassification.MISC ? EntityType.PIG : p_i241950_1_;
-         this.minCount = p_i241950_3_;
-         this.maxCount = p_i241950_4_;
+      public Spawners(EntityType<?> type, int weight, int minCount, int maxCount) {
+         super(weight);
+         this.type = type.getClassification() == EntityClassification.MISC ? EntityType.PIG : type;
+         this.minCount = minCount;
+         this.maxCount = maxCount;
       }
 
       public String toString() {
-         return EntityType.getKey(this.type) + "*(" + this.minCount + "-" + this.maxCount + "):" + this.weight;
+         return EntityType.getKey(this.type) + "*(" + this.minCount + "-" + this.maxCount + "):" + this.itemWeight;
       }
    }
 }

@@ -18,24 +18,24 @@ import java.util.Optional;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class RidingToPassengers extends DataFix {
-   public RidingToPassengers(Schema p_i49655_1_, boolean p_i49655_2_) {
-      super(p_i49655_1_, p_i49655_2_);
+   public RidingToPassengers(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
       Schema schema = this.getInputSchema();
       Schema schema1 = this.getOutputSchema();
-      Type<?> type = schema.getTypeRaw(TypeReferences.ENTITY_TREE);
-      Type<?> type1 = schema1.getTypeRaw(TypeReferences.ENTITY_TREE);
+      Type<?> type = schema.getTypeRaw(TypeReferences.ENTITY_TYPE);
+      Type<?> type1 = schema1.getTypeRaw(TypeReferences.ENTITY_TYPE);
       Type<?> type2 = schema.getTypeRaw(TypeReferences.ENTITY);
       return this.cap(schema, schema1, type, type1, type2);
    }
 
    private <OldEntityTree, NewEntityTree, Entity> TypeRewriteRule cap(Schema p_206340_1_, Schema p_206340_2_, Type<OldEntityTree> p_206340_3_, Type<NewEntityTree> p_206340_4_, Type<Entity> p_206340_5_) {
-      Type<Pair<String, Pair<Either<OldEntityTree, Unit>, Entity>>> type = DSL.named(TypeReferences.ENTITY_TREE.typeName(), DSL.and(DSL.optional(DSL.field("Riding", p_206340_3_)), p_206340_5_));
-      Type<Pair<String, Pair<Either<List<NewEntityTree>, Unit>, Entity>>> type1 = DSL.named(TypeReferences.ENTITY_TREE.typeName(), DSL.and(DSL.optional(DSL.field("Passengers", DSL.list(p_206340_4_))), p_206340_5_));
-      Type<?> type2 = p_206340_1_.getType(TypeReferences.ENTITY_TREE);
-      Type<?> type3 = p_206340_2_.getType(TypeReferences.ENTITY_TREE);
+      Type<Pair<String, Pair<Either<OldEntityTree, Unit>, Entity>>> type = DSL.named(TypeReferences.ENTITY_TYPE.typeName(), DSL.and(DSL.optional(DSL.field("Riding", p_206340_3_)), p_206340_5_));
+      Type<Pair<String, Pair<Either<List<NewEntityTree>, Unit>, Entity>>> type1 = DSL.named(TypeReferences.ENTITY_TYPE.typeName(), DSL.and(DSL.optional(DSL.field("Passengers", DSL.list(p_206340_4_))), p_206340_5_));
+      Type<?> type2 = p_206340_1_.getType(TypeReferences.ENTITY_TYPE);
+      Type<?> type3 = p_206340_2_.getType(TypeReferences.ENTITY_TYPE);
       if (!Objects.equals(type2, type)) {
          throw new IllegalStateException("Old entity type is not what was expected.");
       } else if (!type3.equals(type1, true, true)) {
@@ -61,7 +61,7 @@ public class RidingToPassengers extends DataFix {
                      });
                      return Either.left(ImmutableList.of(newentitytree));
                   }), Either.right(DSL.unit()));
-                  optional = Optional.of(Pair.of(TypeReferences.ENTITY_TREE.typeName(), Pair.of(either, pair.getSecond().getSecond())));
+                  optional = Optional.of(Pair.of(TypeReferences.ENTITY_TYPE.typeName(), Pair.of(either, pair.getSecond().getSecond())));
                   Optional<OldEntityTree> optional1 = pair.getSecond().getFirst().left();
                   if (!optional1.isPresent()) {
                      return optional.orElseThrow(() -> {

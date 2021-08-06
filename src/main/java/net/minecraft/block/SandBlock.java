@@ -8,13 +8,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class SandBlock extends FallingBlock {
    private final int dustColor;
 
-   public SandBlock(int p_i48338_1_, AbstractBlock.Properties p_i48338_2_) {
-      super(p_i48338_2_);
-      this.dustColor = p_i48338_1_;
+   public SandBlock(int dustColorIn, AbstractBlock.Properties properties) {
+      super(properties);
+      this.dustColor = dustColorIn;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getDustColor(BlockState p_189876_1_, IBlockReader p_189876_2_, BlockPos p_189876_3_) {
+   public int getDustColor(BlockState state, IBlockReader reader, BlockPos pos) {
       return this.dustColor;
    }
 }

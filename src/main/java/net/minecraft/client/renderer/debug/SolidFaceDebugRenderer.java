@@ -21,26 +21,26 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class SolidFaceDebugRenderer implements DebugRenderer.IDebugRenderer {
    private final Minecraft minecraft;
 
-   public SolidFaceDebugRenderer(Minecraft p_i47478_1_) {
-      this.minecraft = p_i47478_1_;
+   public SolidFaceDebugRenderer(Minecraft minecraftIn) {
+      this.minecraft = minecraftIn;
    }
 
-   public void render(MatrixStack p_225619_1_, IRenderTypeBuffer p_225619_2_, double p_225619_3_, double p_225619_5_, double p_225619_7_) {
-      IBlockReader iblockreader = this.minecraft.player.level;
+   public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, double camX, double camY, double camZ) {
+      IBlockReader iblockreader = this.minecraft.player.world;
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.lineWidth(2.0F);
       RenderSystem.disableTexture();
       RenderSystem.depthMask(false);
-      BlockPos blockpos = new BlockPos(p_225619_3_, p_225619_5_, p_225619_7_);
+      BlockPos blockpos = new BlockPos(camX, camY, camZ);
 
-      for(BlockPos blockpos1 : BlockPos.betweenClosed(blockpos.offset(-6, -6, -6), blockpos.offset(6, 6, 6))) {
+      for(BlockPos blockpos1 : BlockPos.getAllInBoxMutable(blockpos.add(-6, -6, -6), blockpos.add(6, 6, 6))) {
          BlockState blockstate = iblockreader.getBlockState(blockpos1);
-         if (!blockstate.is(Blocks.AIR)) {
+         if (!blockstate.isIn(Blocks.AIR)) {
             VoxelShape voxelshape = blockstate.getShape(iblockreader, blockpos1);
 
-            for(AxisAlignedBB axisalignedbb : voxelshape.toAabbs()) {
-               AxisAlignedBB axisalignedbb1 = axisalignedbb.move(blockpos1).inflate(0.002D).move(-p_225619_3_, -p_225619_5_, -p_225619_7_);
+            for(AxisAlignedBB axisalignedbb : voxelshape.toBoundingBoxList()) {
+               AxisAlignedBB axisalignedbb1 = axisalignedbb.offset(blockpos1).grow(0.002D).offset(-camX, -camY, -camZ);
                double d0 = axisalignedbb1.minX;
                double d1 = axisalignedbb1.minY;
                double d2 = axisalignedbb1.minZ;
@@ -51,70 +51,70 @@ public class SolidFaceDebugRenderer implements DebugRenderer.IDebugRenderer {
                float f1 = 0.0F;
                float f2 = 0.0F;
                float f3 = 0.5F;
-               if (blockstate.isFaceSturdy(iblockreader, blockpos1, Direction.WEST)) {
+               if (blockstate.isSolidSide(iblockreader, blockpos1, Direction.WEST)) {
                   Tessellator tessellator = Tessellator.getInstance();
-                  BufferBuilder bufferbuilder = tessellator.getBuilder();
+                  BufferBuilder bufferbuilder = tessellator.getBuffer();
                   bufferbuilder.begin(5, DefaultVertexFormats.POSITION_COLOR);
-                  bufferbuilder.vertex(d0, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder.vertex(d0, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder.vertex(d0, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder.vertex(d0, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  tessellator.end();
+                  bufferbuilder.pos(d0, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder.pos(d0, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder.pos(d0, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder.pos(d0, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  tessellator.draw();
                }
 
-               if (blockstate.isFaceSturdy(iblockreader, blockpos1, Direction.SOUTH)) {
+               if (blockstate.isSolidSide(iblockreader, blockpos1, Direction.SOUTH)) {
                   Tessellator tessellator1 = Tessellator.getInstance();
-                  BufferBuilder bufferbuilder1 = tessellator1.getBuilder();
+                  BufferBuilder bufferbuilder1 = tessellator1.getBuffer();
                   bufferbuilder1.begin(5, DefaultVertexFormats.POSITION_COLOR);
-                  bufferbuilder1.vertex(d0, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder1.vertex(d0, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder1.vertex(d3, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder1.vertex(d3, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  tessellator1.end();
+                  bufferbuilder1.pos(d0, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder1.pos(d0, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder1.pos(d3, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder1.pos(d3, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  tessellator1.draw();
                }
 
-               if (blockstate.isFaceSturdy(iblockreader, blockpos1, Direction.EAST)) {
+               if (blockstate.isSolidSide(iblockreader, blockpos1, Direction.EAST)) {
                   Tessellator tessellator2 = Tessellator.getInstance();
-                  BufferBuilder bufferbuilder2 = tessellator2.getBuilder();
+                  BufferBuilder bufferbuilder2 = tessellator2.getBuffer();
                   bufferbuilder2.begin(5, DefaultVertexFormats.POSITION_COLOR);
-                  bufferbuilder2.vertex(d3, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder2.vertex(d3, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder2.vertex(d3, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder2.vertex(d3, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  tessellator2.end();
+                  bufferbuilder2.pos(d3, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder2.pos(d3, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder2.pos(d3, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder2.pos(d3, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  tessellator2.draw();
                }
 
-               if (blockstate.isFaceSturdy(iblockreader, blockpos1, Direction.NORTH)) {
+               if (blockstate.isSolidSide(iblockreader, blockpos1, Direction.NORTH)) {
                   Tessellator tessellator3 = Tessellator.getInstance();
-                  BufferBuilder bufferbuilder3 = tessellator3.getBuilder();
+                  BufferBuilder bufferbuilder3 = tessellator3.getBuffer();
                   bufferbuilder3.begin(5, DefaultVertexFormats.POSITION_COLOR);
-                  bufferbuilder3.vertex(d3, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder3.vertex(d3, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder3.vertex(d0, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder3.vertex(d0, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  tessellator3.end();
+                  bufferbuilder3.pos(d3, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder3.pos(d3, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder3.pos(d0, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder3.pos(d0, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  tessellator3.draw();
                }
 
-               if (blockstate.isFaceSturdy(iblockreader, blockpos1, Direction.DOWN)) {
+               if (blockstate.isSolidSide(iblockreader, blockpos1, Direction.DOWN)) {
                   Tessellator tessellator4 = Tessellator.getInstance();
-                  BufferBuilder bufferbuilder4 = tessellator4.getBuilder();
+                  BufferBuilder bufferbuilder4 = tessellator4.getBuffer();
                   bufferbuilder4.begin(5, DefaultVertexFormats.POSITION_COLOR);
-                  bufferbuilder4.vertex(d0, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder4.vertex(d3, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder4.vertex(d0, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder4.vertex(d3, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  tessellator4.end();
+                  bufferbuilder4.pos(d0, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder4.pos(d3, d1, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder4.pos(d0, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder4.pos(d3, d1, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  tessellator4.draw();
                }
 
-               if (blockstate.isFaceSturdy(iblockreader, blockpos1, Direction.UP)) {
+               if (blockstate.isSolidSide(iblockreader, blockpos1, Direction.UP)) {
                   Tessellator tessellator5 = Tessellator.getInstance();
-                  BufferBuilder bufferbuilder5 = tessellator5.getBuilder();
+                  BufferBuilder bufferbuilder5 = tessellator5.getBuffer();
                   bufferbuilder5.begin(5, DefaultVertexFormats.POSITION_COLOR);
-                  bufferbuilder5.vertex(d0, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder5.vertex(d0, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder5.vertex(d3, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  bufferbuilder5.vertex(d3, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
-                  tessellator5.end();
+                  bufferbuilder5.pos(d0, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder5.pos(d0, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder5.pos(d3, d4, d2).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  bufferbuilder5.pos(d3, d4, d5).color(1.0F, 0.0F, 0.0F, 0.5F).endVertex();
+                  tessellator5.draw();
                }
             }
          }

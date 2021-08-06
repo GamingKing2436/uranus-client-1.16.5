@@ -30,7 +30,7 @@ public class Main {
          boolean flag3 = flag || optionset.has(optionspec3);
          boolean flag4 = flag || optionset.has(optionspec4);
          boolean flag5 = flag || optionset.has(optionspec5);
-         DataGenerator datagenerator = createStandardGenerator(path, optionset.valuesOf(optionspec8).stream().map((p_200263_0_) -> {
+         DataGenerator datagenerator = makeGenerator(path, optionset.valuesOf(optionspec8).stream().map((p_200263_0_) -> {
             return Paths.get(p_200263_0_);
          }).collect(Collectors.toList()), flag1, flag2, flag3, flag4, flag5);
          datagenerator.run();
@@ -39,17 +39,17 @@ public class Main {
       }
    }
 
-   public static DataGenerator createStandardGenerator(Path p_200264_0_, Collection<Path> p_200264_1_, boolean p_200264_2_, boolean p_200264_3_, boolean p_200264_4_, boolean p_200264_5_, boolean p_200264_6_) {
-      DataGenerator datagenerator = new DataGenerator(p_200264_0_, p_200264_1_);
-      if (p_200264_2_ || p_200264_3_) {
-         datagenerator.addProvider((new SNBTToNBTConverter(datagenerator)).addFilter(new StructureUpdater()));
+   public static DataGenerator makeGenerator(Path output, Collection<Path> inputs, boolean client, boolean server, boolean dev, boolean reports, boolean validate) {
+      DataGenerator datagenerator = new DataGenerator(output, inputs);
+      if (client || server) {
+         datagenerator.addProvider((new SNBTToNBTConverter(datagenerator)).addTransformer(new StructureUpdater()));
       }
 
-      if (p_200264_2_) {
+      if (client) {
          datagenerator.addProvider(new BlockStateProvider(datagenerator));
       }
 
-      if (p_200264_3_) {
+      if (server) {
          datagenerator.addProvider(new FluidTagsProvider(datagenerator));
          BlockTagsProvider blocktagsprovider = new BlockTagsProvider(datagenerator);
          datagenerator.addProvider(blocktagsprovider);
@@ -60,11 +60,11 @@ public class Main {
          datagenerator.addProvider(new LootTableProvider(datagenerator));
       }
 
-      if (p_200264_4_) {
+      if (dev) {
          datagenerator.addProvider(new NBTToSNBTConverter(datagenerator));
       }
 
-      if (p_200264_5_) {
+      if (reports) {
          datagenerator.addProvider(new BlockListReport(datagenerator));
          datagenerator.addProvider(new RegistryDumpReport(datagenerator));
          datagenerator.addProvider(new CommandsReport(datagenerator));

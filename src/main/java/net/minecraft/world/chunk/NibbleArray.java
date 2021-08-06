@@ -10,58 +10,58 @@ public class NibbleArray {
    public NibbleArray() {
    }
 
-   public NibbleArray(byte[] p_i45646_1_) {
-      this.data = p_i45646_1_;
-      if (p_i45646_1_.length != 2048) {
-         throw (IllegalArgumentException)Util.pauseInIde(new IllegalArgumentException("ChunkNibbleArrays should be 2048 bytes not: " + p_i45646_1_.length));
+   public NibbleArray(byte[] storageArray) {
+      this.data = storageArray;
+      if (storageArray.length != 2048) {
+         throw (IllegalArgumentException)Util.pauseDevMode(new IllegalArgumentException("ChunkNibbleArrays should be 2048 bytes not: " + storageArray.length));
       }
    }
 
-   protected NibbleArray(int p_i49951_1_) {
-      this.data = new byte[p_i49951_1_];
+   protected NibbleArray(int size) {
+      this.data = new byte[size];
    }
 
-   public int get(int p_76582_1_, int p_76582_2_, int p_76582_3_) {
-      return this.get(this.getIndex(p_76582_1_, p_76582_2_, p_76582_3_));
+   public int get(int x, int y, int z) {
+      return this.getFromIndex(this.getCoordinateIndex(x, y, z));
    }
 
-   public void set(int p_76581_1_, int p_76581_2_, int p_76581_3_, int p_76581_4_) {
-      this.set(this.getIndex(p_76581_1_, p_76581_2_, p_76581_3_), p_76581_4_);
+   public void set(int x, int y, int z, int value) {
+      this.setIndex(this.getCoordinateIndex(x, y, z), value);
    }
 
-   protected int getIndex(int p_177483_1_, int p_177483_2_, int p_177483_3_) {
-      return p_177483_2_ << 8 | p_177483_3_ << 4 | p_177483_1_;
+   protected int getCoordinateIndex(int x, int y, int z) {
+      return y << 8 | z << 4 | x;
    }
 
-   private int get(int p_177480_1_) {
+   private int getFromIndex(int index) {
       if (this.data == null) {
          return 0;
       } else {
-         int i = this.getPosition(p_177480_1_);
-         return this.isFirst(p_177480_1_) ? this.data[i] & 15 : this.data[i] >> 4 & 15;
+         int i = this.getNibbleIndex(index);
+         return this.isLowerNibble(index) ? this.data[i] & 15 : this.data[i] >> 4 & 15;
       }
    }
 
-   private void set(int p_177482_1_, int p_177482_2_) {
+   private void setIndex(int index, int value) {
       if (this.data == null) {
          this.data = new byte[2048];
       }
 
-      int i = this.getPosition(p_177482_1_);
-      if (this.isFirst(p_177482_1_)) {
-         this.data[i] = (byte)(this.data[i] & 240 | p_177482_2_ & 15);
+      int i = this.getNibbleIndex(index);
+      if (this.isLowerNibble(index)) {
+         this.data[i] = (byte)(this.data[i] & 240 | value & 15);
       } else {
-         this.data[i] = (byte)(this.data[i] & 15 | (p_177482_2_ & 15) << 4);
+         this.data[i] = (byte)(this.data[i] & 15 | (value & 15) << 4);
       }
 
    }
 
-   private boolean isFirst(int p_177479_1_) {
-      return (p_177479_1_ & 1) == 0;
+   private boolean isLowerNibble(int index) {
+      return (index & 1) == 0;
    }
 
-   private int getPosition(int p_177478_1_) {
-      return p_177478_1_ >> 1;
+   private int getNibbleIndex(int index) {
+      return index >> 1;
    }
 
    public byte[] getData() {
@@ -80,7 +80,7 @@ public class NibbleArray {
       StringBuilder stringbuilder = new StringBuilder();
 
       for(int i = 0; i < 4096; ++i) {
-         stringbuilder.append(Integer.toHexString(this.get(i)));
+         stringbuilder.append(Integer.toHexString(this.getFromIndex(i)));
          if ((i & 15) == 15) {
             stringbuilder.append("\n");
          }

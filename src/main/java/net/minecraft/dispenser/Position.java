@@ -5,21 +5,21 @@ public class Position implements IPosition {
    protected final double y;
    protected final double z;
 
-   public Position(double p_i1368_1_, double p_i1368_3_, double p_i1368_5_) {
-      this.x = p_i1368_1_;
-      this.y = p_i1368_3_;
-      this.z = p_i1368_5_;
+   public Position(double xCoord, double yCoord, double zCoord) {
+      this.x = xCoord;
+      this.y = yCoord;
+      this.z = zCoord;
    }
 
-   public double x() {
+   public double getX() {
       return this.x;
    }
 
-   public double y() {
+   public double getY() {
       return this.y;
    }
 
-   public double z() {
+   public double getZ() {
       return this.z;
    }
 }

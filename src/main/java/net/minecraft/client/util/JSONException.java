@@ -14,23 +14,23 @@ public class JSONException extends IOException {
    private final List<JSONException.Entry> entries = Lists.newArrayList();
    private final String message;
 
-   public JSONException(String p_i45279_1_) {
+   public JSONException(String messageIn) {
       this.entries.add(new JSONException.Entry());
-      this.message = p_i45279_1_;
+      this.message = messageIn;
    }
 
-   public JSONException(String p_i45280_1_, Throwable p_i45280_2_) {
-      super(p_i45280_2_);
+   public JSONException(String messageIn, Throwable cause) {
+      super(cause);
       this.entries.add(new JSONException.Entry());
-      this.message = p_i45280_1_;
+      this.message = messageIn;
    }
 
-   public void prependJsonKey(String p_151380_1_) {
-      this.entries.get(0).addJsonKey(p_151380_1_);
+   public void prependJsonKey(String key) {
+      this.entries.get(0).addJsonKey(key);
    }
 
-   public void setFilenameAndFlush(String p_151381_1_) {
-      (this.entries.get(0)).filename = p_151381_1_;
+   public void setFilenameAndFlush(String filenameIn) {
+      (this.entries.get(0)).filename = filenameIn;
       this.entries.add(0, new JSONException.Entry());
    }
 
@@ -38,16 +38,16 @@ public class JSONException extends IOException {
       return "Invalid " + this.entries.get(this.entries.size() - 1) + ": " + this.message;
    }
 
-   public static JSONException forException(Exception p_151379_0_) {
-      if (p_151379_0_ instanceof JSONException) {
-         return (JSONException)p_151379_0_;
+   public static JSONException forException(Exception exception) {
+      if (exception instanceof JSONException) {
+         return (JSONException)exception;
       } else {
-         String s = p_151379_0_.getMessage();
-         if (p_151379_0_ instanceof FileNotFoundException) {
+         String s = exception.getMessage();
+         if (exception instanceof FileNotFoundException) {
             s = "File not found";
          }
 
-         return new JSONException(s, p_151379_0_);
+         return new JSONException(s, exception);
       }
    }
 
@@ -60,8 +60,8 @@ public class JSONException extends IOException {
       private Entry() {
       }
 
-      private void addJsonKey(String p_151373_1_) {
-         this.jsonKeys.add(0, p_151373_1_);
+      private void addJsonKey(String key) {
+         this.jsonKeys.add(0, key);
       }
 
       public String getJsonKeys() {

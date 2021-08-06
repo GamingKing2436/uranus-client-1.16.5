@@ -18,58 +18,58 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class NarratorChatListener implements IChatListener {
-   public static final ITextComponent NO_TITLE = StringTextComponent.EMPTY;
+   public static final ITextComponent EMPTY = StringTextComponent.EMPTY;
    private static final Logger LOGGER = LogManager.getLogger();
    public static final NarratorChatListener INSTANCE = new NarratorChatListener();
    private final Narrator narrator = Narrator.getNarrator();
 
-   public void handle(ChatType p_192576_1_, ITextComponent p_192576_2_, UUID p_192576_3_) {
-      NarratorStatus narratorstatus = getStatus();
+   public void say(ChatType chatTypeIn, ITextComponent message, UUID sender) {
+      NarratorStatus narratorstatus = getNarratorStatus();
       if (narratorstatus != NarratorStatus.OFF && this.narrator.active()) {
-         if (narratorstatus == NarratorStatus.ALL || narratorstatus == NarratorStatus.CHAT && p_192576_1_ == ChatType.CHAT || narratorstatus == NarratorStatus.SYSTEM && p_192576_1_ == ChatType.SYSTEM) {
+         if (narratorstatus == NarratorStatus.ALL || narratorstatus == NarratorStatus.CHAT && chatTypeIn == ChatType.CHAT || narratorstatus == NarratorStatus.SYSTEM && chatTypeIn == ChatType.SYSTEM) {
             ITextComponent itextcomponent;
-            if (p_192576_2_ instanceof TranslationTextComponent && "chat.type.text".equals(((TranslationTextComponent)p_192576_2_).getKey())) {
-               itextcomponent = new TranslationTextComponent("chat.type.text.narrate", ((TranslationTextComponent)p_192576_2_).getArgs());
+            if (message instanceof TranslationTextComponent && "chat.type.text".equals(((TranslationTextComponent)message).getKey())) {
+               itextcomponent = new TranslationTextComponent("chat.type.text.narrate", ((TranslationTextComponent)message).getFormatArgs());
             } else {
-               itextcomponent = p_192576_2_;
+               itextcomponent = message;
             }
 
-            this.doSay(p_192576_1_.shouldInterrupt(), itextcomponent.getString());
+            this.say(chatTypeIn.getInterrupts(), itextcomponent.getString());
          }
 
       }
    }
 
-   public void sayNow(String p_216864_1_) {
-      NarratorStatus narratorstatus = getStatus();
-      if (this.narrator.active() && narratorstatus != NarratorStatus.OFF && narratorstatus != NarratorStatus.CHAT && !p_216864_1_.isEmpty()) {
+   public void say(String msg) {
+      NarratorStatus narratorstatus = getNarratorStatus();
+      if (this.narrator.active() && narratorstatus != NarratorStatus.OFF && narratorstatus != NarratorStatus.CHAT && !msg.isEmpty()) {
          this.narrator.clear();
-         this.doSay(true, p_216864_1_);
+         this.say(true, msg);
       }
 
    }
 
-   private static NarratorStatus getStatus() {
-      return Minecraft.getInstance().options.narratorStatus;
+   private static NarratorStatus getNarratorStatus() {
+      return Minecraft.getInstance().gameSettings.narrator;
    }
 
-   private void doSay(boolean p_216866_1_, String p_216866_2_) {
-      if (SharedConstants.IS_RUNNING_IN_IDE) {
-         LOGGER.debug("Narrating: {}", (Object)p_216866_2_.replaceAll("\n", "\\\\n"));
+   private void say(boolean interrupt, String msg) {
+      if (SharedConstants.developmentMode) {
+         LOGGER.debug("Narrating: {}", (Object)msg.replaceAll("\n", "\\\\n"));
       }
 
-      this.narrator.say(p_216866_2_, p_216866_1_);
+      this.narrator.say(msg, interrupt);
    }
 
-   public void updateNarratorStatus(NarratorStatus p_216865_1_) {
+   public void announceMode(NarratorStatus status) {
       this.clear();
-      this.narrator.say((new TranslationTextComponent("options.narrator")).append(" : ").append(p_216865_1_.getName()).getString(), true);
-      ToastGui toastgui = Minecraft.getInstance().getToasts();
+      this.narrator.say((new TranslationTextComponent("options.narrator")).appendString(" : ").append(status.func_238233_b_()).getString(), true);
+      ToastGui toastgui = Minecraft.getInstance().getToastGui();
       if (this.narrator.active()) {
-         if (p_216865_1_ == NarratorStatus.OFF) {
+         if (status == NarratorStatus.OFF) {
             SystemToast.addOrUpdate(toastgui, SystemToast.Type.NARRATOR_TOGGLE, new TranslationTextComponent("narrator.toast.disabled"), (ITextComponent)null);
          } else {
-            SystemToast.addOrUpdate(toastgui, SystemToast.Type.NARRATOR_TOGGLE, new TranslationTextComponent("narrator.toast.enabled"), p_216865_1_.getName());
+            SystemToast.addOrUpdate(toastgui, SystemToast.Type.NARRATOR_TOGGLE, new TranslationTextComponent("narrator.toast.enabled"), status.func_238233_b_());
          }
       } else {
          SystemToast.addOrUpdate(toastgui, SystemToast.Type.NARRATOR_TOGGLE, new TranslationTextComponent("narrator.toast.disabled"), new TranslationTextComponent("options.narrator.notavailable"));
@@ -82,12 +82,12 @@ public class NarratorChatListener implements IChatListener {
    }
 
    public void clear() {
-      if (getStatus() != NarratorStatus.OFF && this.narrator.active()) {
+      if (getNarratorStatus() != NarratorStatus.OFF && this.narrator.active()) {
          this.narrator.clear();
       }
    }
 
-   public void destroy() {
+   public void close() {
       this.narrator.destroy();
    }
 }

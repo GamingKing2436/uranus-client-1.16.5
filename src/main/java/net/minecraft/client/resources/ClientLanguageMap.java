@@ -21,16 +21,16 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientLanguageMap extends LanguageMap {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final Map<String, String> storage;
-   private final boolean defaultRightToLeft;
+   private static final Logger field_239493_a_ = LogManager.getLogger();
+   private final Map<String, String> field_239495_c_;
+   private final boolean field_239496_d_;
 
    private ClientLanguageMap(Map<String, String> p_i232487_1_, boolean p_i232487_2_) {
-      this.storage = p_i232487_1_;
-      this.defaultRightToLeft = p_i232487_2_;
+      this.field_239495_c_ = p_i232487_1_;
+      this.field_239496_d_ = p_i232487_2_;
    }
 
-   public static ClientLanguageMap loadFrom(IResourceManager p_239497_0_, List<Language> p_239497_1_) {
+   public static ClientLanguageMap func_239497_a_(IResourceManager p_239497_0_, List<Language> p_239497_1_) {
       Map<String, String> map = Maps.newHashMap();
       boolean flag = false;
 
@@ -38,13 +38,13 @@ public class ClientLanguageMap extends LanguageMap {
          flag |= language.isBidirectional();
          String s = String.format("lang/%s.json", language.getCode());
 
-         for(String s1 : p_239497_0_.getNamespaces()) {
+         for(String s1 : p_239497_0_.getResourceNamespaces()) {
             try {
                ResourceLocation resourcelocation = new ResourceLocation(s1, s);
-               appendFrom(p_239497_0_.getResources(resourcelocation), map);
+               func_239498_a_(p_239497_0_.getAllResources(resourcelocation), map);
             } catch (FileNotFoundException filenotfoundexception) {
             } catch (Exception exception) {
-               LOGGER.warn("Skipped language file: {}:{} ({})", s1, s, exception.toString());
+               field_239493_a_.warn("Skipped language file: {}:{} ({})", s1, s, exception.toString());
             }
          }
       }
@@ -52,30 +52,30 @@ public class ClientLanguageMap extends LanguageMap {
       return new ClientLanguageMap(ImmutableMap.copyOf(map), flag);
    }
 
-   private static void appendFrom(List<IResource> p_239498_0_, Map<String, String> p_239498_1_) {
+   private static void func_239498_a_(List<IResource> p_239498_0_, Map<String, String> p_239498_1_) {
       for(IResource iresource : p_239498_0_) {
          try (InputStream inputstream = iresource.getInputStream()) {
-            LanguageMap.loadFromJson(inputstream, p_239498_1_::put);
+            LanguageMap.func_240593_a_(inputstream, p_239498_1_::put);
          } catch (IOException ioexception) {
-            LOGGER.warn("Failed to load translations from {}", iresource, ioexception);
+            field_239493_a_.warn("Failed to load translations from {}", iresource, ioexception);
          }
       }
 
    }
 
-   public String getOrDefault(String p_230503_1_) {
-      return this.storage.getOrDefault(p_230503_1_, p_230503_1_);
+   public String func_230503_a_(String p_230503_1_) {
+      return this.field_239495_c_.getOrDefault(p_230503_1_, p_230503_1_);
    }
 
-   public boolean has(String p_230506_1_) {
-      return this.storage.containsKey(p_230506_1_);
+   public boolean func_230506_b_(String p_230506_1_) {
+      return this.field_239495_c_.containsKey(p_230506_1_);
    }
 
-   public boolean isDefaultRightToLeft() {
-      return this.defaultRightToLeft;
+   public boolean func_230505_b_() {
+      return this.field_239496_d_;
    }
 
-   public IReorderingProcessor getVisualOrder(ITextProperties p_241870_1_) {
-      return BidiReorderer.reorder(p_241870_1_, this.defaultRightToLeft);
+   public IReorderingProcessor func_241870_a(ITextProperties p_241870_1_) {
+      return BidiReorderer.func_243508_a(p_241870_1_, this.field_239496_d_);
    }
 }

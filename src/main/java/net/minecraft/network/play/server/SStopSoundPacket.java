@@ -12,43 +12,43 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SStopSoundPacket implements IPacket<IClientPlayNetHandler> {
    private ResourceLocation name;
-   private SoundCategory source;
+   private SoundCategory category;
 
    public SStopSoundPacket() {
    }
 
    public SStopSoundPacket(@Nullable ResourceLocation p_i47929_1_, @Nullable SoundCategory p_i47929_2_) {
       this.name = p_i47929_1_;
-      this.source = p_i47929_2_;
+      this.category = p_i47929_2_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      int i = p_148837_1_.readByte();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      int i = buf.readByte();
       if ((i & 1) > 0) {
-         this.source = p_148837_1_.readEnum(SoundCategory.class);
+         this.category = buf.readEnumValue(SoundCategory.class);
       }
 
       if ((i & 2) > 0) {
-         this.name = p_148837_1_.readResourceLocation();
+         this.name = buf.readResourceLocation();
       }
 
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      if (this.source != null) {
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      if (this.category != null) {
          if (this.name != null) {
-            p_148840_1_.writeByte(3);
-            p_148840_1_.writeEnum(this.source);
-            p_148840_1_.writeResourceLocation(this.name);
+            buf.writeByte(3);
+            buf.writeEnumValue(this.category);
+            buf.writeResourceLocation(this.name);
          } else {
-            p_148840_1_.writeByte(1);
-            p_148840_1_.writeEnum(this.source);
+            buf.writeByte(1);
+            buf.writeEnumValue(this.category);
          }
       } else if (this.name != null) {
-         p_148840_1_.writeByte(2);
-         p_148840_1_.writeResourceLocation(this.name);
+         buf.writeByte(2);
+         buf.writeResourceLocation(this.name);
       } else {
-         p_148840_1_.writeByte(0);
+         buf.writeByte(0);
       }
 
    }
@@ -61,11 +61,11 @@ public class SStopSoundPacket implements IPacket<IClientPlayNetHandler> {
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public SoundCategory getSource() {
-      return this.source;
+   public SoundCategory getCategory() {
+      return this.category;
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleStopSoundEvent(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleStopSound(this);
    }
 }

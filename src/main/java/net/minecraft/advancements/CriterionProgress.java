@@ -10,18 +10,18 @@ import java.util.Date;
 import net.minecraft.network.PacketBuffer;
 
 public class CriterionProgress {
-   private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+   private static final SimpleDateFormat DATE_TIME_FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
    private Date obtained;
 
-   public boolean isDone() {
+   public boolean isObtained() {
       return this.obtained != null;
    }
 
-   public void grant() {
+   public void obtain() {
       this.obtained = new Date();
    }
 
-   public void revoke() {
+   public void reset() {
       this.obtained = null;
    }
 
@@ -33,35 +33,35 @@ public class CriterionProgress {
       return "CriterionProgress{obtained=" + (this.obtained == null ? "false" : this.obtained) + '}';
    }
 
-   public void serializeToNetwork(PacketBuffer p_192150_1_) {
-      p_192150_1_.writeBoolean(this.obtained != null);
+   public void write(PacketBuffer buf) {
+      buf.writeBoolean(this.obtained != null);
       if (this.obtained != null) {
-         p_192150_1_.writeDate(this.obtained);
+         buf.writeTime(this.obtained);
       }
 
    }
 
-   public JsonElement serializeToJson() {
-      return (JsonElement)(this.obtained != null ? new JsonPrimitive(DATE_FORMAT.format(this.obtained)) : JsonNull.INSTANCE);
+   public JsonElement serialize() {
+      return (JsonElement)(this.obtained != null ? new JsonPrimitive(DATE_TIME_FORMATTER.format(this.obtained)) : JsonNull.INSTANCE);
    }
 
-   public static CriterionProgress fromNetwork(PacketBuffer p_192149_0_) {
+   public static CriterionProgress read(PacketBuffer buf) {
       CriterionProgress criterionprogress = new CriterionProgress();
-      if (p_192149_0_.readBoolean()) {
-         criterionprogress.obtained = p_192149_0_.readDate();
+      if (buf.readBoolean()) {
+         criterionprogress.obtained = buf.readTime();
       }
 
       return criterionprogress;
    }
 
-   public static CriterionProgress fromJson(String p_209541_0_) {
+   public static CriterionProgress fromJson(String dateTime) {
       CriterionProgress criterionprogress = new CriterionProgress();
 
       try {
-         criterionprogress.obtained = DATE_FORMAT.parse(p_209541_0_);
+         criterionprogress.obtained = DATE_TIME_FORMATTER.parse(dateTime);
          return criterionprogress;
       } catch (ParseException parseexception) {
-         throw new JsonSyntaxException("Invalid datetime: " + p_209541_0_, parseexception);
+         throw new JsonSyntaxException("Invalid datetime: " + dateTime, parseexception);
       }
    }
 }

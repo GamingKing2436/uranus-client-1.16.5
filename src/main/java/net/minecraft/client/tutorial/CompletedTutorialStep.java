@@ -7,7 +7,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class CompletedTutorialStep implements ITutorialStep {
    private final Tutorial tutorial;
 
-   public CompletedTutorialStep(Tutorial p_i47584_1_) {
-      this.tutorial = p_i47584_1_;
+   public CompletedTutorialStep(Tutorial tutorial) {
+      this.tutorial = tutorial;
    }
 }

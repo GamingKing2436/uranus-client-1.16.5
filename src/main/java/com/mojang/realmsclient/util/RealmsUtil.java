@@ -19,11 +19,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class RealmsUtil {
-   private static final YggdrasilAuthenticationService AUTHENTICATION_SERVICE = new YggdrasilAuthenticationService(Minecraft.getInstance().getProxy());
-   private static final MinecraftSessionService SESSION_SERVICE = AUTHENTICATION_SERVICE.createMinecraftSessionService();
-   public static LoadingCache<String, GameProfile> gameProfileCache = CacheBuilder.newBuilder().expireAfterWrite(60L, TimeUnit.MINUTES).build(new CacheLoader<String, GameProfile>() {
+   private static final YggdrasilAuthenticationService field_225195_b = new YggdrasilAuthenticationService(Minecraft.getInstance().getProxy());
+   private static final MinecraftSessionService field_225196_c = field_225195_b.createMinecraftSessionService();
+   public static LoadingCache<String, GameProfile> field_225194_a = CacheBuilder.newBuilder().expireAfterWrite(60L, TimeUnit.MINUTES).build(new CacheLoader<String, GameProfile>() {
       public GameProfile load(String p_load_1_) throws Exception {
-         GameProfile gameprofile = RealmsUtil.SESSION_SERVICE.fillProfileProperties(new GameProfile(UUIDTypeAdapter.fromString(p_load_1_), (String)null), false);
+         GameProfile gameprofile = RealmsUtil.field_225196_c.fillProfileProperties(new GameProfile(UUIDTypeAdapter.fromString(p_load_1_), (String)null), false);
          if (gameprofile == null) {
             throw new Exception("Couldn't get profile");
          } else {
@@ -32,21 +32,21 @@ public class RealmsUtil {
       }
    });
 
-   public static String uuidToName(String p_225193_0_) throws Exception {
-      GameProfile gameprofile = gameProfileCache.get(p_225193_0_);
+   public static String func_225193_a(String p_225193_0_) throws Exception {
+      GameProfile gameprofile = field_225194_a.get(p_225193_0_);
       return gameprofile.getName();
    }
 
-   public static Map<Type, MinecraftProfileTexture> getTextures(String p_225191_0_) {
+   public static Map<Type, MinecraftProfileTexture> func_225191_b(String p_225191_0_) {
       try {
-         GameProfile gameprofile = gameProfileCache.get(p_225191_0_);
-         return SESSION_SERVICE.getTextures(gameprofile, false);
+         GameProfile gameprofile = field_225194_a.get(p_225191_0_);
+         return field_225196_c.getTextures(gameprofile, false);
       } catch (Exception exception) {
          return Maps.newHashMap();
       }
    }
 
-   public static String convertToAgePresentation(long p_225192_0_) {
+   public static String func_225192_a(long p_225192_0_) {
       if (p_225192_0_ < 0L) {
          return "right now";
       } else {
@@ -66,7 +66,7 @@ public class RealmsUtil {
       }
    }
 
-   public static String convertToAgePresentationFromInstant(Date p_238105_0_) {
-      return convertToAgePresentation(System.currentTimeMillis() - p_238105_0_.getTime());
+   public static String func_238105_a_(Date p_238105_0_) {
+      return func_225192_a(System.currentTimeMillis() - p_238105_0_.getTime());
    }
 }

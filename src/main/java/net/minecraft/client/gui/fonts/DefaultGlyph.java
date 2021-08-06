@@ -9,7 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public enum DefaultGlyph implements IGlyphInfo {
    INSTANCE;
 
-   private static final NativeImage IMAGE_DATA = Util.make(new NativeImage(NativeImage.PixelFormat.RGBA, 5, 8, false), (p_211580_0_) -> {
+   private static final NativeImage NATIVE_IMAGE = Util.make(new NativeImage(NativeImage.PixelFormat.RGBA, 5, 8, false), (p_211580_0_) -> {
       for(int i = 0; i < 8; ++i) {
          for(int j = 0; j < 5; ++j) {
             boolean flag = j == 0 || j + 1 == 5 || i == 0 || i + 1 == 8;
@@ -20,11 +20,11 @@ public enum DefaultGlyph implements IGlyphInfo {
       p_211580_0_.untrack();
    });
 
-   public int getPixelWidth() {
+   public int getWidth() {
       return 5;
    }
 
-   public int getPixelHeight() {
+   public int getHeight() {
       return 8;
    }
 
@@ -36,8 +36,8 @@ public enum DefaultGlyph implements IGlyphInfo {
       return 1.0F;
    }
 
-   public void upload(int p_211573_1_, int p_211573_2_) {
-      IMAGE_DATA.upload(0, p_211573_1_, p_211573_2_, false);
+   public void uploadGlyph(int xOffset, int yOffset) {
+      NATIVE_IMAGE.uploadTextureSub(0, xOffset, yOffset, false);
    }
 
    public boolean isColored() {

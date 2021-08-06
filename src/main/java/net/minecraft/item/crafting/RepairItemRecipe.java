@@ -16,20 +16,20 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class RepairItemRecipe extends SpecialRecipe {
-   public RepairItemRecipe(ResourceLocation p_i51524_1_) {
-      super(p_i51524_1_);
+   public RepairItemRecipe(ResourceLocation idIn) {
+      super(idIn);
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
       List<ItemStack> list = Lists.newArrayList();
 
-      for(int i = 0; i < p_77569_1_.getContainerSize(); ++i) {
-         ItemStack itemstack = p_77569_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack = inv.getStackInSlot(i);
          if (!itemstack.isEmpty()) {
             list.add(itemstack);
             if (list.size() > 1) {
                ItemStack itemstack1 = list.get(0);
-               if (itemstack.getItem() != itemstack1.getItem() || itemstack1.getCount() != 1 || itemstack.getCount() != 1 || !itemstack1.getItem().canBeDepleted()) {
+               if (itemstack.getItem() != itemstack1.getItem() || itemstack1.getCount() != 1 || itemstack.getCount() != 1 || !itemstack1.getItem().isDamageable()) {
                   return false;
                }
             }
@@ -39,16 +39,16 @@ public class RepairItemRecipe extends SpecialRecipe {
       return list.size() == 2;
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
+   public ItemStack getCraftingResult(CraftingInventory inv) {
       List<ItemStack> list = Lists.newArrayList();
 
-      for(int i = 0; i < p_77572_1_.getContainerSize(); ++i) {
-         ItemStack itemstack = p_77572_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack = inv.getStackInSlot(i);
          if (!itemstack.isEmpty()) {
             list.add(itemstack);
             if (list.size() > 1) {
                ItemStack itemstack1 = list.get(0);
-               if (itemstack.getItem() != itemstack1.getItem() || itemstack1.getCount() != 1 || itemstack.getCount() != 1 || !itemstack1.getItem().canBeDepleted()) {
+               if (itemstack.getItem() != itemstack1.getItem() || itemstack1.getCount() != 1 || itemstack.getCount() != 1 || !itemstack1.getItem().isDamageable()) {
                   return ItemStack.EMPTY;
                }
             }
@@ -58,10 +58,10 @@ public class RepairItemRecipe extends SpecialRecipe {
       if (list.size() == 2) {
          ItemStack itemstack3 = list.get(0);
          ItemStack itemstack4 = list.get(1);
-         if (itemstack3.getItem() == itemstack4.getItem() && itemstack3.getCount() == 1 && itemstack4.getCount() == 1 && itemstack3.getItem().canBeDepleted()) {
+         if (itemstack3.getItem() == itemstack4.getItem() && itemstack3.getCount() == 1 && itemstack4.getCount() == 1 && itemstack3.getItem().isDamageable()) {
             Item item = itemstack3.getItem();
-            int j = item.getMaxDamage() - itemstack3.getDamageValue();
-            int k = item.getMaxDamage() - itemstack4.getDamageValue();
+            int j = item.getMaxDamage() - itemstack3.getDamage();
+            int k = item.getMaxDamage() - itemstack4.getDamage();
             int l = j + k + item.getMaxDamage() * 5 / 100;
             int i1 = item.getMaxDamage() - l;
             if (i1 < 0) {
@@ -69,7 +69,7 @@ public class RepairItemRecipe extends SpecialRecipe {
             }
 
             ItemStack itemstack2 = new ItemStack(itemstack3.getItem());
-            itemstack2.setDamageValue(i1);
+            itemstack2.setDamage(i1);
             Map<Enchantment, Integer> map = Maps.newHashMap();
             Map<Enchantment, Integer> map1 = EnchantmentHelper.getEnchantments(itemstack3);
             Map<Enchantment, Integer> map2 = EnchantmentHelper.getEnchantments(itemstack4);
@@ -92,11 +92,11 @@ public class RepairItemRecipe extends SpecialRecipe {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ * p_194133_2_ >= 2;
+   public boolean canFit(int width, int height) {
+      return width * height >= 2;
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.REPAIR_ITEM;
+      return IRecipeSerializer.CRAFTING_SPECIAL_REPAIRITEM;
    }
 }

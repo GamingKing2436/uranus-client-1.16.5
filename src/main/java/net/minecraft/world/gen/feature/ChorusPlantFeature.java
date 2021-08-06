@@ -13,9 +13,9 @@ public class ChorusPlantFeature extends Feature<NoFeatureConfig> {
       super(p_i231936_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, NoFeatureConfig p_241855_5_) {
-      if (p_241855_1_.isEmptyBlock(p_241855_4_) && p_241855_1_.getBlockState(p_241855_4_.below()).is(Blocks.END_STONE)) {
-         ChorusFlowerBlock.generatePlant(p_241855_1_, p_241855_4_, p_241855_3_, 8);
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, NoFeatureConfig config) {
+      if (reader.isAirBlock(pos) && reader.getBlockState(pos.down()).isIn(Blocks.END_STONE)) {
+         ChorusFlowerBlock.generatePlant(reader, pos, rand, 8);
          return true;
       } else {
          return false;

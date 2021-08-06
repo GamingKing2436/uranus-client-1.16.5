@@ -5,5 +5,5 @@ import java.util.function.Supplier;
 import net.minecraft.block.Block;
 
 public interface IFinishedBlockState extends Supplier<JsonElement> {
-   Block getBlock();
+   Block func_230524_a_();
 }

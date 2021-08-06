@@ -55,28 +55,28 @@ import org.apache.logging.log4j.Logger;
 public class GameSettings {
    private static final Logger LOGGER = LogManager.getLogger();
    private static final Gson GSON = new Gson();
-   private static final TypeToken<List<String>> RESOURCE_PACK_TYPE = new TypeToken<List<String>>() {
+   private static final TypeToken<List<String>> TYPE_LIST_STRING = new TypeToken<List<String>>() {
    };
-   private static final Splitter OPTION_SPLITTER = Splitter.on(':').limit(2);
-   public double sensitivity = 0.5D;
-   public int renderDistance = -1;
+   private static final Splitter KEY_VALUE_SPLITTER = Splitter.on(':').limit(2);
+   public double mouseSensitivity = 0.5D;
+   public int renderDistanceChunks = -1;
    public float entityDistanceScaling = 1.0F;
    public int framerateLimit = 120;
-   public CloudOption renderClouds = CloudOption.FANCY;
-   public GraphicsFanciness graphicsMode = GraphicsFanciness.FANCY;
-   public AmbientOcclusionStatus ambientOcclusion = AmbientOcclusionStatus.MAX;
+   public CloudOption cloudOption = CloudOption.FANCY;
+   public GraphicsFanciness graphicFanciness = GraphicsFanciness.FANCY;
+   public AmbientOcclusionStatus ambientOcclusionStatus = AmbientOcclusionStatus.MAX;
    public List<String> resourcePacks = Lists.newArrayList();
    public List<String> incompatibleResourcePacks = Lists.newArrayList();
    public ChatVisibility chatVisibility = ChatVisibility.FULL;
    public double chatOpacity = 1.0D;
    public double chatLineSpacing = 0.0D;
-   public double textBackgroundOpacity = 0.5D;
+   public double accessibilityTextBackgroundOpacity = 0.5D;
    @Nullable
-   public String fullscreenVideoModeString;
+   public String fullscreenResolution;
    public boolean hideServerAddress;
    public boolean advancedItemTooltips;
    public boolean pauseOnLostFocus = true;
-   private final Set<PlayerModelPart> modelParts = Sets.newHashSet(PlayerModelPart.values());
+   private final Set<PlayerModelPart> setModelParts = Sets.newHashSet(PlayerModelPart.values());
    public HandSide mainHand = HandSide.RIGHT;
    public int overrideWidth;
    public int overrideHeight;
@@ -87,132 +87,132 @@ public class GameSettings {
    public double chatHeightFocused = 1.0D;
    public double chatDelay = 0.0D;
    public int mipmapLevels = 4;
-   private final Map<SoundCategory, Float> sourceVolumes = Maps.newEnumMap(SoundCategory.class);
+   private final Map<SoundCategory, Float> soundLevels = Maps.newEnumMap(SoundCategory.class);
    public boolean useNativeTransport = true;
    public AttackIndicatorStatus attackIndicator = AttackIndicatorStatus.CROSSHAIR;
    public TutorialSteps tutorialStep = TutorialSteps.MOVEMENT;
-   public boolean joinedFirstServer = false;
+   public boolean field_244601_E = false;
    public int biomeBlendRadius = 2;
    public double mouseWheelSensitivity = 1.0D;
    public boolean rawMouseInput = true;
    public int glDebugVerbosity = 1;
    public boolean autoJump = true;
-   public boolean autoSuggestions = true;
-   public boolean chatColors = true;
+   public boolean autoSuggestCommands = true;
+   public boolean chatColor = true;
    public boolean chatLinks = true;
    public boolean chatLinksPrompt = true;
-   public boolean enableVsync = true;
+   public boolean vsync = true;
    public boolean entityShadows = true;
    public boolean forceUnicodeFont;
-   public boolean invertYMouse;
+   public boolean invertMouse;
    public boolean discreteMouseScroll;
    public boolean realmsNotifications = true;
    public boolean reducedDebugInfo;
-   public boolean snooperEnabled = true;
+   public boolean snooper = true;
    public boolean showSubtitles;
-   public boolean backgroundForChatOnly = true;
+   public boolean accessibilityTextBackground = true;
    public boolean touchscreen;
    public boolean fullscreen;
-   public boolean bobView = true;
+   public boolean viewBobbing = true;
    public boolean toggleCrouch;
    public boolean toggleSprint;
    public boolean skipMultiplayerWarning;
-   public boolean hideMatchedNames = true;
-   public final KeyBinding keyUp = new KeyBinding("key.forward", 87, "key.categories.movement");
-   public final KeyBinding keyLeft = new KeyBinding("key.left", 65, "key.categories.movement");
-   public final KeyBinding keyDown = new KeyBinding("key.back", 83, "key.categories.movement");
-   public final KeyBinding keyRight = new KeyBinding("key.right", 68, "key.categories.movement");
-   public final KeyBinding keyJump = new KeyBinding("key.jump", 32, "key.categories.movement");
-   public final KeyBinding keyShift = new ToggleableKeyBinding("key.sneak", 340, "key.categories.movement", () -> {
+   public boolean field_244794_ae = true;
+   public final KeyBinding keyBindForward = new KeyBinding("key.forward", 87, "key.categories.movement");
+   public final KeyBinding keyBindLeft = new KeyBinding("key.left", 65, "key.categories.movement");
+   public final KeyBinding keyBindBack = new KeyBinding("key.back", 83, "key.categories.movement");
+   public final KeyBinding keyBindRight = new KeyBinding("key.right", 68, "key.categories.movement");
+   public final KeyBinding keyBindJump = new KeyBinding("key.jump", 32, "key.categories.movement");
+   public final KeyBinding keyBindSneak = new ToggleableKeyBinding("key.sneak", 340, "key.categories.movement", () -> {
       return this.toggleCrouch;
    });
-   public final KeyBinding keySprint = new ToggleableKeyBinding("key.sprint", 341, "key.categories.movement", () -> {
+   public final KeyBinding keyBindSprint = new ToggleableKeyBinding("key.sprint", 341, "key.categories.movement", () -> {
       return this.toggleSprint;
    });
-   public final KeyBinding keyInventory = new KeyBinding("key.inventory", 69, "key.categories.inventory");
-   public final KeyBinding keySwapOffhand = new KeyBinding("key.swapOffhand", 70, "key.categories.inventory");
-   public final KeyBinding keyDrop = new KeyBinding("key.drop", 81, "key.categories.inventory");
-   public final KeyBinding keyUse = new KeyBinding("key.use", InputMappings.Type.MOUSE, 1, "key.categories.gameplay");
-   public final KeyBinding keyAttack = new KeyBinding("key.attack", InputMappings.Type.MOUSE, 0, "key.categories.gameplay");
-   public final KeyBinding keyPickItem = new KeyBinding("key.pickItem", InputMappings.Type.MOUSE, 2, "key.categories.gameplay");
-   public final KeyBinding keyChat = new KeyBinding("key.chat", 84, "key.categories.multiplayer");
-   public final KeyBinding keyPlayerList = new KeyBinding("key.playerlist", 258, "key.categories.multiplayer");
-   public final KeyBinding keyCommand = new KeyBinding("key.command", 47, "key.categories.multiplayer");
-   public final KeyBinding keySocialInteractions = new KeyBinding("key.socialInteractions", 80, "key.categories.multiplayer");
-   public final KeyBinding keyScreenshot = new KeyBinding("key.screenshot", 291, "key.categories.misc");
-   public final KeyBinding keyTogglePerspective = new KeyBinding("key.togglePerspective", 294, "key.categories.misc");
-   public final KeyBinding keySmoothCamera = new KeyBinding("key.smoothCamera", InputMappings.UNKNOWN.getValue(), "key.categories.misc");
-   public final KeyBinding keyFullscreen = new KeyBinding("key.fullscreen", 300, "key.categories.misc");
-   public final KeyBinding keySpectatorOutlines = new KeyBinding("key.spectatorOutlines", InputMappings.UNKNOWN.getValue(), "key.categories.misc");
-   public final KeyBinding keyAdvancements = new KeyBinding("key.advancements", 76, "key.categories.misc");
-   public final KeyBinding[] keyHotbarSlots = new KeyBinding[]{new KeyBinding("key.hotbar.1", 49, "key.categories.inventory"), new KeyBinding("key.hotbar.2", 50, "key.categories.inventory"), new KeyBinding("key.hotbar.3", 51, "key.categories.inventory"), new KeyBinding("key.hotbar.4", 52, "key.categories.inventory"), new KeyBinding("key.hotbar.5", 53, "key.categories.inventory"), new KeyBinding("key.hotbar.6", 54, "key.categories.inventory"), new KeyBinding("key.hotbar.7", 55, "key.categories.inventory"), new KeyBinding("key.hotbar.8", 56, "key.categories.inventory"), new KeyBinding("key.hotbar.9", 57, "key.categories.inventory")};
-   public final KeyBinding keySaveHotbarActivator = new KeyBinding("key.saveToolbarActivator", 67, "key.categories.creative");
-   public final KeyBinding keyLoadHotbarActivator = new KeyBinding("key.loadToolbarActivator", 88, "key.categories.creative");
-   public final KeyBinding[] keyMappings = ArrayUtils.addAll(new KeyBinding[]{this.keyAttack, this.keyUse, this.keyUp, this.keyLeft, this.keyDown, this.keyRight, this.keyJump, this.keyShift, this.keySprint, this.keyDrop, this.keyInventory, this.keyChat, this.keyPlayerList, this.keyPickItem, this.keyCommand, this.keySocialInteractions, this.keyScreenshot, this.keyTogglePerspective, this.keySmoothCamera, this.keyFullscreen, this.keySpectatorOutlines, this.keySwapOffhand, this.keySaveHotbarActivator, this.keyLoadHotbarActivator, this.keyAdvancements}, this.keyHotbarSlots);
-   protected Minecraft minecraft;
+   public final KeyBinding keyBindInventory = new KeyBinding("key.inventory", 69, "key.categories.inventory");
+   public final KeyBinding keyBindSwapHands = new KeyBinding("key.swapOffhand", 70, "key.categories.inventory");
+   public final KeyBinding keyBindDrop = new KeyBinding("key.drop", 81, "key.categories.inventory");
+   public final KeyBinding keyBindUseItem = new KeyBinding("key.use", InputMappings.Type.MOUSE, 1, "key.categories.gameplay");
+   public final KeyBinding keyBindAttack = new KeyBinding("key.attack", InputMappings.Type.MOUSE, 0, "key.categories.gameplay");
+   public final KeyBinding keyBindPickBlock = new KeyBinding("key.pickItem", InputMappings.Type.MOUSE, 2, "key.categories.gameplay");
+   public final KeyBinding keyBindChat = new KeyBinding("key.chat", 84, "key.categories.multiplayer");
+   public final KeyBinding keyBindPlayerList = new KeyBinding("key.playerlist", 258, "key.categories.multiplayer");
+   public final KeyBinding keyBindCommand = new KeyBinding("key.command", 47, "key.categories.multiplayer");
+   public final KeyBinding field_244602_au = new KeyBinding("key.socialInteractions", 80, "key.categories.multiplayer");
+   public final KeyBinding keyBindScreenshot = new KeyBinding("key.screenshot", 291, "key.categories.misc");
+   public final KeyBinding keyBindTogglePerspective = new KeyBinding("key.togglePerspective", 294, "key.categories.misc");
+   public final KeyBinding keyBindSmoothCamera = new KeyBinding("key.smoothCamera", InputMappings.INPUT_INVALID.getKeyCode(), "key.categories.misc");
+   public final KeyBinding keyBindFullscreen = new KeyBinding("key.fullscreen", 300, "key.categories.misc");
+   public final KeyBinding keyBindSpectatorOutlines = new KeyBinding("key.spectatorOutlines", InputMappings.INPUT_INVALID.getKeyCode(), "key.categories.misc");
+   public final KeyBinding keyBindAdvancements = new KeyBinding("key.advancements", 76, "key.categories.misc");
+   public final KeyBinding[] keyBindsHotbar = new KeyBinding[]{new KeyBinding("key.hotbar.1", 49, "key.categories.inventory"), new KeyBinding("key.hotbar.2", 50, "key.categories.inventory"), new KeyBinding("key.hotbar.3", 51, "key.categories.inventory"), new KeyBinding("key.hotbar.4", 52, "key.categories.inventory"), new KeyBinding("key.hotbar.5", 53, "key.categories.inventory"), new KeyBinding("key.hotbar.6", 54, "key.categories.inventory"), new KeyBinding("key.hotbar.7", 55, "key.categories.inventory"), new KeyBinding("key.hotbar.8", 56, "key.categories.inventory"), new KeyBinding("key.hotbar.9", 57, "key.categories.inventory")};
+   public final KeyBinding keyBindSaveToolbar = new KeyBinding("key.saveToolbarActivator", 67, "key.categories.creative");
+   public final KeyBinding keyBindLoadToolbar = new KeyBinding("key.loadToolbarActivator", 88, "key.categories.creative");
+   public final KeyBinding[] keyBindings = ArrayUtils.addAll(new KeyBinding[]{this.keyBindAttack, this.keyBindUseItem, this.keyBindForward, this.keyBindLeft, this.keyBindBack, this.keyBindRight, this.keyBindJump, this.keyBindSneak, this.keyBindSprint, this.keyBindDrop, this.keyBindInventory, this.keyBindChat, this.keyBindPlayerList, this.keyBindPickBlock, this.keyBindCommand, this.field_244602_au, this.keyBindScreenshot, this.keyBindTogglePerspective, this.keyBindSmoothCamera, this.keyBindFullscreen, this.keyBindSpectatorOutlines, this.keyBindSwapHands, this.keyBindSaveToolbar, this.keyBindLoadToolbar, this.keyBindAdvancements}, this.keyBindsHotbar);
+   protected Minecraft mc;
    private final File optionsFile;
    public Difficulty difficulty = Difficulty.NORMAL;
-   public boolean hideGui;
-   private PointOfView cameraType = PointOfView.FIRST_PERSON;
-   public boolean renderDebug;
-   public boolean renderDebugCharts;
-   public boolean renderFpsChart;
-   public String lastMpIp = "";
+   public boolean hideGUI;
+   private PointOfView pointOfView = PointOfView.FIRST_PERSON;
+   public boolean showDebugInfo;
+   public boolean showDebugProfilerChart;
+   public boolean showLagometer;
+   public String lastServer = "";
    public boolean smoothCamera;
    public double fov = 70.0D;
    public float screenEffectScale = 1.0F;
-   public float fovEffectScale = 1.0F;
+   public float fovScaleEffect = 1.0F;
    public double gamma;
    public int guiScale;
    public ParticleStatus particles = ParticleStatus.ALL;
-   public NarratorStatus narratorStatus = NarratorStatus.OFF;
-   public String languageCode = "en_us";
-   public boolean syncWrites;
+   public NarratorStatus narrator = NarratorStatus.OFF;
+   public String language = "en_us";
+   public boolean syncChunkWrites;
 
-   public GameSettings(Minecraft p_i46326_1_, File p_i46326_2_) {
-      this.minecraft = p_i46326_1_;
-      this.optionsFile = new File(p_i46326_2_, "options.txt");
-      if (p_i46326_1_.is64Bit() && Runtime.getRuntime().maxMemory() >= 1000000000L) {
+   public GameSettings(Minecraft mcIn, File mcDataDir) {
+      this.mc = mcIn;
+      this.optionsFile = new File(mcDataDir, "options.txt");
+      if (mcIn.isJava64bit() && Runtime.getRuntime().maxMemory() >= 1000000000L) {
          AbstractOption.RENDER_DISTANCE.setMaxValue(32.0F);
       } else {
          AbstractOption.RENDER_DISTANCE.setMaxValue(16.0F);
       }
 
-      this.renderDistance = p_i46326_1_.is64Bit() ? 12 : 8;
-      this.syncWrites = Util.getPlatform() == Util.OS.WINDOWS;
-      this.load();
+      this.renderDistanceChunks = mcIn.isJava64bit() ? 12 : 8;
+      this.syncChunkWrites = Util.getOSType() == Util.OS.WINDOWS;
+      this.loadOptions();
    }
 
-   public float getBackgroundOpacity(float p_216840_1_) {
-      return this.backgroundForChatOnly ? p_216840_1_ : (float)this.textBackgroundOpacity;
+   public float getTextBackgroundOpacity(float opacity) {
+      return this.accessibilityTextBackground ? opacity : (float)this.accessibilityTextBackgroundOpacity;
    }
 
-   public int getBackgroundColor(float p_216841_1_) {
-      return (int)(this.getBackgroundOpacity(p_216841_1_) * 255.0F) << 24 & -16777216;
+   public int getTextBackgroundColor(float opacity) {
+      return (int)(this.getTextBackgroundOpacity(opacity) * 255.0F) << 24 & -16777216;
    }
 
-   public int getBackgroundColor(int p_216839_1_) {
-      return this.backgroundForChatOnly ? p_216839_1_ : (int)(this.textBackgroundOpacity * 255.0D) << 24 & -16777216;
+   public int getChatBackgroundColor(int chatColor) {
+      return this.accessibilityTextBackground ? chatColor : (int)(this.accessibilityTextBackgroundOpacity * 255.0D) << 24 & -16777216;
    }
 
-   public void setKey(KeyBinding p_198014_1_, InputMappings.Input p_198014_2_) {
-      p_198014_1_.setKey(p_198014_2_);
-      this.save();
+   public void setKeyBindingCode(KeyBinding keyBindingIn, InputMappings.Input inputIn) {
+      keyBindingIn.bind(inputIn);
+      this.saveOptions();
    }
 
-   public void load() {
+   public void loadOptions() {
       try {
          if (!this.optionsFile.exists()) {
             return;
          }
 
-         this.sourceVolumes.clear();
+         this.soundLevels.clear();
          CompoundNBT compoundnbt = new CompoundNBT();
 
          try (BufferedReader bufferedreader = Files.newReader(this.optionsFile, Charsets.UTF_8)) {
             bufferedreader.lines().forEach((p_230004_1_) -> {
                try {
-                  Iterator<String> iterator = OPTION_SPLITTER.split(p_230004_1_).iterator();
+                  Iterator<String> iterator = KEY_VALUE_SPLITTER.split(p_230004_1_).iterator();
                   compoundnbt.putString(iterator.next(), iterator.next());
                } catch (Exception exception2) {
                   LOGGER.warn("Skipping bad option: {}", (Object)p_230004_1_);
@@ -224,13 +224,13 @@ public class GameSettings {
          CompoundNBT compoundnbt1 = this.dataFix(compoundnbt);
          if (!compoundnbt1.contains("graphicsMode") && compoundnbt1.contains("fancyGraphics")) {
             if ("true".equals(compoundnbt1.getString("fancyGraphics"))) {
-               this.graphicsMode = GraphicsFanciness.FANCY;
+               this.graphicFanciness = GraphicsFanciness.FANCY;
             } else {
-               this.graphicsMode = GraphicsFanciness.FAST;
+               this.graphicFanciness = GraphicsFanciness.FAST;
             }
          }
 
-         for(String s : compoundnbt1.getAllKeys()) {
+         for(String s : compoundnbt1.keySet()) {
             String s1 = compoundnbt1.getString(s);
 
             try {
@@ -239,7 +239,7 @@ public class GameSettings {
                }
 
                if ("autoSuggestions".equals(s)) {
-                  AbstractOption.AUTO_SUGGESTIONS.set(this, s1);
+                  AbstractOption.AUTO_SUGGEST_COMMANDS.set(this, s1);
                }
 
                if ("chatColors".equals(s)) {
@@ -255,7 +255,7 @@ public class GameSettings {
                }
 
                if ("enableVsync".equals(s)) {
-                  AbstractOption.ENABLE_VSYNC.set(this, s1);
+                  AbstractOption.VSYNC.set(this, s1);
                }
 
                if ("entityShadows".equals(s)) {
@@ -287,7 +287,7 @@ public class GameSettings {
                }
 
                if ("snooperEnabled".equals(s)) {
-                  AbstractOption.SNOOPER_ENABLED.set(this, s1);
+                  AbstractOption.SNOOPER.set(this, s1);
                }
 
                if ("touchscreen".equals(s)) {
@@ -295,7 +295,7 @@ public class GameSettings {
                }
 
                if ("fullscreen".equals(s)) {
-                  AbstractOption.USE_FULLSCREEN.set(this, s1);
+                  AbstractOption.FULLSCREEN.set(this, s1);
                }
 
                if ("bobView".equals(s)) {
@@ -311,27 +311,27 @@ public class GameSettings {
                }
 
                if ("mouseSensitivity".equals(s)) {
-                  this.sensitivity = (double)readFloat(s1);
+                  this.mouseSensitivity = (double)parseFloat(s1);
                }
 
                if ("fov".equals(s)) {
-                  this.fov = (double)(readFloat(s1) * 40.0F + 70.0F);
+                  this.fov = (double)(parseFloat(s1) * 40.0F + 70.0F);
                }
 
                if ("screenEffectScale".equals(s)) {
-                  this.screenEffectScale = readFloat(s1);
+                  this.screenEffectScale = parseFloat(s1);
                }
 
                if ("fovEffectScale".equals(s)) {
-                  this.fovEffectScale = readFloat(s1);
+                  this.fovScaleEffect = parseFloat(s1);
                }
 
                if ("gamma".equals(s)) {
-                  this.gamma = (double)readFloat(s1);
+                  this.gamma = (double)parseFloat(s1);
                }
 
                if ("renderDistance".equals(s)) {
-                  this.renderDistance = Integer.parseInt(s1);
+                  this.renderDistanceChunks = Integer.parseInt(s1);
                }
 
                if ("entityDistanceScaling".equals(s)) {
@@ -348,8 +348,8 @@ public class GameSettings {
 
                if ("maxFps".equals(s)) {
                   this.framerateLimit = Integer.parseInt(s1);
-                  if (this.minecraft.getWindow() != null) {
-                     this.minecraft.getWindow().setFramerateLimit(this.framerateLimit);
+                  if (this.mc.getMainWindow() != null) {
+                     this.mc.getMainWindow().setFramerateLimit(this.framerateLimit);
                   }
                }
 
@@ -358,30 +358,30 @@ public class GameSettings {
                }
 
                if ("graphicsMode".equals(s)) {
-                  this.graphicsMode = GraphicsFanciness.byId(Integer.parseInt(s1));
+                  this.graphicFanciness = GraphicsFanciness.func_238163_a_(Integer.parseInt(s1));
                }
 
                if ("tutorialStep".equals(s)) {
-                  this.tutorialStep = TutorialSteps.getByName(s1);
+                  this.tutorialStep = TutorialSteps.byName(s1);
                }
 
                if ("ao".equals(s)) {
                   if ("true".equals(s1)) {
-                     this.ambientOcclusion = AmbientOcclusionStatus.MAX;
+                     this.ambientOcclusionStatus = AmbientOcclusionStatus.MAX;
                   } else if ("false".equals(s1)) {
-                     this.ambientOcclusion = AmbientOcclusionStatus.OFF;
+                     this.ambientOcclusionStatus = AmbientOcclusionStatus.OFF;
                   } else {
-                     this.ambientOcclusion = AmbientOcclusionStatus.byId(Integer.parseInt(s1));
+                     this.ambientOcclusionStatus = AmbientOcclusionStatus.getValue(Integer.parseInt(s1));
                   }
                }
 
                if ("renderClouds".equals(s)) {
                   if ("true".equals(s1)) {
-                     this.renderClouds = CloudOption.FANCY;
+                     this.cloudOption = CloudOption.FANCY;
                   } else if ("false".equals(s1)) {
-                     this.renderClouds = CloudOption.OFF;
+                     this.cloudOption = CloudOption.OFF;
                   } else if ("fast".equals(s1)) {
-                     this.renderClouds = CloudOption.FAST;
+                     this.cloudOption = CloudOption.FAST;
                   }
                }
 
@@ -390,49 +390,49 @@ public class GameSettings {
                }
 
                if ("resourcePacks".equals(s)) {
-                  this.resourcePacks = JSONUtils.fromJson(GSON, s1, RESOURCE_PACK_TYPE);
+                  this.resourcePacks = JSONUtils.fromJSONUnlenient(GSON, s1, TYPE_LIST_STRING);
                   if (this.resourcePacks == null) {
                      this.resourcePacks = Lists.newArrayList();
                   }
                }
 
                if ("incompatibleResourcePacks".equals(s)) {
-                  this.incompatibleResourcePacks = JSONUtils.fromJson(GSON, s1, RESOURCE_PACK_TYPE);
+                  this.incompatibleResourcePacks = JSONUtils.fromJSONUnlenient(GSON, s1, TYPE_LIST_STRING);
                   if (this.incompatibleResourcePacks == null) {
                      this.incompatibleResourcePacks = Lists.newArrayList();
                   }
                }
 
                if ("lastServer".equals(s)) {
-                  this.lastMpIp = s1;
+                  this.lastServer = s1;
                }
 
                if ("lang".equals(s)) {
-                  this.languageCode = s1;
+                  this.language = s1;
                }
 
                if ("chatVisibility".equals(s)) {
-                  this.chatVisibility = ChatVisibility.byId(Integer.parseInt(s1));
+                  this.chatVisibility = ChatVisibility.getValue(Integer.parseInt(s1));
                }
 
                if ("chatOpacity".equals(s)) {
-                  this.chatOpacity = (double)readFloat(s1);
+                  this.chatOpacity = (double)parseFloat(s1);
                }
 
                if ("chatLineSpacing".equals(s)) {
-                  this.chatLineSpacing = (double)readFloat(s1);
+                  this.chatLineSpacing = (double)parseFloat(s1);
                }
 
                if ("textBackgroundOpacity".equals(s)) {
-                  this.textBackgroundOpacity = (double)readFloat(s1);
+                  this.accessibilityTextBackgroundOpacity = (double)parseFloat(s1);
                }
 
                if ("backgroundForChatOnly".equals(s)) {
-                  this.backgroundForChatOnly = "true".equals(s1);
+                  this.accessibilityTextBackground = "true".equals(s1);
                }
 
                if ("fullscreenResolution".equals(s)) {
-                  this.fullscreenVideoModeString = s1;
+                  this.fullscreenResolution = s1;
                }
 
                if ("hideServerAddress".equals(s)) {
@@ -460,23 +460,23 @@ public class GameSettings {
                }
 
                if ("chatHeightFocused".equals(s)) {
-                  this.chatHeightFocused = (double)readFloat(s1);
+                  this.chatHeightFocused = (double)parseFloat(s1);
                }
 
                if ("chatDelay".equals(s)) {
-                  this.chatDelay = (double)readFloat(s1);
+                  this.chatDelay = (double)parseFloat(s1);
                }
 
                if ("chatHeightUnfocused".equals(s)) {
-                  this.chatHeightUnfocused = (double)readFloat(s1);
+                  this.chatHeightUnfocused = (double)parseFloat(s1);
                }
 
                if ("chatScale".equals(s)) {
-                  this.chatScale = (double)readFloat(s1);
+                  this.chatScale = (double)parseFloat(s1);
                }
 
                if ("chatWidth".equals(s)) {
-                  this.chatWidth = (double)readFloat(s1);
+                  this.chatWidth = (double)parseFloat(s1);
                }
 
                if ("mipmapLevels".equals(s)) {
@@ -492,7 +492,7 @@ public class GameSettings {
                }
 
                if ("narrator".equals(s)) {
-                  this.narratorStatus = NarratorStatus.byId(Integer.parseInt(s1));
+                  this.narrator = NarratorStatus.byId(Integer.parseInt(s1));
                }
 
                if ("biomeBlendRadius".equals(s)) {
@@ -500,7 +500,7 @@ public class GameSettings {
                }
 
                if ("mouseWheelSensitivity".equals(s)) {
-                  this.mouseWheelSensitivity = (double)readFloat(s1);
+                  this.mouseWheelSensitivity = (double)parseFloat(s1);
                }
 
                if ("rawMouseInput".equals(s)) {
@@ -516,32 +516,32 @@ public class GameSettings {
                }
 
                if ("hideMatchedNames".equals(s)) {
-                  this.hideMatchedNames = "true".equals(s1);
+                  this.field_244794_ae = "true".equals(s1);
                }
 
                if ("joinedFirstServer".equals(s)) {
-                  this.joinedFirstServer = "true".equals(s1);
+                  this.field_244601_E = "true".equals(s1);
                }
 
                if ("syncChunkWrites".equals(s)) {
-                  this.syncWrites = "true".equals(s1);
+                  this.syncChunkWrites = "true".equals(s1);
                }
 
-               for(KeyBinding keybinding : this.keyMappings) {
-                  if (s.equals("key_" + keybinding.getName())) {
-                     keybinding.setKey(InputMappings.getKey(s1));
+               for(KeyBinding keybinding : this.keyBindings) {
+                  if (s.equals("key_" + keybinding.getKeyDescription())) {
+                     keybinding.bind(InputMappings.getInputByName(s1));
                   }
                }
 
                for(SoundCategory soundcategory : SoundCategory.values()) {
                   if (s.equals("soundCategory_" + soundcategory.getName())) {
-                     this.sourceVolumes.put(soundcategory, readFloat(s1));
+                     this.soundLevels.put(soundcategory, parseFloat(s1));
                   }
                }
 
                for(PlayerModelPart playermodelpart : PlayerModelPart.values()) {
-                  if (s.equals("modelPart_" + playermodelpart.getId())) {
-                     this.setModelPart(playermodelpart, "true".equals(s1));
+                  if (s.equals("modelPart_" + playermodelpart.getPartName())) {
+                     this.setModelPartEnabled(playermodelpart, "true".equals(s1));
                   }
                }
             } catch (Exception exception) {
@@ -549,69 +549,69 @@ public class GameSettings {
             }
          }
 
-         KeyBinding.resetMapping();
+         KeyBinding.resetKeyBindingArrayAndHash();
       } catch (Exception exception1) {
          LOGGER.error("Failed to load options", (Throwable)exception1);
       }
 
    }
 
-   private CompoundNBT dataFix(CompoundNBT p_189988_1_) {
+   private CompoundNBT dataFix(CompoundNBT nbt) {
       int i = 0;
 
       try {
-         i = Integer.parseInt(p_189988_1_.getString("version"));
+         i = Integer.parseInt(nbt.getString("version"));
       } catch (RuntimeException runtimeexception) {
       }
 
-      return NBTUtil.update(this.minecraft.getFixerUpper(), DefaultTypeReferences.OPTIONS, p_189988_1_, i);
+      return NBTUtil.update(this.mc.getDataFixer(), DefaultTypeReferences.OPTIONS, nbt, i);
    }
 
-   private static float readFloat(String p_74305_0_) {
-      if ("true".equals(p_74305_0_)) {
+   private static float parseFloat(String floatString) {
+      if ("true".equals(floatString)) {
          return 1.0F;
       } else {
-         return "false".equals(p_74305_0_) ? 0.0F : Float.parseFloat(p_74305_0_);
+         return "false".equals(floatString) ? 0.0F : Float.parseFloat(floatString);
       }
    }
 
-   public void save() {
+   public void saveOptions() {
       try (PrintWriter printwriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(this.optionsFile), StandardCharsets.UTF_8))) {
-         printwriter.println("version:" + SharedConstants.getCurrentVersion().getWorldVersion());
+         printwriter.println("version:" + SharedConstants.getVersion().getWorldVersion());
          printwriter.println("autoJump:" + AbstractOption.AUTO_JUMP.get(this));
-         printwriter.println("autoSuggestions:" + AbstractOption.AUTO_SUGGESTIONS.get(this));
+         printwriter.println("autoSuggestions:" + AbstractOption.AUTO_SUGGEST_COMMANDS.get(this));
          printwriter.println("chatColors:" + AbstractOption.CHAT_COLOR.get(this));
          printwriter.println("chatLinks:" + AbstractOption.CHAT_LINKS.get(this));
          printwriter.println("chatLinksPrompt:" + AbstractOption.CHAT_LINKS_PROMPT.get(this));
-         printwriter.println("enableVsync:" + AbstractOption.ENABLE_VSYNC.get(this));
+         printwriter.println("enableVsync:" + AbstractOption.VSYNC.get(this));
          printwriter.println("entityShadows:" + AbstractOption.ENTITY_SHADOWS.get(this));
          printwriter.println("forceUnicodeFont:" + AbstractOption.FORCE_UNICODE_FONT.get(this));
          printwriter.println("discrete_mouse_scroll:" + AbstractOption.DISCRETE_MOUSE_SCROLL.get(this));
          printwriter.println("invertYMouse:" + AbstractOption.INVERT_MOUSE.get(this));
          printwriter.println("realmsNotifications:" + AbstractOption.REALMS_NOTIFICATIONS.get(this));
          printwriter.println("reducedDebugInfo:" + AbstractOption.REDUCED_DEBUG_INFO.get(this));
-         printwriter.println("snooperEnabled:" + AbstractOption.SNOOPER_ENABLED.get(this));
+         printwriter.println("snooperEnabled:" + AbstractOption.SNOOPER.get(this));
          printwriter.println("showSubtitles:" + AbstractOption.SHOW_SUBTITLES.get(this));
          printwriter.println("touchscreen:" + AbstractOption.TOUCHSCREEN.get(this));
-         printwriter.println("fullscreen:" + AbstractOption.USE_FULLSCREEN.get(this));
+         printwriter.println("fullscreen:" + AbstractOption.FULLSCREEN.get(this));
          printwriter.println("bobView:" + AbstractOption.VIEW_BOBBING.get(this));
          printwriter.println("toggleCrouch:" + this.toggleCrouch);
          printwriter.println("toggleSprint:" + this.toggleSprint);
-         printwriter.println("mouseSensitivity:" + this.sensitivity);
+         printwriter.println("mouseSensitivity:" + this.mouseSensitivity);
          printwriter.println("fov:" + (this.fov - 70.0D) / 40.0D);
          printwriter.println("screenEffectScale:" + this.screenEffectScale);
-         printwriter.println("fovEffectScale:" + this.fovEffectScale);
+         printwriter.println("fovEffectScale:" + this.fovScaleEffect);
          printwriter.println("gamma:" + this.gamma);
-         printwriter.println("renderDistance:" + this.renderDistance);
+         printwriter.println("renderDistance:" + this.renderDistanceChunks);
          printwriter.println("entityDistanceScaling:" + this.entityDistanceScaling);
          printwriter.println("guiScale:" + this.guiScale);
          printwriter.println("particles:" + this.particles.getId());
          printwriter.println("maxFps:" + this.framerateLimit);
          printwriter.println("difficulty:" + this.difficulty.getId());
-         printwriter.println("graphicsMode:" + this.graphicsMode.getId());
-         printwriter.println("ao:" + this.ambientOcclusion.getId());
+         printwriter.println("graphicsMode:" + this.graphicFanciness.func_238162_a_());
+         printwriter.println("ao:" + this.ambientOcclusionStatus.getId());
          printwriter.println("biomeBlendRadius:" + this.biomeBlendRadius);
-         switch(this.renderClouds) {
+         switch(this.cloudOption) {
          case FANCY:
             printwriter.println("renderClouds:true");
             break;
@@ -624,15 +624,15 @@ public class GameSettings {
 
          printwriter.println("resourcePacks:" + GSON.toJson(this.resourcePacks));
          printwriter.println("incompatibleResourcePacks:" + GSON.toJson(this.incompatibleResourcePacks));
-         printwriter.println("lastServer:" + this.lastMpIp);
-         printwriter.println("lang:" + this.languageCode);
+         printwriter.println("lastServer:" + this.lastServer);
+         printwriter.println("lang:" + this.language);
          printwriter.println("chatVisibility:" + this.chatVisibility.getId());
          printwriter.println("chatOpacity:" + this.chatOpacity);
          printwriter.println("chatLineSpacing:" + this.chatLineSpacing);
-         printwriter.println("textBackgroundOpacity:" + this.textBackgroundOpacity);
-         printwriter.println("backgroundForChatOnly:" + this.backgroundForChatOnly);
-         if (this.minecraft.getWindow().getPreferredFullscreenVideoMode().isPresent()) {
-            printwriter.println("fullscreenResolution:" + this.minecraft.getWindow().getPreferredFullscreenVideoMode().get().write());
+         printwriter.println("textBackgroundOpacity:" + this.accessibilityTextBackgroundOpacity);
+         printwriter.println("backgroundForChatOnly:" + this.accessibilityTextBackground);
+         if (this.mc.getMainWindow().getVideoMode().isPresent()) {
+            printwriter.println("fullscreenResolution:" + this.mc.getMainWindow().getVideoMode().get().getSettingsString());
          }
 
          printwriter.println("hideServerAddress:" + this.hideServerAddress);
@@ -650,97 +650,97 @@ public class GameSettings {
          printwriter.println("useNativeTransport:" + this.useNativeTransport);
          printwriter.println("mainHand:" + (this.mainHand == HandSide.LEFT ? "left" : "right"));
          printwriter.println("attackIndicator:" + this.attackIndicator.getId());
-         printwriter.println("narrator:" + this.narratorStatus.getId());
+         printwriter.println("narrator:" + this.narrator.getId());
          printwriter.println("tutorialStep:" + this.tutorialStep.getName());
          printwriter.println("mouseWheelSensitivity:" + this.mouseWheelSensitivity);
          printwriter.println("rawMouseInput:" + AbstractOption.RAW_MOUSE_INPUT.get(this));
          printwriter.println("glDebugVerbosity:" + this.glDebugVerbosity);
          printwriter.println("skipMultiplayerWarning:" + this.skipMultiplayerWarning);
-         printwriter.println("hideMatchedNames:" + this.hideMatchedNames);
-         printwriter.println("joinedFirstServer:" + this.joinedFirstServer);
-         printwriter.println("syncChunkWrites:" + this.syncWrites);
+         printwriter.println("hideMatchedNames:" + this.field_244794_ae);
+         printwriter.println("joinedFirstServer:" + this.field_244601_E);
+         printwriter.println("syncChunkWrites:" + this.syncChunkWrites);
 
-         for(KeyBinding keybinding : this.keyMappings) {
-            printwriter.println("key_" + keybinding.getName() + ":" + keybinding.saveString());
+         for(KeyBinding keybinding : this.keyBindings) {
+            printwriter.println("key_" + keybinding.getKeyDescription() + ":" + keybinding.getTranslationKey());
          }
 
          for(SoundCategory soundcategory : SoundCategory.values()) {
-            printwriter.println("soundCategory_" + soundcategory.getName() + ":" + this.getSoundSourceVolume(soundcategory));
+            printwriter.println("soundCategory_" + soundcategory.getName() + ":" + this.getSoundLevel(soundcategory));
          }
 
          for(PlayerModelPart playermodelpart : PlayerModelPart.values()) {
-            printwriter.println("modelPart_" + playermodelpart.getId() + ":" + this.modelParts.contains(playermodelpart));
+            printwriter.println("modelPart_" + playermodelpart.getPartName() + ":" + this.setModelParts.contains(playermodelpart));
          }
       } catch (Exception exception) {
          LOGGER.error("Failed to save options", (Throwable)exception);
       }
 
-      this.broadcastOptions();
+      this.sendSettingsToServer();
    }
 
-   public float getSoundSourceVolume(SoundCategory p_186711_1_) {
-      return this.sourceVolumes.containsKey(p_186711_1_) ? this.sourceVolumes.get(p_186711_1_) : 1.0F;
+   public float getSoundLevel(SoundCategory category) {
+      return this.soundLevels.containsKey(category) ? this.soundLevels.get(category) : 1.0F;
    }
 
-   public void setSoundCategoryVolume(SoundCategory p_186712_1_, float p_186712_2_) {
-      this.sourceVolumes.put(p_186712_1_, p_186712_2_);
-      this.minecraft.getSoundManager().updateSourceVolume(p_186712_1_, p_186712_2_);
+   public void setSoundLevel(SoundCategory category, float volume) {
+      this.soundLevels.put(category, volume);
+      this.mc.getSoundHandler().setSoundLevel(category, volume);
    }
 
-   public void broadcastOptions() {
-      if (this.minecraft.player != null) {
+   public void sendSettingsToServer() {
+      if (this.mc.player != null) {
          int i = 0;
 
-         for(PlayerModelPart playermodelpart : this.modelParts) {
-            i |= playermodelpart.getMask();
+         for(PlayerModelPart playermodelpart : this.setModelParts) {
+            i |= playermodelpart.getPartMask();
          }
 
-         this.minecraft.player.connection.send(new CClientSettingsPacket(this.languageCode, this.renderDistance, this.chatVisibility, this.chatColors, i, this.mainHand));
+         this.mc.player.connection.sendPacket(new CClientSettingsPacket(this.language, this.renderDistanceChunks, this.chatVisibility, this.chatColor, i, this.mainHand));
       }
 
    }
 
    public Set<PlayerModelPart> getModelParts() {
-      return ImmutableSet.copyOf(this.modelParts);
+      return ImmutableSet.copyOf(this.setModelParts);
    }
 
-   public void setModelPart(PlayerModelPart p_178878_1_, boolean p_178878_2_) {
-      if (p_178878_2_) {
-         this.modelParts.add(p_178878_1_);
+   public void setModelPartEnabled(PlayerModelPart modelPart, boolean enable) {
+      if (enable) {
+         this.setModelParts.add(modelPart);
       } else {
-         this.modelParts.remove(p_178878_1_);
+         this.setModelParts.remove(modelPart);
       }
 
-      this.broadcastOptions();
+      this.sendSettingsToServer();
    }
 
-   public void toggleModelPart(PlayerModelPart p_178877_1_) {
-      if (this.getModelParts().contains(p_178877_1_)) {
-         this.modelParts.remove(p_178877_1_);
+   public void switchModelPartEnabled(PlayerModelPart modelPart) {
+      if (this.getModelParts().contains(modelPart)) {
+         this.setModelParts.remove(modelPart);
       } else {
-         this.modelParts.add(p_178877_1_);
+         this.setModelParts.add(modelPart);
       }
 
-      this.broadcastOptions();
+      this.sendSettingsToServer();
    }
 
-   public CloudOption getCloudsType() {
-      return this.renderDistance >= 4 ? this.renderClouds : CloudOption.OFF;
+   public CloudOption getCloudOption() {
+      return this.renderDistanceChunks >= 4 ? this.cloudOption : CloudOption.OFF;
    }
 
-   public boolean useNativeTransport() {
+   public boolean isUsingNativeTransport() {
       return this.useNativeTransport;
    }
 
-   public void loadSelectedResourcePacks(ResourcePackList p_198017_1_) {
+   public void fillResourcePackList(ResourcePackList resourcePackListIn) {
       Set<String> set = Sets.newLinkedHashSet();
       Iterator<String> iterator = this.resourcePacks.iterator();
 
       while(iterator.hasNext()) {
          String s = iterator.next();
-         ResourcePackInfo resourcepackinfo = p_198017_1_.getPack(s);
+         ResourcePackInfo resourcepackinfo = resourcePackListIn.getPackInfo(s);
          if (resourcepackinfo == null && !s.startsWith("file/")) {
-            resourcepackinfo = p_198017_1_.getPack("file/" + s);
+            resourcepackinfo = resourcePackListIn.getPackInfo("file/" + s);
          }
 
          if (resourcepackinfo == null) {
@@ -753,18 +753,18 @@ public class GameSettings {
             LOGGER.info("Removed resource pack {} from incompatibility list because it's now compatible", (Object)s);
             this.incompatibleResourcePacks.remove(s);
          } else {
-            set.add(resourcepackinfo.getId());
+            set.add(resourcepackinfo.getName());
          }
       }
 
-      p_198017_1_.setSelected(set);
+      resourcePackListIn.setEnabledPacks(set);
    }
 
-   public PointOfView getCameraType() {
-      return this.cameraType;
+   public PointOfView getPointOfView() {
+      return this.pointOfView;
    }
 
-   public void setCameraType(PointOfView p_243229_1_) {
-      this.cameraType = p_243229_1_;
+   public void setPointOfView(PointOfView pointOfView) {
+      this.pointOfView = pointOfView;
    }
 }

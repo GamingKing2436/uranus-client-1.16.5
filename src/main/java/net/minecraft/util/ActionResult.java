@@ -1,39 +1,39 @@
 package net.minecraft.util;
 
 public class ActionResult<T> {
-   private final ActionResultType result;
-   private final T object;
+   private final ActionResultType type;
+   private final T result;
 
-   public ActionResult(ActionResultType p_i46821_1_, T p_i46821_2_) {
-      this.result = p_i46821_1_;
-      this.object = p_i46821_2_;
+   public ActionResult(ActionResultType typeIn, T resultIn) {
+      this.type = typeIn;
+      this.result = resultIn;
    }
 
-   public ActionResultType getResult() {
+   public ActionResultType getType() {
+      return this.type;
+   }
+
+   public T getResult() {
       return this.result;
    }
 
-   public T getObject() {
-      return this.object;
+   public static <T> ActionResult<T> resultSuccess(T type) {
+      return new ActionResult<>(ActionResultType.SUCCESS, type);
    }
 
-   public static <T> ActionResult<T> success(T p_226248_0_) {
-      return new ActionResult<>(ActionResultType.SUCCESS, p_226248_0_);
+   public static <T> ActionResult<T> resultConsume(T type) {
+      return new ActionResult<>(ActionResultType.CONSUME, type);
    }
 
-   public static <T> ActionResult<T> consume(T p_226249_0_) {
-      return new ActionResult<>(ActionResultType.CONSUME, p_226249_0_);
+   public static <T> ActionResult<T> resultPass(T type) {
+      return new ActionResult<>(ActionResultType.PASS, type);
    }
 
-   public static <T> ActionResult<T> pass(T p_226250_0_) {
-      return new ActionResult<>(ActionResultType.PASS, p_226250_0_);
+   public static <T> ActionResult<T> resultFail(T type) {
+      return new ActionResult<>(ActionResultType.FAIL, type);
    }
 
-   public static <T> ActionResult<T> fail(T p_226251_0_) {
-      return new ActionResult<>(ActionResultType.FAIL, p_226251_0_);
-   }
-
-   public static <T> ActionResult<T> sidedSuccess(T p_233538_0_, boolean p_233538_1_) {
-      return p_233538_1_ ? success(p_233538_0_) : consume(p_233538_0_);
+   public static <T> ActionResult<T> func_233538_a_(T type, boolean isRemote) {
+      return isRemote ? resultSuccess(type) : resultConsume(type);
    }
 }

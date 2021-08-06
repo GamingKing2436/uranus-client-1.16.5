@@ -18,44 +18,44 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class TextureAtlasSprite implements AutoCloseable {
-   private final AtlasTexture atlas;
-   private final TextureAtlasSprite.Info info;
-   private final AnimationMetadataSection metadata;
-   protected final NativeImage[] mainImage;
+   private final AtlasTexture atlasTexture;
+   private final TextureAtlasSprite.Info spriteInfo;
+   private final AnimationMetadataSection animationMetadata;
+   protected final NativeImage[] frames;
    private final int[] framesX;
    private final int[] framesY;
    @Nullable
    private final TextureAtlasSprite.InterpolationData interpolationData;
    private final int x;
    private final int y;
-   private final float u0;
-   private final float u1;
-   private final float v0;
-   private final float v1;
-   private int frame;
-   private int subFrame;
+   private final float minU;
+   private final float maxU;
+   private final float minV;
+   private final float maxV;
+   private int frameCounter;
+   private int tickCounter;
 
-   protected TextureAtlasSprite(AtlasTexture p_i226049_1_, TextureAtlasSprite.Info p_i226049_2_, int p_i226049_3_, int p_i226049_4_, int p_i226049_5_, int p_i226049_6_, int p_i226049_7_, NativeImage p_i226049_8_) {
-      this.atlas = p_i226049_1_;
-      AnimationMetadataSection animationmetadatasection = p_i226049_2_.metadata;
-      int i = p_i226049_2_.width;
-      int j = p_i226049_2_.height;
-      this.x = p_i226049_6_;
-      this.y = p_i226049_7_;
-      this.u0 = (float)p_i226049_6_ / (float)p_i226049_4_;
-      this.u1 = (float)(p_i226049_6_ + i) / (float)p_i226049_4_;
-      this.v0 = (float)p_i226049_7_ / (float)p_i226049_5_;
-      this.v1 = (float)(p_i226049_7_ + j) / (float)p_i226049_5_;
-      int k = p_i226049_8_.getWidth() / animationmetadatasection.getFrameWidth(i);
-      int l = p_i226049_8_.getHeight() / animationmetadatasection.getFrameHeight(j);
+   protected TextureAtlasSprite(AtlasTexture atlasTextureIn, TextureAtlasSprite.Info spriteInfoIn, int mipmapLevelsIn, int atlasWidthIn, int atlasHeightIn, int xIn, int yIn, NativeImage imageIn) {
+      this.atlasTexture = atlasTextureIn;
+      AnimationMetadataSection animationmetadatasection = spriteInfoIn.spriteAnimationMetadata;
+      int i = spriteInfoIn.spriteWidth;
+      int j = spriteInfoIn.spriteHeight;
+      this.x = xIn;
+      this.y = yIn;
+      this.minU = (float)xIn / (float)atlasWidthIn;
+      this.maxU = (float)(xIn + i) / (float)atlasWidthIn;
+      this.minV = (float)yIn / (float)atlasHeightIn;
+      this.maxV = (float)(yIn + j) / (float)atlasHeightIn;
+      int k = imageIn.getWidth() / animationmetadatasection.getFrameWidth(i);
+      int l = imageIn.getHeight() / animationmetadatasection.getFrameHeight(j);
       if (animationmetadatasection.getFrameCount() > 0) {
-         int i1 = animationmetadatasection.getUniqueFrameIndices().stream().max(Integer::compareTo).get() + 1;
+         int i1 = animationmetadatasection.getFrameIndexSet().stream().max(Integer::compareTo).get() + 1;
          this.framesX = new int[i1];
          this.framesY = new int[i1];
          Arrays.fill(this.framesX, -1);
          Arrays.fill(this.framesY, -1);
 
-         for(int j1 : animationmetadatasection.getUniqueFrameIndices()) {
+         for(int j1 : animationmetadatasection.getFrameIndexSet()) {
             if (j1 >= k * l) {
                throw new RuntimeException("invalid frameindex " + j1);
             }
@@ -80,106 +80,106 @@ public class TextureAtlasSprite implements AutoCloseable {
             }
          }
 
-         animationmetadatasection = new AnimationMetadataSection(list, i, j, animationmetadatasection.getDefaultFrameTime(), animationmetadatasection.isInterpolatedFrames());
+         animationmetadatasection = new AnimationMetadataSection(list, i, j, animationmetadatasection.getFrameTime(), animationmetadatasection.isInterpolate());
       }
 
-      this.info = new TextureAtlasSprite.Info(p_i226049_2_.name, i, j, animationmetadatasection);
-      this.metadata = animationmetadatasection;
+      this.spriteInfo = new TextureAtlasSprite.Info(spriteInfoIn.spriteLocation, i, j, animationmetadatasection);
+      this.animationMetadata = animationmetadatasection;
 
       try {
          try {
-            this.mainImage = MipmapGenerator.generateMipLevels(p_i226049_8_, p_i226049_3_);
+            this.frames = MipmapGenerator.generateMipmaps(imageIn, mipmapLevelsIn);
          } catch (Throwable throwable) {
-            CrashReport crashreport1 = CrashReport.forThrowable(throwable, "Generating mipmaps for frame");
-            CrashReportCategory crashreportcategory1 = crashreport1.addCategory("Frame being iterated");
-            crashreportcategory1.setDetail("First frame", () -> {
+            CrashReport crashreport1 = CrashReport.makeCrashReport(throwable, "Generating mipmaps for frame");
+            CrashReportCategory crashreportcategory1 = crashreport1.makeCategory("Frame being iterated");
+            crashreportcategory1.addDetail("First frame", () -> {
                StringBuilder stringbuilder = new StringBuilder();
                if (stringbuilder.length() > 0) {
                   stringbuilder.append(", ");
                }
 
-               stringbuilder.append(p_i226049_8_.getWidth()).append("x").append(p_i226049_8_.getHeight());
+               stringbuilder.append(imageIn.getWidth()).append("x").append(imageIn.getHeight());
                return stringbuilder.toString();
             });
             throw new ReportedException(crashreport1);
          }
       } catch (Throwable throwable1) {
-         CrashReport crashreport = CrashReport.forThrowable(throwable1, "Applying mipmap");
-         CrashReportCategory crashreportcategory = crashreport.addCategory("Sprite being mipmapped");
-         crashreportcategory.setDetail("Sprite name", () -> {
+         CrashReport crashreport = CrashReport.makeCrashReport(throwable1, "Applying mipmap");
+         CrashReportCategory crashreportcategory = crashreport.makeCategory("Sprite being mipmapped");
+         crashreportcategory.addDetail("Sprite name", () -> {
             return this.getName().toString();
          });
-         crashreportcategory.setDetail("Sprite size", () -> {
+         crashreportcategory.addDetail("Sprite size", () -> {
             return this.getWidth() + " x " + this.getHeight();
          });
-         crashreportcategory.setDetail("Sprite frames", () -> {
+         crashreportcategory.addDetail("Sprite frames", () -> {
             return this.getFrameCount() + " frames";
          });
-         crashreportcategory.setDetail("Mipmap levels", p_i226049_3_);
+         crashreportcategory.addDetail("Mipmap levels", mipmapLevelsIn);
          throw new ReportedException(crashreport);
       }
 
-      if (animationmetadatasection.isInterpolatedFrames()) {
-         this.interpolationData = new TextureAtlasSprite.InterpolationData(p_i226049_2_, p_i226049_3_);
+      if (animationmetadatasection.isInterpolate()) {
+         this.interpolationData = new TextureAtlasSprite.InterpolationData(spriteInfoIn, mipmapLevelsIn);
       } else {
          this.interpolationData = null;
       }
 
    }
 
-   private void upload(int p_195659_1_) {
-      int i = this.framesX[p_195659_1_] * this.info.width;
-      int j = this.framesY[p_195659_1_] * this.info.height;
-      this.upload(i, j, this.mainImage);
+   private void uploadFrames(int index) {
+      int i = this.framesX[index] * this.spriteInfo.spriteWidth;
+      int j = this.framesY[index] * this.spriteInfo.spriteHeight;
+      this.uploadFrames(i, j, this.frames);
    }
 
-   private void upload(int p_195667_1_, int p_195667_2_, NativeImage[] p_195667_3_) {
-      for(int i = 0; i < this.mainImage.length; ++i) {
-         p_195667_3_[i].upload(i, this.x >> i, this.y >> i, p_195667_1_ >> i, p_195667_2_ >> i, this.info.width >> i, this.info.height >> i, this.mainImage.length > 1, false);
+   private void uploadFrames(int xOffsetIn, int yOffsetIn, NativeImage[] framesIn) {
+      for(int i = 0; i < this.frames.length; ++i) {
+         framesIn[i].uploadTextureSub(i, this.x >> i, this.y >> i, xOffsetIn >> i, yOffsetIn >> i, this.spriteInfo.spriteWidth >> i, this.spriteInfo.spriteHeight >> i, this.frames.length > 1, false);
       }
 
    }
 
    public int getWidth() {
-      return this.info.width;
+      return this.spriteInfo.spriteWidth;
    }
 
    public int getHeight() {
-      return this.info.height;
+      return this.spriteInfo.spriteHeight;
    }
 
-   public float getU0() {
-      return this.u0;
+   public float getMinU() {
+      return this.minU;
    }
 
-   public float getU1() {
-      return this.u1;
+   public float getMaxU() {
+      return this.maxU;
    }
 
-   public float getU(double p_94214_1_) {
-      float f = this.u1 - this.u0;
-      return this.u0 + f * (float)p_94214_1_ / 16.0F;
+   public float getInterpolatedU(double u) {
+      float f = this.maxU - this.minU;
+      return this.minU + f * (float)u / 16.0F;
    }
 
-   public float getV0() {
-      return this.v0;
+   public float getMinV() {
+      return this.minV;
    }
 
-   public float getV1() {
-      return this.v1;
+   public float getMaxV() {
+      return this.maxV;
    }
 
-   public float getV(double p_94207_1_) {
-      float f = this.v1 - this.v0;
-      return this.v0 + f * (float)p_94207_1_ / 16.0F;
+   public float getInterpolatedV(double v) {
+      float f = this.maxV - this.minV;
+      return this.minV + f * (float)v / 16.0F;
    }
 
    public ResourceLocation getName() {
-      return this.info.name;
+      return this.spriteInfo.spriteLocation;
    }
 
-   public AtlasTexture atlas() {
-      return this.atlas;
+   public AtlasTexture getAtlasTexture() {
+      return this.atlasTexture;
    }
 
    public int getFrameCount() {
@@ -187,7 +187,7 @@ public class TextureAtlasSprite implements AutoCloseable {
    }
 
    public void close() {
-      for(NativeImage nativeimage : this.mainImage) {
+      for(NativeImage nativeimage : this.frames) {
          if (nativeimage != null) {
             nativeimage.close();
          }
@@ -201,139 +201,139 @@ public class TextureAtlasSprite implements AutoCloseable {
 
    public String toString() {
       int i = this.framesX.length;
-      return "TextureAtlasSprite{name='" + this.info.name + '\'' + ", frameCount=" + i + ", x=" + this.x + ", y=" + this.y + ", height=" + this.info.height + ", width=" + this.info.width + ", u0=" + this.u0 + ", u1=" + this.u1 + ", v0=" + this.v0 + ", v1=" + this.v1 + '}';
+      return "TextureAtlasSprite{name='" + this.spriteInfo.spriteLocation + '\'' + ", frameCount=" + i + ", x=" + this.x + ", y=" + this.y + ", height=" + this.spriteInfo.spriteHeight + ", width=" + this.spriteInfo.spriteWidth + ", u0=" + this.minU + ", u1=" + this.maxU + ", v0=" + this.minV + ", v1=" + this.maxV + '}';
    }
 
-   public boolean isTransparent(int p_195662_1_, int p_195662_2_, int p_195662_3_) {
-      return (this.mainImage[0].getPixelRGBA(p_195662_2_ + this.framesX[p_195662_1_] * this.info.width, p_195662_3_ + this.framesY[p_195662_1_] * this.info.height) >> 24 & 255) == 0;
+   public boolean isPixelTransparent(int frameIndex, int pixelX, int pixelY) {
+      return (this.frames[0].getPixelRGBA(pixelX + this.framesX[frameIndex] * this.spriteInfo.spriteWidth, pixelY + this.framesY[frameIndex] * this.spriteInfo.spriteHeight) >> 24 & 255) == 0;
    }
 
-   public void uploadFirstFrame() {
-      this.upload(0);
+   public void uploadMipmaps() {
+      this.uploadFrames(0);
    }
 
-   private float atlasSize() {
-      float f = (float)this.info.width / (this.u1 - this.u0);
-      float f1 = (float)this.info.height / (this.v1 - this.v0);
+   private float getAtlasSize() {
+      float f = (float)this.spriteInfo.spriteWidth / (this.maxU - this.minU);
+      float f1 = (float)this.spriteInfo.spriteHeight / (this.maxV - this.minV);
       return Math.max(f1, f);
    }
 
-   public float uvShrinkRatio() {
-      return 4.0F / this.atlasSize();
+   public float getUvShrinkRatio() {
+      return 4.0F / this.getAtlasSize();
    }
 
-   public void cycleFrames() {
-      ++this.subFrame;
-      if (this.subFrame >= this.metadata.getFrameTime(this.frame)) {
-         int i = this.metadata.getFrameIndex(this.frame);
-         int j = this.metadata.getFrameCount() == 0 ? this.getFrameCount() : this.metadata.getFrameCount();
-         this.frame = (this.frame + 1) % j;
-         this.subFrame = 0;
-         int k = this.metadata.getFrameIndex(this.frame);
+   public void updateAnimation() {
+      ++this.tickCounter;
+      if (this.tickCounter >= this.animationMetadata.getFrameTimeSingle(this.frameCounter)) {
+         int i = this.animationMetadata.getFrameIndex(this.frameCounter);
+         int j = this.animationMetadata.getFrameCount() == 0 ? this.getFrameCount() : this.animationMetadata.getFrameCount();
+         this.frameCounter = (this.frameCounter + 1) % j;
+         this.tickCounter = 0;
+         int k = this.animationMetadata.getFrameIndex(this.frameCounter);
          if (i != k && k >= 0 && k < this.getFrameCount()) {
-            this.upload(k);
+            this.uploadFrames(k);
          }
       } else if (this.interpolationData != null) {
          if (!RenderSystem.isOnRenderThread()) {
             RenderSystem.recordRenderCall(() -> {
-               TextureAtlasSprite.this.interpolationData.uploadInterpolatedFrame();
+               TextureAtlasSprite.this.interpolationData.uploadInterpolated();
             });
          } else {
-            this.interpolationData.uploadInterpolatedFrame();
+            this.interpolationData.uploadInterpolated();
          }
       }
 
    }
 
-   public boolean isAnimation() {
-      return this.metadata.getFrameCount() > 1;
+   public boolean hasAnimationMetadata() {
+      return this.animationMetadata.getFrameCount() > 1;
    }
 
-   public IVertexBuilder wrap(IVertexBuilder p_229230_1_) {
-      return new SpriteAwareVertexBuilder(p_229230_1_, this);
+   public IVertexBuilder wrapBuffer(IVertexBuilder bufferIn) {
+      return new SpriteAwareVertexBuilder(bufferIn, this);
    }
 
    @OnlyIn(Dist.CLIENT)
    public static final class Info {
-      private final ResourceLocation name;
-      private final int width;
-      private final int height;
-      private final AnimationMetadataSection metadata;
+      private final ResourceLocation spriteLocation;
+      private final int spriteWidth;
+      private final int spriteHeight;
+      private final AnimationMetadataSection spriteAnimationMetadata;
 
-      public Info(ResourceLocation p_i226050_1_, int p_i226050_2_, int p_i226050_3_, AnimationMetadataSection p_i226050_4_) {
-         this.name = p_i226050_1_;
-         this.width = p_i226050_2_;
-         this.height = p_i226050_3_;
-         this.metadata = p_i226050_4_;
+      public Info(ResourceLocation locationIn, int widthIn, int heightIn, AnimationMetadataSection animationMetadataIn) {
+         this.spriteLocation = locationIn;
+         this.spriteWidth = widthIn;
+         this.spriteHeight = heightIn;
+         this.spriteAnimationMetadata = animationMetadataIn;
       }
 
-      public ResourceLocation name() {
-         return this.name;
+      public ResourceLocation getSpriteLocation() {
+         return this.spriteLocation;
       }
 
-      public int width() {
-         return this.width;
+      public int getSpriteWidth() {
+         return this.spriteWidth;
       }
 
-      public int height() {
-         return this.height;
+      public int getSpriteHeight() {
+         return this.spriteHeight;
       }
    }
 
    @OnlyIn(Dist.CLIENT)
    final class InterpolationData implements AutoCloseable {
-      private final NativeImage[] activeFrame;
+      private final NativeImage[] images;
 
-      private InterpolationData(TextureAtlasSprite.Info p_i226051_2_, int p_i226051_3_) {
-         this.activeFrame = new NativeImage[p_i226051_3_ + 1];
+      private InterpolationData(TextureAtlasSprite.Info spriteInfoIn, int mipmapLevelsIn) {
+         this.images = new NativeImage[mipmapLevelsIn + 1];
 
-         for(int i = 0; i < this.activeFrame.length; ++i) {
-            int j = p_i226051_2_.width >> i;
-            int k = p_i226051_2_.height >> i;
-            if (this.activeFrame[i] == null) {
-               this.activeFrame[i] = new NativeImage(j, k, false);
+         for(int i = 0; i < this.images.length; ++i) {
+            int j = spriteInfoIn.spriteWidth >> i;
+            int k = spriteInfoIn.spriteHeight >> i;
+            if (this.images[i] == null) {
+               this.images[i] = new NativeImage(j, k, false);
             }
          }
 
       }
 
-      private void uploadInterpolatedFrame() {
-         double d0 = 1.0D - (double)TextureAtlasSprite.this.subFrame / (double)TextureAtlasSprite.this.metadata.getFrameTime(TextureAtlasSprite.this.frame);
-         int i = TextureAtlasSprite.this.metadata.getFrameIndex(TextureAtlasSprite.this.frame);
-         int j = TextureAtlasSprite.this.metadata.getFrameCount() == 0 ? TextureAtlasSprite.this.getFrameCount() : TextureAtlasSprite.this.metadata.getFrameCount();
-         int k = TextureAtlasSprite.this.metadata.getFrameIndex((TextureAtlasSprite.this.frame + 1) % j);
+      private void uploadInterpolated() {
+         double d0 = 1.0D - (double)TextureAtlasSprite.this.tickCounter / (double)TextureAtlasSprite.this.animationMetadata.getFrameTimeSingle(TextureAtlasSprite.this.frameCounter);
+         int i = TextureAtlasSprite.this.animationMetadata.getFrameIndex(TextureAtlasSprite.this.frameCounter);
+         int j = TextureAtlasSprite.this.animationMetadata.getFrameCount() == 0 ? TextureAtlasSprite.this.getFrameCount() : TextureAtlasSprite.this.animationMetadata.getFrameCount();
+         int k = TextureAtlasSprite.this.animationMetadata.getFrameIndex((TextureAtlasSprite.this.frameCounter + 1) % j);
          if (i != k && k >= 0 && k < TextureAtlasSprite.this.getFrameCount()) {
-            for(int l = 0; l < this.activeFrame.length; ++l) {
-               int i1 = TextureAtlasSprite.this.info.width >> l;
-               int j1 = TextureAtlasSprite.this.info.height >> l;
+            for(int l = 0; l < this.images.length; ++l) {
+               int i1 = TextureAtlasSprite.this.spriteInfo.spriteWidth >> l;
+               int j1 = TextureAtlasSprite.this.spriteInfo.spriteHeight >> l;
 
                for(int k1 = 0; k1 < j1; ++k1) {
                   for(int l1 = 0; l1 < i1; ++l1) {
-                     int i2 = this.getPixel(i, l, l1, k1);
-                     int j2 = this.getPixel(k, l, l1, k1);
+                     int i2 = this.getPixelColor(i, l, l1, k1);
+                     int j2 = this.getPixelColor(k, l, l1, k1);
                      int k2 = this.mix(d0, i2 >> 16 & 255, j2 >> 16 & 255);
                      int l2 = this.mix(d0, i2 >> 8 & 255, j2 >> 8 & 255);
                      int i3 = this.mix(d0, i2 & 255, j2 & 255);
-                     this.activeFrame[l].setPixelRGBA(l1, k1, i2 & -16777216 | k2 << 16 | l2 << 8 | i3);
+                     this.images[l].setPixelRGBA(l1, k1, i2 & -16777216 | k2 << 16 | l2 << 8 | i3);
                   }
                }
             }
 
-            TextureAtlasSprite.this.upload(0, 0, this.activeFrame);
+            TextureAtlasSprite.this.uploadFrames(0, 0, this.images);
          }
 
       }
 
-      private int getPixel(int p_229259_1_, int p_229259_2_, int p_229259_3_, int p_229259_4_) {
-         return TextureAtlasSprite.this.mainImage[p_229259_2_].getPixelRGBA(p_229259_3_ + (TextureAtlasSprite.this.framesX[p_229259_1_] * TextureAtlasSprite.this.info.width >> p_229259_2_), p_229259_4_ + (TextureAtlasSprite.this.framesY[p_229259_1_] * TextureAtlasSprite.this.info.height >> p_229259_2_));
+      private int getPixelColor(int frameIndex, int mipmapLevel, int x, int y) {
+         return TextureAtlasSprite.this.frames[mipmapLevel].getPixelRGBA(x + (TextureAtlasSprite.this.framesX[frameIndex] * TextureAtlasSprite.this.spriteInfo.spriteWidth >> mipmapLevel), y + (TextureAtlasSprite.this.framesY[frameIndex] * TextureAtlasSprite.this.spriteInfo.spriteHeight >> mipmapLevel));
       }
 
-      private int mix(double p_229258_1_, int p_229258_3_, int p_229258_4_) {
-         return (int)(p_229258_1_ * (double)p_229258_3_ + (1.0D - p_229258_1_) * (double)p_229258_4_);
+      private int mix(double ratio, int val1, int val2) {
+         return (int)(ratio * (double)val1 + (1.0D - ratio) * (double)val2);
       }
 
       public void close() {
-         for(NativeImage nativeimage : this.activeFrame) {
+         for(NativeImage nativeimage : this.images) {
             if (nativeimage != null) {
                nativeimage.close();
             }

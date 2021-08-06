@@ -5,15 +5,15 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IProgressUpdate {
-   void progressStartNoAbort(ITextComponent p_200210_1_);
+   void displaySavingString(ITextComponent component);
 
    @OnlyIn(Dist.CLIENT)
-   void progressStart(ITextComponent p_200211_1_);
+   void resetProgressAndMessage(ITextComponent component);
 
-   void progressStage(ITextComponent p_200209_1_);
+   void displayLoadingString(ITextComponent component);
 
-   void progressStagePercentage(int p_73718_1_);
+   void setLoadingProgress(int progress);
 
    @OnlyIn(Dist.CLIENT)
-   void stop();
+   void setDoneWorking();
 }

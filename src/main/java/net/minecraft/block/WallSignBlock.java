@@ -20,40 +20,40 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.IWorldReader;
 
 public class WallSignBlock extends AbstractSignBlock {
-   public static final DirectionProperty FACING = HorizontalBlock.FACING;
-   private static final Map<Direction, VoxelShape> AABBS = Maps.newEnumMap(ImmutableMap.of(Direction.NORTH, Block.box(0.0D, 4.5D, 14.0D, 16.0D, 12.5D, 16.0D), Direction.SOUTH, Block.box(0.0D, 4.5D, 0.0D, 16.0D, 12.5D, 2.0D), Direction.EAST, Block.box(0.0D, 4.5D, 0.0D, 2.0D, 12.5D, 16.0D), Direction.WEST, Block.box(14.0D, 4.5D, 0.0D, 16.0D, 12.5D, 16.0D)));
+   public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
+   private static final Map<Direction, VoxelShape> SHAPES = Maps.newEnumMap(ImmutableMap.of(Direction.NORTH, Block.makeCuboidShape(0.0D, 4.5D, 14.0D, 16.0D, 12.5D, 16.0D), Direction.SOUTH, Block.makeCuboidShape(0.0D, 4.5D, 0.0D, 16.0D, 12.5D, 2.0D), Direction.EAST, Block.makeCuboidShape(0.0D, 4.5D, 0.0D, 2.0D, 12.5D, 16.0D), Direction.WEST, Block.makeCuboidShape(14.0D, 4.5D, 0.0D, 16.0D, 12.5D, 16.0D)));
 
-   public WallSignBlock(AbstractBlock.Properties p_i225766_1_, WoodType p_i225766_2_) {
-      super(p_i225766_1_, p_i225766_2_);
-      this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(WATERLOGGED, Boolean.valueOf(false)));
+   public WallSignBlock(AbstractBlock.Properties properties, WoodType type) {
+      super(properties, type);
+      this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH).with(WATERLOGGED, Boolean.valueOf(false)));
    }
 
-   public String getDescriptionId() {
-      return this.asItem().getDescriptionId();
+   public String getTranslationKey() {
+      return this.asItem().getTranslationKey();
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
-      return AABBS.get(p_220053_1_.getValue(FACING));
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
+      return SHAPES.get(state.get(FACING));
    }
 
-   public boolean canSurvive(BlockState p_196260_1_, IWorldReader p_196260_2_, BlockPos p_196260_3_) {
-      return p_196260_2_.getBlockState(p_196260_3_.relative(p_196260_1_.getValue(FACING).getOpposite())).getMaterial().isSolid();
+   public boolean isValidPosition(BlockState state, IWorldReader worldIn, BlockPos pos) {
+      return worldIn.getBlockState(pos.offset(state.get(FACING).getOpposite())).getMaterial().isSolid();
    }
 
    @Nullable
-   public BlockState getStateForPlacement(BlockItemUseContext p_196258_1_) {
-      BlockState blockstate = this.defaultBlockState();
-      FluidState fluidstate = p_196258_1_.getLevel().getFluidState(p_196258_1_.getClickedPos());
-      IWorldReader iworldreader = p_196258_1_.getLevel();
-      BlockPos blockpos = p_196258_1_.getClickedPos();
-      Direction[] adirection = p_196258_1_.getNearestLookingDirections();
+   public BlockState getStateForPlacement(BlockItemUseContext context) {
+      BlockState blockstate = this.getDefaultState();
+      FluidState fluidstate = context.getWorld().getFluidState(context.getPos());
+      IWorldReader iworldreader = context.getWorld();
+      BlockPos blockpos = context.getPos();
+      Direction[] adirection = context.getNearestLookingDirections();
 
       for(Direction direction : adirection) {
          if (direction.getAxis().isHorizontal()) {
             Direction direction1 = direction.getOpposite();
-            blockstate = blockstate.setValue(FACING, direction1);
-            if (blockstate.canSurvive(iworldreader, blockpos)) {
-               return blockstate.setValue(WATERLOGGED, Boolean.valueOf(fluidstate.getType() == Fluids.WATER));
+            blockstate = blockstate.with(FACING, direction1);
+            if (blockstate.isValidPosition(iworldreader, blockpos)) {
+               return blockstate.with(WATERLOGGED, Boolean.valueOf(fluidstate.getFluid() == Fluids.WATER));
             }
          }
       }
@@ -61,19 +61,19 @@ public class WallSignBlock extends AbstractSignBlock {
       return null;
    }
 
-   public BlockState updateShape(BlockState p_196271_1_, Direction p_196271_2_, BlockState p_196271_3_, IWorld p_196271_4_, BlockPos p_196271_5_, BlockPos p_196271_6_) {
-      return p_196271_2_.getOpposite() == p_196271_1_.getValue(FACING) && !p_196271_1_.canSurvive(p_196271_4_, p_196271_5_) ? Blocks.AIR.defaultBlockState() : super.updateShape(p_196271_1_, p_196271_2_, p_196271_3_, p_196271_4_, p_196271_5_, p_196271_6_);
+   public BlockState updatePostPlacement(BlockState stateIn, Direction facing, BlockState facingState, IWorld worldIn, BlockPos currentPos, BlockPos facingPos) {
+      return facing.getOpposite() == stateIn.get(FACING) && !stateIn.isValidPosition(worldIn, currentPos) ? Blocks.AIR.getDefaultState() : super.updatePostPlacement(stateIn, facing, facingState, worldIn, currentPos, facingPos);
    }
 
-   public BlockState rotate(BlockState p_185499_1_, Rotation p_185499_2_) {
-      return p_185499_1_.setValue(FACING, p_185499_2_.rotate(p_185499_1_.getValue(FACING)));
+   public BlockState rotate(BlockState state, Rotation rot) {
+      return state.with(FACING, rot.rotate(state.get(FACING)));
    }
 
-   public BlockState mirror(BlockState p_185471_1_, Mirror p_185471_2_) {
-      return p_185471_1_.rotate(p_185471_2_.getRotation(p_185471_1_.getValue(FACING)));
+   public BlockState mirror(BlockState state, Mirror mirrorIn) {
+      return state.rotate(mirrorIn.toRotation(state.get(FACING)));
    }
 
-   protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> p_206840_1_) {
-      p_206840_1_.add(FACING, WATERLOGGED);
+   protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+      builder.add(FACING, WATERLOGGED);
    }
 }

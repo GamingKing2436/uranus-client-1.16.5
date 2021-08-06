@@ -15,12 +15,12 @@ public class NBTCompoundTagArgument implements ArgumentType<CompoundNBT> {
    private NBTCompoundTagArgument() {
    }
 
-   public static NBTCompoundTagArgument compoundTag() {
+   public static NBTCompoundTagArgument nbt() {
       return new NBTCompoundTagArgument();
    }
 
-   public static <S> CompoundNBT getCompoundTag(CommandContext<S> p_218042_0_, String p_218042_1_) {
-      return p_218042_0_.getArgument(p_218042_1_, CompoundNBT.class);
+   public static <S> CompoundNBT getNbt(CommandContext<S> context, String name) {
+      return context.getArgument(name, CompoundNBT.class);
    }
 
    public CompoundNBT parse(StringReader p_parse_1_) throws CommandSyntaxException {

@@ -15,74 +15,74 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class CUseEntityPacket implements IPacket<IServerPlayNetHandler> {
    private int entityId;
    private CUseEntityPacket.Action action;
-   private Vector3d location;
+   private Vector3d hitVec;
    private Hand hand;
-   private boolean usingSecondaryAction;
+   private boolean field_241791_e_;
 
    public CUseEntityPacket() {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public CUseEntityPacket(Entity p_i46877_1_, boolean p_i46877_2_) {
-      this.entityId = p_i46877_1_.getId();
+   public CUseEntityPacket(Entity entityIn, boolean p_i46877_2_) {
+      this.entityId = entityIn.getEntityId();
       this.action = CUseEntityPacket.Action.ATTACK;
-      this.usingSecondaryAction = p_i46877_2_;
+      this.field_241791_e_ = p_i46877_2_;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public CUseEntityPacket(Entity p_i46878_1_, Hand p_i46878_2_, boolean p_i46878_3_) {
-      this.entityId = p_i46878_1_.getId();
+   public CUseEntityPacket(Entity entityIn, Hand handIn, boolean p_i46878_3_) {
+      this.entityId = entityIn.getEntityId();
       this.action = CUseEntityPacket.Action.INTERACT;
-      this.hand = p_i46878_2_;
-      this.usingSecondaryAction = p_i46878_3_;
+      this.hand = handIn;
+      this.field_241791_e_ = p_i46878_3_;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public CUseEntityPacket(Entity p_i47098_1_, Hand p_i47098_2_, Vector3d p_i47098_3_, boolean p_i47098_4_) {
-      this.entityId = p_i47098_1_.getId();
+   public CUseEntityPacket(Entity entityIn, Hand handIn, Vector3d hitVecIn, boolean p_i47098_4_) {
+      this.entityId = entityIn.getEntityId();
       this.action = CUseEntityPacket.Action.INTERACT_AT;
-      this.hand = p_i47098_2_;
-      this.location = p_i47098_3_;
-      this.usingSecondaryAction = p_i47098_4_;
+      this.hand = handIn;
+      this.hitVec = hitVecIn;
+      this.field_241791_e_ = p_i47098_4_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.entityId = p_148837_1_.readVarInt();
-      this.action = p_148837_1_.readEnum(CUseEntityPacket.Action.class);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.entityId = buf.readVarInt();
+      this.action = buf.readEnumValue(CUseEntityPacket.Action.class);
       if (this.action == CUseEntityPacket.Action.INTERACT_AT) {
-         this.location = new Vector3d((double)p_148837_1_.readFloat(), (double)p_148837_1_.readFloat(), (double)p_148837_1_.readFloat());
+         this.hitVec = new Vector3d((double)buf.readFloat(), (double)buf.readFloat(), (double)buf.readFloat());
       }
 
       if (this.action == CUseEntityPacket.Action.INTERACT || this.action == CUseEntityPacket.Action.INTERACT_AT) {
-         this.hand = p_148837_1_.readEnum(Hand.class);
+         this.hand = buf.readEnumValue(Hand.class);
       }
 
-      this.usingSecondaryAction = p_148837_1_.readBoolean();
+      this.field_241791_e_ = buf.readBoolean();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.entityId);
-      p_148840_1_.writeEnum(this.action);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.entityId);
+      buf.writeEnumValue(this.action);
       if (this.action == CUseEntityPacket.Action.INTERACT_AT) {
-         p_148840_1_.writeFloat((float)this.location.x);
-         p_148840_1_.writeFloat((float)this.location.y);
-         p_148840_1_.writeFloat((float)this.location.z);
+         buf.writeFloat((float)this.hitVec.x);
+         buf.writeFloat((float)this.hitVec.y);
+         buf.writeFloat((float)this.hitVec.z);
       }
 
       if (this.action == CUseEntityPacket.Action.INTERACT || this.action == CUseEntityPacket.Action.INTERACT_AT) {
-         p_148840_1_.writeEnum(this.hand);
+         buf.writeEnumValue(this.hand);
       }
 
-      p_148840_1_.writeBoolean(this.usingSecondaryAction);
+      buf.writeBoolean(this.field_241791_e_);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleInteract(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processUseEntity(this);
    }
 
    @Nullable
-   public Entity getTarget(World p_149564_1_) {
-      return p_149564_1_.getEntity(this.entityId);
+   public Entity getEntityFromWorld(World worldIn) {
+      return worldIn.getEntityByID(this.entityId);
    }
 
    public CUseEntityPacket.Action getAction() {
@@ -94,12 +94,12 @@ public class CUseEntityPacket implements IPacket<IServerPlayNetHandler> {
       return this.hand;
    }
 
-   public Vector3d getLocation() {
-      return this.location;
+   public Vector3d getHitVec() {
+      return this.hitVec;
    }
 
-   public boolean isUsingSecondaryAction() {
-      return this.usingSecondaryAction;
+   public boolean func_241792_e_() {
+      return this.field_241791_e_;
    }
 
    public static enum Action {

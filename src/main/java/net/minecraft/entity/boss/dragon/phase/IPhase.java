@@ -8,26 +8,26 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 
 public interface IPhase {
-   boolean isSitting();
+   boolean getIsStationary();
 
-   void doClientTick();
+   void clientTick();
 
-   void doServerTick();
+   void serverTick();
 
-   void onCrystalDestroyed(EnderCrystalEntity p_188655_1_, BlockPos p_188655_2_, DamageSource p_188655_3_, @Nullable PlayerEntity p_188655_4_);
+   void onCrystalDestroyed(EnderCrystalEntity crystal, BlockPos pos, DamageSource dmgSrc, @Nullable PlayerEntity plyr);
 
-   void begin();
+   void initPhase();
 
-   void end();
+   void removeAreaEffect();
 
-   float getFlySpeed();
+   float getMaxRiseOrFall();
 
-   float getTurnSpeed();
+   float getYawFactor();
 
-   PhaseType<? extends IPhase> getPhase();
+   PhaseType<? extends IPhase> getType();
 
    @Nullable
-   Vector3d getFlyTargetLocation();
+   Vector3d getTargetLocation();
 
-   float onHurt(DamageSource p_221113_1_, float p_221113_2_);
+   float func_221113_a(DamageSource p_221113_1_, float p_221113_2_);
 }

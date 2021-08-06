@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
 @OnlyIn(Dist.CLIENT)
 public class UVTransformationUtil {
    private static final Logger LOGGER = LogManager.getLogger();
-   public static final EnumMap<Direction, TransformationMatrix> vanillaUvTransformLocalToGlobal = Util.make(Maps.newEnumMap(Direction.class), (p_229382_0_) -> {
+   public static final EnumMap<Direction, TransformationMatrix> TRANSFORM_LOCAL_TO_GLOBAL = Util.make(Maps.newEnumMap(Direction.class), (p_229382_0_) -> {
       p_229382_0_.put(Direction.SOUTH, TransformationMatrix.identity());
       p_229382_0_.put(Direction.EAST, new TransformationMatrix((Vector3f)null, new Quaternion(new Vector3f(0.0F, 1.0F, 0.0F), 90.0F, true), (Vector3f)null, (Quaternion)null));
       p_229382_0_.put(Direction.WEST, new TransformationMatrix((Vector3f)null, new Quaternion(new Vector3f(0.0F, 1.0F, 0.0F), -90.0F, true), (Vector3f)null, (Quaternion)null));
@@ -25,28 +25,28 @@ public class UVTransformationUtil {
       p_229382_0_.put(Direction.UP, new TransformationMatrix((Vector3f)null, new Quaternion(new Vector3f(1.0F, 0.0F, 0.0F), -90.0F, true), (Vector3f)null, (Quaternion)null));
       p_229382_0_.put(Direction.DOWN, new TransformationMatrix((Vector3f)null, new Quaternion(new Vector3f(1.0F, 0.0F, 0.0F), 90.0F, true), (Vector3f)null, (Quaternion)null));
    });
-   public static final EnumMap<Direction, TransformationMatrix> vanillaUvTransformGlobalToLocal = Util.make(Maps.newEnumMap(Direction.class), (p_229381_0_) -> {
+   public static final EnumMap<Direction, TransformationMatrix> TRANSFORM_GLOBAL_TO_LOCAL = Util.make(Maps.newEnumMap(Direction.class), (p_229381_0_) -> {
       for(Direction direction : Direction.values()) {
-         p_229381_0_.put(direction, vanillaUvTransformLocalToGlobal.get(direction).inverse());
+         p_229381_0_.put(direction, TRANSFORM_LOCAL_TO_GLOBAL.get(direction).inverseVanilla());
       }
 
    });
 
-   public static TransformationMatrix blockCenterToCorner(TransformationMatrix p_229379_0_) {
-      Matrix4f matrix4f = Matrix4f.createTranslateMatrix(0.5F, 0.5F, 0.5F);
-      matrix4f.multiply(p_229379_0_.getMatrix());
-      matrix4f.multiply(Matrix4f.createTranslateMatrix(-0.5F, -0.5F, -0.5F));
+   public static TransformationMatrix blockCenterToCorner(TransformationMatrix matrixIn) {
+      Matrix4f matrix4f = Matrix4f.makeTranslate(0.5F, 0.5F, 0.5F);
+      matrix4f.mul(matrixIn.getMatrix());
+      matrix4f.mul(Matrix4f.makeTranslate(-0.5F, -0.5F, -0.5F));
       return new TransformationMatrix(matrix4f);
    }
 
-   public static TransformationMatrix getUVLockTransform(TransformationMatrix p_229380_0_, Direction p_229380_1_, Supplier<String> p_229380_2_) {
-      Direction direction = Direction.rotate(p_229380_0_.getMatrix(), p_229380_1_);
-      TransformationMatrix transformationmatrix = p_229380_0_.inverse();
+   public static TransformationMatrix getUVLockTransform(TransformationMatrix matrixIn, Direction directionIn, Supplier<String> warningIn) {
+      Direction direction = Direction.rotateFace(matrixIn.getMatrix(), directionIn);
+      TransformationMatrix transformationmatrix = matrixIn.inverseVanilla();
       if (transformationmatrix == null) {
-         LOGGER.warn(p_229380_2_.get());
+         LOGGER.warn(warningIn.get());
          return new TransformationMatrix((Vector3f)null, (Quaternion)null, new Vector3f(0.0F, 0.0F, 0.0F), (Quaternion)null);
       } else {
-         TransformationMatrix transformationmatrix1 = vanillaUvTransformGlobalToLocal.get(p_229380_1_).compose(transformationmatrix).compose(vanillaUvTransformLocalToGlobal.get(direction));
+         TransformationMatrix transformationmatrix1 = TRANSFORM_GLOBAL_TO_LOCAL.get(directionIn).composeVanilla(transformationmatrix).composeVanilla(TRANSFORM_LOCAL_TO_GLOBAL.get(direction));
          return blockCenterToCorner(transformationmatrix1);
       }
    }

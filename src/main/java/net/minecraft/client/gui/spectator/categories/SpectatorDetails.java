@@ -12,19 +12,19 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class SpectatorDetails {
    private final ISpectatorMenuView category;
    private final List<ISpectatorMenuObject> items;
-   private final int selection;
+   private final int selectedSlot;
 
-   public SpectatorDetails(ISpectatorMenuView p_i45494_1_, List<ISpectatorMenuObject> p_i45494_2_, int p_i45494_3_) {
-      this.category = p_i45494_1_;
-      this.items = p_i45494_2_;
-      this.selection = p_i45494_3_;
+   public SpectatorDetails(ISpectatorMenuView categoryIn, List<ISpectatorMenuObject> itemsIn, int selectedIndex) {
+      this.category = categoryIn;
+      this.items = itemsIn;
+      this.selectedSlot = selectedIndex;
    }
 
-   public ISpectatorMenuObject getItem(int p_178680_1_) {
-      return p_178680_1_ >= 0 && p_178680_1_ < this.items.size() ? MoreObjects.firstNonNull(this.items.get(p_178680_1_), SpectatorMenu.EMPTY_SLOT) : SpectatorMenu.EMPTY_SLOT;
+   public ISpectatorMenuObject getObject(int index) {
+      return index >= 0 && index < this.items.size() ? MoreObjects.firstNonNull(this.items.get(index), SpectatorMenu.EMPTY_SLOT) : SpectatorMenu.EMPTY_SLOT;
    }
 
    public int getSelectedSlot() {
-      return this.selection;
+      return this.selectedSlot;
    }
 }

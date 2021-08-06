@@ -8,35 +8,35 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 
 public class FlowerBlock extends BushBlock {
-   protected static final VoxelShape SHAPE = Block.box(5.0D, 0.0D, 5.0D, 11.0D, 10.0D, 11.0D);
-   private final Effect suspiciousStewEffect;
-   private final int effectDuration;
+   protected static final VoxelShape SHAPE = Block.makeCuboidShape(5.0D, 0.0D, 5.0D, 11.0D, 10.0D, 11.0D);
+   private final Effect stewEffect;
+   private final int stewEffectDuration;
 
-   public FlowerBlock(Effect p_i49984_1_, int p_i49984_2_, AbstractBlock.Properties p_i49984_3_) {
-      super(p_i49984_3_);
-      this.suspiciousStewEffect = p_i49984_1_;
-      if (p_i49984_1_.isInstantenous()) {
-         this.effectDuration = p_i49984_2_;
+   public FlowerBlock(Effect effect, int effectDuration, AbstractBlock.Properties properties) {
+      super(properties);
+      this.stewEffect = effect;
+      if (effect.isInstant()) {
+         this.stewEffectDuration = effectDuration;
       } else {
-         this.effectDuration = p_i49984_2_ * 20;
+         this.stewEffectDuration = effectDuration * 20;
       }
 
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
-      Vector3d vector3d = p_220053_1_.getOffset(p_220053_2_, p_220053_3_);
-      return SHAPE.move(vector3d.x, vector3d.y, vector3d.z);
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
+      Vector3d vector3d = state.getOffset(worldIn, pos);
+      return SHAPE.withOffset(vector3d.x, vector3d.y, vector3d.z);
    }
 
    public AbstractBlock.OffsetType getOffsetType() {
       return AbstractBlock.OffsetType.XZ;
    }
 
-   public Effect getSuspiciousStewEffect() {
-      return this.suspiciousStewEffect;
+   public Effect getStewEffect() {
+      return this.stewEffect;
    }
 
-   public int getEffectDuration() {
-      return this.effectDuration;
+   public int getStewEffectDuration() {
+      return this.stewEffectDuration;
    }
 }

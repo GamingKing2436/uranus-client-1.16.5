@@ -45,30 +45,30 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class FlatPresetsScreen extends Screen {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private static final List<FlatPresetsScreen.LayerItem> PRESETS = Lists.newArrayList();
-   private final CreateFlatWorldScreen parent;
-   private ITextComponent shareText;
+   private static final Logger field_238631_a_ = LogManager.getLogger();
+   private static final List<FlatPresetsScreen.LayerItem> FLAT_WORLD_PRESETS = Lists.newArrayList();
+   private final CreateFlatWorldScreen parentScreen;
+   private ITextComponent presetsShare;
    private ITextComponent listText;
    private FlatPresetsScreen.SlotList list;
-   private Button selectButton;
+   private Button btnSelect;
    private TextFieldWidget export;
-   private FlatGenerationSettings settings;
+   private FlatGenerationSettings field_241594_u_;
 
-   public FlatPresetsScreen(CreateFlatWorldScreen p_i46318_1_) {
+   public FlatPresetsScreen(CreateFlatWorldScreen parent) {
       super(new TranslationTextComponent("createWorld.customize.presets.title"));
-      this.parent = p_i46318_1_;
+      this.parentScreen = parent;
    }
 
    @Nullable
-   private static FlatLayerInfo getLayerInfoFromString(String p_238638_0_, int p_238638_1_) {
+   private static FlatLayerInfo func_238638_a_(String p_238638_0_, int p_238638_1_) {
       String[] astring = p_238638_0_.split("\\*", 2);
       int i;
       if (astring.length == 2) {
          try {
             i = Math.max(Integer.parseInt(astring[0]), 0);
          } catch (NumberFormatException numberformatexception) {
-            LOGGER.error("Error while parsing flat world string => {}", (Object)numberformatexception.getMessage());
+            field_238631_a_.error("Error while parsing flat world string => {}", (Object)numberformatexception.getMessage());
             return null;
          }
       } else {
@@ -83,63 +83,63 @@ public class FlatPresetsScreen extends Screen {
       try {
          block = Registry.BLOCK.getOptional(new ResourceLocation(s)).orElse((Block)null);
       } catch (Exception exception) {
-         LOGGER.error("Error while parsing flat world string => {}", (Object)exception.getMessage());
+         field_238631_a_.error("Error while parsing flat world string => {}", (Object)exception.getMessage());
          return null;
       }
 
       if (block == null) {
-         LOGGER.error("Error while parsing flat world string => Unknown block, {}", (Object)s);
+         field_238631_a_.error("Error while parsing flat world string => Unknown block, {}", (Object)s);
          return null;
       } else {
          FlatLayerInfo flatlayerinfo = new FlatLayerInfo(k, block);
-         flatlayerinfo.setStart(p_238638_1_);
+         flatlayerinfo.setMinY(p_238638_1_);
          return flatlayerinfo;
       }
    }
 
-   private static List<FlatLayerInfo> getLayersInfoFromString(String p_238637_0_) {
+   private static List<FlatLayerInfo> func_238637_a_(String p_238637_0_) {
       List<FlatLayerInfo> list = Lists.newArrayList();
       String[] astring = p_238637_0_.split(",");
       int i = 0;
 
       for(String s : astring) {
-         FlatLayerInfo flatlayerinfo = getLayerInfoFromString(s, i);
+         FlatLayerInfo flatlayerinfo = func_238638_a_(s, i);
          if (flatlayerinfo == null) {
             return Collections.emptyList();
          }
 
          list.add(flatlayerinfo);
-         i += flatlayerinfo.getHeight();
+         i += flatlayerinfo.getLayerCount();
       }
 
       return list;
    }
 
-   public static FlatGenerationSettings fromString(Registry<Biome> p_243299_0_, String p_243299_1_, FlatGenerationSettings p_243299_2_) {
+   public static FlatGenerationSettings func_243299_a(Registry<Biome> p_243299_0_, String p_243299_1_, FlatGenerationSettings p_243299_2_) {
       Iterator<String> iterator = Splitter.on(';').split(p_243299_1_).iterator();
       if (!iterator.hasNext()) {
-         return FlatGenerationSettings.getDefault(p_243299_0_);
+         return FlatGenerationSettings.func_242869_a(p_243299_0_);
       } else {
-         List<FlatLayerInfo> list = getLayersInfoFromString(iterator.next());
+         List<FlatLayerInfo> list = func_238637_a_(iterator.next());
          if (list.isEmpty()) {
-            return FlatGenerationSettings.getDefault(p_243299_0_);
+            return FlatGenerationSettings.func_242869_a(p_243299_0_);
          } else {
-            FlatGenerationSettings flatgenerationsettings = p_243299_2_.withLayers(list, p_243299_2_.structureSettings());
+            FlatGenerationSettings flatgenerationsettings = p_243299_2_.func_241527_a_(list, p_243299_2_.func_236943_d_());
             RegistryKey<Biome> registrykey = Biomes.PLAINS;
             if (iterator.hasNext()) {
                try {
                   ResourceLocation resourcelocation = new ResourceLocation(iterator.next());
-                  registrykey = RegistryKey.create(Registry.BIOME_REGISTRY, resourcelocation);
-                  p_243299_0_.getOptional(registrykey).orElseThrow(() -> {
+                  registrykey = RegistryKey.getOrCreateKey(Registry.BIOME_KEY, resourcelocation);
+                  p_243299_0_.getOptionalValue(registrykey).orElseThrow(() -> {
                      return new IllegalArgumentException("Invalid Biome: " + resourcelocation);
                   });
                } catch (Exception exception) {
-                  LOGGER.error("Error while parsing flat world string => {}", (Object)exception.getMessage());
+                  field_238631_a_.error("Error while parsing flat world string => {}", (Object)exception.getMessage());
                }
             }
 
             RegistryKey<Biome> registrykey1 = registrykey;
-            flatgenerationsettings.setBiome(() -> {
+            flatgenerationsettings.func_242870_a(() -> {
                return p_243299_0_.getOrThrow(registrykey1);
             });
             return flatgenerationsettings;
@@ -147,15 +147,15 @@ public class FlatPresetsScreen extends Screen {
       }
    }
 
-   private static String save(Registry<Biome> p_243303_0_, FlatGenerationSettings p_243303_1_) {
+   private static String func_243303_b(Registry<Biome> p_243303_0_, FlatGenerationSettings p_243303_1_) {
       StringBuilder stringbuilder = new StringBuilder();
 
-      for(int i = 0; i < p_243303_1_.getLayersInfo().size(); ++i) {
+      for(int i = 0; i < p_243303_1_.getFlatLayers().size(); ++i) {
          if (i > 0) {
             stringbuilder.append(",");
          }
 
-         stringbuilder.append(p_243303_1_.getLayersInfo().get(i));
+         stringbuilder.append(p_243303_1_.getFlatLayers().get(i));
       }
 
       stringbuilder.append(";");
@@ -164,57 +164,57 @@ public class FlatPresetsScreen extends Screen {
    }
 
    protected void init() {
-      this.minecraft.keyboardHandler.setSendRepeatsToGui(true);
-      this.shareText = new TranslationTextComponent("createWorld.customize.presets.share");
+      this.minecraft.keyboardListener.enableRepeatEvents(true);
+      this.presetsShare = new TranslationTextComponent("createWorld.customize.presets.share");
       this.listText = new TranslationTextComponent("createWorld.customize.presets.list");
-      this.export = new TextFieldWidget(this.font, 50, 40, this.width - 100, 20, this.shareText);
-      this.export.setMaxLength(1230);
-      Registry<Biome> registry = this.parent.parent.worldGenSettingsComponent.registryHolder().registryOrThrow(Registry.BIOME_REGISTRY);
-      this.export.setValue(save(registry, this.parent.settings()));
-      this.settings = this.parent.settings();
+      this.export = new TextFieldWidget(this.font, 50, 40, this.width - 100, 20, this.presetsShare);
+      this.export.setMaxStringLength(1230);
+      Registry<Biome> registry = this.parentScreen.createWorldGui.field_238934_c_.func_239055_b_().getRegistry(Registry.BIOME_KEY);
+      this.export.setText(func_243303_b(registry, this.parentScreen.func_238603_g_()));
+      this.field_241594_u_ = this.parentScreen.func_238603_g_();
       this.children.add(this.export);
       this.list = new FlatPresetsScreen.SlotList();
       this.children.add(this.list);
-      this.selectButton = this.addButton(new Button(this.width / 2 - 155, this.height - 28, 150, 20, new TranslationTextComponent("createWorld.customize.presets.select"), (p_243298_2_) -> {
-         FlatGenerationSettings flatgenerationsettings = fromString(registry, this.export.getValue(), this.settings);
-         this.parent.setConfig(flatgenerationsettings);
-         this.minecraft.setScreen(this.parent);
+      this.btnSelect = this.addButton(new Button(this.width / 2 - 155, this.height - 28, 150, 20, new TranslationTextComponent("createWorld.customize.presets.select"), (p_243298_2_) -> {
+         FlatGenerationSettings flatgenerationsettings = func_243299_a(registry, this.export.getText(), this.field_241594_u_);
+         this.parentScreen.func_238602_a_(flatgenerationsettings);
+         this.minecraft.displayGuiScreen(this.parentScreen);
       }));
       this.addButton(new Button(this.width / 2 + 5, this.height - 28, 150, 20, DialogTexts.GUI_CANCEL, (p_243294_1_) -> {
-         this.minecraft.setScreen(this.parent);
+         this.minecraft.displayGuiScreen(this.parentScreen);
       }));
-      this.updateButtonValidity(this.list.getSelected() != null);
+      this.func_213074_a(this.list.getSelected() != null);
    }
 
-   public boolean mouseScrolled(double p_231043_1_, double p_231043_3_, double p_231043_5_) {
-      return this.list.mouseScrolled(p_231043_1_, p_231043_3_, p_231043_5_);
+   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+      return this.list.mouseScrolled(mouseX, mouseY, delta);
    }
 
-   public void resize(Minecraft p_231152_1_, int p_231152_2_, int p_231152_3_) {
-      String s = this.export.getValue();
-      this.init(p_231152_1_, p_231152_2_, p_231152_3_);
-      this.export.setValue(s);
+   public void resize(Minecraft minecraft, int width, int height) {
+      String s = this.export.getText();
+      this.init(minecraft, width, height);
+      this.export.setText(s);
+   }
+
+   public void closeScreen() {
+      this.minecraft.displayGuiScreen(this.parentScreen);
    }
 
    public void onClose() {
-      this.minecraft.setScreen(this.parent);
+      this.minecraft.keyboardListener.enableRepeatEvents(false);
    }
 
-   public void removed() {
-      this.minecraft.keyboardHandler.setSendRepeatsToGui(false);
-   }
-
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.renderBackground(p_230430_1_);
-      this.list.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.renderBackground(matrixStack);
+      this.list.render(matrixStack, mouseX, mouseY, partialTicks);
       RenderSystem.pushMatrix();
       RenderSystem.translatef(0.0F, 0.0F, 400.0F);
-      drawCenteredString(p_230430_1_, this.font, this.title, this.width / 2, 8, 16777215);
-      drawString(p_230430_1_, this.font, this.shareText, 50, 30, 10526880);
-      drawString(p_230430_1_, this.font, this.listText, 50, 70, 10526880);
+      drawCenteredString(matrixStack, this.font, this.title, this.width / 2, 8, 16777215);
+      drawString(matrixStack, this.font, this.presetsShare, 50, 30, 10526880);
+      drawString(matrixStack, this.font, this.listText, 50, 70, 10526880);
       RenderSystem.popMatrix();
-      this.export.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+      this.export.render(matrixStack, mouseX, mouseY, partialTicks);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
    }
 
    public void tick() {
@@ -222,65 +222,65 @@ public class FlatPresetsScreen extends Screen {
       super.tick();
    }
 
-   public void updateButtonValidity(boolean p_213074_1_) {
-      this.selectButton.active = p_213074_1_ || this.export.getValue().length() > 1;
+   public void func_213074_a(boolean p_213074_1_) {
+      this.btnSelect.active = p_213074_1_ || this.export.getText().length() > 1;
    }
 
-   private static void preset(ITextComponent p_238640_0_, IItemProvider p_238640_1_, RegistryKey<Biome> p_238640_2_, List<Structure<?>> p_238640_3_, boolean p_238640_4_, boolean p_238640_5_, boolean p_238640_6_, FlatLayerInfo... p_238640_7_) {
-      PRESETS.add(new FlatPresetsScreen.LayerItem(p_238640_1_.asItem(), p_238640_0_, (p_243301_6_) -> {
+   private static void func_238640_a_(ITextComponent p_238640_0_, IItemProvider p_238640_1_, RegistryKey<Biome> p_238640_2_, List<Structure<?>> p_238640_3_, boolean p_238640_4_, boolean p_238640_5_, boolean p_238640_6_, FlatLayerInfo... p_238640_7_) {
+      FLAT_WORLD_PRESETS.add(new FlatPresetsScreen.LayerItem(p_238640_1_.asItem(), p_238640_0_, (p_243301_6_) -> {
          Map<Structure<?>, StructureSeparationSettings> map = Maps.newHashMap();
 
          for(Structure<?> structure : p_238640_3_) {
-            map.put(structure, DimensionStructuresSettings.DEFAULTS.get(structure));
+            map.put(structure, DimensionStructuresSettings.field_236191_b_.get(structure));
          }
 
-         DimensionStructuresSettings dimensionstructuressettings = new DimensionStructuresSettings(p_238640_4_ ? Optional.of(DimensionStructuresSettings.DEFAULT_STRONGHOLD) : Optional.empty(), map);
+         DimensionStructuresSettings dimensionstructuressettings = new DimensionStructuresSettings(p_238640_4_ ? Optional.of(DimensionStructuresSettings.field_236192_c_) : Optional.empty(), map);
          FlatGenerationSettings flatgenerationsettings = new FlatGenerationSettings(dimensionstructuressettings, p_243301_6_);
          if (p_238640_5_) {
-            flatgenerationsettings.setDecoration();
+            flatgenerationsettings.func_236936_a_();
          }
 
          if (p_238640_6_) {
-            flatgenerationsettings.setAddLakes();
+            flatgenerationsettings.func_236941_b_();
          }
 
          for(int i = p_238640_7_.length - 1; i >= 0; --i) {
-            flatgenerationsettings.getLayersInfo().add(p_238640_7_[i]);
+            flatgenerationsettings.getFlatLayers().add(p_238640_7_[i]);
          }
 
-         flatgenerationsettings.setBiome(() -> {
+         flatgenerationsettings.func_242870_a(() -> {
             return p_243301_6_.getOrThrow(p_238640_2_);
          });
          flatgenerationsettings.updateLayers();
-         return flatgenerationsettings.withStructureSettings(dimensionstructuressettings);
+         return flatgenerationsettings.func_236937_a_(dimensionstructuressettings);
       }));
    }
 
    static {
-      preset(new TranslationTextComponent("createWorld.customize.preset.classic_flat"), Blocks.GRASS_BLOCK, Biomes.PLAINS, Arrays.asList(Structure.VILLAGE), false, false, false, new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(2, Blocks.DIRT), new FlatLayerInfo(1, Blocks.BEDROCK));
-      preset(new TranslationTextComponent("createWorld.customize.preset.tunnelers_dream"), Blocks.STONE, Biomes.MOUNTAINS, Arrays.asList(Structure.MINESHAFT), true, true, false, new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(5, Blocks.DIRT), new FlatLayerInfo(230, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
-      preset(new TranslationTextComponent("createWorld.customize.preset.water_world"), Items.WATER_BUCKET, Biomes.DEEP_OCEAN, Arrays.asList(Structure.OCEAN_RUIN, Structure.SHIPWRECK, Structure.OCEAN_MONUMENT), false, false, false, new FlatLayerInfo(90, Blocks.WATER), new FlatLayerInfo(5, Blocks.SAND), new FlatLayerInfo(5, Blocks.DIRT), new FlatLayerInfo(5, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
-      preset(new TranslationTextComponent("createWorld.customize.preset.overworld"), Blocks.GRASS, Biomes.PLAINS, Arrays.asList(Structure.VILLAGE, Structure.MINESHAFT, Structure.PILLAGER_OUTPOST, Structure.RUINED_PORTAL), true, true, true, new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(3, Blocks.DIRT), new FlatLayerInfo(59, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
-      preset(new TranslationTextComponent("createWorld.customize.preset.snowy_kingdom"), Blocks.SNOW, Biomes.SNOWY_TUNDRA, Arrays.asList(Structure.VILLAGE, Structure.IGLOO), false, false, false, new FlatLayerInfo(1, Blocks.SNOW), new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(3, Blocks.DIRT), new FlatLayerInfo(59, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
-      preset(new TranslationTextComponent("createWorld.customize.preset.bottomless_pit"), Items.FEATHER, Biomes.PLAINS, Arrays.asList(Structure.VILLAGE), false, false, false, new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(3, Blocks.DIRT), new FlatLayerInfo(2, Blocks.COBBLESTONE));
-      preset(new TranslationTextComponent("createWorld.customize.preset.desert"), Blocks.SAND, Biomes.DESERT, Arrays.asList(Structure.VILLAGE, Structure.DESERT_PYRAMID, Structure.MINESHAFT), true, true, false, new FlatLayerInfo(8, Blocks.SAND), new FlatLayerInfo(52, Blocks.SANDSTONE), new FlatLayerInfo(3, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
-      preset(new TranslationTextComponent("createWorld.customize.preset.redstone_ready"), Items.REDSTONE, Biomes.DESERT, Collections.emptyList(), false, false, false, new FlatLayerInfo(52, Blocks.SANDSTONE), new FlatLayerInfo(3, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
-      preset(new TranslationTextComponent("createWorld.customize.preset.the_void"), Blocks.BARRIER, Biomes.THE_VOID, Collections.emptyList(), false, true, false, new FlatLayerInfo(1, Blocks.AIR));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.classic_flat"), Blocks.GRASS_BLOCK, Biomes.PLAINS, Arrays.asList(Structure.VILLAGE), false, false, false, new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(2, Blocks.DIRT), new FlatLayerInfo(1, Blocks.BEDROCK));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.tunnelers_dream"), Blocks.STONE, Biomes.MOUNTAINS, Arrays.asList(Structure.MINESHAFT), true, true, false, new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(5, Blocks.DIRT), new FlatLayerInfo(230, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.water_world"), Items.WATER_BUCKET, Biomes.DEEP_OCEAN, Arrays.asList(Structure.OCEAN_RUIN, Structure.SHIPWRECK, Structure.MONUMENT), false, false, false, new FlatLayerInfo(90, Blocks.WATER), new FlatLayerInfo(5, Blocks.SAND), new FlatLayerInfo(5, Blocks.DIRT), new FlatLayerInfo(5, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.overworld"), Blocks.GRASS, Biomes.PLAINS, Arrays.asList(Structure.VILLAGE, Structure.MINESHAFT, Structure.PILLAGER_OUTPOST, Structure.RUINED_PORTAL), true, true, true, new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(3, Blocks.DIRT), new FlatLayerInfo(59, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.snowy_kingdom"), Blocks.SNOW, Biomes.SNOWY_TUNDRA, Arrays.asList(Structure.VILLAGE, Structure.IGLOO), false, false, false, new FlatLayerInfo(1, Blocks.SNOW), new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(3, Blocks.DIRT), new FlatLayerInfo(59, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.bottomless_pit"), Items.FEATHER, Biomes.PLAINS, Arrays.asList(Structure.VILLAGE), false, false, false, new FlatLayerInfo(1, Blocks.GRASS_BLOCK), new FlatLayerInfo(3, Blocks.DIRT), new FlatLayerInfo(2, Blocks.COBBLESTONE));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.desert"), Blocks.SAND, Biomes.DESERT, Arrays.asList(Structure.VILLAGE, Structure.DESERT_PYRAMID, Structure.MINESHAFT), true, true, false, new FlatLayerInfo(8, Blocks.SAND), new FlatLayerInfo(52, Blocks.SANDSTONE), new FlatLayerInfo(3, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.redstone_ready"), Items.REDSTONE, Biomes.DESERT, Collections.emptyList(), false, false, false, new FlatLayerInfo(52, Blocks.SANDSTONE), new FlatLayerInfo(3, Blocks.STONE), new FlatLayerInfo(1, Blocks.BEDROCK));
+      func_238640_a_(new TranslationTextComponent("createWorld.customize.preset.the_void"), Blocks.BARRIER, Biomes.THE_VOID, Collections.emptyList(), false, true, false, new FlatLayerInfo(1, Blocks.AIR));
    }
 
    @OnlyIn(Dist.CLIENT)
    static class LayerItem {
       public final Item icon;
       public final ITextComponent name;
-      public final Function<Registry<Biome>, FlatGenerationSettings> settings;
+      public final Function<Registry<Biome>, FlatGenerationSettings> field_238643_c_;
 
       public LayerItem(Item p_i242057_1_, ITextComponent p_i242057_2_, Function<Registry<Biome>, FlatGenerationSettings> p_i242057_3_) {
          this.icon = p_i242057_1_;
          this.name = p_i242057_2_;
-         this.settings = p_i242057_3_;
+         this.field_238643_c_ = p_i242057_3_;
       }
 
-      public ITextComponent getName() {
+      public ITextComponent func_238644_a_() {
          return this.name;
       }
    }
@@ -290,31 +290,31 @@ public class FlatPresetsScreen extends Screen {
       public SlotList() {
          super(FlatPresetsScreen.this.minecraft, FlatPresetsScreen.this.width, FlatPresetsScreen.this.height, 80, FlatPresetsScreen.this.height - 37, 24);
 
-         for(int i = 0; i < FlatPresetsScreen.PRESETS.size(); ++i) {
+         for(int i = 0; i < FlatPresetsScreen.FLAT_WORLD_PRESETS.size(); ++i) {
             this.addEntry(new FlatPresetsScreen.SlotList.PresetEntry());
          }
 
       }
 
-      public void setSelected(@Nullable FlatPresetsScreen.SlotList.PresetEntry p_241215_1_) {
-         super.setSelected(p_241215_1_);
-         if (p_241215_1_ != null) {
-            NarratorChatListener.INSTANCE.sayNow((new TranslationTextComponent("narrator.select", FlatPresetsScreen.PRESETS.get(this.children().indexOf(p_241215_1_)).getName())).getString());
+      public void setSelected(@Nullable FlatPresetsScreen.SlotList.PresetEntry entry) {
+         super.setSelected(entry);
+         if (entry != null) {
+            NarratorChatListener.INSTANCE.say((new TranslationTextComponent("narrator.select", FlatPresetsScreen.FLAT_WORLD_PRESETS.get(this.getEventListeners().indexOf(entry)).func_238644_a_())).getString());
          }
 
-         FlatPresetsScreen.this.updateButtonValidity(p_241215_1_ != null);
+         FlatPresetsScreen.this.func_213074_a(entry != null);
       }
 
       protected boolean isFocused() {
-         return FlatPresetsScreen.this.getFocused() == this;
+         return FlatPresetsScreen.this.getListener() == this;
       }
 
-      public boolean keyPressed(int p_231046_1_, int p_231046_2_, int p_231046_3_) {
-         if (super.keyPressed(p_231046_1_, p_231046_2_, p_231046_3_)) {
+      public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+         if (super.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
          } else {
-            if ((p_231046_1_ == 257 || p_231046_1_ == 335) && this.getSelected() != null) {
-               this.getSelected().select();
+            if ((keyCode == 257 || keyCode == 335) && this.getSelected() != null) {
+               this.getSelected().func_214399_a();
             }
 
             return false;
@@ -324,38 +324,38 @@ public class FlatPresetsScreen extends Screen {
       @OnlyIn(Dist.CLIENT)
       public class PresetEntry extends ExtendedList.AbstractListEntry<FlatPresetsScreen.SlotList.PresetEntry> {
          public void render(MatrixStack p_230432_1_, int p_230432_2_, int p_230432_3_, int p_230432_4_, int p_230432_5_, int p_230432_6_, int p_230432_7_, int p_230432_8_, boolean p_230432_9_, float p_230432_10_) {
-            FlatPresetsScreen.LayerItem flatpresetsscreen$layeritem = FlatPresetsScreen.PRESETS.get(p_230432_2_);
-            this.blitSlot(p_230432_1_, p_230432_4_, p_230432_3_, flatpresetsscreen$layeritem.icon);
-            FlatPresetsScreen.this.font.draw(p_230432_1_, flatpresetsscreen$layeritem.name, (float)(p_230432_4_ + 18 + 5), (float)(p_230432_3_ + 6), 16777215);
+            FlatPresetsScreen.LayerItem flatpresetsscreen$layeritem = FlatPresetsScreen.FLAT_WORLD_PRESETS.get(p_230432_2_);
+            this.func_238647_a_(p_230432_1_, p_230432_4_, p_230432_3_, flatpresetsscreen$layeritem.icon);
+            FlatPresetsScreen.this.font.func_243248_b(p_230432_1_, flatpresetsscreen$layeritem.name, (float)(p_230432_4_ + 18 + 5), (float)(p_230432_3_ + 6), 16777215);
          }
 
-         public boolean mouseClicked(double p_231044_1_, double p_231044_3_, int p_231044_5_) {
-            if (p_231044_5_ == 0) {
-               this.select();
+         public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (button == 0) {
+               this.func_214399_a();
             }
 
             return false;
          }
 
-         private void select() {
+         private void func_214399_a() {
             SlotList.this.setSelected(this);
-            FlatPresetsScreen.LayerItem flatpresetsscreen$layeritem = FlatPresetsScreen.PRESETS.get(SlotList.this.children().indexOf(this));
-            Registry<Biome> registry = FlatPresetsScreen.this.parent.parent.worldGenSettingsComponent.registryHolder().registryOrThrow(Registry.BIOME_REGISTRY);
-            FlatPresetsScreen.this.settings = flatpresetsscreen$layeritem.settings.apply(registry);
-            FlatPresetsScreen.this.export.setValue(FlatPresetsScreen.save(registry, FlatPresetsScreen.this.settings));
-            FlatPresetsScreen.this.export.moveCursorToStart();
+            FlatPresetsScreen.LayerItem flatpresetsscreen$layeritem = FlatPresetsScreen.FLAT_WORLD_PRESETS.get(SlotList.this.getEventListeners().indexOf(this));
+            Registry<Biome> registry = FlatPresetsScreen.this.parentScreen.createWorldGui.field_238934_c_.func_239055_b_().getRegistry(Registry.BIOME_KEY);
+            FlatPresetsScreen.this.field_241594_u_ = flatpresetsscreen$layeritem.field_238643_c_.apply(registry);
+            FlatPresetsScreen.this.export.setText(FlatPresetsScreen.func_243303_b(registry, FlatPresetsScreen.this.field_241594_u_));
+            FlatPresetsScreen.this.export.setCursorPositionZero();
          }
 
-         private void blitSlot(MatrixStack p_238647_1_, int p_238647_2_, int p_238647_3_, Item p_238647_4_) {
-            this.blitSlotBg(p_238647_1_, p_238647_2_ + 1, p_238647_3_ + 1);
+         private void func_238647_a_(MatrixStack p_238647_1_, int p_238647_2_, int p_238647_3_, Item p_238647_4_) {
+            this.func_238646_a_(p_238647_1_, p_238647_2_ + 1, p_238647_3_ + 1);
             RenderSystem.enableRescaleNormal();
-            FlatPresetsScreen.this.itemRenderer.renderGuiItem(new ItemStack(p_238647_4_), p_238647_2_ + 2, p_238647_3_ + 2);
+            FlatPresetsScreen.this.itemRenderer.renderItemIntoGUI(new ItemStack(p_238647_4_), p_238647_2_ + 2, p_238647_3_ + 2);
             RenderSystem.disableRescaleNormal();
          }
 
-         private void blitSlotBg(MatrixStack p_238646_1_, int p_238646_2_, int p_238646_3_) {
+         private void func_238646_a_(MatrixStack p_238646_1_, int p_238646_2_, int p_238646_3_) {
             RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-            SlotList.this.minecraft.getTextureManager().bind(AbstractGui.STATS_ICON_LOCATION);
+            SlotList.this.minecraft.getTextureManager().bindTexture(AbstractGui.STATS_ICON_LOCATION);
             AbstractGui.blit(p_238646_1_, p_238646_2_, p_238646_3_, FlatPresetsScreen.this.getBlitOffset(), 0.0F, 0.0F, 18, 18, 128, 128);
          }
       }

@@ -24,11 +24,11 @@ public final class Matrix3f {
    public Matrix3f() {
    }
 
-   public Matrix3f(Quaternion p_i225696_1_) {
-      float f = p_i225696_1_.i();
-      float f1 = p_i225696_1_.j();
-      float f2 = p_i225696_1_.k();
-      float f3 = p_i225696_1_.r();
+   public Matrix3f(Quaternion quaternionIn) {
+      float f = quaternionIn.getX();
+      float f1 = quaternionIn.getY();
+      float f2 = quaternionIn.getZ();
+      float f3 = quaternionIn.getW();
       float f4 = 2.0F * f * f;
       float f5 = 2.0F * f1 * f1;
       float f6 = 2.0F * f2 * f2;
@@ -50,7 +50,7 @@ public final class Matrix3f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static Matrix3f createScaleMatrix(float p_226117_0_, float p_226117_1_, float p_226117_2_) {
+   public static Matrix3f makeScaleMatrix(float p_226117_0_, float p_226117_1_, float p_226117_2_) {
       Matrix3f matrix3f = new Matrix3f();
       matrix3f.m00 = p_226117_0_;
       matrix3f.m11 = p_226117_1_;
@@ -58,28 +58,28 @@ public final class Matrix3f {
       return matrix3f;
    }
 
-   public Matrix3f(Matrix4f p_i225695_1_) {
-      this.m00 = p_i225695_1_.m00;
-      this.m01 = p_i225695_1_.m01;
-      this.m02 = p_i225695_1_.m02;
-      this.m10 = p_i225695_1_.m10;
-      this.m11 = p_i225695_1_.m11;
-      this.m12 = p_i225695_1_.m12;
-      this.m20 = p_i225695_1_.m20;
-      this.m21 = p_i225695_1_.m21;
-      this.m22 = p_i225695_1_.m22;
+   public Matrix3f(Matrix4f matrixIn) {
+      this.m00 = matrixIn.m00;
+      this.m01 = matrixIn.m01;
+      this.m02 = matrixIn.m02;
+      this.m10 = matrixIn.m10;
+      this.m11 = matrixIn.m11;
+      this.m12 = matrixIn.m12;
+      this.m20 = matrixIn.m20;
+      this.m21 = matrixIn.m21;
+      this.m22 = matrixIn.m22;
    }
 
-   public Matrix3f(Matrix3f p_i225694_1_) {
-      this.m00 = p_i225694_1_.m00;
-      this.m01 = p_i225694_1_.m01;
-      this.m02 = p_i225694_1_.m02;
-      this.m10 = p_i225694_1_.m10;
-      this.m11 = p_i225694_1_.m11;
-      this.m12 = p_i225694_1_.m12;
-      this.m20 = p_i225694_1_.m20;
-      this.m21 = p_i225694_1_.m21;
-      this.m22 = p_i225694_1_.m22;
+   public Matrix3f(Matrix3f matrixIn) {
+      this.m00 = matrixIn.m00;
+      this.m01 = matrixIn.m01;
+      this.m02 = matrixIn.m02;
+      this.m10 = matrixIn.m10;
+      this.m11 = matrixIn.m11;
+      this.m12 = matrixIn.m12;
+      this.m20 = matrixIn.m20;
+      this.m21 = matrixIn.m21;
+      this.m22 = matrixIn.m22;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -122,7 +122,7 @@ public final class Matrix3f {
          float f2 = f1 * f1 - f * f;
          float f3 = -2.0F * f * f1;
          float f4 = f1 * f1 + f * f;
-         quaternion.mul(quaternion1);
+         quaternion.multiply(quaternion1);
          matrix3f.setIdentity();
          matrix3f.m00 = f2;
          matrix3f.m11 = f2;
@@ -132,7 +132,7 @@ public final class Matrix3f {
          p_226120_0_.mul(matrix3f);
          matrix3f.transpose();
          matrix3f.mul(p_226120_0_);
-         p_226120_0_.load(matrix3f);
+         p_226120_0_.set(matrix3f);
       }
 
       if (p_226120_0_.m02 * p_226120_0_.m02 + p_226120_0_.m20 * p_226120_0_.m20 > 1.0E-6F) {
@@ -143,7 +143,7 @@ public final class Matrix3f {
          float f9 = f7 * f7 - f5 * f5;
          float f11 = -2.0F * f5 * f7;
          float f13 = f7 * f7 + f5 * f5;
-         quaternion.mul(quaternion2);
+         quaternion.multiply(quaternion2);
          matrix3f.setIdentity();
          matrix3f.m00 = f9;
          matrix3f.m22 = f9;
@@ -153,7 +153,7 @@ public final class Matrix3f {
          p_226120_0_.mul(matrix3f);
          matrix3f.transpose();
          matrix3f.mul(p_226120_0_);
-         p_226120_0_.load(matrix3f);
+         p_226120_0_.set(matrix3f);
       }
 
       if (p_226120_0_.m12 * p_226120_0_.m12 + p_226120_0_.m21 * p_226120_0_.m21 > 1.0E-6F) {
@@ -164,7 +164,7 @@ public final class Matrix3f {
          float f10 = f8 * f8 - f6 * f6;
          float f12 = -2.0F * f6 * f8;
          float f14 = f8 * f8 + f6 * f6;
-         quaternion.mul(quaternion3);
+         quaternion.multiply(quaternion3);
          matrix3f.setIdentity();
          matrix3f.m11 = f10;
          matrix3f.m22 = f10;
@@ -174,7 +174,7 @@ public final class Matrix3f {
          p_226120_0_.mul(matrix3f);
          matrix3f.transpose();
          matrix3f.mul(p_226120_0_);
-         p_226120_0_.load(matrix3f);
+         p_226120_0_.set(matrix3f);
       }
 
       return quaternion;
@@ -202,7 +202,7 @@ public final class Matrix3f {
       matrix3f.mul(this);
 
       for(int i = 0; i < 5; ++i) {
-         quaternion1.mul(stepJacobi(matrix3f));
+         quaternion1.multiply(stepJacobi(matrix3f));
       }
 
       quaternion1.normalize();
@@ -216,7 +216,7 @@ public final class Matrix3f {
       float f4 = -2.0F * f1 * f2;
       float f5 = f2 * f2 + f1 * f1;
       Quaternion quaternion2 = new Quaternion(0.0F, 0.0F, f1, f2);
-      quaternion.mul(quaternion2);
+      quaternion.multiply(quaternion2);
       Matrix3f matrix3f1 = new Matrix3f();
       matrix3f1.setIdentity();
       matrix3f1.m00 = f3;
@@ -233,7 +233,7 @@ public final class Matrix3f {
       float f9 = -2.0F * f6 * f7;
       float f10 = f7 * f7 + f6 * f6;
       Quaternion quaternion3 = new Quaternion(0.0F, f6, 0.0F, f7);
-      quaternion.mul(quaternion3);
+      quaternion.multiply(quaternion3);
       Matrix3f matrix3f2 = new Matrix3f();
       matrix3f2.setIdentity();
       matrix3f2.m00 = f8;
@@ -250,7 +250,7 @@ public final class Matrix3f {
       float f14 = -2.0F * f11 * f12;
       float f15 = f12 * f12 + f11 * f11;
       Quaternion quaternion4 = new Quaternion(f11, 0.0F, 0.0F, f12);
-      quaternion.mul(quaternion4);
+      quaternion.multiply(quaternion4);
       Matrix3f matrix3f3 = new Matrix3f();
       matrix3f3.setIdentity();
       matrix3f3.m11 = f13;
@@ -261,7 +261,7 @@ public final class Matrix3f {
       f = f * f15;
       matrix3f3.mul(matrix3f2);
       f = 1.0F / f;
-      quaternion.mul((float)Math.sqrt((double)f));
+      quaternion.multiply((float)Math.sqrt((double)f));
       Vector3f vector3f = new Vector3f(matrix3f3.m00 * f, matrix3f3.m11 * f, matrix3f3.m22 * f);
       return Triple.of(quaternion, vector3f, quaternion1);
    }
@@ -290,7 +290,7 @@ public final class Matrix3f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void load(Matrix3f p_226114_1_) {
+   public void set(Matrix3f p_226114_1_) {
       this.m00 = p_226114_1_.m00;
       this.m01 = p_226114_1_.m01;
       this.m02 = p_226114_1_.m02;
@@ -374,7 +374,7 @@ public final class Matrix3f {
       }
    }
 
-   public void set(int p_232605_1_, int p_232605_2_, float p_232605_3_) {
+   public void func_232605_a_(int p_232605_1_, int p_232605_2_, float p_232605_3_) {
       if (p_232605_1_ == 0) {
          if (p_232605_2_ == 0) {
             this.m00 = p_232605_3_;
@@ -428,16 +428,16 @@ public final class Matrix3f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void mul(float p_226111_1_) {
-      this.m00 *= p_226111_1_;
-      this.m01 *= p_226111_1_;
-      this.m02 *= p_226111_1_;
-      this.m10 *= p_226111_1_;
-      this.m11 *= p_226111_1_;
-      this.m12 *= p_226111_1_;
-      this.m20 *= p_226111_1_;
-      this.m21 *= p_226111_1_;
-      this.m22 *= p_226111_1_;
+   public void mul(float scale) {
+      this.m00 *= scale;
+      this.m01 *= scale;
+      this.m02 *= scale;
+      this.m10 *= scale;
+      this.m11 *= scale;
+      this.m12 *= scale;
+      this.m20 *= scale;
+      this.m21 *= scale;
+      this.m22 *= scale;
    }
 
    @OnlyIn(Dist.CLIENT)

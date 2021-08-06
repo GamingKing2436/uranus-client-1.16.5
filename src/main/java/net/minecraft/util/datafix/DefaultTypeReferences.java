@@ -15,13 +15,13 @@ public enum DefaultTypeReferences {
    POI_CHUNK(TypeReferences.POI_CHUNK),
    WORLD_GEN_SETTINGS(TypeReferences.WORLD_GEN_SETTINGS);
 
-   private final TypeReference type;
+   private final TypeReference reference;
 
-   private DefaultTypeReferences(TypeReference p_i50434_3_) {
-      this.type = p_i50434_3_;
+   private DefaultTypeReferences(TypeReference reference) {
+      this.reference = reference;
    }
 
-   public TypeReference getType() {
-      return this.type;
+   public TypeReference getTypeReference() {
+      return this.reference;
    }
 }

@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class V0107 extends Schema {
-   public V0107(int p_i49607_1_, Schema p_i49607_2_) {
-      super(p_i49607_1_, p_i49607_2_);
+   public V0107(int versionKey, Schema parent) {
+      super(versionKey, parent);
    }
 
    public Map<String, Supplier<TypeTemplate>> registerEntities(Schema p_registerEntities_1_) {

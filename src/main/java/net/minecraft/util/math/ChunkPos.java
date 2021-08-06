@@ -7,39 +7,39 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 
 public class ChunkPos {
-   public static final long INVALID_CHUNK_POS = asLong(1875016, 1875016);
+   public static final long SENTINEL = asLong(1875016, 1875016);
    public final int x;
    public final int z;
 
-   public ChunkPos(int p_i1947_1_, int p_i1947_2_) {
-      this.x = p_i1947_1_;
-      this.z = p_i1947_2_;
+   public ChunkPos(int x, int z) {
+      this.x = x;
+      this.z = z;
    }
 
-   public ChunkPos(BlockPos p_i46717_1_) {
-      this.x = p_i46717_1_.getX() >> 4;
-      this.z = p_i46717_1_.getZ() >> 4;
+   public ChunkPos(BlockPos pos) {
+      this.x = pos.getX() >> 4;
+      this.z = pos.getZ() >> 4;
    }
 
-   public ChunkPos(long p_i48713_1_) {
-      this.x = (int)p_i48713_1_;
-      this.z = (int)(p_i48713_1_ >> 32);
+   public ChunkPos(long longIn) {
+      this.x = (int)longIn;
+      this.z = (int)(longIn >> 32);
    }
 
-   public long toLong() {
+   public long asLong() {
       return asLong(this.x, this.z);
    }
 
-   public static long asLong(int p_77272_0_, int p_77272_1_) {
-      return (long)p_77272_0_ & 4294967295L | ((long)p_77272_1_ & 4294967295L) << 32;
+   public static long asLong(int x, int z) {
+      return (long)x & 4294967295L | ((long)z & 4294967295L) << 32;
    }
 
-   public static int getX(long p_212578_0_) {
-      return (int)(p_212578_0_ & 4294967295L);
+   public static int getX(long chunkAsLong) {
+      return (int)(chunkAsLong & 4294967295L);
    }
 
-   public static int getZ(long p_212579_0_) {
-      return (int)(p_212579_0_ >>> 32 & 4294967295L);
+   public static int getZ(long chunkAsLong) {
+      return (int)(chunkAsLong >>> 32 & 4294967295L);
    }
 
    public int hashCode() {
@@ -59,35 +59,35 @@ public class ChunkPos {
       }
    }
 
-   public int getMinBlockX() {
+   public int getXStart() {
       return this.x << 4;
    }
 
-   public int getMinBlockZ() {
+   public int getZStart() {
       return this.z << 4;
    }
 
-   public int getMaxBlockX() {
+   public int getXEnd() {
       return (this.x << 4) + 15;
    }
 
-   public int getMaxBlockZ() {
+   public int getZEnd() {
       return (this.z << 4) + 15;
    }
 
-   public int getRegionX() {
+   public int getRegionCoordX() {
       return this.x >> 5;
    }
 
-   public int getRegionZ() {
+   public int getRegionCoordZ() {
       return this.z >> 5;
    }
 
-   public int getRegionLocalX() {
+   public int getRegionPositionX() {
       return this.x & 31;
    }
 
-   public int getRegionLocalZ() {
+   public int getRegionPositionZ() {
       return this.z & 31;
    }
 
@@ -95,45 +95,45 @@ public class ChunkPos {
       return "[" + this.x + ", " + this.z + "]";
    }
 
-   public BlockPos getWorldPosition() {
-      return new BlockPos(this.getMinBlockX(), 0, this.getMinBlockZ());
+   public BlockPos asBlockPos() {
+      return new BlockPos(this.getXStart(), 0, this.getZStart());
    }
 
-   public int getChessboardDistance(ChunkPos p_226661_1_) {
-      return Math.max(Math.abs(this.x - p_226661_1_.x), Math.abs(this.z - p_226661_1_.z));
+   public int getChessboardDistance(ChunkPos chunkPosIn) {
+      return Math.max(Math.abs(this.x - chunkPosIn.x), Math.abs(this.z - chunkPosIn.z));
    }
 
-   public static Stream<ChunkPos> rangeClosed(ChunkPos p_222243_0_, int p_222243_1_) {
-      return rangeClosed(new ChunkPos(p_222243_0_.x - p_222243_1_, p_222243_0_.z - p_222243_1_), new ChunkPos(p_222243_0_.x + p_222243_1_, p_222243_0_.z + p_222243_1_));
+   public static Stream<ChunkPos> getAllInBox(ChunkPos center, int radius) {
+      return getAllInBox(new ChunkPos(center.x - radius, center.z - radius), new ChunkPos(center.x + radius, center.z + radius));
    }
 
-   public static Stream<ChunkPos> rangeClosed(final ChunkPos p_222239_0_, final ChunkPos p_222239_1_) {
-      int i = Math.abs(p_222239_0_.x - p_222239_1_.x) + 1;
-      int j = Math.abs(p_222239_0_.z - p_222239_1_.z) + 1;
-      final int k = p_222239_0_.x < p_222239_1_.x ? 1 : -1;
-      final int l = p_222239_0_.z < p_222239_1_.z ? 1 : -1;
+   public static Stream<ChunkPos> getAllInBox(final ChunkPos start, final ChunkPos end) {
+      int i = Math.abs(start.x - end.x) + 1;
+      int j = Math.abs(start.z - end.z) + 1;
+      final int k = start.x < end.x ? 1 : -1;
+      final int l = start.z < end.z ? 1 : -1;
       return StreamSupport.stream(new AbstractSpliterator<ChunkPos>((long)(i * j), 64) {
          @Nullable
-         private ChunkPos pos;
+         private ChunkPos current;
 
          public boolean tryAdvance(Consumer<? super ChunkPos> p_tryAdvance_1_) {
-            if (this.pos == null) {
-               this.pos = p_222239_0_;
+            if (this.current == null) {
+               this.current = start;
             } else {
-               int i1 = this.pos.x;
-               int j1 = this.pos.z;
-               if (i1 == p_222239_1_.x) {
-                  if (j1 == p_222239_1_.z) {
+               int i1 = this.current.x;
+               int j1 = this.current.z;
+               if (i1 == end.x) {
+                  if (j1 == end.z) {
                      return false;
                   }
 
-                  this.pos = new ChunkPos(p_222239_0_.x, j1 + l);
+                  this.current = new ChunkPos(start.x, j1 + l);
                } else {
-                  this.pos = new ChunkPos(i1 + k, j1);
+                  this.current = new ChunkPos(i1 + k, j1);
                }
             }
 
-            p_tryAdvance_1_.accept(this.pos);
+            p_tryAdvance_1_.accept(this.current);
             return true;
          }
       }, false);

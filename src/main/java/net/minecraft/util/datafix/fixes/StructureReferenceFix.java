@@ -16,11 +16,11 @@ public class StructureReferenceFix extends DataFix {
    protected TypeRewriteRule makeRule() {
       Type<?> type = this.getInputSchema().getType(TypeReferences.STRUCTURE_FEATURE);
       return this.fixTypeEverywhereTyped("Structure Reference Fix", type, (p_226213_0_) -> {
-         return p_226213_0_.update(DSL.remainderFinder(), StructureReferenceFix::setCountToAtLeastOne);
+         return p_226213_0_.update(DSL.remainderFinder(), StructureReferenceFix::func_226212_a_);
       });
    }
 
-   private static <T> Dynamic<T> setCountToAtLeastOne(Dynamic<T> p_226212_0_) {
+   private static <T> Dynamic<T> func_226212_a_(Dynamic<T> p_226212_0_) {
       return p_226212_0_.update("references", (p_226215_0_) -> {
          return p_226215_0_.createInt(p_226215_0_.asNumber().map(Number::intValue).result().filter((p_226214_0_) -> {
             return p_226214_0_ > 0;

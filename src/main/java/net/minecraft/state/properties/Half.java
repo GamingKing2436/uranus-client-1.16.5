@@ -8,15 +8,15 @@ public enum Half implements IStringSerializable {
 
    private final String name;
 
-   private Half(String p_i49337_3_) {
-      this.name = p_i49337_3_;
+   private Half(String name) {
+      this.name = name;
    }
 
    public String toString() {
       return this.name;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 }

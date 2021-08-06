@@ -11,57 +11,57 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SpawnerMinecartEntity extends AbstractMinecartEntity {
-   private final AbstractSpawner spawner = new AbstractSpawner() {
-      public void broadcastEvent(int p_98267_1_) {
-         SpawnerMinecartEntity.this.level.broadcastEntityEvent(SpawnerMinecartEntity.this, (byte)p_98267_1_);
+   private final AbstractSpawner mobSpawnerLogic = new AbstractSpawner() {
+      public void broadcastEvent(int id) {
+         SpawnerMinecartEntity.this.world.setEntityState(SpawnerMinecartEntity.this, (byte)id);
       }
 
-      public World getLevel() {
-         return SpawnerMinecartEntity.this.level;
+      public World getWorld() {
+         return SpawnerMinecartEntity.this.world;
       }
 
-      public BlockPos getPos() {
-         return SpawnerMinecartEntity.this.blockPosition();
+      public BlockPos getSpawnerPosition() {
+         return SpawnerMinecartEntity.this.getPosition();
       }
    };
 
-   public SpawnerMinecartEntity(EntityType<? extends SpawnerMinecartEntity> p_i50114_1_, World p_i50114_2_) {
-      super(p_i50114_1_, p_i50114_2_);
+   public SpawnerMinecartEntity(EntityType<? extends SpawnerMinecartEntity> type, World world) {
+      super(type, world);
    }
 
-   public SpawnerMinecartEntity(World p_i46753_1_, double p_i46753_2_, double p_i46753_4_, double p_i46753_6_) {
-      super(EntityType.SPAWNER_MINECART, p_i46753_1_, p_i46753_2_, p_i46753_4_, p_i46753_6_);
+   public SpawnerMinecartEntity(World worldIn, double x, double y, double z) {
+      super(EntityType.SPAWNER_MINECART, worldIn, x, y, z);
    }
 
    public AbstractMinecartEntity.Type getMinecartType() {
       return AbstractMinecartEntity.Type.SPAWNER;
    }
 
-   public BlockState getDefaultDisplayBlockState() {
-      return Blocks.SPAWNER.defaultBlockState();
+   public BlockState getDefaultDisplayTile() {
+      return Blocks.SPAWNER.getDefaultState();
    }
 
-   protected void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.spawner.load(p_70037_1_);
+   protected void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.mobSpawnerLogic.read(compound);
    }
 
-   protected void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      this.spawner.save(p_213281_1_);
+   protected void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      this.mobSpawnerLogic.write(compound);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void handleEntityEvent(byte p_70103_1_) {
-      this.spawner.onEventTriggered(p_70103_1_);
+   public void handleStatusUpdate(byte id) {
+      this.mobSpawnerLogic.setDelayToMin(id);
    }
 
    public void tick() {
       super.tick();
-      this.spawner.tick();
+      this.mobSpawnerLogic.tick();
    }
 
-   public boolean onlyOpCanSetNbt() {
+   public boolean ignoreItemEntityData() {
       return true;
    }
 }

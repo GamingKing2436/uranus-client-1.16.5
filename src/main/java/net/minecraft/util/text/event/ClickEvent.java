@@ -8,9 +8,9 @@ public class ClickEvent {
    private final ClickEvent.Action action;
    private final String value;
 
-   public ClickEvent(ClickEvent.Action p_i45156_1_, String p_i45156_2_) {
-      this.action = p_i45156_1_;
-      this.value = p_i45156_2_;
+   public ClickEvent(ClickEvent.Action theAction, String theValue) {
+      this.action = theAction;
+      this.value = theValue;
    }
 
    public ClickEvent.Action getAction() {
@@ -61,27 +61,27 @@ public class ClickEvent {
       CHANGE_PAGE("change_page", true),
       COPY_TO_CLIPBOARD("copy_to_clipboard", true);
 
-      private static final Map<String, ClickEvent.Action> LOOKUP = Arrays.stream(values()).collect(Collectors.toMap(ClickEvent.Action::getName, (p_199851_0_) -> {
+      private static final Map<String, ClickEvent.Action> NAME_MAPPING = Arrays.stream(values()).collect(Collectors.toMap(ClickEvent.Action::getCanonicalName, (p_199851_0_) -> {
          return p_199851_0_;
       }));
-      private final boolean allowFromServer;
-      private final String name;
+      private final boolean allowedInChat;
+      private final String canonicalName;
 
-      private Action(String p_i45155_3_, boolean p_i45155_4_) {
-         this.name = p_i45155_3_;
-         this.allowFromServer = p_i45155_4_;
+      private Action(String canonicalNameIn, boolean allowedInChatIn) {
+         this.canonicalName = canonicalNameIn;
+         this.allowedInChat = allowedInChatIn;
       }
 
-      public boolean isAllowedFromServer() {
-         return this.allowFromServer;
+      public boolean shouldAllowInChat() {
+         return this.allowedInChat;
       }
 
-      public String getName() {
-         return this.name;
+      public String getCanonicalName() {
+         return this.canonicalName;
       }
 
-      public static ClickEvent.Action getByName(String p_150672_0_) {
-         return LOOKUP.get(p_150672_0_);
+      public static ClickEvent.Action getValueByCanonicalName(String canonicalNameIn) {
+         return NAME_MAPPING.get(canonicalNameIn);
       }
    }
 }

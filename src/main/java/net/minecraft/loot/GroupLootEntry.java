@@ -7,19 +7,19 @@ public class GroupLootEntry extends ParentedLootEntry {
       super(p_i51257_1_, p_i51257_2_);
    }
 
-   public LootPoolEntryType getType() {
+   public LootPoolEntryType func_230420_a_() {
       return LootEntryManager.GROUP;
    }
 
-   protected ILootEntry compose(ILootEntry[] p_216146_1_) {
-      switch(p_216146_1_.length) {
+   protected ILootEntry combineChildren(ILootEntry[] entries) {
+      switch(entries.length) {
       case 0:
-         return ALWAYS_TRUE;
+         return field_216140_b;
       case 1:
-         return p_216146_1_[0];
+         return entries[0];
       case 2:
-         ILootEntry ilootentry = p_216146_1_[0];
-         ILootEntry ilootentry1 = p_216146_1_[1];
+         ILootEntry ilootentry = entries[0];
+         ILootEntry ilootentry1 = entries[1];
          return (p_216151_2_, p_216151_3_) -> {
             ilootentry.expand(p_216151_2_, p_216151_3_);
             ilootentry1.expand(p_216151_2_, p_216151_3_);
@@ -27,7 +27,7 @@ public class GroupLootEntry extends ParentedLootEntry {
          };
       default:
          return (p_216152_1_, p_216152_2_) -> {
-            for(ILootEntry ilootentry2 : p_216146_1_) {
+            for(ILootEntry ilootentry2 : entries) {
                ilootentry2.expand(p_216152_1_, p_216152_2_);
             }
 

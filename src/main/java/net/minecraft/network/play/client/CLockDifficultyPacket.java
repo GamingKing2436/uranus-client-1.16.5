@@ -8,29 +8,29 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class CLockDifficultyPacket implements IPacket<IServerPlayNetHandler> {
-   private boolean locked;
+   private boolean field_218777_a;
 
    public CLockDifficultyPacket() {
    }
 
    @OnlyIn(Dist.CLIENT)
    public CLockDifficultyPacket(boolean p_i50760_1_) {
-      this.locked = p_i50760_1_;
+      this.field_218777_a = p_i50760_1_;
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleLockDifficulty(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.func_217261_a(this);
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.locked = p_148837_1_.readBoolean();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.field_218777_a = buf.readBoolean();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeBoolean(this.locked);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeBoolean(this.field_218777_a);
    }
 
-   public boolean isLocked() {
-      return this.locked;
+   public boolean func_218776_b() {
+      return this.field_218777_a;
    }
 }

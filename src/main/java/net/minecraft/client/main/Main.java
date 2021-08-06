@@ -60,7 +60,7 @@ public class Main {
       OptionSpec<Integer> optionspec7 = optionparser.accepts("proxyPort").withRequiredArg().defaultsTo("8080").ofType(Integer.class);
       OptionSpec<String> optionspec8 = optionparser.accepts("proxyUser").withRequiredArg();
       OptionSpec<String> optionspec9 = optionparser.accepts("proxyPass").withRequiredArg();
-      OptionSpec<String> optionspec10 = optionparser.accepts("username").withRequiredArg().defaultsTo("Player" + Util.getMillis() % 1000L);
+      OptionSpec<String> optionspec10 = optionparser.accepts("username").withRequiredArg().defaultsTo("Player" + Util.milliTime() % 1000L);
       OptionSpec<String> optionspec11 = optionparser.accepts("uuid").withRequiredArg();
       OptionSpec<String> optionspec12 = optionparser.accepts("accessToken").withRequiredArg().required();
       OptionSpec<String> optionspec13 = optionparser.accepts("version").withRequiredArg().required();
@@ -80,18 +80,18 @@ public class Main {
          System.out.println("Completely ignored arguments: " + list);
       }
 
-      String s = parseArgument(optionset, optionspec6);
+      String s = getValue(optionset, optionspec6);
       Proxy proxy = Proxy.NO_PROXY;
       if (s != null) {
          try {
-            proxy = new Proxy(Type.SOCKS, new InetSocketAddress(s, parseArgument(optionset, optionspec7)));
+            proxy = new Proxy(Type.SOCKS, new InetSocketAddress(s, getValue(optionset, optionspec7)));
          } catch (Exception exception) {
          }
       }
 
-      final String s1 = parseArgument(optionset, optionspec8);
-      final String s2 = parseArgument(optionset, optionspec9);
-      if (!proxy.equals(Proxy.NO_PROXY) && stringHasValue(s1) && stringHasValue(s2)) {
+      final String s1 = getValue(optionset, optionspec8);
+      final String s2 = getValue(optionset, optionspec9);
+      if (!proxy.equals(Proxy.NO_PROXY) && isNotEmpty(s1) && isNotEmpty(s2)) {
          Authenticator.setDefault(new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
                return new PasswordAuthentication(s1, s2.toCharArray());
@@ -99,39 +99,39 @@ public class Main {
          });
       }
 
-      int i = parseArgument(optionset, optionspec14);
-      int j = parseArgument(optionset, optionspec15);
-      OptionalInt optionalint = ofNullable(parseArgument(optionset, optionspec16));
-      OptionalInt optionalint1 = ofNullable(parseArgument(optionset, optionspec17));
+      int i = getValue(optionset, optionspec14);
+      int j = getValue(optionset, optionspec15);
+      OptionalInt optionalint = toOptionalInt(getValue(optionset, optionspec16));
+      OptionalInt optionalint1 = toOptionalInt(getValue(optionset, optionspec17));
       boolean flag = optionset.has("fullscreen");
       boolean flag1 = optionset.has("demo");
       boolean flag2 = optionset.has("disableMultiplayer");
       boolean flag3 = optionset.has("disableChat");
-      String s3 = parseArgument(optionset, optionspec13);
+      String s3 = getValue(optionset, optionspec13);
       Gson gson = (new GsonBuilder()).registerTypeAdapter(PropertyMap.class, new Serializer()).create();
-      PropertyMap propertymap = JSONUtils.fromJson(gson, parseArgument(optionset, optionspec18), PropertyMap.class);
-      PropertyMap propertymap1 = JSONUtils.fromJson(gson, parseArgument(optionset, optionspec19), PropertyMap.class);
-      String s4 = parseArgument(optionset, optionspec22);
-      File file1 = parseArgument(optionset, optionspec2);
-      File file2 = optionset.has(optionspec3) ? parseArgument(optionset, optionspec3) : new File(file1, "assets/");
-      File file3 = optionset.has(optionspec4) ? parseArgument(optionset, optionspec4) : new File(file1, "resourcepacks/");
-      String s5 = optionset.has(optionspec11) ? optionspec11.value(optionset) : PlayerEntity.createPlayerUUID(optionspec10.value(optionset)).toString();
+      PropertyMap propertymap = JSONUtils.fromJson(gson, getValue(optionset, optionspec18), PropertyMap.class);
+      PropertyMap propertymap1 = JSONUtils.fromJson(gson, getValue(optionset, optionspec19), PropertyMap.class);
+      String s4 = getValue(optionset, optionspec22);
+      File file1 = getValue(optionset, optionspec2);
+      File file2 = optionset.has(optionspec3) ? getValue(optionset, optionspec3) : new File(file1, "assets/");
+      File file3 = optionset.has(optionspec4) ? getValue(optionset, optionspec4) : new File(file1, "resourcepacks/");
+      String s5 = optionset.has(optionspec11) ? optionspec11.value(optionset) : PlayerEntity.getOfflineUUID(optionspec10.value(optionset)).toString();
       String s6 = optionset.has(optionspec20) ? optionspec20.value(optionset) : null;
-      String s7 = parseArgument(optionset, optionspec);
-      Integer integer = parseArgument(optionset, optionspec1);
-      CrashReport.preload();
-      Bootstrap.bootStrap();
-      Bootstrap.validate();
-      Util.startTimerHackThread();
+      String s7 = getValue(optionset, optionspec);
+      Integer integer = getValue(optionset, optionspec1);
+      CrashReport.crash();
+      Bootstrap.register();
+      Bootstrap.checkTranslations();
+      Util.func_240994_l_();
       Session session = new Session(optionspec10.value(optionset), s5, optionspec12.value(optionset), optionspec21.value(optionset));
       GameConfiguration gameconfiguration = new GameConfiguration(new GameConfiguration.UserInformation(session, propertymap, propertymap1, proxy), new ScreenSize(i, j, optionalint, optionalint1, flag), new GameConfiguration.FolderInformation(file1, file3, file2, s6), new GameConfiguration.GameInformation(flag1, s3, s4, flag2, flag3), new GameConfiguration.ServerInformation(s7, integer));
       Thread thread = new Thread("Client Shutdown Thread") {
          public void run() {
             Minecraft minecraft1 = Minecraft.getInstance();
             if (minecraft1 != null) {
-               IntegratedServer integratedserver = minecraft1.getSingleplayerServer();
+               IntegratedServer integratedserver = minecraft1.getIntegratedServer();
                if (integratedserver != null) {
-                  integratedserver.halt(true);
+                  integratedserver.initiateShutdown(true);
                }
 
             }
@@ -152,15 +152,15 @@ public class Main {
          LOGGER.warn("Failed to create window: ", (Throwable)undeclaredexception);
          return;
       } catch (Throwable throwable1) {
-         CrashReport crashreport = CrashReport.forThrowable(throwable1, "Initializing game");
-         crashreport.addCategory("Initialization");
-         Minecraft.fillReport((LanguageManager)null, gameconfiguration.game.launchVersion, (GameSettings)null, crashreport);
-         Minecraft.crash(crashreport);
+         CrashReport crashreport = CrashReport.makeCrashReport(throwable1, "Initializing game");
+         crashreport.makeCategory("Initialization");
+         Minecraft.fillCrashReport((LanguageManager)null, gameconfiguration.gameInfo.version, (GameSettings)null, crashreport);
+         Minecraft.displayCrashReport(crashreport);
          return;
       }
 
       Thread thread1;
-      if (minecraft.renderOnThread()) {
+      if (minecraft.isRenderOnThread()) {
          thread1 = new Thread("Game thread") {
             public void run() {
                try {
@@ -188,29 +188,29 @@ public class Main {
       }
 
       try {
-         minecraft.stop();
+         minecraft.shutdown();
          if (thread1 != null) {
             thread1.join();
          }
       } catch (InterruptedException interruptedexception) {
          LOGGER.error("Exception during client thread shutdown", (Throwable)interruptedexception);
       } finally {
-         minecraft.destroy();
+         minecraft.shutdownMinecraftApplet();
       }
 
    }
 
-   private static OptionalInt ofNullable(@Nullable Integer p_224732_0_) {
-      return p_224732_0_ != null ? OptionalInt.of(p_224732_0_) : OptionalInt.empty();
+   private static OptionalInt toOptionalInt(@Nullable Integer value) {
+      return value != null ? OptionalInt.of(value) : OptionalInt.empty();
    }
 
    @Nullable
-   private static <T> T parseArgument(OptionSet p_206236_0_, OptionSpec<T> p_206236_1_) {
+   private static <T> T getValue(OptionSet set, OptionSpec<T> option) {
       try {
-         return p_206236_0_.valueOf(p_206236_1_);
+         return set.valueOf(option);
       } catch (Throwable throwable) {
-         if (p_206236_1_ instanceof ArgumentAcceptingOptionSpec) {
-            ArgumentAcceptingOptionSpec<T> argumentacceptingoptionspec = (ArgumentAcceptingOptionSpec)p_206236_1_;
+         if (option instanceof ArgumentAcceptingOptionSpec) {
+            ArgumentAcceptingOptionSpec<T> argumentacceptingoptionspec = (ArgumentAcceptingOptionSpec)option;
             List<T> list = argumentacceptingoptionspec.defaultValues();
             if (!list.isEmpty()) {
                return list.get(0);
@@ -221,8 +221,8 @@ public class Main {
       }
    }
 
-   private static boolean stringHasValue(@Nullable String p_110121_0_) {
-      return p_110121_0_ != null && !p_110121_0_.isEmpty();
+   private static boolean isNotEmpty(@Nullable String str) {
+      return str != null && !str.isEmpty();
    }
 
    static {

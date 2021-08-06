@@ -15,38 +15,38 @@ public class ShulkerModel<T extends ShulkerEntity> extends SegmentedModel<T> {
    private final ModelRenderer head;
 
    public ShulkerModel() {
-      super(RenderType::entityCutoutNoCullZOffset);
+      super(RenderType::getEntityCutoutNoCullZOffset);
       this.base = new ModelRenderer(64, 64, 0, 28);
       this.head = new ModelRenderer(64, 64, 0, 52);
       this.lid.addBox(-8.0F, -16.0F, -8.0F, 16.0F, 12.0F, 16.0F);
-      this.lid.setPos(0.0F, 24.0F, 0.0F);
+      this.lid.setRotationPoint(0.0F, 24.0F, 0.0F);
       this.base.addBox(-8.0F, -8.0F, -8.0F, 16.0F, 8.0F, 16.0F);
-      this.base.setPos(0.0F, 24.0F, 0.0F);
+      this.base.setRotationPoint(0.0F, 24.0F, 0.0F);
       this.head.addBox(-3.0F, 0.0F, -3.0F, 6.0F, 6.0F, 6.0F);
-      this.head.setPos(0.0F, 12.0F, 0.0F);
+      this.head.setRotationPoint(0.0F, 12.0F, 0.0F);
    }
 
-   public void setupAnim(T p_225597_1_, float p_225597_2_, float p_225597_3_, float p_225597_4_, float p_225597_5_, float p_225597_6_) {
-      float f = p_225597_4_ - (float)p_225597_1_.tickCount;
-      float f1 = (0.5F + p_225597_1_.getClientPeekAmount(f)) * (float)Math.PI;
+   public void setRotationAngles(T entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+      float f = ageInTicks - (float)entityIn.ticksExisted;
+      float f1 = (0.5F + entityIn.getClientPeekAmount(f)) * (float)Math.PI;
       float f2 = -1.0F + MathHelper.sin(f1);
       float f3 = 0.0F;
       if (f1 > (float)Math.PI) {
-         f3 = MathHelper.sin(p_225597_4_ * 0.1F) * 0.7F;
+         f3 = MathHelper.sin(ageInTicks * 0.1F) * 0.7F;
       }
 
-      this.lid.setPos(0.0F, 16.0F + MathHelper.sin(f1) * 8.0F + f3, 0.0F);
-      if (p_225597_1_.getClientPeekAmount(f) > 0.3F) {
-         this.lid.yRot = f2 * f2 * f2 * f2 * (float)Math.PI * 0.125F;
+      this.lid.setRotationPoint(0.0F, 16.0F + MathHelper.sin(f1) * 8.0F + f3, 0.0F);
+      if (entityIn.getClientPeekAmount(f) > 0.3F) {
+         this.lid.rotateAngleY = f2 * f2 * f2 * f2 * (float)Math.PI * 0.125F;
       } else {
-         this.lid.yRot = 0.0F;
+         this.lid.rotateAngleY = 0.0F;
       }
 
-      this.head.xRot = p_225597_6_ * ((float)Math.PI / 180F);
-      this.head.yRot = (p_225597_1_.yHeadRot - 180.0F - p_225597_1_.yBodyRot) * ((float)Math.PI / 180F);
+      this.head.rotateAngleX = headPitch * ((float)Math.PI / 180F);
+      this.head.rotateAngleY = (entityIn.rotationYawHead - 180.0F - entityIn.renderYawOffset) * ((float)Math.PI / 180F);
    }
 
-   public Iterable<ModelRenderer> parts() {
+   public Iterable<ModelRenderer> getParts() {
       return ImmutableList.of(this.base, this.lid);
    }
 

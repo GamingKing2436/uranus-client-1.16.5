@@ -7,10 +7,10 @@ public enum DoorHingeSide implements IStringSerializable {
    RIGHT;
 
    public String toString() {
-      return this.getSerializedName();
+      return this.getString();
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this == LEFT ? "left" : "right";
    }
 }

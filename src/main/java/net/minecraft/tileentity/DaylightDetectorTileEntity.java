@@ -10,11 +10,11 @@ public class DaylightDetectorTileEntity extends TileEntity implements ITickableT
    }
 
    public void tick() {
-      if (this.level != null && !this.level.isClientSide && this.level.getGameTime() % 20L == 0L) {
+      if (this.world != null && !this.world.isRemote && this.world.getGameTime() % 20L == 0L) {
          BlockState blockstate = this.getBlockState();
          Block block = blockstate.getBlock();
          if (block instanceof DaylightDetectorBlock) {
-            DaylightDetectorBlock.updateSignalStrength(blockstate, this.level, this.worldPosition);
+            DaylightDetectorBlock.updatePower(blockstate, this.world, this.pos);
          }
       }
 

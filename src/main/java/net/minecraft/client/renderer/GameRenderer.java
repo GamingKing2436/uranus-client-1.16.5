@@ -56,143 +56,143 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class GameRenderer implements IResourceManagerReloadListener, AutoCloseable {
-   private static final ResourceLocation NAUSEA_LOCATION = new ResourceLocation("textures/misc/nausea.png");
+   private static final ResourceLocation field_243496_c = new ResourceLocation("textures/misc/nausea.png");
    private static final Logger LOGGER = LogManager.getLogger();
-   private final Minecraft minecraft;
+   private final Minecraft mc;
    private final IResourceManager resourceManager;
    private final Random random = new Random();
-   private float renderDistance;
-   public final FirstPersonRenderer itemInHandRenderer;
-   private final MapItemRenderer mapRenderer;
-   private final RenderTypeBuffers renderBuffers;
-   private int tick;
-   private float fov;
-   private float oldFov;
-   private float darkenWorldAmount;
-   private float darkenWorldAmountO;
+   private float farPlaneDistance;
+   public final FirstPersonRenderer itemRenderer;
+   private final MapItemRenderer mapItemRenderer;
+   private final RenderTypeBuffers renderTypeBuffers;
+   private int rendererUpdateCount;
+   private float fovModifierHand;
+   private float fovModifierHandPrev;
+   private float bossColorModifier;
+   private float bossColorModifierPrev;
    private boolean renderHand = true;
-   private boolean renderBlockOutline = true;
-   private long lastScreenshotAttempt;
-   private long lastActiveTime = Util.getMillis();
-   private final LightTexture lightTexture;
+   private boolean drawBlockOutline = true;
+   private long timeWorldIcon;
+   private long prevFrameTime = Util.milliTime();
+   private final LightTexture lightmapTexture;
    private final OverlayTexture overlayTexture = new OverlayTexture();
-   private boolean panoramicMode;
-   private float zoom = 1.0F;
-   private float zoomX;
-   private float zoomY;
+   private boolean debugView;
+   private float cameraZoom = 1.0F;
+   private float cameraYaw;
+   private float cameraPitch;
    @Nullable
    private ItemStack itemActivationItem;
    private int itemActivationTicks;
    private float itemActivationOffX;
    private float itemActivationOffY;
    @Nullable
-   private ShaderGroup postEffect;
-   private static final ResourceLocation[] EFFECTS = new ResourceLocation[]{new ResourceLocation("shaders/post/notch.json"), new ResourceLocation("shaders/post/fxaa.json"), new ResourceLocation("shaders/post/art.json"), new ResourceLocation("shaders/post/bumpy.json"), new ResourceLocation("shaders/post/blobs2.json"), new ResourceLocation("shaders/post/pencil.json"), new ResourceLocation("shaders/post/color_convolve.json"), new ResourceLocation("shaders/post/deconverge.json"), new ResourceLocation("shaders/post/flip.json"), new ResourceLocation("shaders/post/invert.json"), new ResourceLocation("shaders/post/ntsc.json"), new ResourceLocation("shaders/post/outline.json"), new ResourceLocation("shaders/post/phosphor.json"), new ResourceLocation("shaders/post/scan_pincushion.json"), new ResourceLocation("shaders/post/sobel.json"), new ResourceLocation("shaders/post/bits.json"), new ResourceLocation("shaders/post/desaturate.json"), new ResourceLocation("shaders/post/green.json"), new ResourceLocation("shaders/post/blur.json"), new ResourceLocation("shaders/post/wobble.json"), new ResourceLocation("shaders/post/blobs.json"), new ResourceLocation("shaders/post/antialias.json"), new ResourceLocation("shaders/post/creeper.json"), new ResourceLocation("shaders/post/spider.json")};
-   public static final int EFFECT_NONE = EFFECTS.length;
-   private int effectIndex = EFFECT_NONE;
-   private boolean effectActive;
-   private final ActiveRenderInfo mainCamera = new ActiveRenderInfo();
+   private ShaderGroup shaderGroup;
+   private static final ResourceLocation[] SHADERS_TEXTURES = new ResourceLocation[]{new ResourceLocation("shaders/post/notch.json"), new ResourceLocation("shaders/post/fxaa.json"), new ResourceLocation("shaders/post/art.json"), new ResourceLocation("shaders/post/bumpy.json"), new ResourceLocation("shaders/post/blobs2.json"), new ResourceLocation("shaders/post/pencil.json"), new ResourceLocation("shaders/post/color_convolve.json"), new ResourceLocation("shaders/post/deconverge.json"), new ResourceLocation("shaders/post/flip.json"), new ResourceLocation("shaders/post/invert.json"), new ResourceLocation("shaders/post/ntsc.json"), new ResourceLocation("shaders/post/outline.json"), new ResourceLocation("shaders/post/phosphor.json"), new ResourceLocation("shaders/post/scan_pincushion.json"), new ResourceLocation("shaders/post/sobel.json"), new ResourceLocation("shaders/post/bits.json"), new ResourceLocation("shaders/post/desaturate.json"), new ResourceLocation("shaders/post/green.json"), new ResourceLocation("shaders/post/blur.json"), new ResourceLocation("shaders/post/wobble.json"), new ResourceLocation("shaders/post/blobs.json"), new ResourceLocation("shaders/post/antialias.json"), new ResourceLocation("shaders/post/creeper.json"), new ResourceLocation("shaders/post/spider.json")};
+   public static final int SHADER_COUNT = SHADERS_TEXTURES.length;
+   private int shaderIndex = SHADER_COUNT;
+   private boolean useShader;
+   private final ActiveRenderInfo activeRender = new ActiveRenderInfo();
 
-   public GameRenderer(Minecraft p_i225966_1_, IResourceManager p_i225966_2_, RenderTypeBuffers p_i225966_3_) {
-      this.minecraft = p_i225966_1_;
-      this.resourceManager = p_i225966_2_;
-      this.itemInHandRenderer = p_i225966_1_.getItemInHandRenderer();
-      this.mapRenderer = new MapItemRenderer(p_i225966_1_.getTextureManager());
-      this.lightTexture = new LightTexture(this, p_i225966_1_);
-      this.renderBuffers = p_i225966_3_;
-      this.postEffect = null;
+   public GameRenderer(Minecraft mcIn, IResourceManager resourceManagerIn, RenderTypeBuffers renderTypeBuffersIn) {
+      this.mc = mcIn;
+      this.resourceManager = resourceManagerIn;
+      this.itemRenderer = mcIn.getFirstPersonRenderer();
+      this.mapItemRenderer = new MapItemRenderer(mcIn.getTextureManager());
+      this.lightmapTexture = new LightTexture(this, mcIn);
+      this.renderTypeBuffers = renderTypeBuffersIn;
+      this.shaderGroup = null;
    }
 
    public void close() {
-      this.lightTexture.close();
-      this.mapRenderer.close();
+      this.lightmapTexture.close();
+      this.mapItemRenderer.close();
       this.overlayTexture.close();
-      this.shutdownEffect();
+      this.stopUseShader();
    }
 
-   public void shutdownEffect() {
-      if (this.postEffect != null) {
-         this.postEffect.close();
+   public void stopUseShader() {
+      if (this.shaderGroup != null) {
+         this.shaderGroup.close();
       }
 
-      this.postEffect = null;
-      this.effectIndex = EFFECT_NONE;
+      this.shaderGroup = null;
+      this.shaderIndex = SHADER_COUNT;
    }
 
-   public void togglePostEffect() {
-      this.effectActive = !this.effectActive;
+   public void switchUseShader() {
+      this.useShader = !this.useShader;
    }
 
-   public void checkEntityPostEffect(@Nullable Entity p_175066_1_) {
-      if (this.postEffect != null) {
-         this.postEffect.close();
+   public void loadEntityShader(@Nullable Entity entityIn) {
+      if (this.shaderGroup != null) {
+         this.shaderGroup.close();
       }
 
-      this.postEffect = null;
-      if (p_175066_1_ instanceof CreeperEntity) {
-         this.loadEffect(new ResourceLocation("shaders/post/creeper.json"));
-      } else if (p_175066_1_ instanceof SpiderEntity) {
-         this.loadEffect(new ResourceLocation("shaders/post/spider.json"));
-      } else if (p_175066_1_ instanceof EndermanEntity) {
-         this.loadEffect(new ResourceLocation("shaders/post/invert.json"));
+      this.shaderGroup = null;
+      if (entityIn instanceof CreeperEntity) {
+         this.loadShader(new ResourceLocation("shaders/post/creeper.json"));
+      } else if (entityIn instanceof SpiderEntity) {
+         this.loadShader(new ResourceLocation("shaders/post/spider.json"));
+      } else if (entityIn instanceof EndermanEntity) {
+         this.loadShader(new ResourceLocation("shaders/post/invert.json"));
       }
 
    }
 
-   private void loadEffect(ResourceLocation p_175069_1_) {
-      if (this.postEffect != null) {
-         this.postEffect.close();
+   private void loadShader(ResourceLocation resourceLocationIn) {
+      if (this.shaderGroup != null) {
+         this.shaderGroup.close();
       }
 
       try {
-         this.postEffect = new ShaderGroup(this.minecraft.getTextureManager(), this.resourceManager, this.minecraft.getMainRenderTarget(), p_175069_1_);
-         this.postEffect.resize(this.minecraft.getWindow().getWidth(), this.minecraft.getWindow().getHeight());
-         this.effectActive = true;
+         this.shaderGroup = new ShaderGroup(this.mc.getTextureManager(), this.resourceManager, this.mc.getFramebuffer(), resourceLocationIn);
+         this.shaderGroup.createBindFramebuffers(this.mc.getMainWindow().getFramebufferWidth(), this.mc.getMainWindow().getFramebufferHeight());
+         this.useShader = true;
       } catch (IOException ioexception) {
-         LOGGER.warn("Failed to load shader: {}", p_175069_1_, ioexception);
-         this.effectIndex = EFFECT_NONE;
-         this.effectActive = false;
+         LOGGER.warn("Failed to load shader: {}", resourceLocationIn, ioexception);
+         this.shaderIndex = SHADER_COUNT;
+         this.useShader = false;
       } catch (JsonSyntaxException jsonsyntaxexception) {
-         LOGGER.warn("Failed to parse shader: {}", p_175069_1_, jsonsyntaxexception);
-         this.effectIndex = EFFECT_NONE;
-         this.effectActive = false;
+         LOGGER.warn("Failed to parse shader: {}", resourceLocationIn, jsonsyntaxexception);
+         this.shaderIndex = SHADER_COUNT;
+         this.useShader = false;
       }
 
    }
 
-   public void onResourceManagerReload(IResourceManager p_195410_1_) {
-      if (this.postEffect != null) {
-         this.postEffect.close();
+   public void onResourceManagerReload(IResourceManager resourceManager) {
+      if (this.shaderGroup != null) {
+         this.shaderGroup.close();
       }
 
-      this.postEffect = null;
-      if (this.effectIndex == EFFECT_NONE) {
-         this.checkEntityPostEffect(this.minecraft.getCameraEntity());
+      this.shaderGroup = null;
+      if (this.shaderIndex == SHADER_COUNT) {
+         this.loadEntityShader(this.mc.getRenderViewEntity());
       } else {
-         this.loadEffect(EFFECTS[this.effectIndex]);
+         this.loadShader(SHADERS_TEXTURES[this.shaderIndex]);
       }
 
    }
 
    public void tick() {
-      this.tickFov();
-      this.lightTexture.tick();
-      if (this.minecraft.getCameraEntity() == null) {
-         this.minecraft.setCameraEntity(this.minecraft.player);
+      this.updateFovModifierHand();
+      this.lightmapTexture.tick();
+      if (this.mc.getRenderViewEntity() == null) {
+         this.mc.setRenderViewEntity(this.mc.player);
       }
 
-      this.mainCamera.tick();
-      ++this.tick;
-      this.itemInHandRenderer.tick();
-      this.minecraft.levelRenderer.tickRain(this.mainCamera);
-      this.darkenWorldAmountO = this.darkenWorldAmount;
-      if (this.minecraft.gui.getBossOverlay().shouldDarkenScreen()) {
-         this.darkenWorldAmount += 0.05F;
-         if (this.darkenWorldAmount > 1.0F) {
-            this.darkenWorldAmount = 1.0F;
+      this.activeRender.interpolateHeight();
+      ++this.rendererUpdateCount;
+      this.itemRenderer.tick();
+      this.mc.worldRenderer.addRainParticles(this.activeRender);
+      this.bossColorModifierPrev = this.bossColorModifier;
+      if (this.mc.ingameGUI.getBossOverlay().shouldDarkenSky()) {
+         this.bossColorModifier += 0.05F;
+         if (this.bossColorModifier > 1.0F) {
+            this.bossColorModifier = 1.0F;
          }
-      } else if (this.darkenWorldAmount > 0.0F) {
-         this.darkenWorldAmount -= 0.0125F;
+      } else if (this.bossColorModifier > 0.0F) {
+         this.bossColorModifier -= 0.0125F;
       }
 
       if (this.itemActivationTicks > 0) {
@@ -205,31 +205,31 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
    }
 
    @Nullable
-   public ShaderGroup currentEffect() {
-      return this.postEffect;
+   public ShaderGroup getShaderGroup() {
+      return this.shaderGroup;
    }
 
-   public void resize(int p_147704_1_, int p_147704_2_) {
-      if (this.postEffect != null) {
-         this.postEffect.resize(p_147704_1_, p_147704_2_);
+   public void updateShaderGroupSize(int width, int height) {
+      if (this.shaderGroup != null) {
+         this.shaderGroup.createBindFramebuffers(width, height);
       }
 
-      this.minecraft.levelRenderer.resize(p_147704_1_, p_147704_2_);
+      this.mc.worldRenderer.createBindEntityOutlineFbs(width, height);
    }
 
-   public void pick(float p_78473_1_) {
-      Entity entity = this.minecraft.getCameraEntity();
+   public void getMouseOver(float partialTicks) {
+      Entity entity = this.mc.getRenderViewEntity();
       if (entity != null) {
-         if (this.minecraft.level != null) {
-            this.minecraft.getProfiler().push("pick");
-            this.minecraft.crosshairPickEntity = null;
-            double d0 = (double)this.minecraft.gameMode.getPickRange();
-            this.minecraft.hitResult = entity.pick(d0, p_78473_1_, false);
-            Vector3d vector3d = entity.getEyePosition(p_78473_1_);
+         if (this.mc.world != null) {
+            this.mc.getProfiler().startSection("pick");
+            this.mc.pointedEntity = null;
+            double d0 = (double)this.mc.playerController.getBlockReachDistance();
+            this.mc.objectMouseOver = entity.pick(d0, partialTicks, false);
+            Vector3d vector3d = entity.getEyePosition(partialTicks);
             boolean flag = false;
             int i = 3;
             double d1 = d0;
-            if (this.minecraft.gameMode.hasFarPickRange()) {
+            if (this.mc.playerController.extendedReach()) {
                d1 = 6.0D;
                d0 = d1;
             } else {
@@ -241,71 +241,71 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
             }
 
             d1 = d1 * d1;
-            if (this.minecraft.hitResult != null) {
-               d1 = this.minecraft.hitResult.getLocation().distanceToSqr(vector3d);
+            if (this.mc.objectMouseOver != null) {
+               d1 = this.mc.objectMouseOver.getHitVec().squareDistanceTo(vector3d);
             }
 
-            Vector3d vector3d1 = entity.getViewVector(1.0F);
+            Vector3d vector3d1 = entity.getLook(1.0F);
             Vector3d vector3d2 = vector3d.add(vector3d1.x * d0, vector3d1.y * d0, vector3d1.z * d0);
             float f = 1.0F;
-            AxisAlignedBB axisalignedbb = entity.getBoundingBox().expandTowards(vector3d1.scale(d0)).inflate(1.0D, 1.0D, 1.0D);
-            EntityRayTraceResult entityraytraceresult = ProjectileHelper.getEntityHitResult(entity, vector3d, vector3d2, axisalignedbb, (p_215312_0_) -> {
-               return !p_215312_0_.isSpectator() && p_215312_0_.isPickable();
+            AxisAlignedBB axisalignedbb = entity.getBoundingBox().expand(vector3d1.scale(d0)).grow(1.0D, 1.0D, 1.0D);
+            EntityRayTraceResult entityraytraceresult = ProjectileHelper.rayTraceEntities(entity, vector3d, vector3d2, axisalignedbb, (p_215312_0_) -> {
+               return !p_215312_0_.isSpectator() && p_215312_0_.canBeCollidedWith();
             }, d1);
             if (entityraytraceresult != null) {
                Entity entity1 = entityraytraceresult.getEntity();
-               Vector3d vector3d3 = entityraytraceresult.getLocation();
-               double d2 = vector3d.distanceToSqr(vector3d3);
+               Vector3d vector3d3 = entityraytraceresult.getHitVec();
+               double d2 = vector3d.squareDistanceTo(vector3d3);
                if (flag && d2 > 9.0D) {
-                  this.minecraft.hitResult = BlockRayTraceResult.miss(vector3d3, Direction.getNearest(vector3d1.x, vector3d1.y, vector3d1.z), new BlockPos(vector3d3));
-               } else if (d2 < d1 || this.minecraft.hitResult == null) {
-                  this.minecraft.hitResult = entityraytraceresult;
+                  this.mc.objectMouseOver = BlockRayTraceResult.createMiss(vector3d3, Direction.getFacingFromVector(vector3d1.x, vector3d1.y, vector3d1.z), new BlockPos(vector3d3));
+               } else if (d2 < d1 || this.mc.objectMouseOver == null) {
+                  this.mc.objectMouseOver = entityraytraceresult;
                   if (entity1 instanceof LivingEntity || entity1 instanceof ItemFrameEntity) {
-                     this.minecraft.crosshairPickEntity = entity1;
+                     this.mc.pointedEntity = entity1;
                   }
                }
             }
 
-            this.minecraft.getProfiler().pop();
+            this.mc.getProfiler().endSection();
          }
       }
    }
 
-   private void tickFov() {
+   private void updateFovModifierHand() {
       float f = 1.0F;
-      if (this.minecraft.getCameraEntity() instanceof AbstractClientPlayerEntity) {
-         AbstractClientPlayerEntity abstractclientplayerentity = (AbstractClientPlayerEntity)this.minecraft.getCameraEntity();
-         f = abstractclientplayerentity.getFieldOfViewModifier();
+      if (this.mc.getRenderViewEntity() instanceof AbstractClientPlayerEntity) {
+         AbstractClientPlayerEntity abstractclientplayerentity = (AbstractClientPlayerEntity)this.mc.getRenderViewEntity();
+         f = abstractclientplayerentity.getFovModifier();
       }
 
-      this.oldFov = this.fov;
-      this.fov += (f - this.fov) * 0.5F;
-      if (this.fov > 1.5F) {
-         this.fov = 1.5F;
+      this.fovModifierHandPrev = this.fovModifierHand;
+      this.fovModifierHand += (f - this.fovModifierHand) * 0.5F;
+      if (this.fovModifierHand > 1.5F) {
+         this.fovModifierHand = 1.5F;
       }
 
-      if (this.fov < 0.1F) {
-         this.fov = 0.1F;
+      if (this.fovModifierHand < 0.1F) {
+         this.fovModifierHand = 0.1F;
       }
 
    }
 
-   private double getFov(ActiveRenderInfo p_215311_1_, float p_215311_2_, boolean p_215311_3_) {
-      if (this.panoramicMode) {
+   private double getFOVModifier(ActiveRenderInfo activeRenderInfoIn, float partialTicks, boolean useFOVSetting) {
+      if (this.debugView) {
          return 90.0D;
       } else {
          double d0 = 70.0D;
-         if (p_215311_3_) {
-            d0 = this.minecraft.options.fov;
-            d0 = d0 * (double)MathHelper.lerp(p_215311_2_, this.oldFov, this.fov);
+         if (useFOVSetting) {
+            d0 = this.mc.gameSettings.fov;
+            d0 = d0 * (double)MathHelper.lerp(partialTicks, this.fovModifierHandPrev, this.fovModifierHand);
          }
 
-         if (p_215311_1_.getEntity() instanceof LivingEntity && ((LivingEntity)p_215311_1_.getEntity()).isDeadOrDying()) {
-            float f = Math.min((float)((LivingEntity)p_215311_1_.getEntity()).deathTime + p_215311_2_, 20.0F);
+         if (activeRenderInfoIn.getRenderViewEntity() instanceof LivingEntity && ((LivingEntity)activeRenderInfoIn.getRenderViewEntity()).getShouldBeDead()) {
+            float f = Math.min((float)((LivingEntity)activeRenderInfoIn.getRenderViewEntity()).deathTime + partialTicks, 20.0F);
             d0 /= (double)((1.0F - 500.0F / (f + 500.0F)) * 2.0F + 1.0F);
          }
 
-         FluidState fluidstate = p_215311_1_.getFluidInCamera();
+         FluidState fluidstate = activeRenderInfoIn.getFluidState();
          if (!fluidstate.isEmpty()) {
             d0 = d0 * 60.0D / 70.0D;
          }
@@ -314,122 +314,122 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
       }
    }
 
-   private void bobHurt(MatrixStack p_228380_1_, float p_228380_2_) {
-      if (this.minecraft.getCameraEntity() instanceof LivingEntity) {
-         LivingEntity livingentity = (LivingEntity)this.minecraft.getCameraEntity();
-         float f = (float)livingentity.hurtTime - p_228380_2_;
-         if (livingentity.isDeadOrDying()) {
-            float f1 = Math.min((float)livingentity.deathTime + p_228380_2_, 20.0F);
-            p_228380_1_.mulPose(Vector3f.ZP.rotationDegrees(40.0F - 8000.0F / (f1 + 200.0F)));
+   private void hurtCameraEffect(MatrixStack matrixStackIn, float partialTicks) {
+      if (this.mc.getRenderViewEntity() instanceof LivingEntity) {
+         LivingEntity livingentity = (LivingEntity)this.mc.getRenderViewEntity();
+         float f = (float)livingentity.hurtTime - partialTicks;
+         if (livingentity.getShouldBeDead()) {
+            float f1 = Math.min((float)livingentity.deathTime + partialTicks, 20.0F);
+            matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(40.0F - 8000.0F / (f1 + 200.0F)));
          }
 
          if (f < 0.0F) {
             return;
          }
 
-         f = f / (float)livingentity.hurtDuration;
+         f = f / (float)livingentity.maxHurtTime;
          f = MathHelper.sin(f * f * f * f * (float)Math.PI);
-         float f2 = livingentity.hurtDir;
-         p_228380_1_.mulPose(Vector3f.YP.rotationDegrees(-f2));
-         p_228380_1_.mulPose(Vector3f.ZP.rotationDegrees(-f * 14.0F));
-         p_228380_1_.mulPose(Vector3f.YP.rotationDegrees(f2));
+         float f2 = livingentity.attackedAtYaw;
+         matrixStackIn.rotate(Vector3f.YP.rotationDegrees(-f2));
+         matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(-f * 14.0F));
+         matrixStackIn.rotate(Vector3f.YP.rotationDegrees(f2));
       }
 
    }
 
-   private void bobView(MatrixStack p_228383_1_, float p_228383_2_) {
-      if (this.minecraft.getCameraEntity() instanceof PlayerEntity) {
-         PlayerEntity playerentity = (PlayerEntity)this.minecraft.getCameraEntity();
-         float f = playerentity.walkDist - playerentity.walkDistO;
-         float f1 = -(playerentity.walkDist + f * p_228383_2_);
-         float f2 = MathHelper.lerp(p_228383_2_, playerentity.oBob, playerentity.bob);
-         p_228383_1_.translate((double)(MathHelper.sin(f1 * (float)Math.PI) * f2 * 0.5F), (double)(-Math.abs(MathHelper.cos(f1 * (float)Math.PI) * f2)), 0.0D);
-         p_228383_1_.mulPose(Vector3f.ZP.rotationDegrees(MathHelper.sin(f1 * (float)Math.PI) * f2 * 3.0F));
-         p_228383_1_.mulPose(Vector3f.XP.rotationDegrees(Math.abs(MathHelper.cos(f1 * (float)Math.PI - 0.2F) * f2) * 5.0F));
+   private void applyBobbing(MatrixStack matrixStackIn, float partialTicks) {
+      if (this.mc.getRenderViewEntity() instanceof PlayerEntity) {
+         PlayerEntity playerentity = (PlayerEntity)this.mc.getRenderViewEntity();
+         float f = playerentity.distanceWalkedModified - playerentity.prevDistanceWalkedModified;
+         float f1 = -(playerentity.distanceWalkedModified + f * partialTicks);
+         float f2 = MathHelper.lerp(partialTicks, playerentity.prevCameraYaw, playerentity.cameraYaw);
+         matrixStackIn.translate((double)(MathHelper.sin(f1 * (float)Math.PI) * f2 * 0.5F), (double)(-Math.abs(MathHelper.cos(f1 * (float)Math.PI) * f2)), 0.0D);
+         matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(MathHelper.sin(f1 * (float)Math.PI) * f2 * 3.0F));
+         matrixStackIn.rotate(Vector3f.XP.rotationDegrees(Math.abs(MathHelper.cos(f1 * (float)Math.PI - 0.2F) * f2) * 5.0F));
       }
    }
 
-   private void renderItemInHand(MatrixStack p_228381_1_, ActiveRenderInfo p_228381_2_, float p_228381_3_) {
-      if (!this.panoramicMode) {
-         this.resetProjectionMatrix(this.getProjectionMatrix(p_228381_2_, p_228381_3_, false));
-         MatrixStack.Entry matrixstack$entry = p_228381_1_.last();
-         matrixstack$entry.pose().setIdentity();
-         matrixstack$entry.normal().setIdentity();
-         p_228381_1_.pushPose();
-         this.bobHurt(p_228381_1_, p_228381_3_);
-         if (this.minecraft.options.bobView) {
-            this.bobView(p_228381_1_, p_228381_3_);
+   private void renderHand(MatrixStack matrixStackIn, ActiveRenderInfo activeRenderInfoIn, float partialTicks) {
+      if (!this.debugView) {
+         this.resetProjectionMatrix(this.getProjectionMatrix(activeRenderInfoIn, partialTicks, false));
+         MatrixStack.Entry matrixstack$entry = matrixStackIn.getLast();
+         matrixstack$entry.getMatrix().setIdentity();
+         matrixstack$entry.getNormal().setIdentity();
+         matrixStackIn.push();
+         this.hurtCameraEffect(matrixStackIn, partialTicks);
+         if (this.mc.gameSettings.viewBobbing) {
+            this.applyBobbing(matrixStackIn, partialTicks);
          }
 
-         boolean flag = this.minecraft.getCameraEntity() instanceof LivingEntity && ((LivingEntity)this.minecraft.getCameraEntity()).isSleeping();
-         if (this.minecraft.options.getCameraType().isFirstPerson() && !flag && !this.minecraft.options.hideGui && this.minecraft.gameMode.getPlayerMode() != GameType.SPECTATOR) {
-            this.lightTexture.turnOnLightLayer();
-            this.itemInHandRenderer.renderHandsWithItems(p_228381_3_, p_228381_1_, this.renderBuffers.bufferSource(), this.minecraft.player, this.minecraft.getEntityRenderDispatcher().getPackedLightCoords(this.minecraft.player, p_228381_3_));
-            this.lightTexture.turnOffLightLayer();
+         boolean flag = this.mc.getRenderViewEntity() instanceof LivingEntity && ((LivingEntity)this.mc.getRenderViewEntity()).isSleeping();
+         if (this.mc.gameSettings.getPointOfView().func_243192_a() && !flag && !this.mc.gameSettings.hideGUI && this.mc.playerController.getCurrentGameType() != GameType.SPECTATOR) {
+            this.lightmapTexture.enableLightmap();
+            this.itemRenderer.renderItemInFirstPerson(partialTicks, matrixStackIn, this.renderTypeBuffers.getBufferSource(), this.mc.player, this.mc.getRenderManager().getPackedLight(this.mc.player, partialTicks));
+            this.lightmapTexture.disableLightmap();
          }
 
-         p_228381_1_.popPose();
-         if (this.minecraft.options.getCameraType().isFirstPerson() && !flag) {
-            OverlayRenderer.renderScreenEffect(this.minecraft, p_228381_1_);
-            this.bobHurt(p_228381_1_, p_228381_3_);
+         matrixStackIn.pop();
+         if (this.mc.gameSettings.getPointOfView().func_243192_a() && !flag) {
+            OverlayRenderer.renderOverlays(this.mc, matrixStackIn);
+            this.hurtCameraEffect(matrixStackIn, partialTicks);
          }
 
-         if (this.minecraft.options.bobView) {
-            this.bobView(p_228381_1_, p_228381_3_);
+         if (this.mc.gameSettings.viewBobbing) {
+            this.applyBobbing(matrixStackIn, partialTicks);
          }
 
       }
    }
 
-   public void resetProjectionMatrix(Matrix4f p_228379_1_) {
+   public void resetProjectionMatrix(Matrix4f matrixIn) {
       RenderSystem.matrixMode(5889);
       RenderSystem.loadIdentity();
-      RenderSystem.multMatrix(p_228379_1_);
+      RenderSystem.multMatrix(matrixIn);
       RenderSystem.matrixMode(5888);
    }
 
-   public Matrix4f getProjectionMatrix(ActiveRenderInfo p_228382_1_, float p_228382_2_, boolean p_228382_3_) {
+   public Matrix4f getProjectionMatrix(ActiveRenderInfo activeRenderInfoIn, float partialTicks, boolean useFovSetting) {
       MatrixStack matrixstack = new MatrixStack();
-      matrixstack.last().pose().setIdentity();
-      if (this.zoom != 1.0F) {
-         matrixstack.translate((double)this.zoomX, (double)(-this.zoomY), 0.0D);
-         matrixstack.scale(this.zoom, this.zoom, 1.0F);
+      matrixstack.getLast().getMatrix().setIdentity();
+      if (this.cameraZoom != 1.0F) {
+         matrixstack.translate((double)this.cameraYaw, (double)(-this.cameraPitch), 0.0D);
+         matrixstack.scale(this.cameraZoom, this.cameraZoom, 1.0F);
       }
 
-      matrixstack.last().pose().multiply(Matrix4f.perspective(this.getFov(p_228382_1_, p_228382_2_, p_228382_3_), (float)this.minecraft.getWindow().getWidth() / (float)this.minecraft.getWindow().getHeight(), 0.05F, this.renderDistance * 4.0F));
-      return matrixstack.last().pose();
+      matrixstack.getLast().getMatrix().mul(Matrix4f.perspective(this.getFOVModifier(activeRenderInfoIn, partialTicks, useFovSetting), (float)this.mc.getMainWindow().getFramebufferWidth() / (float)this.mc.getMainWindow().getFramebufferHeight(), 0.05F, this.farPlaneDistance * 4.0F));
+      return matrixstack.getLast().getMatrix();
    }
 
-   public static float getNightVisionScale(LivingEntity p_180438_0_, float p_180438_1_) {
-      int i = p_180438_0_.getEffect(Effects.NIGHT_VISION).getDuration();
-      return i > 200 ? 1.0F : 0.7F + MathHelper.sin(((float)i - p_180438_1_) * (float)Math.PI * 0.2F) * 0.3F;
+   public static float getNightVisionBrightness(LivingEntity livingEntityIn, float entitylivingbaseIn) {
+      int i = livingEntityIn.getActivePotionEffect(Effects.NIGHT_VISION).getDuration();
+      return i > 200 ? 1.0F : 0.7F + MathHelper.sin(((float)i - entitylivingbaseIn) * (float)Math.PI * 0.2F) * 0.3F;
    }
 
-   public void render(float p_195458_1_, long p_195458_2_, boolean p_195458_4_) {
-      if (!this.minecraft.isWindowActive() && this.minecraft.options.pauseOnLostFocus && (!this.minecraft.options.touchscreen || !this.minecraft.mouseHandler.isRightPressed())) {
-         if (Util.getMillis() - this.lastActiveTime > 500L) {
-            this.minecraft.pauseGame(false);
+   public void updateCameraAndRender(float partialTicks, long nanoTime, boolean renderWorldIn) {
+      if (!this.mc.isGameFocused() && this.mc.gameSettings.pauseOnLostFocus && (!this.mc.gameSettings.touchscreen || !this.mc.mouseHelper.isRightDown())) {
+         if (Util.milliTime() - this.prevFrameTime > 500L) {
+            this.mc.displayInGameMenu(false);
          }
       } else {
-         this.lastActiveTime = Util.getMillis();
+         this.prevFrameTime = Util.milliTime();
       }
 
-      if (!this.minecraft.noRender) {
-         int i = (int)(this.minecraft.mouseHandler.xpos() * (double)this.minecraft.getWindow().getGuiScaledWidth() / (double)this.minecraft.getWindow().getScreenWidth());
-         int j = (int)(this.minecraft.mouseHandler.ypos() * (double)this.minecraft.getWindow().getGuiScaledHeight() / (double)this.minecraft.getWindow().getScreenHeight());
-         RenderSystem.viewport(0, 0, this.minecraft.getWindow().getWidth(), this.minecraft.getWindow().getHeight());
-         if (p_195458_4_ && this.minecraft.level != null) {
-            this.minecraft.getProfiler().push("level");
-            this.renderLevel(p_195458_1_, p_195458_2_, new MatrixStack());
-            if (this.minecraft.hasSingleplayerServer() && this.lastScreenshotAttempt < Util.getMillis() - 1000L) {
-               this.lastScreenshotAttempt = Util.getMillis();
-               if (!this.minecraft.getSingleplayerServer().hasWorldScreenshot()) {
-                  this.takeAutoScreenshot();
+      if (!this.mc.skipRenderWorld) {
+         int i = (int)(this.mc.mouseHelper.getMouseX() * (double)this.mc.getMainWindow().getScaledWidth() / (double)this.mc.getMainWindow().getWidth());
+         int j = (int)(this.mc.mouseHelper.getMouseY() * (double)this.mc.getMainWindow().getScaledHeight() / (double)this.mc.getMainWindow().getHeight());
+         RenderSystem.viewport(0, 0, this.mc.getMainWindow().getFramebufferWidth(), this.mc.getMainWindow().getFramebufferHeight());
+         if (renderWorldIn && this.mc.world != null) {
+            this.mc.getProfiler().startSection("level");
+            this.renderWorld(partialTicks, nanoTime, new MatrixStack());
+            if (this.mc.isSingleplayer() && this.timeWorldIcon < Util.milliTime() - 1000L) {
+               this.timeWorldIcon = Util.milliTime();
+               if (!this.mc.getIntegratedServer().isWorldIconSet()) {
+                  this.createWorldIcon();
                }
             }
 
-            this.minecraft.levelRenderer.doEntityOutline();
-            if (this.postEffect != null && this.effectActive) {
+            this.mc.worldRenderer.renderEntityOutlineFramebuffer();
+            if (this.shaderGroup != null && this.useShader) {
                RenderSystem.disableBlend();
                RenderSystem.disableDepthTest();
                RenderSystem.disableAlphaTest();
@@ -437,67 +437,67 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
                RenderSystem.matrixMode(5890);
                RenderSystem.pushMatrix();
                RenderSystem.loadIdentity();
-               this.postEffect.process(p_195458_1_);
+               this.shaderGroup.render(partialTicks);
                RenderSystem.popMatrix();
             }
 
-            this.minecraft.getMainRenderTarget().bindWrite(true);
+            this.mc.getFramebuffer().bindFramebuffer(true);
          }
 
-         MainWindow mainwindow = this.minecraft.getWindow();
-         RenderSystem.clear(256, Minecraft.ON_OSX);
+         MainWindow mainwindow = this.mc.getMainWindow();
+         RenderSystem.clear(256, Minecraft.IS_RUNNING_ON_MAC);
          RenderSystem.matrixMode(5889);
          RenderSystem.loadIdentity();
-         RenderSystem.ortho(0.0D, (double)mainwindow.getWidth() / mainwindow.getGuiScale(), (double)mainwindow.getHeight() / mainwindow.getGuiScale(), 0.0D, 1000.0D, 3000.0D);
+         RenderSystem.ortho(0.0D, (double)mainwindow.getFramebufferWidth() / mainwindow.getGuiScaleFactor(), (double)mainwindow.getFramebufferHeight() / mainwindow.getGuiScaleFactor(), 0.0D, 1000.0D, 3000.0D);
          RenderSystem.matrixMode(5888);
          RenderSystem.loadIdentity();
          RenderSystem.translatef(0.0F, 0.0F, -2000.0F);
-         RenderHelper.setupFor3DItems();
+         RenderHelper.setupGui3DDiffuseLighting();
          MatrixStack matrixstack = new MatrixStack();
-         if (p_195458_4_ && this.minecraft.level != null) {
-            this.minecraft.getProfiler().popPush("gui");
-            if (this.minecraft.player != null) {
-               float f = MathHelper.lerp(p_195458_1_, this.minecraft.player.oPortalTime, this.minecraft.player.portalTime);
-               if (f > 0.0F && this.minecraft.player.hasEffect(Effects.CONFUSION) && this.minecraft.options.screenEffectScale < 1.0F) {
-                  this.renderConfusionOverlay(f * (1.0F - this.minecraft.options.screenEffectScale));
+         if (renderWorldIn && this.mc.world != null) {
+            this.mc.getProfiler().endStartSection("gui");
+            if (this.mc.player != null) {
+               float f = MathHelper.lerp(partialTicks, this.mc.player.prevTimeInPortal, this.mc.player.timeInPortal);
+               if (f > 0.0F && this.mc.player.isPotionActive(Effects.NAUSEA) && this.mc.gameSettings.screenEffectScale < 1.0F) {
+                  this.func_243497_c(f * (1.0F - this.mc.gameSettings.screenEffectScale));
                }
             }
 
-            if (!this.minecraft.options.hideGui || this.minecraft.screen != null) {
+            if (!this.mc.gameSettings.hideGUI || this.mc.currentScreen != null) {
                RenderSystem.defaultAlphaFunc();
-               this.renderItemActivationAnimation(this.minecraft.getWindow().getGuiScaledWidth(), this.minecraft.getWindow().getGuiScaledHeight(), p_195458_1_);
-               this.minecraft.gui.render(matrixstack, p_195458_1_);
-               RenderSystem.clear(256, Minecraft.ON_OSX);
+               this.renderItemActivation(this.mc.getMainWindow().getScaledWidth(), this.mc.getMainWindow().getScaledHeight(), partialTicks);
+               this.mc.ingameGUI.renderIngameGui(matrixstack, partialTicks);
+               RenderSystem.clear(256, Minecraft.IS_RUNNING_ON_MAC);
             }
 
-            this.minecraft.getProfiler().pop();
+            this.mc.getProfiler().endSection();
          }
 
-         if (this.minecraft.overlay != null) {
+         if (this.mc.loadingGui != null) {
             try {
-               this.minecraft.overlay.render(matrixstack, i, j, this.minecraft.getDeltaFrameTime());
+               this.mc.loadingGui.render(matrixstack, i, j, this.mc.getTickLength());
             } catch (Throwable throwable1) {
-               CrashReport crashreport = CrashReport.forThrowable(throwable1, "Rendering overlay");
-               CrashReportCategory crashreportcategory = crashreport.addCategory("Overlay render details");
-               crashreportcategory.setDetail("Overlay name", () -> {
-                  return this.minecraft.overlay.getClass().getCanonicalName();
+               CrashReport crashreport = CrashReport.makeCrashReport(throwable1, "Rendering overlay");
+               CrashReportCategory crashreportcategory = crashreport.makeCategory("Overlay render details");
+               crashreportcategory.addDetail("Overlay name", () -> {
+                  return this.mc.loadingGui.getClass().getCanonicalName();
                });
                throw new ReportedException(crashreport);
             }
-         } else if (this.minecraft.screen != null) {
+         } else if (this.mc.currentScreen != null) {
             try {
-               this.minecraft.screen.render(matrixstack, i, j, this.minecraft.getDeltaFrameTime());
+               this.mc.currentScreen.render(matrixstack, i, j, this.mc.getTickLength());
             } catch (Throwable throwable) {
-               CrashReport crashreport1 = CrashReport.forThrowable(throwable, "Rendering screen");
-               CrashReportCategory crashreportcategory1 = crashreport1.addCategory("Screen render details");
-               crashreportcategory1.setDetail("Screen name", () -> {
-                  return this.minecraft.screen.getClass().getCanonicalName();
+               CrashReport crashreport1 = CrashReport.makeCrashReport(throwable, "Rendering screen");
+               CrashReportCategory crashreportcategory1 = crashreport1.makeCategory("Screen render details");
+               crashreportcategory1.addDetail("Screen name", () -> {
+                  return this.mc.currentScreen.getClass().getCanonicalName();
                });
-               crashreportcategory1.setDetail("Mouse location", () -> {
-                  return String.format(Locale.ROOT, "Scaled: (%d, %d). Absolute: (%f, %f)", i, j, this.minecraft.mouseHandler.xpos(), this.minecraft.mouseHandler.ypos());
+               crashreportcategory1.addDetail("Mouse location", () -> {
+                  return String.format(Locale.ROOT, "Scaled: (%d, %d). Absolute: (%f, %f)", i, j, this.mc.mouseHelper.getMouseX(), this.mc.mouseHelper.getMouseY());
                });
-               crashreportcategory1.setDetail("Screen size", () -> {
-                  return String.format(Locale.ROOT, "Scaled: (%d, %d). Absolute: (%d, %d). Scale factor of %f", this.minecraft.getWindow().getGuiScaledWidth(), this.minecraft.getWindow().getGuiScaledHeight(), this.minecraft.getWindow().getWidth(), this.minecraft.getWindow().getHeight(), this.minecraft.getWindow().getGuiScale());
+               crashreportcategory1.addDetail("Screen size", () -> {
+                  return String.format(Locale.ROOT, "Scaled: (%d, %d). Absolute: (%d, %d). Scale factor of %f", this.mc.getMainWindow().getScaledWidth(), this.mc.getMainWindow().getScaledHeight(), this.mc.getMainWindow().getFramebufferWidth(), this.mc.getMainWindow().getFramebufferHeight(), this.mc.getMainWindow().getGuiScaleFactor());
                });
                throw new ReportedException(crashreport1);
             }
@@ -506,10 +506,10 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
       }
    }
 
-   private void takeAutoScreenshot() {
-      if (this.minecraft.levelRenderer.countRenderedChunks() > 10 && this.minecraft.levelRenderer.hasRenderedAllChunks() && !this.minecraft.getSingleplayerServer().hasWorldScreenshot()) {
-         NativeImage nativeimage = ScreenShotHelper.takeScreenshot(this.minecraft.getWindow().getWidth(), this.minecraft.getWindow().getHeight(), this.minecraft.getMainRenderTarget());
-         Util.ioPool().execute(() -> {
+   private void createWorldIcon() {
+      if (this.mc.worldRenderer.getRenderedChunks() > 10 && this.mc.worldRenderer.hasNoChunkUpdates() && !this.mc.getIntegratedServer().isWorldIconSet()) {
+         NativeImage nativeimage = ScreenShotHelper.createScreenshot(this.mc.getMainWindow().getFramebufferWidth(), this.mc.getMainWindow().getFramebufferHeight(), this.mc.getFramebuffer());
+         Util.getRenderingService().execute(() -> {
             int i = nativeimage.getWidth();
             int j = nativeimage.getHeight();
             int k = 0;
@@ -524,7 +524,7 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
 
             try (NativeImage nativeimage1 = new NativeImage(64, 64, false)) {
                nativeimage.resizeSubRectTo(k, l, i, j, nativeimage1);
-               nativeimage1.writeToFile(this.minecraft.getSingleplayerServer().getWorldScreenshotFile());
+               nativeimage1.write(this.mc.getIntegratedServer().getWorldIconFile());
             } catch (IOException ioexception) {
                LOGGER.warn("Couldn't save auto screenshot", (Throwable)ioexception);
             } finally {
@@ -536,23 +536,23 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
 
    }
 
-   private boolean shouldRenderBlockOutline() {
-      if (!this.renderBlockOutline) {
+   private boolean isDrawBlockOutline() {
+      if (!this.drawBlockOutline) {
          return false;
       } else {
-         Entity entity = this.minecraft.getCameraEntity();
-         boolean flag = entity instanceof PlayerEntity && !this.minecraft.options.hideGui;
-         if (flag && !((PlayerEntity)entity).abilities.mayBuild) {
-            ItemStack itemstack = ((LivingEntity)entity).getMainHandItem();
-            RayTraceResult raytraceresult = this.minecraft.hitResult;
+         Entity entity = this.mc.getRenderViewEntity();
+         boolean flag = entity instanceof PlayerEntity && !this.mc.gameSettings.hideGUI;
+         if (flag && !((PlayerEntity)entity).abilities.allowEdit) {
+            ItemStack itemstack = ((LivingEntity)entity).getHeldItemMainhand();
+            RayTraceResult raytraceresult = this.mc.objectMouseOver;
             if (raytraceresult != null && raytraceresult.getType() == RayTraceResult.Type.BLOCK) {
-               BlockPos blockpos = ((BlockRayTraceResult)raytraceresult).getBlockPos();
-               BlockState blockstate = this.minecraft.level.getBlockState(blockpos);
-               if (this.minecraft.gameMode.getPlayerMode() == GameType.SPECTATOR) {
-                  flag = blockstate.getMenuProvider(this.minecraft.level, blockpos) != null;
+               BlockPos blockpos = ((BlockRayTraceResult)raytraceresult).getPos();
+               BlockState blockstate = this.mc.world.getBlockState(blockpos);
+               if (this.mc.playerController.getCurrentGameType() == GameType.SPECTATOR) {
+                  flag = blockstate.getContainer(this.mc.world, blockpos) != null;
                } else {
-                  CachedBlockInfo cachedblockinfo = new CachedBlockInfo(this.minecraft.level, blockpos, false);
-                  flag = !itemstack.isEmpty() && (itemstack.hasAdventureModeBreakTagForBlock(this.minecraft.level.getTagManager(), cachedblockinfo) || itemstack.hasAdventureModePlaceTagForBlock(this.minecraft.level.getTagManager(), cachedblockinfo));
+                  CachedBlockInfo cachedblockinfo = new CachedBlockInfo(this.mc.world, blockpos, false);
+                  flag = !itemstack.isEmpty() && (itemstack.canDestroy(this.mc.world.getTags(), cachedblockinfo) || itemstack.canPlaceOn(this.mc.world.getTags(), cachedblockinfo));
                }
             }
          }
@@ -561,96 +561,96 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
       }
    }
 
-   public void renderLevel(float p_228378_1_, long p_228378_2_, MatrixStack p_228378_4_) {
-      this.lightTexture.updateLightTexture(p_228378_1_);
-      if (this.minecraft.getCameraEntity() == null) {
-         this.minecraft.setCameraEntity(this.minecraft.player);
+   public void renderWorld(float partialTicks, long finishTimeNano, MatrixStack matrixStackIn) {
+      this.lightmapTexture.updateLightmap(partialTicks);
+      if (this.mc.getRenderViewEntity() == null) {
+         this.mc.setRenderViewEntity(this.mc.player);
       }
 
-      this.pick(p_228378_1_);
-      this.minecraft.getProfiler().push("center");
-      boolean flag = this.shouldRenderBlockOutline();
-      this.minecraft.getProfiler().popPush("camera");
-      ActiveRenderInfo activerenderinfo = this.mainCamera;
-      this.renderDistance = (float)(this.minecraft.options.renderDistance * 16);
+      this.getMouseOver(partialTicks);
+      this.mc.getProfiler().startSection("center");
+      boolean flag = this.isDrawBlockOutline();
+      this.mc.getProfiler().endStartSection("camera");
+      ActiveRenderInfo activerenderinfo = this.activeRender;
+      this.farPlaneDistance = (float)(this.mc.gameSettings.renderDistanceChunks * 16);
       MatrixStack matrixstack = new MatrixStack();
-      matrixstack.last().pose().multiply(this.getProjectionMatrix(activerenderinfo, p_228378_1_, true));
-      this.bobHurt(matrixstack, p_228378_1_);
-      if (this.minecraft.options.bobView) {
-         this.bobView(matrixstack, p_228378_1_);
+      matrixstack.getLast().getMatrix().mul(this.getProjectionMatrix(activerenderinfo, partialTicks, true));
+      this.hurtCameraEffect(matrixstack, partialTicks);
+      if (this.mc.gameSettings.viewBobbing) {
+         this.applyBobbing(matrixstack, partialTicks);
       }
 
-      float f = MathHelper.lerp(p_228378_1_, this.minecraft.player.oPortalTime, this.minecraft.player.portalTime) * this.minecraft.options.screenEffectScale * this.minecraft.options.screenEffectScale;
+      float f = MathHelper.lerp(partialTicks, this.mc.player.prevTimeInPortal, this.mc.player.timeInPortal) * this.mc.gameSettings.screenEffectScale * this.mc.gameSettings.screenEffectScale;
       if (f > 0.0F) {
-         int i = this.minecraft.player.hasEffect(Effects.CONFUSION) ? 7 : 20;
+         int i = this.mc.player.isPotionActive(Effects.NAUSEA) ? 7 : 20;
          float f1 = 5.0F / (f * f + 5.0F) - f * 0.04F;
          f1 = f1 * f1;
-         Vector3f vector3f = new Vector3f(0.0F, MathHelper.SQRT_OF_TWO / 2.0F, MathHelper.SQRT_OF_TWO / 2.0F);
-         matrixstack.mulPose(vector3f.rotationDegrees(((float)this.tick + p_228378_1_) * (float)i));
+         Vector3f vector3f = new Vector3f(0.0F, MathHelper.SQRT_2 / 2.0F, MathHelper.SQRT_2 / 2.0F);
+         matrixstack.rotate(vector3f.rotationDegrees(((float)this.rendererUpdateCount + partialTicks) * (float)i));
          matrixstack.scale(1.0F / f1, 1.0F, 1.0F);
-         float f2 = -((float)this.tick + p_228378_1_) * (float)i;
-         matrixstack.mulPose(vector3f.rotationDegrees(f2));
+         float f2 = -((float)this.rendererUpdateCount + partialTicks) * (float)i;
+         matrixstack.rotate(vector3f.rotationDegrees(f2));
       }
 
-      Matrix4f matrix4f = matrixstack.last().pose();
+      Matrix4f matrix4f = matrixstack.getLast().getMatrix();
       this.resetProjectionMatrix(matrix4f);
-      activerenderinfo.setup(this.minecraft.level, (Entity)(this.minecraft.getCameraEntity() == null ? this.minecraft.player : this.minecraft.getCameraEntity()), !this.minecraft.options.getCameraType().isFirstPerson(), this.minecraft.options.getCameraType().isMirrored(), p_228378_1_);
-      p_228378_4_.mulPose(Vector3f.XP.rotationDegrees(activerenderinfo.getXRot()));
-      p_228378_4_.mulPose(Vector3f.YP.rotationDegrees(activerenderinfo.getYRot() + 180.0F));
-      this.minecraft.levelRenderer.renderLevel(p_228378_4_, p_228378_1_, p_228378_2_, flag, activerenderinfo, this, this.lightTexture, matrix4f);
-      this.minecraft.getProfiler().popPush("hand");
+      activerenderinfo.update(this.mc.world, (Entity)(this.mc.getRenderViewEntity() == null ? this.mc.player : this.mc.getRenderViewEntity()), !this.mc.gameSettings.getPointOfView().func_243192_a(), this.mc.gameSettings.getPointOfView().func_243193_b(), partialTicks);
+      matrixStackIn.rotate(Vector3f.XP.rotationDegrees(activerenderinfo.getPitch()));
+      matrixStackIn.rotate(Vector3f.YP.rotationDegrees(activerenderinfo.getYaw() + 180.0F));
+      this.mc.worldRenderer.updateCameraAndRender(matrixStackIn, partialTicks, finishTimeNano, flag, activerenderinfo, this, this.lightmapTexture, matrix4f);
+      this.mc.getProfiler().endStartSection("hand");
       if (this.renderHand) {
-         RenderSystem.clear(256, Minecraft.ON_OSX);
-         this.renderItemInHand(p_228378_4_, activerenderinfo, p_228378_1_);
+         RenderSystem.clear(256, Minecraft.IS_RUNNING_ON_MAC);
+         this.renderHand(matrixStackIn, activerenderinfo, partialTicks);
       }
 
-      this.minecraft.getProfiler().pop();
+      this.mc.getProfiler().endSection();
    }
 
    public void resetData() {
       this.itemActivationItem = null;
-      this.mapRenderer.resetData();
-      this.mainCamera.reset();
+      this.mapItemRenderer.clearLoadedMaps();
+      this.activeRender.clear();
    }
 
-   public MapItemRenderer getMapRenderer() {
-      return this.mapRenderer;
+   public MapItemRenderer getMapItemRenderer() {
+      return this.mapItemRenderer;
    }
 
-   public void displayItemActivation(ItemStack p_190565_1_) {
-      this.itemActivationItem = p_190565_1_;
+   public void displayItemActivation(ItemStack stack) {
+      this.itemActivationItem = stack;
       this.itemActivationTicks = 40;
       this.itemActivationOffX = this.random.nextFloat() * 2.0F - 1.0F;
       this.itemActivationOffY = this.random.nextFloat() * 2.0F - 1.0F;
    }
 
-   private void renderItemActivationAnimation(int p_190563_1_, int p_190563_2_, float p_190563_3_) {
+   private void renderItemActivation(int widthsp, int heightScaled, float partialTicks) {
       if (this.itemActivationItem != null && this.itemActivationTicks > 0) {
          int i = 40 - this.itemActivationTicks;
-         float f = ((float)i + p_190563_3_) / 40.0F;
+         float f = ((float)i + partialTicks) / 40.0F;
          float f1 = f * f;
          float f2 = f * f1;
          float f3 = 10.25F * f2 * f1 - 24.95F * f1 * f1 + 25.5F * f2 - 13.8F * f1 + 4.0F * f;
          float f4 = f3 * (float)Math.PI;
-         float f5 = this.itemActivationOffX * (float)(p_190563_1_ / 4);
-         float f6 = this.itemActivationOffY * (float)(p_190563_2_ / 4);
+         float f5 = this.itemActivationOffX * (float)(widthsp / 4);
+         float f6 = this.itemActivationOffY * (float)(heightScaled / 4);
          RenderSystem.enableAlphaTest();
          RenderSystem.pushMatrix();
          RenderSystem.pushLightingAttributes();
          RenderSystem.enableDepthTest();
          RenderSystem.disableCull();
          MatrixStack matrixstack = new MatrixStack();
-         matrixstack.pushPose();
-         matrixstack.translate((double)((float)(p_190563_1_ / 2) + f5 * MathHelper.abs(MathHelper.sin(f4 * 2.0F))), (double)((float)(p_190563_2_ / 2) + f6 * MathHelper.abs(MathHelper.sin(f4 * 2.0F))), -50.0D);
+         matrixstack.push();
+         matrixstack.translate((double)((float)(widthsp / 2) + f5 * MathHelper.abs(MathHelper.sin(f4 * 2.0F))), (double)((float)(heightScaled / 2) + f6 * MathHelper.abs(MathHelper.sin(f4 * 2.0F))), -50.0D);
          float f7 = 50.0F + 175.0F * MathHelper.sin(f4);
          matrixstack.scale(f7, -f7, f7);
-         matrixstack.mulPose(Vector3f.YP.rotationDegrees(900.0F * MathHelper.abs(MathHelper.sin(f4))));
-         matrixstack.mulPose(Vector3f.XP.rotationDegrees(6.0F * MathHelper.cos(f * 8.0F)));
-         matrixstack.mulPose(Vector3f.ZP.rotationDegrees(6.0F * MathHelper.cos(f * 8.0F)));
-         IRenderTypeBuffer.Impl irendertypebuffer$impl = this.renderBuffers.bufferSource();
-         this.minecraft.getItemRenderer().renderStatic(this.itemActivationItem, ItemCameraTransforms.TransformType.FIXED, 15728880, OverlayTexture.NO_OVERLAY, matrixstack, irendertypebuffer$impl);
-         matrixstack.popPose();
-         irendertypebuffer$impl.endBatch();
+         matrixstack.rotate(Vector3f.YP.rotationDegrees(900.0F * MathHelper.abs(MathHelper.sin(f4))));
+         matrixstack.rotate(Vector3f.XP.rotationDegrees(6.0F * MathHelper.cos(f * 8.0F)));
+         matrixstack.rotate(Vector3f.ZP.rotationDegrees(6.0F * MathHelper.cos(f * 8.0F)));
+         IRenderTypeBuffer.Impl irendertypebuffer$impl = this.renderTypeBuffers.getBufferSource();
+         this.mc.getItemRenderer().renderItem(this.itemActivationItem, ItemCameraTransforms.TransformType.FIXED, 15728880, OverlayTexture.NO_OVERLAY, matrixstack, irendertypebuffer$impl);
+         matrixstack.pop();
+         irendertypebuffer$impl.finish();
          RenderSystem.popAttributes();
          RenderSystem.popMatrix();
          RenderSystem.enableCull();
@@ -658,9 +658,9 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
       }
    }
 
-   private void renderConfusionOverlay(float p_243497_1_) {
-      int i = this.minecraft.getWindow().getGuiScaledWidth();
-      int j = this.minecraft.getWindow().getGuiScaledHeight();
+   private void func_243497_c(float p_243497_1_) {
+      int i = this.mc.getMainWindow().getScaledWidth();
+      int j = this.mc.getMainWindow().getScaledHeight();
       double d0 = MathHelper.lerp((double)p_243497_1_, 2.0D, 1.0D);
       float f = 0.2F * p_243497_1_;
       float f1 = 0.4F * p_243497_1_;
@@ -674,15 +674,15 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
       RenderSystem.enableBlend();
       RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
       RenderSystem.color4f(f, f1, f2, 1.0F);
-      this.minecraft.getTextureManager().bind(NAUSEA_LOCATION);
+      this.mc.getTextureManager().bindTexture(field_243496_c);
       Tessellator tessellator = Tessellator.getInstance();
-      BufferBuilder bufferbuilder = tessellator.getBuilder();
+      BufferBuilder bufferbuilder = tessellator.getBuffer();
       bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
-      bufferbuilder.vertex(d3, d4 + d2, -90.0D).uv(0.0F, 1.0F).endVertex();
-      bufferbuilder.vertex(d3 + d1, d4 + d2, -90.0D).uv(1.0F, 1.0F).endVertex();
-      bufferbuilder.vertex(d3 + d1, d4, -90.0D).uv(1.0F, 0.0F).endVertex();
-      bufferbuilder.vertex(d3, d4, -90.0D).uv(0.0F, 0.0F).endVertex();
-      tessellator.end();
+      bufferbuilder.pos(d3, d4 + d2, -90.0D).tex(0.0F, 1.0F).endVertex();
+      bufferbuilder.pos(d3 + d1, d4 + d2, -90.0D).tex(1.0F, 1.0F).endVertex();
+      bufferbuilder.pos(d3 + d1, d4, -90.0D).tex(1.0F, 0.0F).endVertex();
+      bufferbuilder.pos(d3, d4, -90.0D).tex(0.0F, 0.0F).endVertex();
+      tessellator.draw();
       RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
       RenderSystem.defaultBlendFunc();
       RenderSystem.disableBlend();
@@ -690,23 +690,23 @@ public class GameRenderer implements IResourceManagerReloadListener, AutoCloseab
       RenderSystem.enableDepthTest();
    }
 
-   public float getDarkenWorldAmount(float p_205002_1_) {
-      return MathHelper.lerp(p_205002_1_, this.darkenWorldAmountO, this.darkenWorldAmount);
+   public float getBossColorModifier(float partialTicks) {
+      return MathHelper.lerp(partialTicks, this.bossColorModifierPrev, this.bossColorModifier);
    }
 
-   public float getRenderDistance() {
-      return this.renderDistance;
+   public float getFarPlaneDistance() {
+      return this.farPlaneDistance;
    }
 
-   public ActiveRenderInfo getMainCamera() {
-      return this.mainCamera;
+   public ActiveRenderInfo getActiveRenderInfo() {
+      return this.activeRender;
    }
 
-   public LightTexture lightTexture() {
-      return this.lightTexture;
+   public LightTexture getLightTexture() {
+      return this.lightmapTexture;
    }
 
-   public OverlayTexture overlayTexture() {
+   public OverlayTexture getOverlayTexture() {
       return this.overlayTexture;
    }
 }

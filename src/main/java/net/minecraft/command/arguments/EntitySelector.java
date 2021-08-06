@@ -21,84 +21,84 @@ import net.minecraft.util.text.TextComponentUtils;
 import net.minecraft.world.server.ServerWorld;
 
 public class EntitySelector {
-   private final int maxResults;
-   private final boolean includesEntities;
-   private final boolean worldLimited;
-   private final Predicate<Entity> predicate;
-   private final MinMaxBounds.FloatBound range;
-   private final Function<Vector3d, Vector3d> position;
+   private final int limit;
+   private final boolean includeNonPlayers;
+   private final boolean currentWorldOnly;
+   private final Predicate<Entity> filter;
+   private final MinMaxBounds.FloatBound distance;
+   private final Function<Vector3d, Vector3d> positionGetter;
    @Nullable
    private final AxisAlignedBB aabb;
-   private final BiConsumer<Vector3d, List<? extends Entity>> order;
-   private final boolean currentEntity;
+   private final BiConsumer<Vector3d, List<? extends Entity>> sorter;
+   private final boolean self;
    @Nullable
-   private final String playerName;
+   private final String username;
    @Nullable
-   private final UUID entityUUID;
+   private final UUID uuid;
    @Nullable
    private final EntityType<?> type;
-   private final boolean usesSelector;
+   private final boolean checkPermission;
 
    public EntitySelector(int p_i50800_1_, boolean p_i50800_2_, boolean p_i50800_3_, Predicate<Entity> p_i50800_4_, MinMaxBounds.FloatBound p_i50800_5_, Function<Vector3d, Vector3d> p_i50800_6_, @Nullable AxisAlignedBB p_i50800_7_, BiConsumer<Vector3d, List<? extends Entity>> p_i50800_8_, boolean p_i50800_9_, @Nullable String p_i50800_10_, @Nullable UUID p_i50800_11_, @Nullable EntityType<?> p_i50800_12_, boolean p_i50800_13_) {
-      this.maxResults = p_i50800_1_;
-      this.includesEntities = p_i50800_2_;
-      this.worldLimited = p_i50800_3_;
-      this.predicate = p_i50800_4_;
-      this.range = p_i50800_5_;
-      this.position = p_i50800_6_;
+      this.limit = p_i50800_1_;
+      this.includeNonPlayers = p_i50800_2_;
+      this.currentWorldOnly = p_i50800_3_;
+      this.filter = p_i50800_4_;
+      this.distance = p_i50800_5_;
+      this.positionGetter = p_i50800_6_;
       this.aabb = p_i50800_7_;
-      this.order = p_i50800_8_;
-      this.currentEntity = p_i50800_9_;
-      this.playerName = p_i50800_10_;
-      this.entityUUID = p_i50800_11_;
+      this.sorter = p_i50800_8_;
+      this.self = p_i50800_9_;
+      this.username = p_i50800_10_;
+      this.uuid = p_i50800_11_;
       this.type = p_i50800_12_;
-      this.usesSelector = p_i50800_13_;
+      this.checkPermission = p_i50800_13_;
    }
 
-   public int getMaxResults() {
-      return this.maxResults;
+   public int getLimit() {
+      return this.limit;
    }
 
    public boolean includesEntities() {
-      return this.includesEntities;
+      return this.includeNonPlayers;
    }
 
    public boolean isSelfSelector() {
-      return this.currentEntity;
+      return this.self;
    }
 
    public boolean isWorldLimited() {
-      return this.worldLimited;
+      return this.currentWorldOnly;
    }
 
-   private void checkPermissions(CommandSource p_210324_1_) throws CommandSyntaxException {
-      if (this.usesSelector && !p_210324_1_.hasPermission(2)) {
-         throw EntityArgument.ERROR_SELECTORS_NOT_ALLOWED.create();
+   private void checkPermission(CommandSource source) throws CommandSyntaxException {
+      if (this.checkPermission && !source.hasPermissionLevel(2)) {
+         throw EntityArgument.SELECTOR_NOT_ALLOWED.create();
       }
    }
 
-   public Entity findSingleEntity(CommandSource p_197340_1_) throws CommandSyntaxException {
-      this.checkPermissions(p_197340_1_);
-      List<? extends Entity> list = this.findEntities(p_197340_1_);
+   public Entity selectOne(CommandSource source) throws CommandSyntaxException {
+      this.checkPermission(source);
+      List<? extends Entity> list = this.select(source);
       if (list.isEmpty()) {
-         throw EntityArgument.NO_ENTITIES_FOUND.create();
+         throw EntityArgument.ENTITY_NOT_FOUND.create();
       } else if (list.size() > 1) {
-         throw EntityArgument.ERROR_NOT_SINGLE_ENTITY.create();
+         throw EntityArgument.TOO_MANY_ENTITIES.create();
       } else {
          return list.get(0);
       }
    }
 
-   public List<? extends Entity> findEntities(CommandSource p_197341_1_) throws CommandSyntaxException {
-      this.checkPermissions(p_197341_1_);
-      if (!this.includesEntities) {
-         return this.findPlayers(p_197341_1_);
-      } else if (this.playerName != null) {
-         ServerPlayerEntity serverplayerentity = p_197341_1_.getServer().getPlayerList().getPlayerByName(this.playerName);
+   public List<? extends Entity> select(CommandSource source) throws CommandSyntaxException {
+      this.checkPermission(source);
+      if (!this.includeNonPlayers) {
+         return this.selectPlayers(source);
+      } else if (this.username != null) {
+         ServerPlayerEntity serverplayerentity = source.getServer().getPlayerList().getPlayerByUsername(this.username);
          return (List<? extends Entity>)(serverplayerentity == null ? Collections.emptyList() : Lists.newArrayList(serverplayerentity));
-      } else if (this.entityUUID != null) {
-         for(ServerWorld serverworld1 : p_197341_1_.getServer().getAllLevels()) {
-            Entity entity = serverworld1.getEntity(this.entityUUID);
+      } else if (this.uuid != null) {
+         for(ServerWorld serverworld1 : source.getServer().getWorlds()) {
+            Entity entity = serverworld1.getEntityByUuid(this.uuid);
             if (entity != null) {
                return Lists.newArrayList(entity);
             }
@@ -106,17 +106,17 @@ public class EntitySelector {
 
          return Collections.emptyList();
       } else {
-         Vector3d vector3d = this.position.apply(p_197341_1_.getPosition());
-         Predicate<Entity> predicate = this.getPredicate(vector3d);
-         if (this.currentEntity) {
-            return (List<? extends Entity>)(p_197341_1_.getEntity() != null && predicate.test(p_197341_1_.getEntity()) ? Lists.newArrayList(p_197341_1_.getEntity()) : Collections.emptyList());
+         Vector3d vector3d = this.positionGetter.apply(source.getPos());
+         Predicate<Entity> predicate = this.updateFilter(vector3d);
+         if (this.self) {
+            return (List<? extends Entity>)(source.getEntity() != null && predicate.test(source.getEntity()) ? Lists.newArrayList(source.getEntity()) : Collections.emptyList());
          } else {
             List<Entity> list = Lists.newArrayList();
             if (this.isWorldLimited()) {
-               this.addEntities(list, p_197341_1_.getLevel(), vector3d, predicate);
+               this.getEntities(list, source.getWorld(), vector3d, predicate);
             } else {
-               for(ServerWorld serverworld : p_197341_1_.getServer().getAllLevels()) {
-                  this.addEntities(list, serverworld, vector3d, predicate);
+               for(ServerWorld serverworld : source.getServer().getWorlds()) {
+                  this.getEntities(list, serverworld, vector3d, predicate);
                }
             }
 
@@ -125,39 +125,39 @@ public class EntitySelector {
       }
    }
 
-   private void addEntities(List<Entity> p_197348_1_, ServerWorld p_197348_2_, Vector3d p_197348_3_, Predicate<Entity> p_197348_4_) {
+   private void getEntities(List<Entity> result, ServerWorld worldIn, Vector3d pos, Predicate<Entity> predicate) {
       if (this.aabb != null) {
-         p_197348_1_.addAll(p_197348_2_.getEntities(this.type, this.aabb.move(p_197348_3_), p_197348_4_));
+         result.addAll(worldIn.getEntitiesWithinAABB(this.type, this.aabb.offset(pos), predicate));
       } else {
-         p_197348_1_.addAll(p_197348_2_.getEntities(this.type, p_197348_4_));
+         result.addAll(worldIn.getEntities(this.type, predicate));
       }
 
    }
 
-   public ServerPlayerEntity findSinglePlayer(CommandSource p_197347_1_) throws CommandSyntaxException {
-      this.checkPermissions(p_197347_1_);
-      List<ServerPlayerEntity> list = this.findPlayers(p_197347_1_);
+   public ServerPlayerEntity selectOnePlayer(CommandSource source) throws CommandSyntaxException {
+      this.checkPermission(source);
+      List<ServerPlayerEntity> list = this.selectPlayers(source);
       if (list.size() != 1) {
-         throw EntityArgument.NO_PLAYERS_FOUND.create();
+         throw EntityArgument.PLAYER_NOT_FOUND.create();
       } else {
          return list.get(0);
       }
    }
 
-   public List<ServerPlayerEntity> findPlayers(CommandSource p_197342_1_) throws CommandSyntaxException {
-      this.checkPermissions(p_197342_1_);
-      if (this.playerName != null) {
-         ServerPlayerEntity serverplayerentity2 = p_197342_1_.getServer().getPlayerList().getPlayerByName(this.playerName);
+   public List<ServerPlayerEntity> selectPlayers(CommandSource source) throws CommandSyntaxException {
+      this.checkPermission(source);
+      if (this.username != null) {
+         ServerPlayerEntity serverplayerentity2 = source.getServer().getPlayerList().getPlayerByUsername(this.username);
          return (List<ServerPlayerEntity>)(serverplayerentity2 == null ? Collections.emptyList() : Lists.newArrayList(serverplayerentity2));
-      } else if (this.entityUUID != null) {
-         ServerPlayerEntity serverplayerentity1 = p_197342_1_.getServer().getPlayerList().getPlayer(this.entityUUID);
+      } else if (this.uuid != null) {
+         ServerPlayerEntity serverplayerentity1 = source.getServer().getPlayerList().getPlayerByUUID(this.uuid);
          return (List<ServerPlayerEntity>)(serverplayerentity1 == null ? Collections.emptyList() : Lists.newArrayList(serverplayerentity1));
       } else {
-         Vector3d vector3d = this.position.apply(p_197342_1_.getPosition());
-         Predicate<Entity> predicate = this.getPredicate(vector3d);
-         if (this.currentEntity) {
-            if (p_197342_1_.getEntity() instanceof ServerPlayerEntity) {
-               ServerPlayerEntity serverplayerentity3 = (ServerPlayerEntity)p_197342_1_.getEntity();
+         Vector3d vector3d = this.positionGetter.apply(source.getPos());
+         Predicate<Entity> predicate = this.updateFilter(vector3d);
+         if (this.self) {
+            if (source.getEntity() instanceof ServerPlayerEntity) {
+               ServerPlayerEntity serverplayerentity3 = (ServerPlayerEntity)source.getEntity();
                if (predicate.test(serverplayerentity3)) {
                   return Lists.newArrayList(serverplayerentity3);
                }
@@ -167,11 +167,11 @@ public class EntitySelector {
          } else {
             List<ServerPlayerEntity> list;
             if (this.isWorldLimited()) {
-               list = p_197342_1_.getLevel().getPlayers(predicate::test);
+               list = source.getWorld().getPlayers(predicate::test);
             } else {
                list = Lists.newArrayList();
 
-               for(ServerPlayerEntity serverplayerentity : p_197342_1_.getServer().getPlayerList().getPlayers()) {
+               for(ServerPlayerEntity serverplayerentity : source.getServer().getPlayerList().getPlayers()) {
                   if (predicate.test(serverplayerentity)) {
                      list.add(serverplayerentity);
                   }
@@ -183,33 +183,33 @@ public class EntitySelector {
       }
    }
 
-   private Predicate<Entity> getPredicate(Vector3d p_197349_1_) {
-      Predicate<Entity> predicate = this.predicate;
+   private Predicate<Entity> updateFilter(Vector3d pos) {
+      Predicate<Entity> predicate = this.filter;
       if (this.aabb != null) {
-         AxisAlignedBB axisalignedbb = this.aabb.move(p_197349_1_);
+         AxisAlignedBB axisalignedbb = this.aabb.offset(pos);
          predicate = predicate.and((p_197344_1_) -> {
             return axisalignedbb.intersects(p_197344_1_.getBoundingBox());
          });
       }
 
-      if (!this.range.isAny()) {
+      if (!this.distance.isUnbounded()) {
          predicate = predicate.and((p_211376_2_) -> {
-            return this.range.matchesSqr(p_211376_2_.distanceToSqr(p_197349_1_));
+            return this.distance.testSquared(p_211376_2_.getDistanceSq(pos));
          });
       }
 
       return predicate;
    }
 
-   private <T extends Entity> List<T> sortAndLimit(Vector3d p_197345_1_, List<T> p_197345_2_) {
-      if (p_197345_2_.size() > 1) {
-         this.order.accept(p_197345_1_, p_197345_2_);
+   private <T extends Entity> List<T> sortAndLimit(Vector3d pos, List<T> entities) {
+      if (entities.size() > 1) {
+         this.sorter.accept(pos, entities);
       }
 
-      return p_197345_2_.subList(0, Math.min(this.maxResults, p_197345_2_.size()));
+      return entities.subList(0, Math.min(this.limit, entities.size()));
    }
 
-   public static IFormattableTextComponent joinNames(List<? extends Entity> p_197350_0_) {
-      return TextComponentUtils.formatList(p_197350_0_, Entity::getDisplayName);
+   public static IFormattableTextComponent joinNames(List<? extends Entity> entities) {
+      return TextComponentUtils.func_240649_b_(entities, Entity::getDisplayName);
    }
 }

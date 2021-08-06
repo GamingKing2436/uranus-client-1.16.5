@@ -10,7 +10,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class CPlayerTryUseItemOnBlockPacket implements IPacket<IServerPlayNetHandler> {
-   private BlockRayTraceResult blockHit;
+   private BlockRayTraceResult field_218795_a;
    private Hand hand;
 
    public CPlayerTryUseItemOnBlockPacket() {
@@ -19,28 +19,28 @@ public class CPlayerTryUseItemOnBlockPacket implements IPacket<IServerPlayNetHan
    @OnlyIn(Dist.CLIENT)
    public CPlayerTryUseItemOnBlockPacket(Hand p_i50756_1_, BlockRayTraceResult p_i50756_2_) {
       this.hand = p_i50756_1_;
-      this.blockHit = p_i50756_2_;
+      this.field_218795_a = p_i50756_2_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.hand = p_148837_1_.readEnum(Hand.class);
-      this.blockHit = p_148837_1_.readBlockHitResult();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.hand = buf.readEnumValue(Hand.class);
+      this.field_218795_a = buf.readBlockRay();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeEnum(this.hand);
-      p_148840_1_.writeBlockHitResult(this.blockHit);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeEnumValue(this.hand);
+      buf.writeBlockRay(this.field_218795_a);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleUseItemOn(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processTryUseItemOnBlock(this);
    }
 
    public Hand getHand() {
       return this.hand;
    }
 
-   public BlockRayTraceResult getHitResult() {
-      return this.blockHit;
+   public BlockRayTraceResult func_218794_c() {
+      return this.field_218795_a;
    }
 }

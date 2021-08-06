@@ -7,15 +7,15 @@ import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.world.IBlockReader;
 
 public class AirBlock extends Block {
-   protected AirBlock(AbstractBlock.Properties p_i48451_1_) {
-      super(p_i48451_1_);
+   protected AirBlock(AbstractBlock.Properties properties) {
+      super(properties);
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.INVISIBLE;
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
       return VoxelShapes.empty();
    }
 }

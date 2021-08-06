@@ -9,14 +9,14 @@ public class Fluids {
    public static final FlowingFluid FLOWING_LAVA = register("flowing_lava", new LavaFluid.Flowing());
    public static final FlowingFluid LAVA = register("lava", new LavaFluid.Source());
 
-   private static <T extends Fluid> T register(String p_215710_0_, T p_215710_1_) {
-      return Registry.register(Registry.FLUID, p_215710_0_, p_215710_1_);
+   private static <T extends Fluid> T register(String key, T fluid) {
+      return Registry.register(Registry.FLUID, key, fluid);
    }
 
    static {
       for(Fluid fluid : Registry.FLUID) {
-         for(FluidState fluidstate : fluid.getStateDefinition().getPossibleStates()) {
-            Fluid.FLUID_STATE_REGISTRY.add(fluidstate);
+         for(FluidState fluidstate : fluid.getStateContainer().getValidStates()) {
+            Fluid.STATE_REGISTRY.add(fluidstate);
          }
       }
 

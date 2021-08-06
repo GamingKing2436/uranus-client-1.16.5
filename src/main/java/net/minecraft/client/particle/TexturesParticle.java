@@ -16,8 +16,8 @@ public class TexturesParticle {
    @Nullable
    private final List<ResourceLocation> textures;
 
-   private TexturesParticle(@Nullable List<ResourceLocation> p_i51017_1_) {
-      this.textures = p_i51017_1_;
+   private TexturesParticle(@Nullable List<ResourceLocation> textures) {
+      this.textures = textures;
    }
 
    @Nullable
@@ -25,12 +25,12 @@ public class TexturesParticle {
       return this.textures;
    }
 
-   public static TexturesParticle fromJson(JsonObject p_217595_0_) {
-      JsonArray jsonarray = JSONUtils.getAsJsonArray(p_217595_0_, "textures", (JsonArray)null);
+   public static TexturesParticle deserialize(JsonObject json) {
+      JsonArray jsonarray = JSONUtils.getJsonArray(json, "textures", (JsonArray)null);
       List<ResourceLocation> list;
       if (jsonarray != null) {
          list = Streams.stream(jsonarray).map((p_217597_0_) -> {
-            return JSONUtils.convertToString(p_217597_0_, "texture");
+            return JSONUtils.getString(p_217597_0_, "texture");
          }).map(ResourceLocation::new).collect(ImmutableList.toImmutableList());
       } else {
          list = null;

@@ -8,14 +8,14 @@ public abstract class MarginedStructureStart<C extends IFeatureConfig> extends S
       super(p_i225874_1_, p_i225874_2_, p_i225874_3_, p_i225874_4_, p_i225874_5_, p_i225874_6_);
    }
 
-   protected void calculateBoundingBox() {
-      super.calculateBoundingBox();
+   protected void recalculateStructureSize() {
+      super.recalculateStructureSize();
       int i = 12;
-      this.boundingBox.x0 -= 12;
-      this.boundingBox.y0 -= 12;
-      this.boundingBox.z0 -= 12;
-      this.boundingBox.x1 += 12;
-      this.boundingBox.y1 += 12;
-      this.boundingBox.z1 += 12;
+      this.bounds.minX -= 12;
+      this.bounds.minY -= 12;
+      this.bounds.minZ -= 12;
+      this.bounds.maxX += 12;
+      this.bounds.maxY += 12;
+      this.bounds.maxZ += 12;
    }
 }

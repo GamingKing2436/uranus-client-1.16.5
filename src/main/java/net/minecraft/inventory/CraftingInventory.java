@@ -7,24 +7,24 @@ import net.minecraft.item.crafting.RecipeItemHelper;
 import net.minecraft.util.NonNullList;
 
 public class CraftingInventory implements IInventory, IRecipeHelperPopulator {
-   private final NonNullList<ItemStack> items;
+   private final NonNullList<ItemStack> stackList;
    private final int width;
    private final int height;
-   private final Container menu;
+   private final Container eventHandler;
 
-   public CraftingInventory(Container p_i1807_1_, int p_i1807_2_, int p_i1807_3_) {
-      this.items = NonNullList.withSize(p_i1807_2_ * p_i1807_3_, ItemStack.EMPTY);
-      this.menu = p_i1807_1_;
-      this.width = p_i1807_2_;
-      this.height = p_i1807_3_;
+   public CraftingInventory(Container eventHandlerIn, int width, int height) {
+      this.stackList = NonNullList.withSize(width * height, ItemStack.EMPTY);
+      this.eventHandler = eventHandlerIn;
+      this.width = width;
+      this.height = height;
    }
 
-   public int getContainerSize() {
-      return this.items.size();
+   public int getSizeInventory() {
+      return this.stackList.size();
    }
 
    public boolean isEmpty() {
-      for(ItemStack itemstack : this.items) {
+      for(ItemStack itemstack : this.stackList) {
          if (!itemstack.isEmpty()) {
             return false;
          }
@@ -33,37 +33,37 @@ public class CraftingInventory implements IInventory, IRecipeHelperPopulator {
       return true;
    }
 
-   public ItemStack getItem(int p_70301_1_) {
-      return p_70301_1_ >= this.getContainerSize() ? ItemStack.EMPTY : this.items.get(p_70301_1_);
+   public ItemStack getStackInSlot(int index) {
+      return index >= this.getSizeInventory() ? ItemStack.EMPTY : this.stackList.get(index);
    }
 
-   public ItemStack removeItemNoUpdate(int p_70304_1_) {
-      return ItemStackHelper.takeItem(this.items, p_70304_1_);
+   public ItemStack removeStackFromSlot(int index) {
+      return ItemStackHelper.getAndRemove(this.stackList, index);
    }
 
-   public ItemStack removeItem(int p_70298_1_, int p_70298_2_) {
-      ItemStack itemstack = ItemStackHelper.removeItem(this.items, p_70298_1_, p_70298_2_);
+   public ItemStack decrStackSize(int index, int count) {
+      ItemStack itemstack = ItemStackHelper.getAndSplit(this.stackList, index, count);
       if (!itemstack.isEmpty()) {
-         this.menu.slotsChanged(this);
+         this.eventHandler.onCraftMatrixChanged(this);
       }
 
       return itemstack;
    }
 
-   public void setItem(int p_70299_1_, ItemStack p_70299_2_) {
-      this.items.set(p_70299_1_, p_70299_2_);
-      this.menu.slotsChanged(this);
+   public void setInventorySlotContents(int index, ItemStack stack) {
+      this.stackList.set(index, stack);
+      this.eventHandler.onCraftMatrixChanged(this);
    }
 
-   public void setChanged() {
+   public void markDirty() {
    }
 
-   public boolean stillValid(PlayerEntity p_70300_1_) {
+   public boolean isUsableByPlayer(PlayerEntity player) {
       return true;
    }
 
-   public void clearContent() {
-      this.items.clear();
+   public void clear() {
+      this.stackList.clear();
    }
 
    public int getHeight() {
@@ -74,9 +74,9 @@ public class CraftingInventory implements IInventory, IRecipeHelperPopulator {
       return this.width;
    }
 
-   public void fillStackedContents(RecipeItemHelper p_194018_1_) {
-      for(ItemStack itemstack : this.items) {
-         p_194018_1_.accountSimpleStack(itemstack);
+   public void fillStackedContents(RecipeItemHelper helper) {
+      for(ItemStack itemstack : this.stackList) {
+         helper.accountPlainStack(itemstack);
       }
 
    }

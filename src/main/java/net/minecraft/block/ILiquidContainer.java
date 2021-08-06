@@ -7,7 +7,7 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 
 public interface ILiquidContainer {
-   boolean canPlaceLiquid(IBlockReader p_204510_1_, BlockPos p_204510_2_, BlockState p_204510_3_, Fluid p_204510_4_);
+   boolean canContainFluid(IBlockReader worldIn, BlockPos pos, BlockState state, Fluid fluidIn);
 
-   boolean placeLiquid(IWorld p_204509_1_, BlockPos p_204509_2_, BlockState p_204509_3_, FluidState p_204509_4_);
+   boolean receiveFluid(IWorld worldIn, BlockPos pos, BlockState state, FluidState fluidStateIn);
 }

@@ -12,8 +12,8 @@ public class NettyCompressionDecoder extends ByteToMessageDecoder {
    private final Inflater inflater;
    private int threshold;
 
-   public NettyCompressionDecoder(int p_i46006_1_) {
-      this.threshold = p_i46006_1_;
+   public NettyCompressionDecoder(int thresholdIn) {
+      this.threshold = thresholdIn;
       this.inflater = new Inflater();
    }
 
@@ -44,7 +44,7 @@ public class NettyCompressionDecoder extends ByteToMessageDecoder {
       }
    }
 
-   public void setThreshold(int p_179303_1_) {
-      this.threshold = p_179303_1_;
+   public void setCompressionThreshold(int thresholdIn) {
+      this.threshold = thresholdIn;
    }
 }

@@ -16,92 +16,92 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class LecternScreen extends ReadBookScreen implements IHasContainer<LecternContainer> {
-   private final LecternContainer menu;
-   private final IContainerListener listener = new IContainerListener() {
-      public void refreshContainer(Container p_71110_1_, NonNullList<ItemStack> p_71110_2_) {
-         LecternScreen.this.bookChanged();
+   private final LecternContainer field_214182_c;
+   private final IContainerListener field_214183_d = new IContainerListener() {
+      public void sendAllContents(Container containerToSend, NonNullList<ItemStack> itemsList) {
+         LecternScreen.this.func_214175_g();
       }
 
-      public void slotChanged(Container p_71111_1_, int p_71111_2_, ItemStack p_71111_3_) {
-         LecternScreen.this.bookChanged();
+      public void sendSlotContents(Container containerToSend, int slotInd, ItemStack stack) {
+         LecternScreen.this.func_214175_g();
       }
 
-      public void setContainerData(Container p_71112_1_, int p_71112_2_, int p_71112_3_) {
-         if (p_71112_2_ == 0) {
-            LecternScreen.this.pageChanged();
+      public void sendWindowProperty(Container containerIn, int varToUpdate, int newValue) {
+         if (varToUpdate == 0) {
+            LecternScreen.this.func_214176_h();
          }
 
       }
    };
 
    public LecternScreen(LecternContainer p_i51082_1_, PlayerInventory p_i51082_2_, ITextComponent p_i51082_3_) {
-      this.menu = p_i51082_1_;
+      this.field_214182_c = p_i51082_1_;
    }
 
-   public LecternContainer getMenu() {
-      return this.menu;
+   public LecternContainer getContainer() {
+      return this.field_214182_c;
    }
 
    protected void init() {
       super.init();
-      this.menu.addSlotListener(this.listener);
+      this.field_214182_c.addListener(this.field_214183_d);
+   }
+
+   public void closeScreen() {
+      this.minecraft.player.closeScreen();
+      super.closeScreen();
    }
 
    public void onClose() {
-      this.minecraft.player.closeContainer();
       super.onClose();
+      this.field_214182_c.removeListener(this.field_214183_d);
    }
 
-   public void removed() {
-      super.removed();
-      this.menu.removeSlotListener(this.listener);
-   }
-
-   protected void createMenuControls() {
-      if (this.minecraft.player.mayBuild()) {
+   protected void addDoneButton() {
+      if (this.minecraft.player.isAllowEdit()) {
          this.addButton(new Button(this.width / 2 - 100, 196, 98, 20, DialogTexts.GUI_DONE, (p_214181_1_) -> {
-            this.minecraft.setScreen((Screen)null);
+            this.minecraft.displayGuiScreen((Screen)null);
          }));
          this.addButton(new Button(this.width / 2 + 2, 196, 98, 20, new TranslationTextComponent("lectern.take_book"), (p_214178_1_) -> {
-            this.sendButtonClick(3);
+            this.func_214179_c(3);
          }));
       } else {
-         super.createMenuControls();
+         super.addDoneButton();
       }
 
    }
 
-   protected void pageBack() {
-      this.sendButtonClick(1);
+   protected void previousPage() {
+      this.func_214179_c(1);
    }
 
-   protected void pageForward() {
-      this.sendButtonClick(2);
+   protected void nextPage() {
+      this.func_214179_c(2);
    }
 
-   protected boolean forcePage(int p_214153_1_) {
-      if (p_214153_1_ != this.menu.getPage()) {
-         this.sendButtonClick(100 + p_214153_1_);
+   protected boolean showPage2(int pageNum) {
+      if (pageNum != this.field_214182_c.getPage()) {
+         this.func_214179_c(100 + pageNum);
          return true;
       } else {
          return false;
       }
    }
 
-   private void sendButtonClick(int p_214179_1_) {
-      this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, p_214179_1_);
+   private void func_214179_c(int p_214179_1_) {
+      this.minecraft.playerController.sendEnchantPacket(this.field_214182_c.windowId, p_214179_1_);
    }
 
    public boolean isPauseScreen() {
       return false;
    }
 
-   private void bookChanged() {
-      ItemStack itemstack = this.menu.getBook();
-      this.setBookAccess(ReadBookScreen.IBookInfo.fromItem(itemstack));
+   private void func_214175_g() {
+      ItemStack itemstack = this.field_214182_c.getBook();
+      this.func_214155_a(ReadBookScreen.IBookInfo.func_216917_a(itemstack));
    }
 
-   private void pageChanged() {
-      this.setPage(this.menu.getPage());
+   private void func_214176_h() {
+      this.showPage(this.field_214182_c.getPage());
    }
 }

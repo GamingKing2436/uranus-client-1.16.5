@@ -15,57 +15,57 @@ import org.lwjgl.glfw.GLFWMonitorCallbackI;
 
 @OnlyIn(Dist.CLIENT)
 public class MonitorHandler {
-   private final Long2ObjectMap<Monitor> monitors = new Long2ObjectOpenHashMap<>();
-   private final IMonitorFactory monitorCreator;
+   private final Long2ObjectMap<Monitor> monitorsById = new Long2ObjectOpenHashMap<>();
+   private final IMonitorFactory monitorFactory;
 
-   public MonitorHandler(IMonitorFactory p_i51171_1_) {
+   public MonitorHandler(IMonitorFactory monitorFactory) {
       RenderSystem.assertThread(RenderSystem::isInInitPhase);
-      this.monitorCreator = p_i51171_1_;
-      GLFW.glfwSetMonitorCallback(this::onMonitorChange);
+      this.monitorFactory = monitorFactory;
+      GLFW.glfwSetMonitorCallback(this::onMonitorUpdate);
       PointerBuffer pointerbuffer = GLFW.glfwGetMonitors();
       if (pointerbuffer != null) {
          for(int i = 0; i < pointerbuffer.limit(); ++i) {
             long j = pointerbuffer.get(i);
-            this.monitors.put(j, p_i51171_1_.createMonitor(j));
+            this.monitorsById.put(j, monitorFactory.createMonitor(j));
          }
       }
 
    }
 
-   private void onMonitorChange(long p_216516_1_, int p_216516_3_) {
+   private void onMonitorUpdate(long monitorID, int opCode) {
       RenderSystem.assertThread(RenderSystem::isOnRenderThread);
-      if (p_216516_3_ == 262145) {
-         this.monitors.put(p_216516_1_, this.monitorCreator.createMonitor(p_216516_1_));
-      } else if (p_216516_3_ == 262146) {
-         this.monitors.remove(p_216516_1_);
+      if (opCode == 262145) {
+         this.monitorsById.put(monitorID, this.monitorFactory.createMonitor(monitorID));
+      } else if (opCode == 262146) {
+         this.monitorsById.remove(monitorID);
       }
 
    }
 
    @Nullable
-   public Monitor getMonitor(long p_216512_1_) {
+   public Monitor getMonitor(long monitorID) {
       RenderSystem.assertThread(RenderSystem::isInInitPhase);
-      return this.monitors.get(p_216512_1_);
+      return this.monitorsById.get(monitorID);
    }
 
    @Nullable
-   public Monitor findBestMonitor(MainWindow p_216515_1_) {
-      long i = GLFW.glfwGetWindowMonitor(p_216515_1_.getWindow());
+   public Monitor getMonitor(MainWindow window) {
+      long i = GLFW.glfwGetWindowMonitor(window.getHandle());
       if (i != 0L) {
          return this.getMonitor(i);
       } else {
-         int j = p_216515_1_.getX();
-         int k = j + p_216515_1_.getScreenWidth();
-         int l = p_216515_1_.getY();
-         int i1 = l + p_216515_1_.getScreenHeight();
+         int j = window.getWindowX();
+         int k = j + window.getWidth();
+         int l = window.getWindowY();
+         int i1 = l + window.getHeight();
          int j1 = -1;
          Monitor monitor = null;
 
-         for(Monitor monitor1 : this.monitors.values()) {
-            int k1 = monitor1.getX();
-            int l1 = k1 + monitor1.getCurrentMode().getWidth();
-            int i2 = monitor1.getY();
-            int j2 = i2 + monitor1.getCurrentMode().getHeight();
+         for(Monitor monitor1 : this.monitorsById.values()) {
+            int k1 = monitor1.getVirtualPosX();
+            int l1 = k1 + monitor1.getDefaultVideoMode().getWidth();
+            int i2 = monitor1.getVirtualPosY();
+            int j2 = i2 + monitor1.getDefaultVideoMode().getHeight();
             int k2 = clamp(j, k1, l1);
             int l2 = clamp(k, k1, l1);
             int i3 = clamp(l, i2, j2);
@@ -83,15 +83,15 @@ public class MonitorHandler {
       }
    }
 
-   public static int clamp(int p_216513_0_, int p_216513_1_, int p_216513_2_) {
-      if (p_216513_0_ < p_216513_1_) {
-         return p_216513_1_;
+   public static int clamp(int minValue, int value, int maxValue) {
+      if (minValue < value) {
+         return value;
       } else {
-         return p_216513_0_ > p_216513_2_ ? p_216513_2_ : p_216513_0_;
+         return minValue > maxValue ? maxValue : minValue;
       }
    }
 
-   public void shutdown() {
+   public void close() {
       RenderSystem.assertThread(RenderSystem::isOnRenderThread);
       GLFWMonitorCallback glfwmonitorcallback = GLFW.glfwSetMonitorCallback((GLFWMonitorCallbackI)null);
       if (glfwmonitorcallback != null) {

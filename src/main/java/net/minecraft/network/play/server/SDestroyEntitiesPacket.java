@@ -8,39 +8,39 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SDestroyEntitiesPacket implements IPacket<IClientPlayNetHandler> {
-   private int[] entityIds;
+   private int[] entityIDs;
 
    public SDestroyEntitiesPacket() {
    }
 
-   public SDestroyEntitiesPacket(int... p_i46926_1_) {
-      this.entityIds = p_i46926_1_;
+   public SDestroyEntitiesPacket(int... entityIdsIn) {
+      this.entityIDs = entityIdsIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.entityIds = new int[p_148837_1_.readVarInt()];
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.entityIDs = new int[buf.readVarInt()];
 
-      for(int i = 0; i < this.entityIds.length; ++i) {
-         this.entityIds[i] = p_148837_1_.readVarInt();
+      for(int i = 0; i < this.entityIDs.length; ++i) {
+         this.entityIDs[i] = buf.readVarInt();
       }
 
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.entityIds.length);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.entityIDs.length);
 
-      for(int i : this.entityIds) {
-         p_148840_1_.writeVarInt(i);
+      for(int i : this.entityIDs) {
+         buf.writeVarInt(i);
       }
 
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleRemoveEntity(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleDestroyEntities(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int[] getEntityIds() {
-      return this.entityIds;
+   public int[] getEntityIDs() {
+      return this.entityIDs;
    }
 }

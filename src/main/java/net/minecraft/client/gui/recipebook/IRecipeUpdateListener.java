@@ -7,5 +7,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IRecipeUpdateListener {
-   void recipesShown(List<IRecipe<?>> p_193001_1_);
+   void recipesShown(List<IRecipe<?>> recipes);
 }

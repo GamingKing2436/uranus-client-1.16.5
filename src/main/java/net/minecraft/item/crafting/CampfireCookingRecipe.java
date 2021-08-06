@@ -12,11 +12,11 @@ public class CampfireCookingRecipe extends AbstractCookingRecipe {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack getToastSymbol() {
+   public ItemStack getIcon() {
       return new ItemStack(Blocks.CAMPFIRE);
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.CAMPFIRE_COOKING_RECIPE;
+      return IRecipeSerializer.CAMPFIRE_COOKING;
    }
 }

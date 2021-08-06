@@ -7,10 +7,10 @@ public enum DoubleBlockHalf implements IStringSerializable {
    LOWER;
 
    public String toString() {
-      return this.getSerializedName();
+      return this.getString();
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this == UPPER ? "upper" : "lower";
    }
 }

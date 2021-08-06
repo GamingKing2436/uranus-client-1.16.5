@@ -25,25 +25,25 @@ public class BannerTileEntity extends TileEntity implements INameable {
    @Nullable
    private DyeColor baseColor = DyeColor.WHITE;
    @Nullable
-   private ListNBT itemPatterns;
-   private boolean receivedData;
+   private ListNBT patterns;
+   private boolean patternDataSet;
    @Nullable
-   private List<Pair<BannerPattern, DyeColor>> patterns;
+   private List<Pair<BannerPattern, DyeColor>> patternList;
 
    public BannerTileEntity() {
       super(TileEntityType.BANNER);
    }
 
-   public BannerTileEntity(DyeColor p_i47731_1_) {
+   public BannerTileEntity(DyeColor baseColor) {
       this();
-      this.baseColor = p_i47731_1_;
+      this.baseColor = baseColor;
    }
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public static ListNBT getItemPatterns(ItemStack p_230139_0_) {
+   public static ListNBT getPatternData(ItemStack stack) {
       ListNBT listnbt = null;
-      CompoundNBT compoundnbt = p_230139_0_.getTagElement("BlockEntityTag");
+      CompoundNBT compoundnbt = stack.getChildTag("BlockEntityTag");
       if (compoundnbt != null && compoundnbt.contains("Patterns", 9)) {
          listnbt = compoundnbt.getList("Patterns", 10).copy();
       }
@@ -52,12 +52,12 @@ public class BannerTileEntity extends TileEntity implements INameable {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void fromItem(ItemStack p_195534_1_, DyeColor p_195534_2_) {
-      this.itemPatterns = getItemPatterns(p_195534_1_);
-      this.baseColor = p_195534_2_;
-      this.patterns = null;
-      this.receivedData = true;
-      this.name = p_195534_1_.hasCustomHoverName() ? p_195534_1_.getHoverName() : null;
+   public void loadFromItemStack(ItemStack stack, DyeColor color) {
+      this.patterns = getPatternData(stack);
+      this.baseColor = color;
+      this.patternList = null;
+      this.patternDataSet = true;
+      this.name = stack.hasDisplayName() ? stack.getDisplayName() : null;
    }
 
    public ITextComponent getName() {
@@ -69,70 +69,70 @@ public class BannerTileEntity extends TileEntity implements INameable {
       return this.name;
    }
 
-   public void setCustomName(ITextComponent p_213136_1_) {
-      this.name = p_213136_1_;
+   public void setName(ITextComponent name) {
+      this.name = name;
    }
 
-   public CompoundNBT save(CompoundNBT p_189515_1_) {
-      super.save(p_189515_1_);
-      if (this.itemPatterns != null) {
-         p_189515_1_.put("Patterns", this.itemPatterns);
+   public CompoundNBT write(CompoundNBT compound) {
+      super.write(compound);
+      if (this.patterns != null) {
+         compound.put("Patterns", this.patterns);
       }
 
       if (this.name != null) {
-         p_189515_1_.putString("CustomName", ITextComponent.Serializer.toJson(this.name));
+         compound.putString("CustomName", ITextComponent.Serializer.toJson(this.name));
       }
 
-      return p_189515_1_;
+      return compound;
    }
 
-   public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
-      super.load(p_230337_1_, p_230337_2_);
-      if (p_230337_2_.contains("CustomName", 8)) {
-         this.name = ITextComponent.Serializer.fromJson(p_230337_2_.getString("CustomName"));
+   public void read(BlockState state, CompoundNBT nbt) {
+      super.read(state, nbt);
+      if (nbt.contains("CustomName", 8)) {
+         this.name = ITextComponent.Serializer.getComponentFromJson(nbt.getString("CustomName"));
       }
 
-      if (this.hasLevel()) {
+      if (this.hasWorld()) {
          this.baseColor = ((AbstractBannerBlock)this.getBlockState().getBlock()).getColor();
       } else {
          this.baseColor = null;
       }
 
-      this.itemPatterns = p_230337_2_.getList("Patterns", 10);
-      this.patterns = null;
-      this.receivedData = true;
+      this.patterns = nbt.getList("Patterns", 10);
+      this.patternList = null;
+      this.patternDataSet = true;
    }
 
    @Nullable
    public SUpdateTileEntityPacket getUpdatePacket() {
-      return new SUpdateTileEntityPacket(this.worldPosition, 6, this.getUpdateTag());
+      return new SUpdateTileEntityPacket(this.pos, 6, this.getUpdateTag());
    }
 
    public CompoundNBT getUpdateTag() {
-      return this.save(new CompoundNBT());
+      return this.write(new CompoundNBT());
    }
 
-   public static int getPatternCount(ItemStack p_175113_0_) {
-      CompoundNBT compoundnbt = p_175113_0_.getTagElement("BlockEntityTag");
+   public static int getPatterns(ItemStack stack) {
+      CompoundNBT compoundnbt = stack.getChildTag("BlockEntityTag");
       return compoundnbt != null && compoundnbt.contains("Patterns") ? compoundnbt.getList("Patterns", 10).size() : 0;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public List<Pair<BannerPattern, DyeColor>> getPatterns() {
-      if (this.patterns == null && this.receivedData) {
-         this.patterns = createPatterns(this.getBaseColor(this::getBlockState), this.itemPatterns);
+   public List<Pair<BannerPattern, DyeColor>> getPatternList() {
+      if (this.patternList == null && this.patternDataSet) {
+         this.patternList = getPatternColorData(this.getBaseColor(this::getBlockState), this.patterns);
       }
 
-      return this.patterns;
+      return this.patternList;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static List<Pair<BannerPattern, DyeColor>> createPatterns(DyeColor p_230138_0_, @Nullable ListNBT p_230138_1_) {
+   public static List<Pair<BannerPattern, DyeColor>> getPatternColorData(DyeColor color, @Nullable ListNBT nbtList) {
       List<Pair<BannerPattern, DyeColor>> list = Lists.newArrayList();
-      list.add(Pair.of(BannerPattern.BASE, p_230138_0_));
-      if (p_230138_1_ != null) {
-         for(int i = 0; i < p_230138_1_.size(); ++i) {
-            CompoundNBT compoundnbt = p_230138_1_.getCompound(i);
+      list.add(Pair.of(BannerPattern.BASE, color));
+      if (nbtList != null) {
+         for(int i = 0; i < nbtList.size(); ++i) {
+            CompoundNBT compoundnbt = nbtList.getCompound(i);
             BannerPattern bannerpattern = BannerPattern.byHash(compoundnbt.getString("Pattern"));
             if (bannerpattern != null) {
                int j = compoundnbt.getInt("Color");
@@ -144,14 +144,14 @@ public class BannerTileEntity extends TileEntity implements INameable {
       return list;
    }
 
-   public static void removeLastPattern(ItemStack p_175117_0_) {
-      CompoundNBT compoundnbt = p_175117_0_.getTagElement("BlockEntityTag");
+   public static void removeBannerData(ItemStack stack) {
+      CompoundNBT compoundnbt = stack.getChildTag("BlockEntityTag");
       if (compoundnbt != null && compoundnbt.contains("Patterns", 9)) {
          ListNBT listnbt = compoundnbt.getList("Patterns", 10);
          if (!listnbt.isEmpty()) {
             listnbt.remove(listnbt.size() - 1);
             if (listnbt.isEmpty()) {
-               p_175117_0_.removeTagKey("BlockEntityTag");
+               stack.removeChildTag("BlockEntityTag");
             }
 
          }
@@ -159,24 +159,24 @@ public class BannerTileEntity extends TileEntity implements INameable {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack getItem(BlockState p_190615_1_) {
-      ItemStack itemstack = new ItemStack(BannerBlock.byColor(this.getBaseColor(() -> {
-         return p_190615_1_;
+   public ItemStack getItem(BlockState state) {
+      ItemStack itemstack = new ItemStack(BannerBlock.forColor(this.getBaseColor(() -> {
+         return state;
       })));
-      if (this.itemPatterns != null && !this.itemPatterns.isEmpty()) {
-         itemstack.getOrCreateTagElement("BlockEntityTag").put("Patterns", this.itemPatterns.copy());
+      if (this.patterns != null && !this.patterns.isEmpty()) {
+         itemstack.getOrCreateChildTag("BlockEntityTag").put("Patterns", this.patterns.copy());
       }
 
       if (this.name != null) {
-         itemstack.setHoverName(this.name);
+         itemstack.setDisplayName(this.name);
       }
 
       return itemstack;
    }
 
-   public DyeColor getBaseColor(Supplier<BlockState> p_195533_1_) {
+   public DyeColor getBaseColor(Supplier<BlockState> bannerBlockStateSupplier) {
       if (this.baseColor == null) {
-         this.baseColor = ((AbstractBannerBlock)p_195533_1_.get().getBlock()).getColor();
+         this.baseColor = ((AbstractBannerBlock)bannerBlockStateSupplier.get().getBlock()).getColor();
       }
 
       return this.baseColor;

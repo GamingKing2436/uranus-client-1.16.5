@@ -7,38 +7,38 @@ import org.apache.logging.log4j.Logger;
 public class PhaseManager {
    private static final Logger LOGGER = LogManager.getLogger();
    private final EnderDragonEntity dragon;
-   private final IPhase[] phases = new IPhase[PhaseType.getCount()];
-   private IPhase currentPhase;
+   private final IPhase[] phases = new IPhase[PhaseType.getTotalPhases()];
+   private IPhase phase;
 
-   public PhaseManager(EnderDragonEntity p_i46781_1_) {
-      this.dragon = p_i46781_1_;
-      this.setPhase(PhaseType.HOVERING);
+   public PhaseManager(EnderDragonEntity dragonIn) {
+      this.dragon = dragonIn;
+      this.setPhase(PhaseType.HOVER);
    }
 
-   public void setPhase(PhaseType<?> p_188758_1_) {
-      if (this.currentPhase == null || p_188758_1_ != this.currentPhase.getPhase()) {
-         if (this.currentPhase != null) {
-            this.currentPhase.end();
+   public void setPhase(PhaseType<?> phaseIn) {
+      if (this.phase == null || phaseIn != this.phase.getType()) {
+         if (this.phase != null) {
+            this.phase.removeAreaEffect();
          }
 
-         this.currentPhase = this.getPhase(p_188758_1_);
-         if (!this.dragon.level.isClientSide) {
-            this.dragon.getEntityData().set(EnderDragonEntity.DATA_PHASE, p_188758_1_.getId());
+         this.phase = this.getPhase(phaseIn);
+         if (!this.dragon.world.isRemote) {
+            this.dragon.getDataManager().set(EnderDragonEntity.PHASE, phaseIn.getId());
          }
 
-         LOGGER.debug("Dragon is now in phase {} on the {}", p_188758_1_, this.dragon.level.isClientSide ? "client" : "server");
-         this.currentPhase.begin();
+         LOGGER.debug("Dragon is now in phase {} on the {}", phaseIn, this.dragon.world.isRemote ? "client" : "server");
+         this.phase.initPhase();
       }
    }
 
    public IPhase getCurrentPhase() {
-      return this.currentPhase;
+      return this.phase;
    }
 
-   public <T extends IPhase> T getPhase(PhaseType<T> p_188757_1_) {
-      int i = p_188757_1_.getId();
+   public <T extends IPhase> T getPhase(PhaseType<T> phaseIn) {
+      int i = phaseIn.getId();
       if (this.phases[i] == null) {
-         this.phases[i] = p_188757_1_.createInstance(this.dragon);
+         this.phases[i] = phaseIn.createPhase(this.dragon);
       }
 
       return (T)this.phases[i];

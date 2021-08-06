@@ -9,8 +9,8 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class V1125 extends NamespacedSchema {
-   public V1125(int p_i49606_1_, Schema p_i49606_2_) {
-      super(p_i49606_1_, p_i49606_2_);
+   public V1125(int versionKey, Schema parent) {
+      super(versionKey, parent);
    }
 
    public Map<String, Supplier<TypeTemplate>> registerBlockEntities(Schema p_registerBlockEntities_1_) {
@@ -25,10 +25,10 @@ public class V1125 extends NamespacedSchema {
          return DSL.optionalFields("minecraft:adventure/adventuring_time", DSL.optionalFields("criteria", DSL.compoundList(TypeReferences.BIOME.in(p_registerTypes_1_), DSL.constType(DSL.string()))), "minecraft:adventure/kill_a_mob", DSL.optionalFields("criteria", DSL.compoundList(TypeReferences.ENTITY_NAME.in(p_registerTypes_1_), DSL.constType(DSL.string()))), "minecraft:adventure/kill_all_mobs", DSL.optionalFields("criteria", DSL.compoundList(TypeReferences.ENTITY_NAME.in(p_registerTypes_1_), DSL.constType(DSL.string()))), "minecraft:husbandry/bred_all_animals", DSL.optionalFields("criteria", DSL.compoundList(TypeReferences.ENTITY_NAME.in(p_registerTypes_1_), DSL.constType(DSL.string()))));
       });
       p_registerTypes_1_.registerType(false, TypeReferences.BIOME, () -> {
-         return DSL.constType(namespacedString());
+         return DSL.constType(func_233457_a_());
       });
       p_registerTypes_1_.registerType(false, TypeReferences.ENTITY_NAME, () -> {
-         return DSL.constType(namespacedString());
+         return DSL.constType(func_233457_a_());
       });
    }
 }

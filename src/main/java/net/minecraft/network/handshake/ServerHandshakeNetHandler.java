@@ -13,51 +13,51 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class ServerHandshakeNetHandler implements IHandshakeNetHandler {
-   private static final ITextComponent IGNORE_STATUS_REASON = new StringTextComponent("Ignoring status request");
+   private static final ITextComponent field_241169_a_ = new StringTextComponent("Ignoring status request");
    private final MinecraftServer server;
-   private final NetworkManager connection;
+   private final NetworkManager networkManager;
 
-   public ServerHandshakeNetHandler(MinecraftServer p_i45295_1_, NetworkManager p_i45295_2_) {
-      this.server = p_i45295_1_;
-      this.connection = p_i45295_2_;
+   public ServerHandshakeNetHandler(MinecraftServer serverIn, NetworkManager netManager) {
+      this.server = serverIn;
+      this.networkManager = netManager;
    }
 
-   public void handleIntention(CHandshakePacket p_147383_1_) {
-      switch(p_147383_1_.getIntention()) {
+   public void processHandshake(CHandshakePacket packetIn) {
+      switch(packetIn.getRequestedState()) {
       case LOGIN:
-         this.connection.setProtocol(ProtocolType.LOGIN);
-         if (p_147383_1_.getProtocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
+         this.networkManager.setConnectionState(ProtocolType.LOGIN);
+         if (packetIn.getProtocolVersion() != SharedConstants.getVersion().getProtocolVersion()) {
             ITextComponent itextcomponent;
-            if (p_147383_1_.getProtocolVersion() < 754) {
-               itextcomponent = new TranslationTextComponent("multiplayer.disconnect.outdated_client", SharedConstants.getCurrentVersion().getName());
+            if (packetIn.getProtocolVersion() < 754) {
+               itextcomponent = new TranslationTextComponent("multiplayer.disconnect.outdated_client", SharedConstants.getVersion().getName());
             } else {
-               itextcomponent = new TranslationTextComponent("multiplayer.disconnect.incompatible", SharedConstants.getCurrentVersion().getName());
+               itextcomponent = new TranslationTextComponent("multiplayer.disconnect.incompatible", SharedConstants.getVersion().getName());
             }
 
-            this.connection.send(new SDisconnectLoginPacket(itextcomponent));
-            this.connection.disconnect(itextcomponent);
+            this.networkManager.sendPacket(new SDisconnectLoginPacket(itextcomponent));
+            this.networkManager.closeChannel(itextcomponent);
          } else {
-            this.connection.setListener(new ServerLoginNetHandler(this.server, this.connection));
+            this.networkManager.setNetHandler(new ServerLoginNetHandler(this.server, this.networkManager));
          }
          break;
       case STATUS:
-         if (this.server.repliesToStatus()) {
-            this.connection.setProtocol(ProtocolType.STATUS);
-            this.connection.setListener(new ServerStatusNetHandler(this.server, this.connection));
+         if (this.server.func_230541_aj_()) {
+            this.networkManager.setConnectionState(ProtocolType.STATUS);
+            this.networkManager.setNetHandler(new ServerStatusNetHandler(this.server, this.networkManager));
          } else {
-            this.connection.disconnect(IGNORE_STATUS_REASON);
+            this.networkManager.closeChannel(field_241169_a_);
          }
          break;
       default:
-         throw new UnsupportedOperationException("Invalid intention " + p_147383_1_.getIntention());
+         throw new UnsupportedOperationException("Invalid intention " + packetIn.getRequestedState());
       }
 
    }
 
-   public void onDisconnect(ITextComponent p_147231_1_) {
+   public void onDisconnect(ITextComponent reason) {
    }
 
-   public NetworkManager getConnection() {
-      return this.connection;
+   public NetworkManager getNetworkManager() {
+      return this.networkManager;
    }
 }

@@ -26,86 +26,86 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class FluidBlockRenderer {
-   private final TextureAtlasSprite[] lavaIcons = new TextureAtlasSprite[2];
-   private final TextureAtlasSprite[] waterIcons = new TextureAtlasSprite[2];
-   private TextureAtlasSprite waterOverlay;
+   private final TextureAtlasSprite[] atlasSpritesLava = new TextureAtlasSprite[2];
+   private final TextureAtlasSprite[] atlasSpritesWater = new TextureAtlasSprite[2];
+   private TextureAtlasSprite atlasSpriteWaterOverlay;
 
-   protected void setupSprites() {
-      this.lavaIcons[0] = Minecraft.getInstance().getModelManager().getBlockModelShaper().getBlockModel(Blocks.LAVA.defaultBlockState()).getParticleIcon();
-      this.lavaIcons[1] = ModelBakery.LAVA_FLOW.sprite();
-      this.waterIcons[0] = Minecraft.getInstance().getModelManager().getBlockModelShaper().getBlockModel(Blocks.WATER.defaultBlockState()).getParticleIcon();
-      this.waterIcons[1] = ModelBakery.WATER_FLOW.sprite();
-      this.waterOverlay = ModelBakery.WATER_OVERLAY.sprite();
+   protected void initAtlasSprites() {
+      this.atlasSpritesLava[0] = Minecraft.getInstance().getModelManager().getBlockModelShapes().getModel(Blocks.LAVA.getDefaultState()).getParticleTexture();
+      this.atlasSpritesLava[1] = ModelBakery.LOCATION_LAVA_FLOW.getSprite();
+      this.atlasSpritesWater[0] = Minecraft.getInstance().getModelManager().getBlockModelShapes().getModel(Blocks.WATER.getDefaultState()).getParticleTexture();
+      this.atlasSpritesWater[1] = ModelBakery.LOCATION_WATER_FLOW.getSprite();
+      this.atlasSpriteWaterOverlay = ModelBakery.LOCATION_WATER_OVERLAY.getSprite();
    }
 
-   private static boolean isNeighborSameFluid(IBlockReader p_209557_0_, BlockPos p_209557_1_, Direction p_209557_2_, FluidState p_209557_3_) {
-      BlockPos blockpos = p_209557_1_.relative(p_209557_2_);
-      FluidState fluidstate = p_209557_0_.getFluidState(blockpos);
-      return fluidstate.getType().isSame(p_209557_3_.getType());
+   private static boolean isAdjacentFluidSameAs(IBlockReader worldIn, BlockPos pos, Direction side, FluidState state) {
+      BlockPos blockpos = pos.offset(side);
+      FluidState fluidstate = worldIn.getFluidState(blockpos);
+      return fluidstate.getFluid().isEquivalentTo(state.getFluid());
    }
 
-   private static boolean isFaceOccludedByState(IBlockReader p_239284_0_, Direction p_239284_1_, float p_239284_2_, BlockPos p_239284_3_, BlockState p_239284_4_) {
-      if (p_239284_4_.canOcclude()) {
-         VoxelShape voxelshape = VoxelShapes.box(0.0D, 0.0D, 0.0D, 1.0D, (double)p_239284_2_, 1.0D);
-         VoxelShape voxelshape1 = p_239284_4_.getOcclusionShape(p_239284_0_, p_239284_3_);
-         return VoxelShapes.blockOccudes(voxelshape, voxelshape1, p_239284_1_);
+   private static boolean func_239284_a_(IBlockReader p_239284_0_, Direction p_239284_1_, float p_239284_2_, BlockPos p_239284_3_, BlockState p_239284_4_) {
+      if (p_239284_4_.isSolid()) {
+         VoxelShape voxelshape = VoxelShapes.create(0.0D, 0.0D, 0.0D, 1.0D, (double)p_239284_2_, 1.0D);
+         VoxelShape voxelshape1 = p_239284_4_.getRenderShapeTrue(p_239284_0_, p_239284_3_);
+         return VoxelShapes.isCubeSideCovered(voxelshape, voxelshape1, p_239284_1_);
       } else {
          return false;
       }
    }
 
-   private static boolean isFaceOccludedByNeighbor(IBlockReader p_239283_0_, BlockPos p_239283_1_, Direction p_239283_2_, float p_239283_3_) {
-      BlockPos blockpos = p_239283_1_.relative(p_239283_2_);
+   private static boolean func_239283_a_(IBlockReader p_239283_0_, BlockPos p_239283_1_, Direction p_239283_2_, float p_239283_3_) {
+      BlockPos blockpos = p_239283_1_.offset(p_239283_2_);
       BlockState blockstate = p_239283_0_.getBlockState(blockpos);
-      return isFaceOccludedByState(p_239283_0_, p_239283_2_, p_239283_3_, blockpos, blockstate);
+      return func_239284_a_(p_239283_0_, p_239283_2_, p_239283_3_, blockpos, blockstate);
    }
 
-   private static boolean isFaceOccludedBySelf(IBlockReader p_239282_0_, BlockPos p_239282_1_, BlockState p_239282_2_, Direction p_239282_3_) {
-      return isFaceOccludedByState(p_239282_0_, p_239282_3_.getOpposite(), 1.0F, p_239282_1_, p_239282_2_);
+   private static boolean func_239282_a_(IBlockReader p_239282_0_, BlockPos p_239282_1_, BlockState p_239282_2_, Direction p_239282_3_) {
+      return func_239284_a_(p_239282_0_, p_239282_3_.getOpposite(), 1.0F, p_239282_1_, p_239282_2_);
    }
 
-   public static boolean shouldRenderFace(IBlockDisplayReader p_239281_0_, BlockPos p_239281_1_, FluidState p_239281_2_, BlockState p_239281_3_, Direction p_239281_4_) {
-      return !isFaceOccludedBySelf(p_239281_0_, p_239281_1_, p_239281_3_, p_239281_4_) && !isNeighborSameFluid(p_239281_0_, p_239281_1_, p_239281_4_, p_239281_2_);
+   public static boolean func_239281_a_(IBlockDisplayReader p_239281_0_, BlockPos p_239281_1_, FluidState p_239281_2_, BlockState p_239281_3_, Direction p_239281_4_) {
+      return !func_239282_a_(p_239281_0_, p_239281_1_, p_239281_3_, p_239281_4_) && !isAdjacentFluidSameAs(p_239281_0_, p_239281_1_, p_239281_4_, p_239281_2_);
    }
 
-   public boolean tesselate(IBlockDisplayReader p_228796_1_, BlockPos p_228796_2_, IVertexBuilder p_228796_3_, FluidState p_228796_4_) {
-      boolean flag = p_228796_4_.is(FluidTags.LAVA);
-      TextureAtlasSprite[] atextureatlassprite = flag ? this.lavaIcons : this.waterIcons;
-      BlockState blockstate = p_228796_1_.getBlockState(p_228796_2_);
-      int i = flag ? 16777215 : BiomeColors.getAverageWaterColor(p_228796_1_, p_228796_2_);
+   public boolean render(IBlockDisplayReader lightReaderIn, BlockPos posIn, IVertexBuilder vertexBuilderIn, FluidState fluidStateIn) {
+      boolean flag = fluidStateIn.isTagged(FluidTags.LAVA);
+      TextureAtlasSprite[] atextureatlassprite = flag ? this.atlasSpritesLava : this.atlasSpritesWater;
+      BlockState blockstate = lightReaderIn.getBlockState(posIn);
+      int i = flag ? 16777215 : BiomeColors.getWaterColor(lightReaderIn, posIn);
       float f = (float)(i >> 16 & 255) / 255.0F;
       float f1 = (float)(i >> 8 & 255) / 255.0F;
       float f2 = (float)(i & 255) / 255.0F;
-      boolean flag1 = !isNeighborSameFluid(p_228796_1_, p_228796_2_, Direction.UP, p_228796_4_);
-      boolean flag2 = shouldRenderFace(p_228796_1_, p_228796_2_, p_228796_4_, blockstate, Direction.DOWN) && !isFaceOccludedByNeighbor(p_228796_1_, p_228796_2_, Direction.DOWN, 0.8888889F);
-      boolean flag3 = shouldRenderFace(p_228796_1_, p_228796_2_, p_228796_4_, blockstate, Direction.NORTH);
-      boolean flag4 = shouldRenderFace(p_228796_1_, p_228796_2_, p_228796_4_, blockstate, Direction.SOUTH);
-      boolean flag5 = shouldRenderFace(p_228796_1_, p_228796_2_, p_228796_4_, blockstate, Direction.WEST);
-      boolean flag6 = shouldRenderFace(p_228796_1_, p_228796_2_, p_228796_4_, blockstate, Direction.EAST);
+      boolean flag1 = !isAdjacentFluidSameAs(lightReaderIn, posIn, Direction.UP, fluidStateIn);
+      boolean flag2 = func_239281_a_(lightReaderIn, posIn, fluidStateIn, blockstate, Direction.DOWN) && !func_239283_a_(lightReaderIn, posIn, Direction.DOWN, 0.8888889F);
+      boolean flag3 = func_239281_a_(lightReaderIn, posIn, fluidStateIn, blockstate, Direction.NORTH);
+      boolean flag4 = func_239281_a_(lightReaderIn, posIn, fluidStateIn, blockstate, Direction.SOUTH);
+      boolean flag5 = func_239281_a_(lightReaderIn, posIn, fluidStateIn, blockstate, Direction.WEST);
+      boolean flag6 = func_239281_a_(lightReaderIn, posIn, fluidStateIn, blockstate, Direction.EAST);
       if (!flag1 && !flag2 && !flag6 && !flag5 && !flag3 && !flag4) {
          return false;
       } else {
          boolean flag7 = false;
-         float f3 = p_228796_1_.getShade(Direction.DOWN, true);
-         float f4 = p_228796_1_.getShade(Direction.UP, true);
-         float f5 = p_228796_1_.getShade(Direction.NORTH, true);
-         float f6 = p_228796_1_.getShade(Direction.WEST, true);
-         float f7 = this.getWaterHeight(p_228796_1_, p_228796_2_, p_228796_4_.getType());
-         float f8 = this.getWaterHeight(p_228796_1_, p_228796_2_.south(), p_228796_4_.getType());
-         float f9 = this.getWaterHeight(p_228796_1_, p_228796_2_.east().south(), p_228796_4_.getType());
-         float f10 = this.getWaterHeight(p_228796_1_, p_228796_2_.east(), p_228796_4_.getType());
-         double d0 = (double)(p_228796_2_.getX() & 15);
-         double d1 = (double)(p_228796_2_.getY() & 15);
-         double d2 = (double)(p_228796_2_.getZ() & 15);
+         float f3 = lightReaderIn.func_230487_a_(Direction.DOWN, true);
+         float f4 = lightReaderIn.func_230487_a_(Direction.UP, true);
+         float f5 = lightReaderIn.func_230487_a_(Direction.NORTH, true);
+         float f6 = lightReaderIn.func_230487_a_(Direction.WEST, true);
+         float f7 = this.getFluidHeight(lightReaderIn, posIn, fluidStateIn.getFluid());
+         float f8 = this.getFluidHeight(lightReaderIn, posIn.south(), fluidStateIn.getFluid());
+         float f9 = this.getFluidHeight(lightReaderIn, posIn.east().south(), fluidStateIn.getFluid());
+         float f10 = this.getFluidHeight(lightReaderIn, posIn.east(), fluidStateIn.getFluid());
+         double d0 = (double)(posIn.getX() & 15);
+         double d1 = (double)(posIn.getY() & 15);
+         double d2 = (double)(posIn.getZ() & 15);
          float f11 = 0.001F;
          float f12 = flag2 ? 0.001F : 0.0F;
-         if (flag1 && !isFaceOccludedByNeighbor(p_228796_1_, p_228796_2_, Direction.UP, Math.min(Math.min(f7, f8), Math.min(f9, f10)))) {
+         if (flag1 && !func_239283_a_(lightReaderIn, posIn, Direction.UP, Math.min(Math.min(f7, f8), Math.min(f9, f10)))) {
             flag7 = true;
             f7 -= 0.001F;
             f8 -= 0.001F;
             f9 -= 0.001F;
             f10 -= 0.001F;
-            Vector3d vector3d = p_228796_4_.getFlow(p_228796_1_, p_228796_2_);
+            Vector3d vector3d = fluidStateIn.getFlow(lightReaderIn, posIn);
             float f13;
             float f14;
             float f15;
@@ -116,11 +116,11 @@ public class FluidBlockRenderer {
             float f20;
             if (vector3d.x == 0.0D && vector3d.z == 0.0D) {
                TextureAtlasSprite textureatlassprite1 = atextureatlassprite[0];
-               f13 = textureatlassprite1.getU(0.0D);
-               f17 = textureatlassprite1.getV(0.0D);
+               f13 = textureatlassprite1.getInterpolatedU(0.0D);
+               f17 = textureatlassprite1.getInterpolatedV(0.0D);
                f14 = f13;
-               f18 = textureatlassprite1.getV(16.0D);
-               f15 = textureatlassprite1.getU(16.0D);
+               f18 = textureatlassprite1.getInterpolatedV(16.0D);
+               f15 = textureatlassprite1.getInterpolatedU(16.0D);
                f19 = f18;
                f16 = f15;
                f20 = f17;
@@ -130,20 +130,20 @@ public class FluidBlockRenderer {
                float f22 = MathHelper.sin(f21) * 0.25F;
                float f23 = MathHelper.cos(f21) * 0.25F;
                float f24 = 8.0F;
-               f13 = textureatlassprite.getU((double)(8.0F + (-f23 - f22) * 16.0F));
-               f17 = textureatlassprite.getV((double)(8.0F + (-f23 + f22) * 16.0F));
-               f14 = textureatlassprite.getU((double)(8.0F + (-f23 + f22) * 16.0F));
-               f18 = textureatlassprite.getV((double)(8.0F + (f23 + f22) * 16.0F));
-               f15 = textureatlassprite.getU((double)(8.0F + (f23 + f22) * 16.0F));
-               f19 = textureatlassprite.getV((double)(8.0F + (f23 - f22) * 16.0F));
-               f16 = textureatlassprite.getU((double)(8.0F + (f23 - f22) * 16.0F));
-               f20 = textureatlassprite.getV((double)(8.0F + (-f23 - f22) * 16.0F));
+               f13 = textureatlassprite.getInterpolatedU((double)(8.0F + (-f23 - f22) * 16.0F));
+               f17 = textureatlassprite.getInterpolatedV((double)(8.0F + (-f23 + f22) * 16.0F));
+               f14 = textureatlassprite.getInterpolatedU((double)(8.0F + (-f23 + f22) * 16.0F));
+               f18 = textureatlassprite.getInterpolatedV((double)(8.0F + (f23 + f22) * 16.0F));
+               f15 = textureatlassprite.getInterpolatedU((double)(8.0F + (f23 + f22) * 16.0F));
+               f19 = textureatlassprite.getInterpolatedV((double)(8.0F + (f23 - f22) * 16.0F));
+               f16 = textureatlassprite.getInterpolatedU((double)(8.0F + (f23 - f22) * 16.0F));
+               f20 = textureatlassprite.getInterpolatedV((double)(8.0F + (-f23 - f22) * 16.0F));
             }
 
             float f43 = (f13 + f14 + f15 + f16) / 4.0F;
             float f44 = (f17 + f18 + f19 + f20) / 4.0F;
-            float f45 = (float)atextureatlassprite[0].getWidth() / (atextureatlassprite[0].getU1() - atextureatlassprite[0].getU0());
-            float f46 = (float)atextureatlassprite[0].getHeight() / (atextureatlassprite[0].getV1() - atextureatlassprite[0].getV0());
+            float f45 = (float)atextureatlassprite[0].getWidth() / (atextureatlassprite[0].getMaxU() - atextureatlassprite[0].getMinU());
+            float f46 = (float)atextureatlassprite[0].getHeight() / (atextureatlassprite[0].getMaxV() - atextureatlassprite[0].getMinV());
             float f47 = 4.0F / Math.max(f46, f45);
             f13 = MathHelper.lerp(f47, f13, f43);
             f14 = MathHelper.lerp(f47, f14, f43);
@@ -153,35 +153,35 @@ public class FluidBlockRenderer {
             f18 = MathHelper.lerp(f47, f18, f44);
             f19 = MathHelper.lerp(f47, f19, f44);
             f20 = MathHelper.lerp(f47, f20, f44);
-            int j = this.getLightColor(p_228796_1_, p_228796_2_);
+            int j = this.getCombinedAverageLight(lightReaderIn, posIn);
             float f25 = f4 * f;
             float f26 = f4 * f1;
             float f27 = f4 * f2;
-            this.vertex(p_228796_3_, d0 + 0.0D, d1 + (double)f7, d2 + 0.0D, f25, f26, f27, f13, f17, j);
-            this.vertex(p_228796_3_, d0 + 0.0D, d1 + (double)f8, d2 + 1.0D, f25, f26, f27, f14, f18, j);
-            this.vertex(p_228796_3_, d0 + 1.0D, d1 + (double)f9, d2 + 1.0D, f25, f26, f27, f15, f19, j);
-            this.vertex(p_228796_3_, d0 + 1.0D, d1 + (double)f10, d2 + 0.0D, f25, f26, f27, f16, f20, j);
-            if (p_228796_4_.shouldRenderBackwardUpFace(p_228796_1_, p_228796_2_.above())) {
-               this.vertex(p_228796_3_, d0 + 0.0D, d1 + (double)f7, d2 + 0.0D, f25, f26, f27, f13, f17, j);
-               this.vertex(p_228796_3_, d0 + 1.0D, d1 + (double)f10, d2 + 0.0D, f25, f26, f27, f16, f20, j);
-               this.vertex(p_228796_3_, d0 + 1.0D, d1 + (double)f9, d2 + 1.0D, f25, f26, f27, f15, f19, j);
-               this.vertex(p_228796_3_, d0 + 0.0D, d1 + (double)f8, d2 + 1.0D, f25, f26, f27, f14, f18, j);
+            this.vertexVanilla(vertexBuilderIn, d0 + 0.0D, d1 + (double)f7, d2 + 0.0D, f25, f26, f27, f13, f17, j);
+            this.vertexVanilla(vertexBuilderIn, d0 + 0.0D, d1 + (double)f8, d2 + 1.0D, f25, f26, f27, f14, f18, j);
+            this.vertexVanilla(vertexBuilderIn, d0 + 1.0D, d1 + (double)f9, d2 + 1.0D, f25, f26, f27, f15, f19, j);
+            this.vertexVanilla(vertexBuilderIn, d0 + 1.0D, d1 + (double)f10, d2 + 0.0D, f25, f26, f27, f16, f20, j);
+            if (fluidStateIn.shouldRenderSides(lightReaderIn, posIn.up())) {
+               this.vertexVanilla(vertexBuilderIn, d0 + 0.0D, d1 + (double)f7, d2 + 0.0D, f25, f26, f27, f13, f17, j);
+               this.vertexVanilla(vertexBuilderIn, d0 + 1.0D, d1 + (double)f10, d2 + 0.0D, f25, f26, f27, f16, f20, j);
+               this.vertexVanilla(vertexBuilderIn, d0 + 1.0D, d1 + (double)f9, d2 + 1.0D, f25, f26, f27, f15, f19, j);
+               this.vertexVanilla(vertexBuilderIn, d0 + 0.0D, d1 + (double)f8, d2 + 1.0D, f25, f26, f27, f14, f18, j);
             }
          }
 
          if (flag2) {
-            float f34 = atextureatlassprite[0].getU0();
-            float f35 = atextureatlassprite[0].getU1();
-            float f37 = atextureatlassprite[0].getV0();
-            float f39 = atextureatlassprite[0].getV1();
-            int i1 = this.getLightColor(p_228796_1_, p_228796_2_.below());
+            float f34 = atextureatlassprite[0].getMinU();
+            float f35 = atextureatlassprite[0].getMaxU();
+            float f37 = atextureatlassprite[0].getMinV();
+            float f39 = atextureatlassprite[0].getMaxV();
+            int i1 = this.getCombinedAverageLight(lightReaderIn, posIn.down());
             float f40 = f3 * f;
             float f41 = f3 * f1;
             float f42 = f3 * f2;
-            this.vertex(p_228796_3_, d0, d1 + (double)f12, d2 + 1.0D, f40, f41, f42, f34, f39, i1);
-            this.vertex(p_228796_3_, d0, d1 + (double)f12, d2, f40, f41, f42, f34, f37, i1);
-            this.vertex(p_228796_3_, d0 + 1.0D, d1 + (double)f12, d2, f40, f41, f42, f35, f37, i1);
-            this.vertex(p_228796_3_, d0 + 1.0D, d1 + (double)f12, d2 + 1.0D, f40, f41, f42, f35, f39, i1);
+            this.vertexVanilla(vertexBuilderIn, d0, d1 + (double)f12, d2 + 1.0D, f40, f41, f42, f34, f39, i1);
+            this.vertexVanilla(vertexBuilderIn, d0, d1 + (double)f12, d2, f40, f41, f42, f34, f37, i1);
+            this.vertexVanilla(vertexBuilderIn, d0 + 1.0D, d1 + (double)f12, d2, f40, f41, f42, f35, f37, i1);
+            this.vertexVanilla(vertexBuilderIn, d0 + 1.0D, d1 + (double)f12, d2 + 1.0D, f40, f41, f42, f35, f39, i1);
             flag7 = true;
          }
 
@@ -232,36 +232,36 @@ public class FluidBlockRenderer {
                flag8 = flag6;
             }
 
-            if (flag8 && !isFaceOccludedByNeighbor(p_228796_1_, p_228796_2_, direction, Math.max(f36, f38))) {
+            if (flag8 && !func_239283_a_(lightReaderIn, posIn, direction, Math.max(f36, f38))) {
                flag7 = true;
-               BlockPos blockpos = p_228796_2_.relative(direction);
+               BlockPos blockpos = posIn.offset(direction);
                TextureAtlasSprite textureatlassprite2 = atextureatlassprite[1];
                if (!flag) {
-                  Block block = p_228796_1_.getBlockState(blockpos).getBlock();
+                  Block block = lightReaderIn.getBlockState(blockpos).getBlock();
                   if (block instanceof BreakableBlock || block instanceof LeavesBlock) {
-                     textureatlassprite2 = this.waterOverlay;
+                     textureatlassprite2 = this.atlasSpriteWaterOverlay;
                   }
                }
 
-               float f48 = textureatlassprite2.getU(0.0D);
-               float f49 = textureatlassprite2.getU(8.0D);
-               float f50 = textureatlassprite2.getV((double)((1.0F - f36) * 16.0F * 0.5F));
-               float f28 = textureatlassprite2.getV((double)((1.0F - f38) * 16.0F * 0.5F));
-               float f29 = textureatlassprite2.getV(8.0D);
-               int k = this.getLightColor(p_228796_1_, blockpos);
+               float f48 = textureatlassprite2.getInterpolatedU(0.0D);
+               float f49 = textureatlassprite2.getInterpolatedU(8.0D);
+               float f50 = textureatlassprite2.getInterpolatedV((double)((1.0F - f36) * 16.0F * 0.5F));
+               float f28 = textureatlassprite2.getInterpolatedV((double)((1.0F - f38) * 16.0F * 0.5F));
+               float f29 = textureatlassprite2.getInterpolatedV(8.0D);
+               int k = this.getCombinedAverageLight(lightReaderIn, blockpos);
                float f30 = l < 2 ? f5 : f6;
                float f31 = f4 * f30 * f;
                float f32 = f4 * f30 * f1;
                float f33 = f4 * f30 * f2;
-               this.vertex(p_228796_3_, d3, d1 + (double)f36, d4, f31, f32, f33, f48, f50, k);
-               this.vertex(p_228796_3_, d5, d1 + (double)f38, d6, f31, f32, f33, f49, f28, k);
-               this.vertex(p_228796_3_, d5, d1 + (double)f12, d6, f31, f32, f33, f49, f29, k);
-               this.vertex(p_228796_3_, d3, d1 + (double)f12, d4, f31, f32, f33, f48, f29, k);
-               if (textureatlassprite2 != this.waterOverlay) {
-                  this.vertex(p_228796_3_, d3, d1 + (double)f12, d4, f31, f32, f33, f48, f29, k);
-                  this.vertex(p_228796_3_, d5, d1 + (double)f12, d6, f31, f32, f33, f49, f29, k);
-                  this.vertex(p_228796_3_, d5, d1 + (double)f38, d6, f31, f32, f33, f49, f28, k);
-                  this.vertex(p_228796_3_, d3, d1 + (double)f36, d4, f31, f32, f33, f48, f50, k);
+               this.vertexVanilla(vertexBuilderIn, d3, d1 + (double)f36, d4, f31, f32, f33, f48, f50, k);
+               this.vertexVanilla(vertexBuilderIn, d5, d1 + (double)f38, d6, f31, f32, f33, f49, f28, k);
+               this.vertexVanilla(vertexBuilderIn, d5, d1 + (double)f12, d6, f31, f32, f33, f49, f29, k);
+               this.vertexVanilla(vertexBuilderIn, d3, d1 + (double)f12, d4, f31, f32, f33, f48, f29, k);
+               if (textureatlassprite2 != this.atlasSpriteWaterOverlay) {
+                  this.vertexVanilla(vertexBuilderIn, d3, d1 + (double)f12, d4, f31, f32, f33, f48, f29, k);
+                  this.vertexVanilla(vertexBuilderIn, d5, d1 + (double)f12, d6, f31, f32, f33, f49, f29, k);
+                  this.vertexVanilla(vertexBuilderIn, d5, d1 + (double)f38, d6, f31, f32, f33, f49, f28, k);
+                  this.vertexVanilla(vertexBuilderIn, d3, d1 + (double)f36, d4, f31, f32, f33, f48, f50, k);
                }
             }
          }
@@ -270,13 +270,13 @@ public class FluidBlockRenderer {
       }
    }
 
-   private void vertex(IVertexBuilder p_228797_1_, double p_228797_2_, double p_228797_4_, double p_228797_6_, float p_228797_8_, float p_228797_9_, float p_228797_10_, float p_228797_11_, float p_228797_12_, int p_228797_13_) {
-      p_228797_1_.vertex(p_228797_2_, p_228797_4_, p_228797_6_).color(p_228797_8_, p_228797_9_, p_228797_10_, 1.0F).uv(p_228797_11_, p_228797_12_).uv2(p_228797_13_).normal(0.0F, 1.0F, 0.0F).endVertex();
+   private void vertexVanilla(IVertexBuilder vertexBuilderIn, double x, double y, double z, float red, float green, float blue, float u, float v, int packedLight) {
+      vertexBuilderIn.pos(x, y, z).color(red, green, blue, 1.0F).tex(u, v).lightmap(packedLight).normal(0.0F, 1.0F, 0.0F).endVertex();
    }
 
-   private int getLightColor(IBlockDisplayReader p_228795_1_, BlockPos p_228795_2_) {
-      int i = WorldRenderer.getLightColor(p_228795_1_, p_228795_2_);
-      int j = WorldRenderer.getLightColor(p_228795_1_, p_228795_2_.above());
+   private int getCombinedAverageLight(IBlockDisplayReader lightReaderIn, BlockPos posIn) {
+      int i = WorldRenderer.getCombinedLight(lightReaderIn, posIn);
+      int j = WorldRenderer.getCombinedLight(lightReaderIn, posIn.up());
       int k = i & 255;
       int l = j & 255;
       int i1 = i >> 16 & 255;
@@ -284,19 +284,19 @@ public class FluidBlockRenderer {
       return (k > l ? k : l) | (i1 > j1 ? i1 : j1) << 16;
    }
 
-   private float getWaterHeight(IBlockReader p_217640_1_, BlockPos p_217640_2_, Fluid p_217640_3_) {
+   private float getFluidHeight(IBlockReader reader, BlockPos pos, Fluid fluidIn) {
       int i = 0;
       float f = 0.0F;
 
       for(int j = 0; j < 4; ++j) {
-         BlockPos blockpos = p_217640_2_.offset(-(j & 1), 0, -(j >> 1 & 1));
-         if (p_217640_1_.getFluidState(blockpos.above()).getType().isSame(p_217640_3_)) {
+         BlockPos blockpos = pos.add(-(j & 1), 0, -(j >> 1 & 1));
+         if (reader.getFluidState(blockpos.up()).getFluid().isEquivalentTo(fluidIn)) {
             return 1.0F;
          }
 
-         FluidState fluidstate = p_217640_1_.getFluidState(blockpos);
-         if (fluidstate.getType().isSame(p_217640_3_)) {
-            float f1 = fluidstate.getHeight(p_217640_1_, blockpos);
+         FluidState fluidstate = reader.getFluidState(blockpos);
+         if (fluidstate.getFluid().isEquivalentTo(fluidIn)) {
+            float f1 = fluidstate.getActualHeight(reader, blockpos);
             if (f1 >= 0.8F) {
                f += f1 * 10.0F;
                i += 10;
@@ -304,7 +304,7 @@ public class FluidBlockRenderer {
                f += f1;
                ++i;
             }
-         } else if (!p_217640_1_.getBlockState(blockpos).getMaterial().isSolid()) {
+         } else if (!reader.getBlockState(blockpos).getMaterial().isSolid()) {
             ++i;
          }
       }

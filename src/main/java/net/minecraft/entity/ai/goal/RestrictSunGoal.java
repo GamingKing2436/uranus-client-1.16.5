@@ -6,23 +6,23 @@ import net.minecraft.pathfinding.GroundPathNavigator;
 import net.minecraft.util.GroundPathHelper;
 
 public class RestrictSunGoal extends Goal {
-   private final CreatureEntity mob;
+   private final CreatureEntity entity;
 
-   public RestrictSunGoal(CreatureEntity p_i1652_1_) {
-      this.mob = p_i1652_1_;
+   public RestrictSunGoal(CreatureEntity creature) {
+      this.entity = creature;
    }
 
-   public boolean canUse() {
-      return this.mob.level.isDay() && this.mob.getItemBySlot(EquipmentSlotType.HEAD).isEmpty() && GroundPathHelper.hasGroundPathNavigation(this.mob);
+   public boolean shouldExecute() {
+      return this.entity.world.isDaytime() && this.entity.getItemStackFromSlot(EquipmentSlotType.HEAD).isEmpty() && GroundPathHelper.isGroundNavigator(this.entity);
    }
 
-   public void start() {
-      ((GroundPathNavigator)this.mob.getNavigation()).setAvoidSun(true);
+   public void startExecuting() {
+      ((GroundPathNavigator)this.entity.getNavigator()).setAvoidSun(true);
    }
 
-   public void stop() {
-      if (GroundPathHelper.hasGroundPathNavigation(this.mob)) {
-         ((GroundPathNavigator)this.mob.getNavigation()).setAvoidSun(false);
+   public void resetTask() {
+      if (GroundPathHelper.isGroundNavigator(this.entity)) {
+         ((GroundPathNavigator)this.entity.getNavigator()).setAvoidSun(false);
       }
 
    }

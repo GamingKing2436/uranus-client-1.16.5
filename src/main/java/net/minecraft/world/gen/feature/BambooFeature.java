@@ -13,48 +13,48 @@ import net.minecraft.world.gen.ChunkGenerator;
 import net.minecraft.world.gen.Heightmap;
 
 public class BambooFeature extends Feature<ProbabilityConfig> {
-   private static final BlockState BAMBOO_TRUNK = Blocks.BAMBOO.defaultBlockState().setValue(BambooBlock.AGE, Integer.valueOf(1)).setValue(BambooBlock.LEAVES, BambooLeaves.NONE).setValue(BambooBlock.STAGE, Integer.valueOf(0));
-   private static final BlockState BAMBOO_FINAL_LARGE = BAMBOO_TRUNK.setValue(BambooBlock.LEAVES, BambooLeaves.LARGE).setValue(BambooBlock.STAGE, Integer.valueOf(1));
-   private static final BlockState BAMBOO_TOP_LARGE = BAMBOO_TRUNK.setValue(BambooBlock.LEAVES, BambooLeaves.LARGE);
-   private static final BlockState BAMBOO_TOP_SMALL = BAMBOO_TRUNK.setValue(BambooBlock.LEAVES, BambooLeaves.SMALL);
+   private static final BlockState BAMBOO_BASE = Blocks.BAMBOO.getDefaultState().with(BambooBlock.PROPERTY_AGE, Integer.valueOf(1)).with(BambooBlock.PROPERTY_BAMBOO_LEAVES, BambooLeaves.NONE).with(BambooBlock.PROPERTY_STAGE, Integer.valueOf(0));
+   private static final BlockState BAMBOO_LARGE_LEAVES_GROWN = BAMBOO_BASE.with(BambooBlock.PROPERTY_BAMBOO_LEAVES, BambooLeaves.LARGE).with(BambooBlock.PROPERTY_STAGE, Integer.valueOf(1));
+   private static final BlockState BAMBOO_LARGE_LEAVES = BAMBOO_BASE.with(BambooBlock.PROPERTY_BAMBOO_LEAVES, BambooLeaves.LARGE);
+   private static final BlockState BAMBOO_SMALL_LEAVES = BAMBOO_BASE.with(BambooBlock.PROPERTY_BAMBOO_LEAVES, BambooLeaves.SMALL);
 
-   public BambooFeature(Codec<ProbabilityConfig> p_i231924_1_) {
-      super(p_i231924_1_);
+   public BambooFeature(Codec<ProbabilityConfig> codec) {
+      super(codec);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, ProbabilityConfig p_241855_5_) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, ProbabilityConfig config) {
       int i = 0;
-      BlockPos.Mutable blockpos$mutable = p_241855_4_.mutable();
-      BlockPos.Mutable blockpos$mutable1 = p_241855_4_.mutable();
-      if (p_241855_1_.isEmptyBlock(blockpos$mutable)) {
-         if (Blocks.BAMBOO.defaultBlockState().canSurvive(p_241855_1_, blockpos$mutable)) {
-            int j = p_241855_3_.nextInt(12) + 5;
-            if (p_241855_3_.nextFloat() < p_241855_5_.probability) {
-               int k = p_241855_3_.nextInt(4) + 1;
+      BlockPos.Mutable blockpos$mutable = pos.toMutable();
+      BlockPos.Mutable blockpos$mutable1 = pos.toMutable();
+      if (reader.isAirBlock(blockpos$mutable)) {
+         if (Blocks.BAMBOO.getDefaultState().isValidPosition(reader, blockpos$mutable)) {
+            int j = rand.nextInt(12) + 5;
+            if (rand.nextFloat() < config.probability) {
+               int k = rand.nextInt(4) + 1;
 
-               for(int l = p_241855_4_.getX() - k; l <= p_241855_4_.getX() + k; ++l) {
-                  for(int i1 = p_241855_4_.getZ() - k; i1 <= p_241855_4_.getZ() + k; ++i1) {
-                     int j1 = l - p_241855_4_.getX();
-                     int k1 = i1 - p_241855_4_.getZ();
+               for(int l = pos.getX() - k; l <= pos.getX() + k; ++l) {
+                  for(int i1 = pos.getZ() - k; i1 <= pos.getZ() + k; ++i1) {
+                     int j1 = l - pos.getX();
+                     int k1 = i1 - pos.getZ();
                      if (j1 * j1 + k1 * k1 <= k * k) {
-                        blockpos$mutable1.set(l, p_241855_1_.getHeight(Heightmap.Type.WORLD_SURFACE, l, i1) - 1, i1);
-                        if (isDirt(p_241855_1_.getBlockState(blockpos$mutable1).getBlock())) {
-                           p_241855_1_.setBlock(blockpos$mutable1, Blocks.PODZOL.defaultBlockState(), 2);
+                        blockpos$mutable1.setPos(l, reader.getHeight(Heightmap.Type.WORLD_SURFACE, l, i1) - 1, i1);
+                        if (isDirt(reader.getBlockState(blockpos$mutable1).getBlock())) {
+                           reader.setBlockState(blockpos$mutable1, Blocks.PODZOL.getDefaultState(), 2);
                         }
                      }
                   }
                }
             }
 
-            for(int l1 = 0; l1 < j && p_241855_1_.isEmptyBlock(blockpos$mutable); ++l1) {
-               p_241855_1_.setBlock(blockpos$mutable, BAMBOO_TRUNK, 2);
+            for(int l1 = 0; l1 < j && reader.isAirBlock(blockpos$mutable); ++l1) {
+               reader.setBlockState(blockpos$mutable, BAMBOO_BASE, 2);
                blockpos$mutable.move(Direction.UP, 1);
             }
 
-            if (blockpos$mutable.getY() - p_241855_4_.getY() >= 3) {
-               p_241855_1_.setBlock(blockpos$mutable, BAMBOO_FINAL_LARGE, 2);
-               p_241855_1_.setBlock(blockpos$mutable.move(Direction.DOWN, 1), BAMBOO_TOP_LARGE, 2);
-               p_241855_1_.setBlock(blockpos$mutable.move(Direction.DOWN, 1), BAMBOO_TOP_SMALL, 2);
+            if (blockpos$mutable.getY() - pos.getY() >= 3) {
+               reader.setBlockState(blockpos$mutable, BAMBOO_LARGE_LEAVES_GROWN, 2);
+               reader.setBlockState(blockpos$mutable.move(Direction.DOWN, 1), BAMBOO_LARGE_LEAVES, 2);
+               reader.setBlockState(blockpos$mutable.move(Direction.DOWN, 1), BAMBOO_SMALL_LEAVES, 2);
             }
          }
 

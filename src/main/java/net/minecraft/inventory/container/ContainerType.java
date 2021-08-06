@@ -6,13 +6,13 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ContainerType<T extends Container> {
-   public static final ContainerType<ChestContainer> GENERIC_9x1 = register("generic_9x1", ChestContainer::oneRow);
-   public static final ContainerType<ChestContainer> GENERIC_9x2 = register("generic_9x2", ChestContainer::twoRows);
-   public static final ContainerType<ChestContainer> GENERIC_9x3 = register("generic_9x3", ChestContainer::threeRows);
-   public static final ContainerType<ChestContainer> GENERIC_9x4 = register("generic_9x4", ChestContainer::fourRows);
-   public static final ContainerType<ChestContainer> GENERIC_9x5 = register("generic_9x5", ChestContainer::fiveRows);
-   public static final ContainerType<ChestContainer> GENERIC_9x6 = register("generic_9x6", ChestContainer::sixRows);
-   public static final ContainerType<DispenserContainer> GENERIC_3x3 = register("generic_3x3", DispenserContainer::new);
+   public static final ContainerType<ChestContainer> GENERIC_9X1 = register("generic_9x1", ChestContainer::createGeneric9X1);
+   public static final ContainerType<ChestContainer> GENERIC_9X2 = register("generic_9x2", ChestContainer::createGeneric9X2);
+   public static final ContainerType<ChestContainer> GENERIC_9X3 = register("generic_9x3", ChestContainer::createGeneric9X3);
+   public static final ContainerType<ChestContainer> GENERIC_9X4 = register("generic_9x4", ChestContainer::createGeneric9X4);
+   public static final ContainerType<ChestContainer> GENERIC_9X5 = register("generic_9x5", ChestContainer::createGeneric9X5);
+   public static final ContainerType<ChestContainer> GENERIC_9X6 = register("generic_9x6", ChestContainer::createGeneric9X6);
+   public static final ContainerType<DispenserContainer> GENERIC_3X3 = register("generic_3x3", DispenserContainer::new);
    public static final ContainerType<RepairContainer> ANVIL = register("anvil", RepairContainer::new);
    public static final ContainerType<BeaconContainer> BEACON = register("beacon", BeaconContainer::new);
    public static final ContainerType<BlastFurnaceContainer> BLAST_FURNACE = register("blast_furnace", BlastFurnaceContainer::new);
@@ -32,19 +32,19 @@ public class ContainerType<T extends Container> {
    public static final ContainerType<SmokerContainer> SMOKER = register("smoker", SmokerContainer::new);
    public static final ContainerType<CartographyContainer> CARTOGRAPHY_TABLE = register("cartography_table", CartographyContainer::new);
    public static final ContainerType<StonecutterContainer> STONECUTTER = register("stonecutter", StonecutterContainer::new);
-   private final ContainerType.IFactory<T> constructor;
+   private final ContainerType.IFactory<T> factory;
 
-   private static <T extends Container> ContainerType<T> register(String p_221505_0_, ContainerType.IFactory<T> p_221505_1_) {
-      return Registry.register(Registry.MENU, p_221505_0_, new ContainerType<>(p_221505_1_));
+   private static <T extends Container> ContainerType<T> register(String key, ContainerType.IFactory<T> factory) {
+      return Registry.register(Registry.MENU, key, new ContainerType<>(factory));
    }
 
-   private ContainerType(ContainerType.IFactory<T> p_i50072_1_) {
-      this.constructor = p_i50072_1_;
+   private ContainerType(ContainerType.IFactory<T> factory) {
+      this.factory = factory;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public T create(int p_221506_1_, PlayerInventory p_221506_2_) {
-      return this.constructor.create(p_221506_1_, p_221506_2_);
+   public T create(int windowId, PlayerInventory player) {
+      return this.factory.create(windowId, player);
    }
 
    interface IFactory<T extends Container> {

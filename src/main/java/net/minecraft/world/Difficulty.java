@@ -14,15 +14,15 @@ public enum Difficulty {
    NORMAL(2, "normal"),
    HARD(3, "hard");
 
-   private static final Difficulty[] BY_ID = Arrays.stream(values()).sorted(Comparator.comparingInt(Difficulty::getId)).toArray((p_199928_0_) -> {
+   private static final Difficulty[] ID_MAPPING = Arrays.stream(values()).sorted(Comparator.comparingInt(Difficulty::getId)).toArray((p_199928_0_) -> {
       return new Difficulty[p_199928_0_];
    });
    private final int id;
-   private final String key;
+   private final String translationKey;
 
-   private Difficulty(int p_i45312_3_, String p_i45312_4_) {
-      this.id = p_i45312_3_;
-      this.key = p_i45312_4_;
+   private Difficulty(int difficultyIdIn, String difficultyResourceKeyIn) {
+      this.id = difficultyIdIn;
+      this.translationKey = difficultyResourceKeyIn;
    }
 
    public int getId() {
@@ -30,17 +30,17 @@ public enum Difficulty {
    }
 
    public ITextComponent getDisplayName() {
-      return new TranslationTextComponent("options.difficulty." + this.key);
+      return new TranslationTextComponent("options.difficulty." + this.translationKey);
    }
 
-   public static Difficulty byId(int p_151523_0_) {
-      return BY_ID[p_151523_0_ % BY_ID.length];
+   public static Difficulty byId(int id) {
+      return ID_MAPPING[id % ID_MAPPING.length];
    }
 
    @Nullable
-   public static Difficulty byName(String p_219963_0_) {
+   public static Difficulty byName(String nameIn) {
       for(Difficulty difficulty : values()) {
-         if (difficulty.key.equals(p_219963_0_)) {
+         if (difficulty.translationKey.equals(nameIn)) {
             return difficulty;
          }
       }
@@ -48,12 +48,12 @@ public enum Difficulty {
       return null;
    }
 
-   public String getKey() {
-      return this.key;
+   public String getTranslationKey() {
+      return this.translationKey;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Difficulty nextById() {
-      return BY_ID[(this.id + 1) % BY_ID.length];
+   public Difficulty getNextDifficulty() {
+      return ID_MAPPING[(this.id + 1) % ID_MAPPING.length];
    }
 }

@@ -79,14 +79,14 @@ public class Main {
             return;
          }
 
-         CrashReport.preload();
-         Bootstrap.bootStrap();
-         Bootstrap.validate();
-         Util.startTimerHackThread();
-         DynamicRegistries.Impl dynamicregistries$impl = DynamicRegistries.builtin();
+         CrashReport.crash();
+         Bootstrap.register();
+         Bootstrap.checkTranslations();
+         Util.func_240994_l_();
+         DynamicRegistries.Impl dynamicregistries$impl = DynamicRegistries.func_239770_b_();
          Path path = Paths.get("server.properties");
          ServerPropertiesProvider serverpropertiesprovider = new ServerPropertiesProvider(dynamicregistries$impl, path);
-         serverpropertiesprovider.forceSave();
+         serverpropertiesprovider.save();
          Path path1 = Paths.get("eula.txt");
          ServerEula servereula = new ServerEula(path1);
          if (optionset.has(optionspec1)) {
@@ -94,7 +94,7 @@ public class Main {
             return;
          }
 
-         if (!servereula.hasAgreedToEULA()) {
+         if (!servereula.hasAcceptedEULA()) {
             LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
             return;
          }
@@ -103,20 +103,20 @@ public class Main {
          YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY);
          MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
          GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
-         PlayerProfileCache playerprofilecache = new PlayerProfileCache(gameprofilerepository, new File(file1, MinecraftServer.USERID_CACHE_FILE.getName()));
-         String s = Optional.ofNullable(optionset.valueOf(optionspec10)).orElse(serverpropertiesprovider.getProperties().levelName);
-         SaveFormat saveformat = SaveFormat.createDefault(file1.toPath());
-         SaveFormat.LevelSave saveformat$levelsave = saveformat.createAccess(s);
-         MinecraftServer.convertFromRegionFormatIfNeeded(saveformat$levelsave);
-         DatapackCodec datapackcodec = saveformat$levelsave.getDataPacks();
+         PlayerProfileCache playerprofilecache = new PlayerProfileCache(gameprofilerepository, new File(file1, MinecraftServer.USER_CACHE_FILE.getName()));
+         String s = Optional.ofNullable(optionset.valueOf(optionspec10)).orElse(serverpropertiesprovider.getProperties().worldName);
+         SaveFormat saveformat = SaveFormat.create(file1.toPath());
+         SaveFormat.LevelSave saveformat$levelsave = saveformat.getLevelSave(s);
+         MinecraftServer.func_240777_a_(saveformat$levelsave);
+         DatapackCodec datapackcodec = saveformat$levelsave.readDatapackCodec();
          boolean flag = optionset.has(optionspec6);
          if (flag) {
             LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
          }
 
-         ResourcePackList resourcepacklist = new ResourcePackList(new ServerPackFinder(), new FolderPackFinder(saveformat$levelsave.getLevelPath(FolderName.DATAPACK_DIR).toFile(), IPackNameDecorator.WORLD));
-         DatapackCodec datapackcodec1 = MinecraftServer.configurePackRepository(resourcepacklist, datapackcodec == null ? DatapackCodec.DEFAULT : datapackcodec, flag);
-         CompletableFuture<DataPackRegistries> completablefuture = DataPackRegistries.loadResources(resourcepacklist.openAllSelected(), Commands.EnvironmentType.DEDICATED, serverpropertiesprovider.getProperties().functionPermissionLevel, Util.backgroundExecutor(), Runnable::run);
+         ResourcePackList resourcepacklist = new ResourcePackList(new ServerPackFinder(), new FolderPackFinder(saveformat$levelsave.resolveFilePath(FolderName.DATAPACKS).toFile(), IPackNameDecorator.WORLD));
+         DatapackCodec datapackcodec1 = MinecraftServer.func_240772_a_(resourcepacklist, datapackcodec == null ? DatapackCodec.VANILLA_CODEC : datapackcodec, flag);
+         CompletableFuture<DataPackRegistries> completablefuture = DataPackRegistries.func_240961_a_(resourcepacklist.func_232623_f_(), Commands.EnvironmentType.DEDICATED, serverpropertiesprovider.getProperties().functionPermissionLevel, Util.getServerExecutor(), Runnable::run);
 
          DataPackRegistries datapackregistries;
          try {
@@ -127,48 +127,48 @@ public class Main {
             return;
          }
 
-         datapackregistries.updateGlobals();
+         datapackregistries.updateTags();
          WorldSettingsImport<INBT> worldsettingsimport = WorldSettingsImport.create(NBTDynamicOps.INSTANCE, datapackregistries.getResourceManager(), dynamicregistries$impl);
-         IServerConfiguration iserverconfiguration = saveformat$levelsave.getDataTag(worldsettingsimport, datapackcodec1);
+         IServerConfiguration iserverconfiguration = saveformat$levelsave.readServerConfiguration(worldsettingsimport, datapackcodec1);
          if (iserverconfiguration == null) {
             WorldSettings worldsettings;
             DimensionGeneratorSettings dimensiongeneratorsettings;
             if (optionset.has(optionspec2)) {
-               worldsettings = MinecraftServer.DEMO_SETTINGS;
-               dimensiongeneratorsettings = DimensionGeneratorSettings.demoSettings(dynamicregistries$impl);
+               worldsettings = MinecraftServer.DEMO_WORLD_SETTINGS;
+               dimensiongeneratorsettings = DimensionGeneratorSettings.func_242752_a(dynamicregistries$impl);
             } else {
                ServerProperties serverproperties = serverpropertiesprovider.getProperties();
-               worldsettings = new WorldSettings(serverproperties.levelName, serverproperties.gamemode, serverproperties.hardcore, serverproperties.difficulty, false, new GameRules(), datapackcodec1);
-               dimensiongeneratorsettings = optionset.has(optionspec3) ? serverproperties.worldGenSettings.withBonusChest() : serverproperties.worldGenSettings;
+               worldsettings = new WorldSettings(serverproperties.worldName, serverproperties.gamemode, serverproperties.hardcore, serverproperties.difficulty, false, new GameRules(), datapackcodec1);
+               dimensiongeneratorsettings = optionset.has(optionspec3) ? serverproperties.field_241082_U_.func_236230_k_() : serverproperties.field_241082_U_;
             }
 
             iserverconfiguration = new ServerWorldInfo(worldsettings, dimensiongeneratorsettings, Lifecycle.stable());
          }
 
          if (optionset.has(optionspec4)) {
-            forceUpgrade(saveformat$levelsave, DataFixesManager.getDataFixer(), optionset.has(optionspec5), () -> {
+            forceWorldUpgrade(saveformat$levelsave, DataFixesManager.getDataFixer(), optionset.has(optionspec5), () -> {
                return true;
-            }, iserverconfiguration.worldGenSettings().levels());
+            }, iserverconfiguration.getDimensionGeneratorSettings().func_236226_g_());
          }
 
-         saveformat$levelsave.saveDataTag(dynamicregistries$impl, iserverconfiguration);
+         saveformat$levelsave.saveLevel(dynamicregistries$impl, iserverconfiguration);
          IServerConfiguration iserverconfiguration1 = iserverconfiguration;
-         final DedicatedServer dedicatedserver = MinecraftServer.spin((p_240762_16_) -> {
+         final DedicatedServer dedicatedserver = MinecraftServer.startServer((p_240762_16_) -> {
             DedicatedServer dedicatedserver1 = new DedicatedServer(p_240762_16_, dynamicregistries$impl, saveformat$levelsave, resourcepacklist, datapackregistries, iserverconfiguration1, serverpropertiesprovider, DataFixesManager.getDataFixer(), minecraftsessionservice, gameprofilerepository, playerprofilecache, LoggingChunkStatusListener::new);
-            dedicatedserver1.setSingleplayerName(optionset.valueOf(optionspec8));
-            dedicatedserver1.setPort(optionset.valueOf(optionspec11));
+            dedicatedserver1.setServerOwner(optionset.valueOf(optionspec8));
+            dedicatedserver1.setServerPort(optionset.valueOf(optionspec11));
             dedicatedserver1.setDemo(optionset.has(optionspec2));
-            dedicatedserver1.setId(optionset.valueOf(optionspec12));
+            dedicatedserver1.setServerId(optionset.valueOf(optionspec12));
             boolean flag1 = !optionset.has(optionspec) && !optionset.valuesOf(optionspec13).contains("nogui");
             if (flag1 && !GraphicsEnvironment.isHeadless()) {
-               dedicatedserver1.showGui();
+               dedicatedserver1.setGuiEnabled();
             }
 
             return dedicatedserver1;
          });
          Thread thread = new Thread("Server Shutdown Thread") {
             public void run() {
-               dedicatedserver.halt(true);
+               dedicatedserver.initiateShutdown(true);
             }
          };
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
@@ -179,16 +179,16 @@ public class Main {
 
    }
 
-   private static void forceUpgrade(SaveFormat.LevelSave p_240761_0_, DataFixer p_240761_1_, boolean p_240761_2_, BooleanSupplier p_240761_3_, ImmutableSet<RegistryKey<World>> p_240761_4_) {
+   private static void forceWorldUpgrade(SaveFormat.LevelSave worldStorage, DataFixer fixer, boolean clearHeightAndLightMaps, BooleanSupplier p_240761_3_, ImmutableSet<RegistryKey<World>> p_240761_4_) {
       LOGGER.info("Forcing world upgrade!");
-      WorldOptimizer worldoptimizer = new WorldOptimizer(p_240761_0_, p_240761_1_, p_240761_4_, p_240761_2_);
+      WorldOptimizer worldoptimizer = new WorldOptimizer(worldStorage, fixer, p_240761_4_, clearHeightAndLightMaps);
       ITextComponent itextcomponent = null;
 
       while(!worldoptimizer.isFinished()) {
-         ITextComponent itextcomponent1 = worldoptimizer.getStatus();
+         ITextComponent itextcomponent1 = worldoptimizer.getStatusText();
          if (itextcomponent != itextcomponent1) {
             itextcomponent = itextcomponent1;
-            LOGGER.info(worldoptimizer.getStatus().getString());
+            LOGGER.info(worldoptimizer.getStatusText().getString());
          }
 
          int i = worldoptimizer.getTotalChunks();

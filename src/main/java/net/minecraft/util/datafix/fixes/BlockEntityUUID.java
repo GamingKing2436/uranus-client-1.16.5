@@ -11,21 +11,21 @@ public class BlockEntityUUID extends AbstractUUIDFix {
    }
 
    protected TypeRewriteRule makeRule() {
-      return this.fixTypeEverywhereTyped("BlockEntityUUIDFix", this.getInputSchema().getType(this.typeReference), (p_233113_1_) -> {
-         p_233113_1_ = this.updateNamedChoice(p_233113_1_, "minecraft:conduit", this::updateConduit);
-         return this.updateNamedChoice(p_233113_1_, "minecraft:skull", this::updateSkull);
+      return this.fixTypeEverywhereTyped("BlockEntityUUIDFix", this.getInputSchema().getType(this.reference), (p_233113_1_) -> {
+         p_233113_1_ = this.func_233053_a_(p_233113_1_, "minecraft:conduit", this::func_233116_c_);
+         return this.func_233053_a_(p_233113_1_, "minecraft:skull", this::func_233115_b_);
       });
    }
 
-   private Dynamic<?> updateSkull(Dynamic<?> p_233115_1_) {
+   private Dynamic<?> func_233115_b_(Dynamic<?> p_233115_1_) {
       return p_233115_1_.get("Owner").get().map((p_233117_0_) -> {
-         return replaceUUIDString(p_233117_0_, "Id", "Id").orElse(p_233117_0_);
+         return func_233058_a_(p_233117_0_, "Id", "Id").orElse(p_233117_0_);
       }).<Dynamic<?>>map((p_233114_1_) -> {
          return p_233115_1_.remove("Owner").set("SkullOwner", p_233114_1_);
       }).result().orElse(p_233115_1_);
    }
 
-   private Dynamic<?> updateConduit(Dynamic<?> p_233116_1_) {
-      return replaceUUIDMLTag(p_233116_1_, "target_uuid", "Target").orElse(p_233116_1_);
+   private Dynamic<?> func_233116_c_(Dynamic<?> p_233116_1_) {
+      return func_233062_b_(p_233116_1_, "target_uuid", "Target").orElse(p_233116_1_);
    }
 }

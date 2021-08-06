@@ -34,23 +34,23 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class Multipart implements IUnbakedModel {
-   private final StateContainer<Block, BlockState> definition;
+   private final StateContainer<Block, BlockState> stateContainer;
    private final List<Selector> selectors;
 
-   public Multipart(StateContainer<Block, BlockState> p_i49524_1_, List<Selector> p_i49524_2_) {
-      this.definition = p_i49524_1_;
-      this.selectors = p_i49524_2_;
+   public Multipart(StateContainer<Block, BlockState> stateContainerIn, List<Selector> selectorsIn) {
+      this.stateContainer = stateContainerIn;
+      this.selectors = selectorsIn;
    }
 
    public List<Selector> getSelectors() {
       return this.selectors;
    }
 
-   public Set<VariantList> getMultiVariants() {
+   public Set<VariantList> getVariants() {
       Set<VariantList> set = Sets.newHashSet();
 
       for(Selector selector : this.selectors) {
-         set.add(selector.getVariant());
+         set.add(selector.getVariantList());
       }
 
       return set;
@@ -63,34 +63,34 @@ public class Multipart implements IUnbakedModel {
          return false;
       } else {
          Multipart multipart = (Multipart)p_equals_1_;
-         return Objects.equals(this.definition, multipart.definition) && Objects.equals(this.selectors, multipart.selectors);
+         return Objects.equals(this.stateContainer, multipart.stateContainer) && Objects.equals(this.selectors, multipart.selectors);
       }
    }
 
    public int hashCode() {
-      return Objects.hash(this.definition, this.selectors);
+      return Objects.hash(this.stateContainer, this.selectors);
    }
 
    public Collection<ResourceLocation> getDependencies() {
       return this.getSelectors().stream().flatMap((p_209563_0_) -> {
-         return p_209563_0_.getVariant().getDependencies().stream();
+         return p_209563_0_.getVariantList().getDependencies().stream();
       }).collect(Collectors.toSet());
    }
 
-   public Collection<RenderMaterial> getMaterials(Function<ResourceLocation, IUnbakedModel> p_225614_1_, Set<Pair<String, String>> p_225614_2_) {
+   public Collection<RenderMaterial> getTextures(Function<ResourceLocation, IUnbakedModel> modelGetter, Set<Pair<String, String>> missingTextureErrors) {
       return this.getSelectors().stream().flatMap((p_228832_2_) -> {
-         return p_228832_2_.getVariant().getMaterials(p_225614_1_, p_225614_2_).stream();
+         return p_228832_2_.getVariantList().getTextures(modelGetter, missingTextureErrors).stream();
       }).collect(Collectors.toSet());
    }
 
    @Nullable
-   public IBakedModel bake(ModelBakery p_225613_1_, Function<RenderMaterial, TextureAtlasSprite> p_225613_2_, IModelTransform p_225613_3_, ResourceLocation p_225613_4_) {
+   public IBakedModel bakeModel(ModelBakery modelBakeryIn, Function<RenderMaterial, TextureAtlasSprite> spriteGetterIn, IModelTransform transformIn, ResourceLocation locationIn) {
       MultipartBakedModel.Builder multipartbakedmodel$builder = new MultipartBakedModel.Builder();
 
       for(Selector selector : this.getSelectors()) {
-         IBakedModel ibakedmodel = selector.getVariant().bake(p_225613_1_, p_225613_2_, p_225613_3_, p_225613_4_);
+         IBakedModel ibakedmodel = selector.getVariantList().bakeModel(modelBakeryIn, spriteGetterIn, transformIn, locationIn);
          if (ibakedmodel != null) {
-            multipartbakedmodel$builder.add(selector.getPredicate(this.definition), ibakedmodel);
+            multipartbakedmodel$builder.putModel(selector.getPredicate(this.stateContainer), ibakedmodel);
          }
       }
 
@@ -99,21 +99,21 @@ public class Multipart implements IUnbakedModel {
 
    @OnlyIn(Dist.CLIENT)
    public static class Deserializer implements JsonDeserializer<Multipart> {
-      private final BlockModelDefinition.ContainerHolder context;
+      private final BlockModelDefinition.ContainerHolder containerHolder;
 
-      public Deserializer(BlockModelDefinition.ContainerHolder p_i49520_1_) {
-         this.context = p_i49520_1_;
+      public Deserializer(BlockModelDefinition.ContainerHolder containerHolderIn) {
+         this.containerHolder = containerHolderIn;
       }
 
       public Multipart deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
-         return new Multipart(this.context.getDefinition(), this.getSelectors(p_deserialize_3_, p_deserialize_1_.getAsJsonArray()));
+         return new Multipart(this.containerHolder.getStateContainer(), this.getSelectors(p_deserialize_3_, p_deserialize_1_.getAsJsonArray()));
       }
 
-      private List<Selector> getSelectors(JsonDeserializationContext p_188133_1_, JsonArray p_188133_2_) {
+      private List<Selector> getSelectors(JsonDeserializationContext context, JsonArray elements) {
          List<Selector> list = Lists.newArrayList();
 
-         for(JsonElement jsonelement : p_188133_2_) {
-            list.add(p_188133_1_.deserialize(jsonelement, Selector.class));
+         for(JsonElement jsonelement : elements) {
+            list.add(context.deserialize(jsonelement, Selector.class));
          }
 
          return list;

@@ -24,53 +24,53 @@ import net.minecraft.world.server.ServerWorld;
 import org.apache.commons.lang3.Validate;
 
 public abstract class HangingEntity extends Entity {
-   protected static final Predicate<Entity> HANGING_ENTITY = (p_210144_0_) -> {
+   protected static final Predicate<Entity> IS_HANGING_ENTITY = (p_210144_0_) -> {
       return p_210144_0_ instanceof HangingEntity;
    };
-   private int checkInterval;
-   protected BlockPos pos;
-   protected Direction direction = Direction.SOUTH;
+   private int tickCounter1;
+   protected BlockPos hangingPosition;
+   protected Direction facingDirection = Direction.SOUTH;
 
-   protected HangingEntity(EntityType<? extends HangingEntity> p_i48561_1_, World p_i48561_2_) {
-      super(p_i48561_1_, p_i48561_2_);
+   protected HangingEntity(EntityType<? extends HangingEntity> type, World p_i48561_2_) {
+      super(type, p_i48561_2_);
    }
 
-   protected HangingEntity(EntityType<? extends HangingEntity> p_i48562_1_, World p_i48562_2_, BlockPos p_i48562_3_) {
-      this(p_i48562_1_, p_i48562_2_);
-      this.pos = p_i48562_3_;
+   protected HangingEntity(EntityType<? extends HangingEntity> type, World world, BlockPos hangingPos) {
+      this(type, world);
+      this.hangingPosition = hangingPos;
    }
 
-   protected void defineSynchedData() {
+   protected void registerData() {
    }
 
-   protected void setDirection(Direction p_174859_1_) {
-      Validate.notNull(p_174859_1_);
-      Validate.isTrue(p_174859_1_.getAxis().isHorizontal());
-      this.direction = p_174859_1_;
-      this.yRot = (float)(this.direction.get2DDataValue() * 90);
-      this.yRotO = this.yRot;
-      this.recalculateBoundingBox();
+   protected void updateFacingWithBoundingBox(Direction facingDirectionIn) {
+      Validate.notNull(facingDirectionIn);
+      Validate.isTrue(facingDirectionIn.getAxis().isHorizontal());
+      this.facingDirection = facingDirectionIn;
+      this.rotationYaw = (float)(this.facingDirection.getHorizontalIndex() * 90);
+      this.prevRotationYaw = this.rotationYaw;
+      this.updateBoundingBox();
    }
 
-   protected void recalculateBoundingBox() {
-      if (this.direction != null) {
-         double d0 = (double)this.pos.getX() + 0.5D;
-         double d1 = (double)this.pos.getY() + 0.5D;
-         double d2 = (double)this.pos.getZ() + 0.5D;
+   protected void updateBoundingBox() {
+      if (this.facingDirection != null) {
+         double d0 = (double)this.hangingPosition.getX() + 0.5D;
+         double d1 = (double)this.hangingPosition.getY() + 0.5D;
+         double d2 = (double)this.hangingPosition.getZ() + 0.5D;
          double d3 = 0.46875D;
-         double d4 = this.offs(this.getWidth());
-         double d5 = this.offs(this.getHeight());
-         d0 = d0 - (double)this.direction.getStepX() * 0.46875D;
-         d2 = d2 - (double)this.direction.getStepZ() * 0.46875D;
+         double d4 = this.offs(this.getWidthPixels());
+         double d5 = this.offs(this.getHeightPixels());
+         d0 = d0 - (double)this.facingDirection.getXOffset() * 0.46875D;
+         d2 = d2 - (double)this.facingDirection.getZOffset() * 0.46875D;
          d1 = d1 + d5;
-         Direction direction = this.direction.getCounterClockWise();
-         d0 = d0 + d4 * (double)direction.getStepX();
-         d2 = d2 + d4 * (double)direction.getStepZ();
-         this.setPosRaw(d0, d1, d2);
-         double d6 = (double)this.getWidth();
-         double d7 = (double)this.getHeight();
-         double d8 = (double)this.getWidth();
-         if (this.direction.getAxis() == Direction.Axis.Z) {
+         Direction direction = this.facingDirection.rotateYCCW();
+         d0 = d0 + d4 * (double)direction.getXOffset();
+         d2 = d2 + d4 * (double)direction.getZOffset();
+         this.setRawPosition(d0, d1, d2);
+         double d6 = (double)this.getWidthPixels();
+         double d7 = (double)this.getHeightPixels();
+         double d8 = (double)this.getWidthPixels();
+         if (this.facingDirection.getAxis() == Direction.Axis.Z) {
             d8 = 1.0D;
          } else {
             d6 = 1.0D;
@@ -88,151 +88,151 @@ public abstract class HangingEntity extends Entity {
    }
 
    public void tick() {
-      if (!this.level.isClientSide) {
-         if (this.getY() < -64.0D) {
+      if (!this.world.isRemote) {
+         if (this.getPosY() < -64.0D) {
             this.outOfWorld();
          }
 
-         if (this.checkInterval++ == 100) {
-            this.checkInterval = 0;
-            if (!this.removed && !this.survives()) {
+         if (this.tickCounter1++ == 100) {
+            this.tickCounter1 = 0;
+            if (!this.removed && !this.onValidSurface()) {
                this.remove();
-               this.dropItem((Entity)null);
+               this.onBroken((Entity)null);
             }
          }
       }
 
    }
 
-   public boolean survives() {
-      if (!this.level.noCollision(this)) {
+   public boolean onValidSurface() {
+      if (!this.world.hasNoCollisions(this)) {
          return false;
       } else {
-         int i = Math.max(1, this.getWidth() / 16);
-         int j = Math.max(1, this.getHeight() / 16);
-         BlockPos blockpos = this.pos.relative(this.direction.getOpposite());
-         Direction direction = this.direction.getCounterClockWise();
+         int i = Math.max(1, this.getWidthPixels() / 16);
+         int j = Math.max(1, this.getHeightPixels() / 16);
+         BlockPos blockpos = this.hangingPosition.offset(this.facingDirection.getOpposite());
+         Direction direction = this.facingDirection.rotateYCCW();
          BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
 
          for(int k = 0; k < i; ++k) {
             for(int l = 0; l < j; ++l) {
                int i1 = (i - 1) / -2;
                int j1 = (j - 1) / -2;
-               blockpos$mutable.set(blockpos).move(direction, k + i1).move(Direction.UP, l + j1);
-               BlockState blockstate = this.level.getBlockState(blockpos$mutable);
+               blockpos$mutable.setPos(blockpos).move(direction, k + i1).move(Direction.UP, l + j1);
+               BlockState blockstate = this.world.getBlockState(blockpos$mutable);
                if (!blockstate.getMaterial().isSolid() && !RedstoneDiodeBlock.isDiode(blockstate)) {
                   return false;
                }
             }
          }
 
-         return this.level.getEntities(this, this.getBoundingBox(), HANGING_ENTITY).isEmpty();
+         return this.world.getEntitiesInAABBexcluding(this, this.getBoundingBox(), IS_HANGING_ENTITY).isEmpty();
       }
    }
 
-   public boolean isPickable() {
+   public boolean canBeCollidedWith() {
       return true;
    }
 
-   public boolean skipAttackInteraction(Entity p_85031_1_) {
-      if (p_85031_1_ instanceof PlayerEntity) {
-         PlayerEntity playerentity = (PlayerEntity)p_85031_1_;
-         return !this.level.mayInteract(playerentity, this.pos) ? true : this.hurt(DamageSource.playerAttack(playerentity), 0.0F);
+   public boolean hitByEntity(Entity entityIn) {
+      if (entityIn instanceof PlayerEntity) {
+         PlayerEntity playerentity = (PlayerEntity)entityIn;
+         return !this.world.isBlockModifiable(playerentity, this.hangingPosition) ? true : this.attackEntityFrom(DamageSource.causePlayerDamage(playerentity), 0.0F);
       } else {
          return false;
       }
    }
 
-   public Direction getDirection() {
-      return this.direction;
+   public Direction getHorizontalFacing() {
+      return this.facingDirection;
    }
 
-   public boolean hurt(DamageSource p_70097_1_, float p_70097_2_) {
-      if (this.isInvulnerableTo(p_70097_1_)) {
+   public boolean attackEntityFrom(DamageSource source, float amount) {
+      if (this.isInvulnerableTo(source)) {
          return false;
       } else {
-         if (!this.removed && !this.level.isClientSide) {
+         if (!this.removed && !this.world.isRemote) {
             this.remove();
-            this.markHurt();
-            this.dropItem(p_70097_1_.getEntity());
+            this.markVelocityChanged();
+            this.onBroken(source.getTrueSource());
          }
 
          return true;
       }
    }
 
-   public void move(MoverType p_213315_1_, Vector3d p_213315_2_) {
-      if (!this.level.isClientSide && !this.removed && p_213315_2_.lengthSqr() > 0.0D) {
+   public void move(MoverType typeIn, Vector3d pos) {
+      if (!this.world.isRemote && !this.removed && pos.lengthSquared() > 0.0D) {
          this.remove();
-         this.dropItem((Entity)null);
+         this.onBroken((Entity)null);
       }
 
    }
 
-   public void push(double p_70024_1_, double p_70024_3_, double p_70024_5_) {
-      if (!this.level.isClientSide && !this.removed && p_70024_1_ * p_70024_1_ + p_70024_3_ * p_70024_3_ + p_70024_5_ * p_70024_5_ > 0.0D) {
+   public void addVelocity(double x, double y, double z) {
+      if (!this.world.isRemote && !this.removed && x * x + y * y + z * z > 0.0D) {
          this.remove();
-         this.dropItem((Entity)null);
+         this.onBroken((Entity)null);
       }
 
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      BlockPos blockpos = this.getPos();
-      p_213281_1_.putInt("TileX", blockpos.getX());
-      p_213281_1_.putInt("TileY", blockpos.getY());
-      p_213281_1_.putInt("TileZ", blockpos.getZ());
+   public void writeAdditional(CompoundNBT compound) {
+      BlockPos blockpos = this.getHangingPosition();
+      compound.putInt("TileX", blockpos.getX());
+      compound.putInt("TileY", blockpos.getY());
+      compound.putInt("TileZ", blockpos.getZ());
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      this.pos = new BlockPos(p_70037_1_.getInt("TileX"), p_70037_1_.getInt("TileY"), p_70037_1_.getInt("TileZ"));
+   public void readAdditional(CompoundNBT compound) {
+      this.hangingPosition = new BlockPos(compound.getInt("TileX"), compound.getInt("TileY"), compound.getInt("TileZ"));
    }
 
-   public abstract int getWidth();
+   public abstract int getWidthPixels();
 
-   public abstract int getHeight();
+   public abstract int getHeightPixels();
 
-   public abstract void dropItem(@Nullable Entity p_110128_1_);
+   public abstract void onBroken(@Nullable Entity brokenEntity);
 
-   public abstract void playPlacementSound();
+   public abstract void playPlaceSound();
 
-   public ItemEntity spawnAtLocation(ItemStack p_70099_1_, float p_70099_2_) {
-      ItemEntity itementity = new ItemEntity(this.level, this.getX() + (double)((float)this.direction.getStepX() * 0.15F), this.getY() + (double)p_70099_2_, this.getZ() + (double)((float)this.direction.getStepZ() * 0.15F), p_70099_1_);
-      itementity.setDefaultPickUpDelay();
-      this.level.addFreshEntity(itementity);
+   public ItemEntity entityDropItem(ItemStack stack, float offsetY) {
+      ItemEntity itementity = new ItemEntity(this.world, this.getPosX() + (double)((float)this.facingDirection.getXOffset() * 0.15F), this.getPosY() + (double)offsetY, this.getPosZ() + (double)((float)this.facingDirection.getZOffset() * 0.15F), stack);
+      itementity.setDefaultPickupDelay();
+      this.world.addEntity(itementity);
       return itementity;
    }
 
-   protected boolean repositionEntityAfterLoad() {
+   protected boolean shouldSetPosAfterLoading() {
       return false;
    }
 
-   public void setPos(double p_70107_1_, double p_70107_3_, double p_70107_5_) {
-      this.pos = new BlockPos(p_70107_1_, p_70107_3_, p_70107_5_);
-      this.recalculateBoundingBox();
-      this.hasImpulse = true;
+   public void setPosition(double x, double y, double z) {
+      this.hangingPosition = new BlockPos(x, y, z);
+      this.updateBoundingBox();
+      this.isAirBorne = true;
    }
 
-   public BlockPos getPos() {
-      return this.pos;
+   public BlockPos getHangingPosition() {
+      return this.hangingPosition;
    }
 
-   public float rotate(Rotation p_184229_1_) {
-      if (this.direction.getAxis() != Direction.Axis.Y) {
-         switch(p_184229_1_) {
+   public float getRotatedYaw(Rotation transformRotation) {
+      if (this.facingDirection.getAxis() != Direction.Axis.Y) {
+         switch(transformRotation) {
          case CLOCKWISE_180:
-            this.direction = this.direction.getOpposite();
+            this.facingDirection = this.facingDirection.getOpposite();
             break;
          case COUNTERCLOCKWISE_90:
-            this.direction = this.direction.getCounterClockWise();
+            this.facingDirection = this.facingDirection.rotateYCCW();
             break;
          case CLOCKWISE_90:
-            this.direction = this.direction.getClockWise();
+            this.facingDirection = this.facingDirection.rotateY();
          }
       }
 
-      float f = MathHelper.wrapDegrees(this.yRot);
-      switch(p_184229_1_) {
+      float f = MathHelper.wrapDegrees(this.rotationYaw);
+      switch(transformRotation) {
       case CLOCKWISE_180:
          return f + 180.0F;
       case COUNTERCLOCKWISE_90:
@@ -244,13 +244,13 @@ public abstract class HangingEntity extends Entity {
       }
    }
 
-   public float mirror(Mirror p_184217_1_) {
-      return this.rotate(p_184217_1_.getRotation(this.direction));
+   public float getMirroredYaw(Mirror transformMirror) {
+      return this.getRotatedYaw(transformMirror.toRotation(this.facingDirection));
    }
 
-   public void thunderHit(ServerWorld p_241841_1_, LightningBoltEntity p_241841_2_) {
+   public void func_241841_a(ServerWorld p_241841_1_, LightningBoltEntity p_241841_2_) {
    }
 
-   public void refreshDimensions() {
+   public void recalculateSize() {
    }
 }

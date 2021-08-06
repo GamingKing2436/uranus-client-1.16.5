@@ -15,13 +15,13 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ItemFilledMapMetadata extends DataFix {
-   public ItemFilledMapMetadata(Schema p_i49637_1_, boolean p_i49637_2_) {
-      super(p_i49637_1_, p_i49637_2_);
+   public ItemFilledMapMetadata(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
       Type<?> type = this.getInputSchema().getType(TypeReferences.ITEM_STACK);
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
       OpticFinder<?> opticfinder1 = type.findField("tag");
       return this.fixTypeEverywhereTyped("ItemInstanceMapIdFix", type, (p_206360_2_) -> {
          Optional<Pair<String, String>> optional = p_206360_2_.getOptional(opticfinder);

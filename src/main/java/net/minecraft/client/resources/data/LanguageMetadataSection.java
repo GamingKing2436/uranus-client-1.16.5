@@ -7,11 +7,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class LanguageMetadataSection {
-   public static final LanguageMetadataSectionSerializer SERIALIZER = new LanguageMetadataSectionSerializer();
+   public static final LanguageMetadataSectionSerializer field_195818_a = new LanguageMetadataSectionSerializer();
    private final Collection<Language> languages;
 
-   public LanguageMetadataSection(Collection<Language> p_i1311_1_) {
-      this.languages = p_i1311_1_;
+   public LanguageMetadataSection(Collection<Language> languagesIn) {
+      this.languages = languagesIn;
    }
 
    public Collection<Language> getLanguages() {

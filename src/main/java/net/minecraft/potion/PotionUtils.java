@@ -23,67 +23,67 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class PotionUtils {
-   private static final IFormattableTextComponent NO_EFFECT = (new TranslationTextComponent("effect.none")).withStyle(TextFormatting.GRAY);
+   private static final IFormattableTextComponent field_242400_a = (new TranslationTextComponent("effect.none")).mergeStyle(TextFormatting.GRAY);
 
-   public static List<EffectInstance> getMobEffects(ItemStack p_185189_0_) {
-      return getAllEffects(p_185189_0_.getTag());
+   public static List<EffectInstance> getEffectsFromStack(ItemStack stack) {
+      return getEffectsFromTag(stack.getTag());
    }
 
-   public static List<EffectInstance> getAllEffects(Potion p_185186_0_, Collection<EffectInstance> p_185186_1_) {
+   public static List<EffectInstance> mergeEffects(Potion potionIn, Collection<EffectInstance> effects) {
       List<EffectInstance> list = Lists.newArrayList();
-      list.addAll(p_185186_0_.getEffects());
-      list.addAll(p_185186_1_);
+      list.addAll(potionIn.getEffects());
+      list.addAll(effects);
       return list;
    }
 
-   public static List<EffectInstance> getAllEffects(@Nullable CompoundNBT p_185185_0_) {
+   public static List<EffectInstance> getEffectsFromTag(@Nullable CompoundNBT tag) {
       List<EffectInstance> list = Lists.newArrayList();
-      list.addAll(getPotion(p_185185_0_).getEffects());
-      getCustomEffects(p_185185_0_, list);
+      list.addAll(getPotionTypeFromNBT(tag).getEffects());
+      addCustomPotionEffectToList(tag, list);
       return list;
    }
 
-   public static List<EffectInstance> getCustomEffects(ItemStack p_185190_0_) {
-      return getCustomEffects(p_185190_0_.getTag());
+   public static List<EffectInstance> getFullEffectsFromItem(ItemStack itemIn) {
+      return getFullEffectsFromTag(itemIn.getTag());
    }
 
-   public static List<EffectInstance> getCustomEffects(@Nullable CompoundNBT p_185192_0_) {
+   public static List<EffectInstance> getFullEffectsFromTag(@Nullable CompoundNBT tag) {
       List<EffectInstance> list = Lists.newArrayList();
-      getCustomEffects(p_185192_0_, list);
+      addCustomPotionEffectToList(tag, list);
       return list;
    }
 
-   public static void getCustomEffects(@Nullable CompoundNBT p_185193_0_, List<EffectInstance> p_185193_1_) {
-      if (p_185193_0_ != null && p_185193_0_.contains("CustomPotionEffects", 9)) {
-         ListNBT listnbt = p_185193_0_.getList("CustomPotionEffects", 10);
+   public static void addCustomPotionEffectToList(@Nullable CompoundNBT tag, List<EffectInstance> effectList) {
+      if (tag != null && tag.contains("CustomPotionEffects", 9)) {
+         ListNBT listnbt = tag.getList("CustomPotionEffects", 10);
 
          for(int i = 0; i < listnbt.size(); ++i) {
             CompoundNBT compoundnbt = listnbt.getCompound(i);
-            EffectInstance effectinstance = EffectInstance.load(compoundnbt);
+            EffectInstance effectinstance = EffectInstance.read(compoundnbt);
             if (effectinstance != null) {
-               p_185193_1_.add(effectinstance);
+               effectList.add(effectinstance);
             }
          }
       }
 
    }
 
-   public static int getColor(ItemStack p_190932_0_) {
-      CompoundNBT compoundnbt = p_190932_0_.getTag();
+   public static int getColor(ItemStack itemStackIn) {
+      CompoundNBT compoundnbt = itemStackIn.getTag();
       if (compoundnbt != null && compoundnbt.contains("CustomPotionColor", 99)) {
          return compoundnbt.getInt("CustomPotionColor");
       } else {
-         return getPotion(p_190932_0_) == Potions.EMPTY ? 16253176 : getColor(getMobEffects(p_190932_0_));
+         return getPotionFromItem(itemStackIn) == Potions.EMPTY ? 16253176 : getPotionColorFromEffectList(getEffectsFromStack(itemStackIn));
       }
    }
 
-   public static int getColor(Potion p_185183_0_) {
-      return p_185183_0_ == Potions.EMPTY ? 16253176 : getColor(p_185183_0_.getEffects());
+   public static int getPotionColor(Potion potionIn) {
+      return potionIn == Potions.EMPTY ? 16253176 : getPotionColorFromEffectList(potionIn.getEffects());
    }
 
-   public static int getColor(Collection<EffectInstance> p_185181_0_) {
+   public static int getPotionColorFromEffectList(Collection<EffectInstance> effects) {
       int i = 3694022;
-      if (p_185181_0_.isEmpty()) {
+      if (effects.isEmpty()) {
          return 3694022;
       } else {
          float f = 0.0F;
@@ -91,9 +91,9 @@ public class PotionUtils {
          float f2 = 0.0F;
          int j = 0;
 
-         for(EffectInstance effectinstance : p_185181_0_) {
-            if (effectinstance.isVisible()) {
-               int k = effectinstance.getEffect().getColor();
+         for(EffectInstance effectinstance : effects) {
+            if (effectinstance.doesShowParticles()) {
+               int k = effectinstance.getPotion().getLiquidColor();
                int l = effectinstance.getAmplifier() + 1;
                f += (float)(l * (k >> 16 & 255)) / 255.0F;
                f1 += (float)(l * (k >> 8 & 255)) / 255.0F;
@@ -113,56 +113,56 @@ public class PotionUtils {
       }
    }
 
-   public static Potion getPotion(ItemStack p_185191_0_) {
-      return getPotion(p_185191_0_.getTag());
+   public static Potion getPotionFromItem(ItemStack itemIn) {
+      return getPotionTypeFromNBT(itemIn.getTag());
    }
 
-   public static Potion getPotion(@Nullable CompoundNBT p_185187_0_) {
-      return p_185187_0_ == null ? Potions.EMPTY : Potion.byName(p_185187_0_.getString("Potion"));
+   public static Potion getPotionTypeFromNBT(@Nullable CompoundNBT tag) {
+      return tag == null ? Potions.EMPTY : Potion.getPotionTypeForName(tag.getString("Potion"));
    }
 
-   public static ItemStack setPotion(ItemStack p_185188_0_, Potion p_185188_1_) {
-      ResourceLocation resourcelocation = Registry.POTION.getKey(p_185188_1_);
-      if (p_185188_1_ == Potions.EMPTY) {
-         p_185188_0_.removeTagKey("Potion");
+   public static ItemStack addPotionToItemStack(ItemStack itemIn, Potion potionIn) {
+      ResourceLocation resourcelocation = Registry.POTION.getKey(potionIn);
+      if (potionIn == Potions.EMPTY) {
+         itemIn.removeChildTag("Potion");
       } else {
-         p_185188_0_.getOrCreateTag().putString("Potion", resourcelocation.toString());
+         itemIn.getOrCreateTag().putString("Potion", resourcelocation.toString());
       }
 
-      return p_185188_0_;
+      return itemIn;
    }
 
-   public static ItemStack setCustomEffects(ItemStack p_185184_0_, Collection<EffectInstance> p_185184_1_) {
-      if (p_185184_1_.isEmpty()) {
-         return p_185184_0_;
+   public static ItemStack appendEffects(ItemStack itemIn, Collection<EffectInstance> effects) {
+      if (effects.isEmpty()) {
+         return itemIn;
       } else {
-         CompoundNBT compoundnbt = p_185184_0_.getOrCreateTag();
+         CompoundNBT compoundnbt = itemIn.getOrCreateTag();
          ListNBT listnbt = compoundnbt.getList("CustomPotionEffects", 9);
 
-         for(EffectInstance effectinstance : p_185184_1_) {
-            listnbt.add(effectinstance.save(new CompoundNBT()));
+         for(EffectInstance effectinstance : effects) {
+            listnbt.add(effectinstance.write(new CompoundNBT()));
          }
 
          compoundnbt.put("CustomPotionEffects", listnbt);
-         return p_185184_0_;
+         return itemIn;
       }
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static void addPotionTooltip(ItemStack p_185182_0_, List<ITextComponent> p_185182_1_, float p_185182_2_) {
-      List<EffectInstance> list = getMobEffects(p_185182_0_);
+   public static void addPotionTooltip(ItemStack itemIn, List<ITextComponent> lores, float durationFactor) {
+      List<EffectInstance> list = getEffectsFromStack(itemIn);
       List<Pair<Attribute, AttributeModifier>> list1 = Lists.newArrayList();
       if (list.isEmpty()) {
-         p_185182_1_.add(NO_EFFECT);
+         lores.add(field_242400_a);
       } else {
          for(EffectInstance effectinstance : list) {
-            IFormattableTextComponent iformattabletextcomponent = new TranslationTextComponent(effectinstance.getDescriptionId());
-            Effect effect = effectinstance.getEffect();
-            Map<Attribute, AttributeModifier> map = effect.getAttributeModifiers();
+            IFormattableTextComponent iformattabletextcomponent = new TranslationTextComponent(effectinstance.getEffectName());
+            Effect effect = effectinstance.getPotion();
+            Map<Attribute, AttributeModifier> map = effect.getAttributeModifierMap();
             if (!map.isEmpty()) {
                for(Entry<Attribute, AttributeModifier> entry : map.entrySet()) {
                   AttributeModifier attributemodifier = entry.getValue();
-                  AttributeModifier attributemodifier1 = new AttributeModifier(attributemodifier.getName(), effect.getAttributeModifierValue(effectinstance.getAmplifier(), attributemodifier), attributemodifier.getOperation());
+                  AttributeModifier attributemodifier1 = new AttributeModifier(attributemodifier.getName(), effect.getAttributeModifierAmount(effectinstance.getAmplifier(), attributemodifier), attributemodifier.getOperation());
                   list1.add(new Pair<>(entry.getKey(), attributemodifier1));
                }
             }
@@ -172,16 +172,16 @@ public class PotionUtils {
             }
 
             if (effectinstance.getDuration() > 20) {
-               iformattabletextcomponent = new TranslationTextComponent("potion.withDuration", iformattabletextcomponent, EffectUtils.formatDuration(effectinstance, p_185182_2_));
+               iformattabletextcomponent = new TranslationTextComponent("potion.withDuration", iformattabletextcomponent, EffectUtils.getPotionDurationString(effectinstance, durationFactor));
             }
 
-            p_185182_1_.add(iformattabletextcomponent.withStyle(effect.getCategory().getTooltipFormatting()));
+            lores.add(iformattabletextcomponent.mergeStyle(effect.getEffectType().getColor()));
          }
       }
 
       if (!list1.isEmpty()) {
-         p_185182_1_.add(StringTextComponent.EMPTY);
-         p_185182_1_.add((new TranslationTextComponent("potion.whenDrank")).withStyle(TextFormatting.DARK_PURPLE));
+         lores.add(StringTextComponent.EMPTY);
+         lores.add((new TranslationTextComponent("potion.whenDrank")).mergeStyle(TextFormatting.DARK_PURPLE));
 
          for(Pair<Attribute, AttributeModifier> pair : list1) {
             AttributeModifier attributemodifier2 = pair.getSecond();
@@ -194,10 +194,10 @@ public class PotionUtils {
             }
 
             if (d0 > 0.0D) {
-               p_185182_1_.add((new TranslationTextComponent("attribute.modifier.plus." + attributemodifier2.getOperation().toValue(), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1), new TranslationTextComponent(pair.getFirst().getDescriptionId()))).withStyle(TextFormatting.BLUE));
+               lores.add((new TranslationTextComponent("attribute.modifier.plus." + attributemodifier2.getOperation().getId(), ItemStack.DECIMALFORMAT.format(d1), new TranslationTextComponent(pair.getFirst().getAttributeName()))).mergeStyle(TextFormatting.BLUE));
             } else if (d0 < 0.0D) {
                d1 = d1 * -1.0D;
-               p_185182_1_.add((new TranslationTextComponent("attribute.modifier.take." + attributemodifier2.getOperation().toValue(), ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(d1), new TranslationTextComponent(pair.getFirst().getDescriptionId()))).withStyle(TextFormatting.RED));
+               lores.add((new TranslationTextComponent("attribute.modifier.take." + attributemodifier2.getOperation().getId(), ItemStack.DECIMALFORMAT.format(d1), new TranslationTextComponent(pair.getFirst().getAttributeName()))).mergeStyle(TextFormatting.RED));
             }
          }
       }

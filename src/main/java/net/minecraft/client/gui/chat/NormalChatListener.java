@@ -9,17 +9,17 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class NormalChatListener implements IChatListener {
-   private final Minecraft minecraft;
+   private final Minecraft mc;
 
-   public NormalChatListener(Minecraft p_i47393_1_) {
-      this.minecraft = p_i47393_1_;
+   public NormalChatListener(Minecraft minecraft) {
+      this.mc = minecraft;
    }
 
-   public void handle(ChatType p_192576_1_, ITextComponent p_192576_2_, UUID p_192576_3_) {
-      if (p_192576_1_ != ChatType.CHAT) {
-         this.minecraft.gui.getChat().addMessage(p_192576_2_);
+   public void say(ChatType chatTypeIn, ITextComponent message, UUID sender) {
+      if (chatTypeIn != ChatType.CHAT) {
+         this.mc.ingameGUI.getChatGUI().printChatMessage(message);
       } else {
-         this.minecraft.gui.getChat().enqueueMessage(p_192576_2_);
+         this.mc.ingameGUI.getChatGUI().func_238495_b_(message);
       }
 
    }

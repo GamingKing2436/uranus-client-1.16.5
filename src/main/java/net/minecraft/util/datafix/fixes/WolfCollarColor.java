@@ -7,8 +7,8 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class WolfCollarColor extends NamedEntityFix {
-   public WolfCollarColor(Schema p_i49649_1_, boolean p_i49649_2_) {
-      super(p_i49649_1_, p_i49649_2_, "EntityWolfColorFix", TypeReferences.ENTITY, "minecraft:wolf");
+   public WolfCollarColor(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "EntityWolfColorFix", TypeReferences.ENTITY, "minecraft:wolf");
    }
 
    public Dynamic<?> fixTag(Dynamic<?> p_209655_1_) {

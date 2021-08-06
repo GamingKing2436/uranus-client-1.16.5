@@ -14,30 +14,30 @@ public class SSendResourcePackPacket implements IPacket<IClientPlayNetHandler> {
    public SSendResourcePackPacket() {
    }
 
-   public SSendResourcePackPacket(String p_i46924_1_, String p_i46924_2_) {
-      this.url = p_i46924_1_;
-      this.hash = p_i46924_2_;
-      if (p_i46924_2_.length() > 40) {
-         throw new IllegalArgumentException("Hash is too long (max 40, was " + p_i46924_2_.length() + ")");
+   public SSendResourcePackPacket(String urlIn, String hashIn) {
+      this.url = urlIn;
+      this.hash = hashIn;
+      if (hashIn.length() > 40) {
+         throw new IllegalArgumentException("Hash is too long (max 40, was " + hashIn.length() + ")");
       }
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.url = p_148837_1_.readUtf(32767);
-      this.hash = p_148837_1_.readUtf(40);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.url = buf.readString(32767);
+      this.hash = buf.readString(40);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeUtf(this.url);
-      p_148840_1_.writeUtf(this.hash);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeString(this.url);
+      buf.writeString(this.hash);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleResourcePack(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleResourcePack(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public String getUrl() {
+   public String getURL() {
       return this.url;
    }
 

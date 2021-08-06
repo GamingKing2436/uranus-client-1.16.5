@@ -8,9 +8,9 @@ import net.minecraft.world.gen.layer.traits.IDimOffset0Transformer;
 public enum MixRiverLayer implements IAreaTransformer2, IDimOffset0Transformer {
    INSTANCE;
 
-   public int applyPixel(INoiseRandom p_215723_1_, IArea p_215723_2_, IArea p_215723_3_, int p_215723_4_, int p_215723_5_) {
-      int i = p_215723_2_.get(this.getParentX(p_215723_4_), this.getParentY(p_215723_5_));
-      int j = p_215723_3_.get(this.getParentX(p_215723_4_), this.getParentY(p_215723_5_));
+   public int apply(INoiseRandom p_215723_1_, IArea p_215723_2_, IArea p_215723_3_, int p_215723_4_, int p_215723_5_) {
+      int i = p_215723_2_.getValue(this.getOffsetX(p_215723_4_), this.getOffsetZ(p_215723_5_));
+      int j = p_215723_3_.getValue(this.getOffsetX(p_215723_4_), this.getOffsetZ(p_215723_5_));
       if (LayerUtil.isOcean(i)) {
          return i;
       } else if (j == 7) {

@@ -24,13 +24,13 @@ public class WoodlandMansionStructure extends Structure<NoFeatureConfig> {
       super(p_i232005_1_);
    }
 
-   protected boolean linearSeparation() {
+   protected boolean func_230365_b_() {
       return false;
    }
 
-   protected boolean isFeatureChunk(ChunkGenerator p_230363_1_, BiomeProvider p_230363_2_, long p_230363_3_, SharedSeedRandom p_230363_5_, int p_230363_6_, int p_230363_7_, Biome p_230363_8_, ChunkPos p_230363_9_, NoFeatureConfig p_230363_10_) {
-      for(Biome biome : p_230363_2_.getBiomesWithin(p_230363_6_ * 16 + 9, p_230363_1_.getSeaLevel(), p_230363_7_ * 16 + 9, 32)) {
-         if (!biome.getGenerationSettings().isValidStart(this)) {
+   protected boolean func_230363_a_(ChunkGenerator p_230363_1_, BiomeProvider p_230363_2_, long p_230363_3_, SharedSeedRandom p_230363_5_, int p_230363_6_, int p_230363_7_, Biome p_230363_8_, ChunkPos p_230363_9_, NoFeatureConfig p_230363_10_) {
+      for(Biome biome : p_230363_2_.getBiomes(p_230363_6_ * 16 + 9, p_230363_1_.getSeaLevel(), p_230363_7_ * 16 + 9, 32)) {
+         if (!biome.getGenerationSettings().hasStructure(this)) {
             return false;
          }
       }
@@ -47,8 +47,8 @@ public class WoodlandMansionStructure extends Structure<NoFeatureConfig> {
          super(p_i225823_1_, p_i225823_2_, p_i225823_3_, p_i225823_4_, p_i225823_5_, p_i225823_6_);
       }
 
-      public void generatePieces(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
-         Rotation rotation = Rotation.getRandom(this.random);
+      public void func_230364_a_(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
+         Rotation rotation = Rotation.randomRotation(this.rand);
          int i = 5;
          int j = 5;
          if (rotation == Rotation.CLOCKWISE_90) {
@@ -62,32 +62,32 @@ public class WoodlandMansionStructure extends Structure<NoFeatureConfig> {
 
          int k = (p_230364_4_ << 4) + 7;
          int l = (p_230364_5_ << 4) + 7;
-         int i1 = p_230364_2_.getFirstOccupiedHeight(k, l, Heightmap.Type.WORLD_SURFACE_WG);
-         int j1 = p_230364_2_.getFirstOccupiedHeight(k, l + j, Heightmap.Type.WORLD_SURFACE_WG);
-         int k1 = p_230364_2_.getFirstOccupiedHeight(k + i, l, Heightmap.Type.WORLD_SURFACE_WG);
-         int l1 = p_230364_2_.getFirstOccupiedHeight(k + i, l + j, Heightmap.Type.WORLD_SURFACE_WG);
+         int i1 = p_230364_2_.getNoiseHeightMinusOne(k, l, Heightmap.Type.WORLD_SURFACE_WG);
+         int j1 = p_230364_2_.getNoiseHeightMinusOne(k, l + j, Heightmap.Type.WORLD_SURFACE_WG);
+         int k1 = p_230364_2_.getNoiseHeightMinusOne(k + i, l, Heightmap.Type.WORLD_SURFACE_WG);
+         int l1 = p_230364_2_.getNoiseHeightMinusOne(k + i, l + j, Heightmap.Type.WORLD_SURFACE_WG);
          int i2 = Math.min(Math.min(i1, j1), Math.min(k1, l1));
          if (i2 >= 60) {
             BlockPos blockpos = new BlockPos(p_230364_4_ * 16 + 8, i2 + 1, p_230364_5_ * 16 + 8);
             List<WoodlandMansionPieces.MansionTemplate> list = Lists.newLinkedList();
-            WoodlandMansionPieces.generateMansion(p_230364_3_, blockpos, rotation, list, this.random);
-            this.pieces.addAll(list);
-            this.calculateBoundingBox();
+            WoodlandMansionPieces.generateMansion(p_230364_3_, blockpos, rotation, list, this.rand);
+            this.components.addAll(list);
+            this.recalculateStructureSize();
          }
       }
 
-      public void placeInChunk(ISeedReader p_230366_1_, StructureManager p_230366_2_, ChunkGenerator p_230366_3_, Random p_230366_4_, MutableBoundingBox p_230366_5_, ChunkPos p_230366_6_) {
-         super.placeInChunk(p_230366_1_, p_230366_2_, p_230366_3_, p_230366_4_, p_230366_5_, p_230366_6_);
-         int i = this.boundingBox.y0;
+      public void func_230366_a_(ISeedReader p_230366_1_, StructureManager p_230366_2_, ChunkGenerator p_230366_3_, Random p_230366_4_, MutableBoundingBox p_230366_5_, ChunkPos p_230366_6_) {
+         super.func_230366_a_(p_230366_1_, p_230366_2_, p_230366_3_, p_230366_4_, p_230366_5_, p_230366_6_);
+         int i = this.bounds.minY;
 
-         for(int j = p_230366_5_.x0; j <= p_230366_5_.x1; ++j) {
-            for(int k = p_230366_5_.z0; k <= p_230366_5_.z1; ++k) {
+         for(int j = p_230366_5_.minX; j <= p_230366_5_.maxX; ++j) {
+            for(int k = p_230366_5_.minZ; k <= p_230366_5_.maxZ; ++k) {
                BlockPos blockpos = new BlockPos(j, i, k);
-               if (!p_230366_1_.isEmptyBlock(blockpos) && this.boundingBox.isInside(blockpos)) {
+               if (!p_230366_1_.isAirBlock(blockpos) && this.bounds.isVecInside(blockpos)) {
                   boolean flag = false;
 
-                  for(StructurePiece structurepiece : this.pieces) {
-                     if (structurepiece.getBoundingBox().isInside(blockpos)) {
+                  for(StructurePiece structurepiece : this.components) {
+                     if (structurepiece.getBoundingBox().isVecInside(blockpos)) {
                         flag = true;
                         break;
                      }
@@ -96,11 +96,11 @@ public class WoodlandMansionStructure extends Structure<NoFeatureConfig> {
                   if (flag) {
                      for(int l = i - 1; l > 1; --l) {
                         BlockPos blockpos1 = new BlockPos(j, l, k);
-                        if (!p_230366_1_.isEmptyBlock(blockpos1) && !p_230366_1_.getBlockState(blockpos1).getMaterial().isLiquid()) {
+                        if (!p_230366_1_.isAirBlock(blockpos1) && !p_230366_1_.getBlockState(blockpos1).getMaterial().isLiquid()) {
                            break;
                         }
 
-                        p_230366_1_.setBlock(blockpos1, Blocks.COBBLESTONE.defaultBlockState(), 2);
+                        p_230366_1_.setBlockState(blockpos1, Blocks.COBBLESTONE.getDefaultState(), 2);
                      }
                   }
                }

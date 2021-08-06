@@ -4,28 +4,28 @@ import java.util.UUID;
 import net.minecraft.util.text.ITextComponent;
 
 public interface ICommandSource {
-   ICommandSource NULL = new ICommandSource() {
-      public void sendMessage(ITextComponent p_145747_1_, UUID p_145747_2_) {
+   ICommandSource DUMMY = new ICommandSource() {
+      public void sendMessage(ITextComponent component, UUID senderUUID) {
       }
 
-      public boolean acceptsSuccess() {
+      public boolean shouldReceiveFeedback() {
          return false;
       }
 
-      public boolean acceptsFailure() {
+      public boolean shouldReceiveErrors() {
          return false;
       }
 
-      public boolean shouldInformAdmins() {
+      public boolean allowLogging() {
          return false;
       }
    };
 
-   void sendMessage(ITextComponent p_145747_1_, UUID p_145747_2_);
+   void sendMessage(ITextComponent component, UUID senderUUID);
 
-   boolean acceptsSuccess();
+   boolean shouldReceiveFeedback();
 
-   boolean acceptsFailure();
+   boolean shouldReceiveErrors();
 
-   boolean shouldInformAdmins();
+   boolean allowLogging();
 }

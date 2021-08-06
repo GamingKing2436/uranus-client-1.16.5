@@ -9,14 +9,14 @@ public enum EffectType {
    HARMFUL(TextFormatting.RED),
    NEUTRAL(TextFormatting.BLUE);
 
-   private final TextFormatting tooltipFormatting;
+   private final TextFormatting color;
 
-   private EffectType(TextFormatting p_i50390_3_) {
-      this.tooltipFormatting = p_i50390_3_;
+   private EffectType(TextFormatting color) {
+      this.color = color;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public TextFormatting getTooltipFormatting() {
-      return this.tooltipFormatting;
+   public TextFormatting getColor() {
+      return this.color;
    }
 }

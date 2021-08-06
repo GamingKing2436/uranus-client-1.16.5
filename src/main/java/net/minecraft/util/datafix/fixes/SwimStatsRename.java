@@ -9,8 +9,8 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class SwimStatsRename extends DataFix {
-   public SwimStatsRename(Schema p_i49754_1_, boolean p_i49754_2_) {
-      super(p_i49754_1_, p_i49754_2_);
+   public SwimStatsRename(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    protected TypeRewriteRule makeRule() {
@@ -18,7 +18,7 @@ public class SwimStatsRename extends DataFix {
       Type<?> type1 = this.getInputSchema().getType(TypeReferences.STATS);
       OpticFinder<?> opticfinder = type1.findField("stats");
       OpticFinder<?> opticfinder1 = opticfinder.type().findField("minecraft:custom");
-      OpticFinder<String> opticfinder2 = NamespacedSchema.namespacedString().finder();
+      OpticFinder<String> opticfinder2 = NamespacedSchema.func_233457_a_().finder();
       return this.fixTypeEverywhereTyped("SwimStatsRenameFix", type1, type, (p_211690_3_) -> {
          return p_211690_3_.updateTyped(opticfinder, (p_211692_2_) -> {
             return p_211692_2_.updateTyped(opticfinder1, (p_211691_1_) -> {

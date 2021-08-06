@@ -20,55 +20,55 @@ public abstract class TileEntity {
    private static final Logger LOGGER = LogManager.getLogger();
    private final TileEntityType<?> type;
    @Nullable
-   protected World level;
-   protected BlockPos worldPosition = BlockPos.ZERO;
-   protected boolean remove;
+   protected World world;
+   protected BlockPos pos = BlockPos.ZERO;
+   protected boolean removed;
    @Nullable
-   private BlockState blockState;
-   private boolean hasLoggedInvalidStateBefore;
+   private BlockState cachedBlockState;
+   private boolean warnedInvalidBlock;
 
-   public TileEntity(TileEntityType<?> p_i48289_1_) {
-      this.type = p_i48289_1_;
+   public TileEntity(TileEntityType<?> tileEntityTypeIn) {
+      this.type = tileEntityTypeIn;
    }
 
    @Nullable
-   public World getLevel() {
-      return this.level;
+   public World getWorld() {
+      return this.world;
    }
 
-   public void setLevelAndPosition(World p_226984_1_, BlockPos p_226984_2_) {
-      this.level = p_226984_1_;
-      this.worldPosition = p_226984_2_.immutable();
+   public void setWorldAndPos(World world, BlockPos pos) {
+      this.world = world;
+      this.pos = pos.toImmutable();
    }
 
-   public boolean hasLevel() {
-      return this.level != null;
+   public boolean hasWorld() {
+      return this.world != null;
    }
 
-   public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
-      this.worldPosition = new BlockPos(p_230337_2_.getInt("x"), p_230337_2_.getInt("y"), p_230337_2_.getInt("z"));
+   public void read(BlockState state, CompoundNBT nbt) {
+      this.pos = new BlockPos(nbt.getInt("x"), nbt.getInt("y"), nbt.getInt("z"));
    }
 
-   public CompoundNBT save(CompoundNBT p_189515_1_) {
-      return this.saveMetadata(p_189515_1_);
+   public CompoundNBT write(CompoundNBT compound) {
+      return this.writeInternal(compound);
    }
 
-   private CompoundNBT saveMetadata(CompoundNBT p_189516_1_) {
-      ResourceLocation resourcelocation = TileEntityType.getKey(this.getType());
+   private CompoundNBT writeInternal(CompoundNBT compound) {
+      ResourceLocation resourcelocation = TileEntityType.getId(this.getType());
       if (resourcelocation == null) {
          throw new RuntimeException(this.getClass() + " is missing a mapping! This is a bug!");
       } else {
-         p_189516_1_.putString("id", resourcelocation.toString());
-         p_189516_1_.putInt("x", this.worldPosition.getX());
-         p_189516_1_.putInt("y", this.worldPosition.getY());
-         p_189516_1_.putInt("z", this.worldPosition.getZ());
-         return p_189516_1_;
+         compound.putString("id", resourcelocation.toString());
+         compound.putInt("x", this.pos.getX());
+         compound.putInt("y", this.pos.getY());
+         compound.putInt("z", this.pos.getZ());
+         return compound;
       }
    }
 
    @Nullable
-   public static TileEntity loadStatic(BlockState p_235657_0_, CompoundNBT p_235657_1_) {
-      String s = p_235657_1_.getString("id");
+   public static TileEntity readTileEntity(BlockState state, CompoundNBT nbt) {
+      String s = nbt.getString("id");
       return Registry.BLOCK_ENTITY_TYPE.getOptional(new ResourceLocation(s)).map((p_213134_1_) -> {
          try {
             return p_213134_1_.create();
@@ -78,7 +78,7 @@ public abstract class TileEntity {
          }
       }).map((p_235656_3_) -> {
          try {
-            p_235656_3_.load(p_235657_0_, p_235657_1_);
+            p_235656_3_.read(state, nbt);
             return p_235656_3_;
          } catch (Throwable throwable) {
             LOGGER.error("Failed to load data for block entity {}", s, throwable);
@@ -90,32 +90,32 @@ public abstract class TileEntity {
       });
    }
 
-   public void setChanged() {
-      if (this.level != null) {
-         this.blockState = this.level.getBlockState(this.worldPosition);
-         this.level.blockEntityChanged(this.worldPosition, this);
-         if (!this.blockState.isAir()) {
-            this.level.updateNeighbourForOutputSignal(this.worldPosition, this.blockState.getBlock());
+   public void markDirty() {
+      if (this.world != null) {
+         this.cachedBlockState = this.world.getBlockState(this.pos);
+         this.world.markChunkDirty(this.pos, this);
+         if (!this.cachedBlockState.isAir()) {
+            this.world.updateComparatorOutputLevel(this.pos, this.cachedBlockState.getBlock());
          }
       }
 
    }
 
    @OnlyIn(Dist.CLIENT)
-   public double getViewDistance() {
+   public double getMaxRenderDistanceSquared() {
       return 64.0D;
    }
 
-   public BlockPos getBlockPos() {
-      return this.worldPosition;
+   public BlockPos getPos() {
+      return this.pos;
    }
 
    public BlockState getBlockState() {
-      if (this.blockState == null) {
-         this.blockState = this.level.getBlockState(this.worldPosition);
+      if (this.cachedBlockState == null) {
+         this.cachedBlockState = this.world.getBlockState(this.pos);
       }
 
-      return this.blockState;
+      return this.cachedBlockState;
    }
 
    @Nullable
@@ -124,63 +124,63 @@ public abstract class TileEntity {
    }
 
    public CompoundNBT getUpdateTag() {
-      return this.saveMetadata(new CompoundNBT());
+      return this.writeInternal(new CompoundNBT());
    }
 
    public boolean isRemoved() {
-      return this.remove;
+      return this.removed;
    }
 
-   public void setRemoved() {
-      this.remove = true;
+   public void remove() {
+      this.removed = true;
    }
 
-   public void clearRemoved() {
-      this.remove = false;
+   public void validate() {
+      this.removed = false;
    }
 
-   public boolean triggerEvent(int p_145842_1_, int p_145842_2_) {
+   public boolean receiveClientEvent(int id, int type) {
       return false;
    }
 
-   public void clearCache() {
-      this.blockState = null;
+   public void updateContainingBlockInfo() {
+      this.cachedBlockState = null;
    }
 
-   public void fillCrashReportCategory(CrashReportCategory p_145828_1_) {
-      p_145828_1_.setDetail("Name", () -> {
+   public void addInfoToCrashReport(CrashReportCategory reportCategory) {
+      reportCategory.addDetail("Name", () -> {
          return Registry.BLOCK_ENTITY_TYPE.getKey(this.getType()) + " // " + this.getClass().getCanonicalName();
       });
-      if (this.level != null) {
-         CrashReportCategory.populateBlockDetails(p_145828_1_, this.worldPosition, this.getBlockState());
-         CrashReportCategory.populateBlockDetails(p_145828_1_, this.worldPosition, this.level.getBlockState(this.worldPosition));
+      if (this.world != null) {
+         CrashReportCategory.addBlockInfo(reportCategory, this.pos, this.getBlockState());
+         CrashReportCategory.addBlockInfo(reportCategory, this.pos, this.world.getBlockState(this.pos));
       }
    }
 
-   public void setPosition(BlockPos p_174878_1_) {
-      this.worldPosition = p_174878_1_.immutable();
+   public void setPos(BlockPos posIn) {
+      this.pos = posIn.toImmutable();
    }
 
-   public boolean onlyOpCanSetNbt() {
+   public boolean onlyOpsCanSetNbt() {
       return false;
    }
 
-   public void rotate(Rotation p_189667_1_) {
+   public void rotate(Rotation rotationIn) {
    }
 
-   public void mirror(Mirror p_189668_1_) {
+   public void mirror(Mirror mirrorIn) {
    }
 
    public TileEntityType<?> getType() {
       return this.type;
    }
 
-   public void logInvalidState() {
-      if (!this.hasLoggedInvalidStateBefore) {
-         this.hasLoggedInvalidStateBefore = true;
+   public void warnInvalidBlock() {
+      if (!this.warnedInvalidBlock) {
+         this.warnedInvalidBlock = true;
          LOGGER.warn("Block entity invalid: {} @ {}", () -> {
             return Registry.BLOCK_ENTITY_TYPE.getKey(this.getType());
-         }, this::getBlockPos);
+         }, this::getPos);
       }
    }
 }

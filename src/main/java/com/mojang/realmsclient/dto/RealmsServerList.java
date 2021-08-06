@@ -14,12 +14,12 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class RealmsServerList extends ValueObject {
-   private static final Logger LOGGER = LogManager.getLogger();
-   public List<RealmsServer> servers;
+   private static final Logger field_230606_b_ = LogManager.getLogger();
+   public List<RealmsServer> field_230605_a_;
 
-   public static RealmsServerList parse(String p_230783_0_) {
+   public static RealmsServerList func_230783_a_(String p_230783_0_) {
       RealmsServerList realmsserverlist = new RealmsServerList();
-      realmsserverlist.servers = Lists.newArrayList();
+      realmsserverlist.field_230605_a_ = Lists.newArrayList();
 
       try {
          JsonParser jsonparser = new JsonParser();
@@ -29,11 +29,11 @@ public class RealmsServerList extends ValueObject {
             Iterator<JsonElement> iterator = jsonarray.iterator();
 
             while(iterator.hasNext()) {
-               realmsserverlist.servers.add(RealmsServer.parse(iterator.next().getAsJsonObject()));
+               realmsserverlist.field_230605_a_.add(RealmsServer.func_230770_a_(iterator.next().getAsJsonObject()));
             }
          }
       } catch (Exception exception) {
-         LOGGER.error("Could not parse McoServerList: " + exception.getMessage());
+         field_230606_b_.error("Could not parse McoServerList: " + exception.getMessage());
       }
 
       return realmsserverlist;

@@ -15,11 +15,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SessionLockManager implements AutoCloseable {
-   private final FileChannel lockFile;
-   private final FileLock lock;
-   private static final ByteBuffer DUMMY;
+   private final FileChannel field_232994_a_;
+   private final FileLock field_232995_b_;
+   private static final ByteBuffer field_232996_c_;
 
-   public static SessionLockManager create(Path p_232998_0_) throws IOException {
+   public static SessionLockManager func_232998_a_(Path p_232998_0_) throws IOException {
       Path path = p_232998_0_.resolve("session.lock");
       if (!Files.isDirectory(p_232998_0_)) {
          Files.createDirectories(p_232998_0_);
@@ -28,11 +28,11 @@ public class SessionLockManager implements AutoCloseable {
       FileChannel filechannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
 
       try {
-         filechannel.write(DUMMY.duplicate());
+         filechannel.write(field_232996_c_.duplicate());
          filechannel.force(true);
          FileLock filelock = filechannel.tryLock();
          if (filelock == null) {
-            throw SessionLockManager.AlreadyLockedException.alreadyLocked(path);
+            throw SessionLockManager.AlreadyLockedException.func_233000_a_(path);
          } else {
             return new SessionLockManager(filechannel, filelock);
          }
@@ -48,30 +48,30 @@ public class SessionLockManager implements AutoCloseable {
    }
 
    private SessionLockManager(FileChannel p_i231437_1_, FileLock p_i231437_2_) {
-      this.lockFile = p_i231437_1_;
-      this.lock = p_i231437_2_;
+      this.field_232994_a_ = p_i231437_1_;
+      this.field_232995_b_ = p_i231437_2_;
    }
 
    public void close() throws IOException {
       try {
-         if (this.lock.isValid()) {
-            this.lock.release();
+         if (this.field_232995_b_.isValid()) {
+            this.field_232995_b_.release();
          }
       } finally {
-         if (this.lockFile.isOpen()) {
-            this.lockFile.close();
+         if (this.field_232994_a_.isOpen()) {
+            this.field_232994_a_.close();
          }
 
       }
 
    }
 
-   public boolean isValid() {
-      return this.lock.isValid();
+   public boolean func_232997_a_() {
+      return this.field_232995_b_.isValid();
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static boolean isLocked(Path p_232999_0_) throws IOException {
+   public static boolean func_232999_b_(Path p_232999_0_) throws IOException {
       Path path = p_232999_0_.resolve("session.lock");
 
       try (
@@ -88,9 +88,9 @@ public class SessionLockManager implements AutoCloseable {
 
    static {
       byte[] abyte = "\u2603".getBytes(Charsets.UTF_8);
-      DUMMY = ByteBuffer.allocateDirect(abyte.length);
-      DUMMY.put(abyte);
-      ((Buffer)DUMMY).flip();
+      field_232996_c_ = ByteBuffer.allocateDirect(abyte.length);
+      field_232996_c_.put(abyte);
+      ((Buffer)field_232996_c_).flip();
    }
 
    public static class AlreadyLockedException extends IOException {
@@ -98,7 +98,7 @@ public class SessionLockManager implements AutoCloseable {
          super(p_i231438_1_.toAbsolutePath() + ": " + p_i231438_2_);
       }
 
-      public static SessionLockManager.AlreadyLockedException alreadyLocked(Path p_233000_0_) {
+      public static SessionLockManager.AlreadyLockedException func_233000_a_(Path p_233000_0_) {
          return new SessionLockManager.AlreadyLockedException(p_233000_0_, "already locked (possibly by other Minecraft instance?)");
       }
    }

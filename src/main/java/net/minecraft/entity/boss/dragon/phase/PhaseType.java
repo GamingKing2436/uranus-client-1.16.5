@@ -16,28 +16,28 @@ public class PhaseType<T extends IPhase> {
    public static final PhaseType<AttackingSittingPhase> SITTING_ATTACKING = create(AttackingSittingPhase.class, "SittingAttacking");
    public static final PhaseType<ChargingPlayerPhase> CHARGING_PLAYER = create(ChargingPlayerPhase.class, "ChargingPlayer");
    public static final PhaseType<DyingPhase> DYING = create(DyingPhase.class, "Dying");
-   public static final PhaseType<HoverPhase> HOVERING = create(HoverPhase.class, "Hover");
-   private final Class<? extends IPhase> instanceClass;
+   public static final PhaseType<HoverPhase> HOVER = create(HoverPhase.class, "Hover");
+   private final Class<? extends IPhase> clazz;
    private final int id;
    private final String name;
 
-   private PhaseType(int p_i46782_1_, Class<? extends IPhase> p_i46782_2_, String p_i46782_3_) {
-      this.id = p_i46782_1_;
-      this.instanceClass = p_i46782_2_;
-      this.name = p_i46782_3_;
+   private PhaseType(int idIn, Class<? extends IPhase> clazzIn, String nameIn) {
+      this.id = idIn;
+      this.clazz = clazzIn;
+      this.name = nameIn;
    }
 
-   public IPhase createInstance(EnderDragonEntity p_188736_1_) {
+   public IPhase createPhase(EnderDragonEntity dragon) {
       try {
          Constructor<? extends IPhase> constructor = this.getConstructor();
-         return constructor.newInstance(p_188736_1_);
+         return constructor.newInstance(dragon);
       } catch (Exception exception) {
          throw new Error(exception);
       }
    }
 
    protected Constructor<? extends IPhase> getConstructor() throws NoSuchMethodException {
-      return this.instanceClass.getConstructor(EnderDragonEntity.class);
+      return this.clazz.getConstructor(EnderDragonEntity.class);
    }
 
    public int getId() {
@@ -48,16 +48,16 @@ public class PhaseType<T extends IPhase> {
       return this.name + " (#" + this.id + ")";
    }
 
-   public static PhaseType<?> getById(int p_188738_0_) {
-      return p_188738_0_ >= 0 && p_188738_0_ < phases.length ? phases[p_188738_0_] : HOLDING_PATTERN;
+   public static PhaseType<?> getById(int idIn) {
+      return idIn >= 0 && idIn < phases.length ? phases[idIn] : HOLDING_PATTERN;
    }
 
-   public static int getCount() {
+   public static int getTotalPhases() {
       return phases.length;
    }
 
-   private static <T extends IPhase> PhaseType<T> create(Class<T> p_188735_0_, String p_188735_1_) {
-      PhaseType<T> phasetype = new PhaseType<>(phases.length, p_188735_0_, p_188735_1_);
+   private static <T extends IPhase> PhaseType<T> create(Class<T> phaseIn, String nameIn) {
+      PhaseType<T> phasetype = new PhaseType<>(phases.length, phaseIn, nameIn);
       phases = Arrays.copyOf(phases, phases.length + 1);
       phases[phasetype.getId()] = phasetype;
       return phasetype;

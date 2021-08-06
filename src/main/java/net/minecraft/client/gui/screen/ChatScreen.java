@@ -16,173 +16,173 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class ChatScreen extends Screen {
    private String historyBuffer = "";
-   private int historyPos = -1;
-   protected TextFieldWidget input;
-   private String initial = "";
-   private CommandSuggestionHelper commandSuggestions;
+   private int sentHistoryCursor = -1;
+   protected TextFieldWidget inputField;
+   private String defaultInputFieldText = "";
+   private CommandSuggestionHelper commandSuggestionHelper;
 
-   public ChatScreen(String p_i1024_1_) {
-      super(NarratorChatListener.NO_TITLE);
-      this.initial = p_i1024_1_;
+   public ChatScreen(String defaultText) {
+      super(NarratorChatListener.EMPTY);
+      this.defaultInputFieldText = defaultText;
    }
 
    protected void init() {
-      this.minecraft.keyboardHandler.setSendRepeatsToGui(true);
-      this.historyPos = this.minecraft.gui.getChat().getRecentChat().size();
-      this.input = new TextFieldWidget(this.font, 4, this.height - 12, this.width - 4, 12, new TranslationTextComponent("chat.editBox")) {
-         protected IFormattableTextComponent createNarrationMessage() {
-            return super.createNarrationMessage().append(ChatScreen.this.commandSuggestions.getNarrationMessage());
+      this.minecraft.keyboardListener.enableRepeatEvents(true);
+      this.sentHistoryCursor = this.minecraft.ingameGUI.getChatGUI().getSentMessages().size();
+      this.inputField = new TextFieldWidget(this.font, 4, this.height - 12, this.width - 4, 12, new TranslationTextComponent("chat.editBox")) {
+         protected IFormattableTextComponent getNarrationMessage() {
+            return super.getNarrationMessage().appendString(ChatScreen.this.commandSuggestionHelper.getSuggestionMessage());
          }
       };
-      this.input.setMaxLength(256);
-      this.input.setBordered(false);
-      this.input.setValue(this.initial);
-      this.input.setResponder(this::onEdited);
-      this.children.add(this.input);
-      this.commandSuggestions = new CommandSuggestionHelper(this.minecraft, this, this.input, this.font, false, false, 1, 10, true, -805306368);
-      this.commandSuggestions.updateCommandInfo();
-      this.setInitialFocus(this.input);
+      this.inputField.setMaxStringLength(256);
+      this.inputField.setEnableBackgroundDrawing(false);
+      this.inputField.setText(this.defaultInputFieldText);
+      this.inputField.setResponder(this::func_212997_a);
+      this.children.add(this.inputField);
+      this.commandSuggestionHelper = new CommandSuggestionHelper(this.minecraft, this, this.inputField, this.font, false, false, 1, 10, true, -805306368);
+      this.commandSuggestionHelper.init();
+      this.setFocusedDefault(this.inputField);
    }
 
-   public void resize(Minecraft p_231152_1_, int p_231152_2_, int p_231152_3_) {
-      String s = this.input.getValue();
-      this.init(p_231152_1_, p_231152_2_, p_231152_3_);
+   public void resize(Minecraft minecraft, int width, int height) {
+      String s = this.inputField.getText();
+      this.init(minecraft, width, height);
       this.setChatLine(s);
-      this.commandSuggestions.updateCommandInfo();
+      this.commandSuggestionHelper.init();
    }
 
-   public void removed() {
-      this.minecraft.keyboardHandler.setSendRepeatsToGui(false);
-      this.minecraft.gui.getChat().resetChatScroll();
+   public void onClose() {
+      this.minecraft.keyboardListener.enableRepeatEvents(false);
+      this.minecraft.ingameGUI.getChatGUI().resetScroll();
    }
 
    public void tick() {
-      this.input.tick();
+      this.inputField.tick();
    }
 
-   private void onEdited(String p_212997_1_) {
-      String s = this.input.getValue();
-      this.commandSuggestions.setAllowSuggestions(!s.equals(this.initial));
-      this.commandSuggestions.updateCommandInfo();
+   private void func_212997_a(String p_212997_1_) {
+      String s = this.inputField.getText();
+      this.commandSuggestionHelper.shouldAutoSuggest(!s.equals(this.defaultInputFieldText));
+      this.commandSuggestionHelper.init();
    }
 
-   public boolean keyPressed(int p_231046_1_, int p_231046_2_, int p_231046_3_) {
-      if (this.commandSuggestions.keyPressed(p_231046_1_, p_231046_2_, p_231046_3_)) {
+   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+      if (this.commandSuggestionHelper.onKeyPressed(keyCode, scanCode, modifiers)) {
          return true;
-      } else if (super.keyPressed(p_231046_1_, p_231046_2_, p_231046_3_)) {
+      } else if (super.keyPressed(keyCode, scanCode, modifiers)) {
          return true;
-      } else if (p_231046_1_ == 256) {
-         this.minecraft.setScreen((Screen)null);
+      } else if (keyCode == 256) {
+         this.minecraft.displayGuiScreen((Screen)null);
          return true;
-      } else if (p_231046_1_ != 257 && p_231046_1_ != 335) {
-         if (p_231046_1_ == 265) {
-            this.moveInHistory(-1);
+      } else if (keyCode != 257 && keyCode != 335) {
+         if (keyCode == 265) {
+            this.getSentHistory(-1);
             return true;
-         } else if (p_231046_1_ == 264) {
-            this.moveInHistory(1);
+         } else if (keyCode == 264) {
+            this.getSentHistory(1);
             return true;
-         } else if (p_231046_1_ == 266) {
-            this.minecraft.gui.getChat().scrollChat((double)(this.minecraft.gui.getChat().getLinesPerPage() - 1));
+         } else if (keyCode == 266) {
+            this.minecraft.ingameGUI.getChatGUI().addScrollPos((double)(this.minecraft.ingameGUI.getChatGUI().getLineCount() - 1));
             return true;
-         } else if (p_231046_1_ == 267) {
-            this.minecraft.gui.getChat().scrollChat((double)(-this.minecraft.gui.getChat().getLinesPerPage() + 1));
+         } else if (keyCode == 267) {
+            this.minecraft.ingameGUI.getChatGUI().addScrollPos((double)(-this.minecraft.ingameGUI.getChatGUI().getLineCount() + 1));
             return true;
          } else {
             return false;
          }
       } else {
-         String s = this.input.getValue().trim();
+         String s = this.inputField.getText().trim();
          if (!s.isEmpty()) {
             this.sendMessage(s);
          }
 
-         this.minecraft.setScreen((Screen)null);
+         this.minecraft.displayGuiScreen((Screen)null);
          return true;
       }
    }
 
-   public boolean mouseScrolled(double p_231043_1_, double p_231043_3_, double p_231043_5_) {
-      if (p_231043_5_ > 1.0D) {
-         p_231043_5_ = 1.0D;
+   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+      if (delta > 1.0D) {
+         delta = 1.0D;
       }
 
-      if (p_231043_5_ < -1.0D) {
-         p_231043_5_ = -1.0D;
+      if (delta < -1.0D) {
+         delta = -1.0D;
       }
 
-      if (this.commandSuggestions.mouseScrolled(p_231043_5_)) {
+      if (this.commandSuggestionHelper.onScroll(delta)) {
          return true;
       } else {
          if (!hasShiftDown()) {
-            p_231043_5_ *= 7.0D;
+            delta *= 7.0D;
          }
 
-         this.minecraft.gui.getChat().scrollChat(p_231043_5_);
+         this.minecraft.ingameGUI.getChatGUI().addScrollPos(delta);
          return true;
       }
    }
 
-   public boolean mouseClicked(double p_231044_1_, double p_231044_3_, int p_231044_5_) {
-      if (this.commandSuggestions.mouseClicked((double)((int)p_231044_1_), (double)((int)p_231044_3_), p_231044_5_)) {
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      if (this.commandSuggestionHelper.onClick((double)((int)mouseX), (double)((int)mouseY), button)) {
          return true;
       } else {
-         if (p_231044_5_ == 0) {
-            NewChatGui newchatgui = this.minecraft.gui.getChat();
-            if (newchatgui.handleChatQueueClicked(p_231044_1_, p_231044_3_)) {
+         if (button == 0) {
+            NewChatGui newchatgui = this.minecraft.ingameGUI.getChatGUI();
+            if (newchatgui.func_238491_a_(mouseX, mouseY)) {
                return true;
             }
 
-            Style style = newchatgui.getClickedComponentStyleAt(p_231044_1_, p_231044_3_);
+            Style style = newchatgui.func_238494_b_(mouseX, mouseY);
             if (style != null && this.handleComponentClicked(style)) {
                return true;
             }
          }
 
-         return this.input.mouseClicked(p_231044_1_, p_231044_3_, p_231044_5_) ? true : super.mouseClicked(p_231044_1_, p_231044_3_, p_231044_5_);
+         return this.inputField.mouseClicked(mouseX, mouseY, button) ? true : super.mouseClicked(mouseX, mouseY, button);
       }
    }
 
-   protected void insertText(String p_231155_1_, boolean p_231155_2_) {
-      if (p_231155_2_) {
-         this.input.setValue(p_231155_1_);
+   protected void insertText(String text, boolean overwrite) {
+      if (overwrite) {
+         this.inputField.setText(text);
       } else {
-         this.input.insertText(p_231155_1_);
+         this.inputField.writeText(text);
       }
 
    }
 
-   public void moveInHistory(int p_146402_1_) {
-      int i = this.historyPos + p_146402_1_;
-      int j = this.minecraft.gui.getChat().getRecentChat().size();
+   public void getSentHistory(int msgPos) {
+      int i = this.sentHistoryCursor + msgPos;
+      int j = this.minecraft.ingameGUI.getChatGUI().getSentMessages().size();
       i = MathHelper.clamp(i, 0, j);
-      if (i != this.historyPos) {
+      if (i != this.sentHistoryCursor) {
          if (i == j) {
-            this.historyPos = j;
-            this.input.setValue(this.historyBuffer);
+            this.sentHistoryCursor = j;
+            this.inputField.setText(this.historyBuffer);
          } else {
-            if (this.historyPos == j) {
-               this.historyBuffer = this.input.getValue();
+            if (this.sentHistoryCursor == j) {
+               this.historyBuffer = this.inputField.getText();
             }
 
-            this.input.setValue(this.minecraft.gui.getChat().getRecentChat().get(i));
-            this.commandSuggestions.setAllowSuggestions(false);
-            this.historyPos = i;
+            this.inputField.setText(this.minecraft.ingameGUI.getChatGUI().getSentMessages().get(i));
+            this.commandSuggestionHelper.shouldAutoSuggest(false);
+            this.sentHistoryCursor = i;
          }
       }
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.setFocused(this.input);
-      this.input.setFocus(true);
-      fill(p_230430_1_, 2, this.height - 14, this.width - 2, this.height - 2, this.minecraft.options.getBackgroundColor(Integer.MIN_VALUE));
-      this.input.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
-      this.commandSuggestions.render(p_230430_1_, p_230430_2_, p_230430_3_);
-      Style style = this.minecraft.gui.getChat().getClickedComponentStyleAt((double)p_230430_2_, (double)p_230430_3_);
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.setListener(this.inputField);
+      this.inputField.setFocused2(true);
+      fill(matrixStack, 2, this.height - 14, this.width - 2, this.height - 2, this.minecraft.gameSettings.getChatBackgroundColor(Integer.MIN_VALUE));
+      this.inputField.render(matrixStack, mouseX, mouseY, partialTicks);
+      this.commandSuggestionHelper.drawSuggestionList(matrixStack, mouseX, mouseY);
+      Style style = this.minecraft.ingameGUI.getChatGUI().func_238494_b_((double)mouseX, (double)mouseY);
       if (style != null && style.getHoverEvent() != null) {
-         this.renderComponentHoverEffect(p_230430_1_, style, p_230430_2_, p_230430_3_);
+         this.renderComponentHoverEffect(matrixStack, style, mouseX, mouseY);
       }
 
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
    }
 
    public boolean isPauseScreen() {
@@ -190,6 +190,6 @@ public class ChatScreen extends Screen {
    }
 
    private void setChatLine(String p_208604_1_) {
-      this.input.setValue(p_208604_1_);
+      this.inputField.setText(p_208604_1_);
    }
 }

@@ -8,7 +8,7 @@ public interface IRandomRange {
    ResourceLocation UNIFORM = new ResourceLocation("uniform");
    ResourceLocation BINOMIAL = new ResourceLocation("binomial");
 
-   int getInt(Random p_186511_1_);
+   int generateInt(Random rand);
 
    ResourceLocation getType();
 }

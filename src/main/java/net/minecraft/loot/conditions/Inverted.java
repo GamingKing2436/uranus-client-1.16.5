@@ -14,11 +14,11 @@ import net.minecraft.util.JSONUtils;
 public class Inverted implements ILootCondition {
    private final ILootCondition term;
 
-   private Inverted(ILootCondition p_i51202_1_) {
-      this.term = p_i51202_1_;
+   private Inverted(ILootCondition term) {
+      this.term = term;
    }
 
-   public LootConditionType getType() {
+   public LootConditionType func_230419_b_() {
       return LootConditionManager.INVERTED;
    }
 
@@ -26,16 +26,16 @@ public class Inverted implements ILootCondition {
       return !this.term.test(p_test_1_);
    }
 
-   public Set<LootParameter<?>> getReferencedContextParams() {
-      return this.term.getReferencedContextParams();
+   public Set<LootParameter<?>> getRequiredParameters() {
+      return this.term.getRequiredParameters();
    }
 
-   public void validate(ValidationTracker p_225580_1_) {
-      ILootCondition.super.validate(p_225580_1_);
-      this.term.validate(p_225580_1_);
+   public void func_225580_a_(ValidationTracker p_225580_1_) {
+      ILootCondition.super.func_225580_a_(p_225580_1_);
+      this.term.func_225580_a_(p_225580_1_);
    }
 
-   public static ILootCondition.IBuilder invert(ILootCondition.IBuilder p_215979_0_) {
+   public static ILootCondition.IBuilder builder(ILootCondition.IBuilder p_215979_0_) {
       Inverted inverted = new Inverted(p_215979_0_.build());
       return () -> {
          return inverted;
@@ -48,7 +48,7 @@ public class Inverted implements ILootCondition {
       }
 
       public Inverted deserialize(JsonObject p_230423_1_, JsonDeserializationContext p_230423_2_) {
-         ILootCondition ilootcondition = JSONUtils.getAsObject(p_230423_1_, "term", p_230423_2_, ILootCondition.class);
+         ILootCondition ilootcondition = JSONUtils.deserializeClass(p_230423_1_, "term", p_230423_2_, ILootCondition.class);
          return new Inverted(ilootcondition);
       }
    }

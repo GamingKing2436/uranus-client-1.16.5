@@ -18,34 +18,34 @@ import net.minecraft.util.JSONUtils;
 public class CopyName extends LootFunction {
    private final CopyName.Source source;
 
-   private CopyName(ILootCondition[] p_i51242_1_, CopyName.Source p_i51242_2_) {
-      super(p_i51242_1_);
-      this.source = p_i51242_2_;
+   private CopyName(ILootCondition[] conditionsIn, CopyName.Source sourceIn) {
+      super(conditionsIn);
+      this.source = sourceIn;
    }
 
-   public LootFunctionType getType() {
+   public LootFunctionType getFunctionType() {
       return LootFunctionManager.COPY_NAME;
    }
 
-   public Set<LootParameter<?>> getReferencedContextParams() {
-      return ImmutableSet.of(this.source.param);
+   public Set<LootParameter<?>> getRequiredParameters() {
+      return ImmutableSet.of(this.source.parameter);
    }
 
-   public ItemStack run(ItemStack p_215859_1_, LootContext p_215859_2_) {
-      Object object = p_215859_2_.getParamOrNull(this.source.param);
+   public ItemStack doApply(ItemStack stack, LootContext context) {
+      Object object = context.get(this.source.parameter);
       if (object instanceof INameable) {
          INameable inameable = (INameable)object;
          if (inameable.hasCustomName()) {
-            p_215859_1_.setHoverName(inameable.getDisplayName());
+            stack.setDisplayName(inameable.getDisplayName());
          }
       }
 
-      return p_215859_1_;
+      return stack;
    }
 
-   public static LootFunction.Builder<?> copyName(CopyName.Source p_215893_0_) {
-      return simpleBuilder((p_215891_1_) -> {
-         return new CopyName(p_215891_1_, p_215893_0_);
+   public static LootFunction.Builder<?> builder(CopyName.Source sourceIn) {
+      return builder((p_215891_1_) -> {
+         return new CopyName(p_215891_1_, sourceIn);
       });
    }
 
@@ -55,9 +55,9 @@ public class CopyName extends LootFunction {
          p_230424_1_.addProperty("source", p_230424_2_.source.name);
       }
 
-      public CopyName deserialize(JsonObject p_186530_1_, JsonDeserializationContext p_186530_2_, ILootCondition[] p_186530_3_) {
-         CopyName.Source copyname$source = CopyName.Source.getByName(JSONUtils.getAsString(p_186530_1_, "source"));
-         return new CopyName(p_186530_3_, copyname$source);
+      public CopyName deserialize(JsonObject object, JsonDeserializationContext deserializationContext, ILootCondition[] conditionsIn) {
+         CopyName.Source copyname$source = CopyName.Source.byName(JSONUtils.getString(object, "source"));
+         return new CopyName(conditionsIn, copyname$source);
       }
    }
 
@@ -68,21 +68,21 @@ public class CopyName extends LootFunction {
       BLOCK_ENTITY("block_entity", LootParameters.BLOCK_ENTITY);
 
       public final String name;
-      public final LootParameter<?> param;
+      public final LootParameter<?> parameter;
 
-      private Source(String p_i50801_3_, LootParameter<?> p_i50801_4_) {
-         this.name = p_i50801_3_;
-         this.param = p_i50801_4_;
+      private Source(String nameIn, LootParameter<?> parameterIn) {
+         this.name = nameIn;
+         this.parameter = parameterIn;
       }
 
-      public static CopyName.Source getByName(String p_216235_0_) {
+      public static CopyName.Source byName(String nameIn) {
          for(CopyName.Source copyname$source : values()) {
-            if (copyname$source.name.equals(p_216235_0_)) {
+            if (copyname$source.name.equals(nameIn)) {
                return copyname$source;
             }
          }
 
-         throw new IllegalArgumentException("Invalid name source " + p_216235_0_);
+         throw new IllegalArgumentException("Invalid name source " + nameIn);
       }
    }
 }

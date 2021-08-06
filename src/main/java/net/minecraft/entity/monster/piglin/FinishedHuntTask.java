@@ -13,15 +13,15 @@ public class FinishedHuntTask<E extends PiglinEntity> extends Task<E> {
       super(ImmutableMap.of(MemoryModuleType.ATTACK_TARGET, MemoryModuleStatus.VALUE_PRESENT, MemoryModuleType.HUNTED_RECENTLY, MemoryModuleStatus.REGISTERED));
    }
 
-   protected void start(ServerWorld p_212831_1_, E p_212831_2_, long p_212831_3_) {
-      if (this.isAttackTargetDeadHoglin(p_212831_2_)) {
-         PiglinTasks.dontKillAnyMoreHoglinsForAWhile(p_212831_2_);
+   protected void startExecuting(ServerWorld worldIn, E entityIn, long gameTimeIn) {
+      if (this.func_234539_a_(entityIn)) {
+         PiglinTasks.func_234518_h_(entityIn);
       }
 
    }
 
-   private boolean isAttackTargetDeadHoglin(E p_234539_1_) {
+   private boolean func_234539_a_(E p_234539_1_) {
       LivingEntity livingentity = p_234539_1_.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).get();
-      return livingentity.getType() == EntityType.HOGLIN && livingentity.isDeadOrDying();
+      return livingentity.getType() == EntityType.HOGLIN && livingentity.getShouldBeDead();
    }
 }

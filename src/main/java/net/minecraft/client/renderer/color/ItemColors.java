@@ -22,9 +22,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ItemColors {
-   private final ObjectIntIdentityMap<IItemColor> itemColors = new ObjectIntIdentityMap<>(32);
+   private final ObjectIntIdentityMap<IItemColor> colors = new ObjectIntIdentityMap<>(32);
 
-   public static ItemColors createDefault(BlockColors p_186729_0_) {
+   public static ItemColors init(BlockColors colors) {
       ItemColors itemcolors = new ItemColors();
       itemcolors.register((p_210239_0_, p_210239_1_) -> {
          return p_210239_1_ > 0 ? -1 : ((IDyeableArmorItem)p_210239_0_.getItem()).getColor(p_210239_0_);
@@ -36,7 +36,7 @@ public class ItemColors {
          if (p_210241_1_ != 1) {
             return -1;
          } else {
-            CompoundNBT compoundnbt = p_210241_0_.getTagElement("Explosion");
+            CompoundNBT compoundnbt = p_210241_0_.getChildTag("Explosion");
             int[] aint = compoundnbt != null && compoundnbt.contains("Colors", 11) ? compoundnbt.getIntArray("Colors") : null;
             if (aint != null && aint.length != 0) {
                if (aint.length == 1) {
@@ -66,15 +66,15 @@ public class ItemColors {
          return p_210238_1_ > 0 ? -1 : PotionUtils.getColor(p_210238_0_);
       }, Items.POTION, Items.SPLASH_POTION, Items.LINGERING_POTION);
 
-      for(SpawnEggItem spawneggitem : SpawnEggItem.eggs()) {
+      for(SpawnEggItem spawneggitem : SpawnEggItem.getEggs()) {
          itemcolors.register((p_198141_1_, p_198141_2_) -> {
             return spawneggitem.getColor(p_198141_2_);
          }, spawneggitem);
       }
 
       itemcolors.register((p_210235_1_, p_210235_2_) -> {
-         BlockState blockstate = ((BlockItem)p_210235_1_.getItem()).getBlock().defaultBlockState();
-         return p_186729_0_.getColor(blockstate, (IBlockDisplayReader)null, (BlockPos)null, p_210235_2_);
+         BlockState blockstate = ((BlockItem)p_210235_1_.getItem()).getBlock().getDefaultState();
+         return colors.getColor(blockstate, (IBlockDisplayReader)null, (BlockPos)null, p_210235_2_);
       }, Blocks.GRASS_BLOCK, Blocks.GRASS, Blocks.FERN, Blocks.VINE, Blocks.OAK_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.BIRCH_LEAVES, Blocks.JUNGLE_LEAVES, Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES, Blocks.LILY_PAD);
       itemcolors.register((p_210242_0_, p_210242_1_) -> {
          return p_210242_1_ == 0 ? PotionUtils.getColor(p_210242_0_) : -1;
@@ -85,14 +85,14 @@ public class ItemColors {
       return itemcolors;
    }
 
-   public int getColor(ItemStack p_186728_1_, int p_186728_2_) {
-      IItemColor iitemcolor = this.itemColors.byId(Registry.ITEM.getId(p_186728_1_.getItem()));
-      return iitemcolor == null ? -1 : iitemcolor.getColor(p_186728_1_, p_186728_2_);
+   public int getColor(ItemStack stack, int tintIndex) {
+      IItemColor iitemcolor = this.colors.getByValue(Registry.ITEM.getId(stack.getItem()));
+      return iitemcolor == null ? -1 : iitemcolor.getColor(stack, tintIndex);
    }
 
-   public void register(IItemColor p_199877_1_, IItemProvider... p_199877_2_) {
-      for(IItemProvider iitemprovider : p_199877_2_) {
-         this.itemColors.addMapping(p_199877_1_, Item.getId(iitemprovider.asItem()));
+   public void register(IItemColor itemColor, IItemProvider... itemsIn) {
+      for(IItemProvider iitemprovider : itemsIn) {
+         this.colors.put(itemColor, Item.getIdFromItem(iitemprovider.asItem()));
       }
 
    }

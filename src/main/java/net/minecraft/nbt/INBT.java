@@ -11,7 +11,7 @@ public interface INBT {
    TextFormatting SYNTAX_HIGHLIGHTING_NUMBER = TextFormatting.GOLD;
    TextFormatting SYNTAX_HIGHLIGHTING_NUMBER_TYPE = TextFormatting.RED;
 
-   void write(DataOutput p_74734_1_) throws IOException;
+   void write(DataOutput output) throws IOException;
 
    String toString();
 
@@ -21,13 +21,13 @@ public interface INBT {
 
    INBT copy();
 
-   default String getAsString() {
+   default String getString() {
       return this.toString();
    }
 
-   default ITextComponent getPrettyDisplay() {
-      return this.getPrettyDisplay("", 0);
+   default ITextComponent toFormattedComponent() {
+      return this.toFormattedComponent("", 0);
    }
 
-   ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_);
+   ITextComponent toFormattedComponent(String indentation, int indentDepth);
 }

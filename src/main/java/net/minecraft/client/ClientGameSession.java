@@ -11,32 +11,32 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientGameSession implements GameSession {
-   private final int players;
-   private final boolean isRemoteServer;
+   private final int playerCount;
+   private final boolean remoteServer;
    private final String difficulty;
    private final String gameMode;
-   private final UUID id;
+   private final UUID sessionId;
 
-   public ClientGameSession(ClientWorld p_i51152_1_, ClientPlayerEntity p_i51152_2_, ClientPlayNetHandler p_i51152_3_) {
-      this.players = p_i51152_3_.getOnlinePlayers().size();
-      this.isRemoteServer = !p_i51152_3_.getConnection().isMemoryConnection();
-      this.difficulty = p_i51152_1_.getDifficulty().getKey();
-      NetworkPlayerInfo networkplayerinfo = p_i51152_3_.getPlayerInfo(p_i51152_2_.getUUID());
+   public ClientGameSession(ClientWorld world, ClientPlayerEntity player, ClientPlayNetHandler netHandler) {
+      this.playerCount = netHandler.getPlayerInfoMap().size();
+      this.remoteServer = !netHandler.getNetworkManager().isLocalChannel();
+      this.difficulty = world.getDifficulty().getTranslationKey();
+      NetworkPlayerInfo networkplayerinfo = netHandler.getPlayerInfo(player.getUniqueID());
       if (networkplayerinfo != null) {
-         this.gameMode = networkplayerinfo.getGameMode().getName();
+         this.gameMode = networkplayerinfo.getGameType().getName();
       } else {
          this.gameMode = "unknown";
       }
 
-      this.id = p_i51152_3_.getId();
+      this.sessionId = netHandler.getSessionId();
    }
 
    public int getPlayerCount() {
-      return this.players;
+      return this.playerCount;
    }
 
    public boolean isRemoteServer() {
-      return this.isRemoteServer;
+      return this.remoteServer;
    }
 
    public String getDifficulty() {
@@ -48,6 +48,6 @@ public class ClientGameSession implements GameSession {
    }
 
    public UUID getSessionId() {
-      return this.id;
+      return this.sessionId;
    }
 }

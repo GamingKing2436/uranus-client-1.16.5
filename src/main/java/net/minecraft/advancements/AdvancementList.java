@@ -20,34 +20,34 @@ public class AdvancementList {
    private static final Logger LOGGER = LogManager.getLogger();
    private final Map<ResourceLocation, Advancement> advancements = Maps.newHashMap();
    private final Set<Advancement> roots = Sets.newLinkedHashSet();
-   private final Set<Advancement> tasks = Sets.newLinkedHashSet();
+   private final Set<Advancement> nonRoots = Sets.newLinkedHashSet();
    private AdvancementList.IListener listener;
 
    @OnlyIn(Dist.CLIENT)
-   private void remove(Advancement p_192090_1_) {
-      for(Advancement advancement : p_192090_1_.getChildren()) {
+   private void remove(Advancement advancementIn) {
+      for(Advancement advancement : advancementIn.getChildren()) {
          this.remove(advancement);
       }
 
-      LOGGER.info("Forgot about advancement {}", (Object)p_192090_1_.getId());
-      this.advancements.remove(p_192090_1_.getId());
-      if (p_192090_1_.getParent() == null) {
-         this.roots.remove(p_192090_1_);
+      LOGGER.info("Forgot about advancement {}", (Object)advancementIn.getId());
+      this.advancements.remove(advancementIn.getId());
+      if (advancementIn.getParent() == null) {
+         this.roots.remove(advancementIn);
          if (this.listener != null) {
-            this.listener.onRemoveAdvancementRoot(p_192090_1_);
+            this.listener.rootAdvancementRemoved(advancementIn);
          }
       } else {
-         this.tasks.remove(p_192090_1_);
+         this.nonRoots.remove(advancementIn);
          if (this.listener != null) {
-            this.listener.onRemoveAdvancementTask(p_192090_1_);
+            this.listener.nonRootAdvancementRemoved(advancementIn);
          }
       }
 
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void remove(Set<ResourceLocation> p_192085_1_) {
-      for(ResourceLocation resourcelocation : p_192085_1_) {
+   public void removeAll(Set<ResourceLocation> ids) {
+      for(ResourceLocation resourcelocation : ids) {
          Advancement advancement = this.advancements.get(resourcelocation);
          if (advancement == null) {
             LOGGER.warn("Told to remove advancement {} but I don't know what that is", (Object)resourcelocation);
@@ -58,18 +58,18 @@ public class AdvancementList {
 
    }
 
-   public void add(Map<ResourceLocation, Advancement.Builder> p_192083_1_) {
+   public void loadAdvancements(Map<ResourceLocation, Advancement.Builder> advancementsIn) {
       Function<ResourceLocation, Advancement> function = Functions.forMap(this.advancements, (Advancement)null);
 
-      while(!p_192083_1_.isEmpty()) {
+      while(!advancementsIn.isEmpty()) {
          boolean flag = false;
-         Iterator<Entry<ResourceLocation, Advancement.Builder>> iterator = p_192083_1_.entrySet().iterator();
+         Iterator<Entry<ResourceLocation, Advancement.Builder>> iterator = advancementsIn.entrySet().iterator();
 
          while(iterator.hasNext()) {
             Entry<ResourceLocation, Advancement.Builder> entry = iterator.next();
             ResourceLocation resourcelocation = entry.getKey();
             Advancement.Builder advancement$builder = entry.getValue();
-            if (advancement$builder.canBuild(function)) {
+            if (advancement$builder.resolveParent(function)) {
                Advancement advancement = advancement$builder.build(resourcelocation);
                this.advancements.put(resourcelocation, advancement);
                flag = true;
@@ -77,19 +77,19 @@ public class AdvancementList {
                if (advancement.getParent() == null) {
                   this.roots.add(advancement);
                   if (this.listener != null) {
-                     this.listener.onAddAdvancementRoot(advancement);
+                     this.listener.rootAdvancementAdded(advancement);
                   }
                } else {
-                  this.tasks.add(advancement);
+                  this.nonRoots.add(advancement);
                   if (this.listener != null) {
-                     this.listener.onAddAdvancementTask(advancement);
+                     this.listener.nonRootAdvancementAdded(advancement);
                   }
                }
             }
          }
 
          if (!flag) {
-            for(Entry<ResourceLocation, Advancement.Builder> entry1 : p_192083_1_.entrySet()) {
+            for(Entry<ResourceLocation, Advancement.Builder> entry1 : advancementsIn.entrySet()) {
                LOGGER.error("Couldn't load advancement {}: {}", entry1.getKey(), entry1.getValue());
             }
             break;
@@ -103,9 +103,9 @@ public class AdvancementList {
    public void clear() {
       this.advancements.clear();
       this.roots.clear();
-      this.tasks.clear();
+      this.nonRoots.clear();
       if (this.listener != null) {
-         this.listener.onAdvancementsCleared();
+         this.listener.advancementsCleared();
       }
 
    }
@@ -114,42 +114,42 @@ public class AdvancementList {
       return this.roots;
    }
 
-   public Collection<Advancement> getAllAdvancements() {
+   public Collection<Advancement> getAll() {
       return this.advancements.values();
    }
 
    @Nullable
-   public Advancement get(ResourceLocation p_192084_1_) {
-      return this.advancements.get(p_192084_1_);
+   public Advancement getAdvancement(ResourceLocation id) {
+      return this.advancements.get(id);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void setListener(@Nullable AdvancementList.IListener p_192086_1_) {
-      this.listener = p_192086_1_;
-      if (p_192086_1_ != null) {
+   public void setListener(@Nullable AdvancementList.IListener listenerIn) {
+      this.listener = listenerIn;
+      if (listenerIn != null) {
          for(Advancement advancement : this.roots) {
-            p_192086_1_.onAddAdvancementRoot(advancement);
+            listenerIn.rootAdvancementAdded(advancement);
          }
 
-         for(Advancement advancement1 : this.tasks) {
-            p_192086_1_.onAddAdvancementTask(advancement1);
+         for(Advancement advancement1 : this.nonRoots) {
+            listenerIn.nonRootAdvancementAdded(advancement1);
          }
       }
 
    }
 
    public interface IListener {
-      void onAddAdvancementRoot(Advancement p_191931_1_);
+      void rootAdvancementAdded(Advancement advancementIn);
 
       @OnlyIn(Dist.CLIENT)
-      void onRemoveAdvancementRoot(Advancement p_191928_1_);
+      void rootAdvancementRemoved(Advancement advancementIn);
 
-      void onAddAdvancementTask(Advancement p_191932_1_);
-
-      @OnlyIn(Dist.CLIENT)
-      void onRemoveAdvancementTask(Advancement p_191929_1_);
+      void nonRootAdvancementAdded(Advancement advancementIn);
 
       @OnlyIn(Dist.CLIENT)
-      void onAdvancementsCleared();
+      void nonRootAdvancementRemoved(Advancement advancementIn);
+
+      @OnlyIn(Dist.CLIENT)
+      void advancementsCleared();
    }
 }

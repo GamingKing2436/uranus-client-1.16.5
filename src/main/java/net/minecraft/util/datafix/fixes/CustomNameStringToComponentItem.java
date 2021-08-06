@@ -14,8 +14,8 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class CustomNameStringToComponentItem extends DataFix {
-   public CustomNameStringToComponentItem(Schema p_i49644_1_, boolean p_i49644_2_) {
-      super(p_i49644_1_, p_i49644_2_);
+   public CustomNameStringToComponentItem(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    private Dynamic<?> fixTag(Dynamic<?> p_209621_1_) {

@@ -15,41 +15,41 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 
 public class BeaconBlock extends ContainerBlock implements IBeaconBeamColorProvider {
-   public BeaconBlock(AbstractBlock.Properties p_i48443_1_) {
-      super(p_i48443_1_);
+   public BeaconBlock(AbstractBlock.Properties properties) {
+      super(properties);
    }
 
    public DyeColor getColor() {
       return DyeColor.WHITE;
    }
 
-   public TileEntity newBlockEntity(IBlockReader p_196283_1_) {
+   public TileEntity createNewTileEntity(IBlockReader worldIn) {
       return new BeaconTileEntity();
    }
 
-   public ActionResultType use(BlockState p_225533_1_, World p_225533_2_, BlockPos p_225533_3_, PlayerEntity p_225533_4_, Hand p_225533_5_, BlockRayTraceResult p_225533_6_) {
-      if (p_225533_2_.isClientSide) {
+   public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+      if (worldIn.isRemote) {
          return ActionResultType.SUCCESS;
       } else {
-         TileEntity tileentity = p_225533_2_.getBlockEntity(p_225533_3_);
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof BeaconTileEntity) {
-            p_225533_4_.openMenu((BeaconTileEntity)tileentity);
-            p_225533_4_.awardStat(Stats.INTERACT_WITH_BEACON);
+            player.openContainer((BeaconTileEntity)tileentity);
+            player.addStat(Stats.INTERACT_WITH_BEACON);
          }
 
          return ActionResultType.CONSUME;
       }
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.MODEL;
    }
 
-   public void setPlacedBy(World p_180633_1_, BlockPos p_180633_2_, BlockState p_180633_3_, LivingEntity p_180633_4_, ItemStack p_180633_5_) {
-      if (p_180633_5_.hasCustomHoverName()) {
-         TileEntity tileentity = p_180633_1_.getBlockEntity(p_180633_2_);
+   public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+      if (stack.hasDisplayName()) {
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof BeaconTileEntity) {
-            ((BeaconTileEntity)tileentity).setCustomName(p_180633_5_.getHoverName());
+            ((BeaconTileEntity)tileentity).setCustomName(stack.getDisplayName());
          }
       }
 

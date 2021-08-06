@@ -3,15 +3,15 @@ package net.minecraft.enchantment;
 import net.minecraft.inventory.EquipmentSlotType;
 
 public class LoyaltyEnchantment extends Enchantment {
-   public LoyaltyEnchantment(Enchantment.Rarity p_i48785_1_, EquipmentSlotType... p_i48785_2_) {
-      super(p_i48785_1_, EnchantmentType.TRIDENT, p_i48785_2_);
+   public LoyaltyEnchantment(Enchantment.Rarity rarityIn, EquipmentSlotType... slots) {
+      super(rarityIn, EnchantmentType.TRIDENT, slots);
    }
 
-   public int getMinCost(int p_77321_1_) {
-      return 5 + p_77321_1_ * 7;
+   public int getMinEnchantability(int enchantmentLevel) {
+      return 5 + enchantmentLevel * 7;
    }
 
-   public int getMaxCost(int p_223551_1_) {
+   public int getMaxEnchantability(int enchantmentLevel) {
       return 50;
    }
 
@@ -19,7 +19,7 @@ public class LoyaltyEnchantment extends Enchantment {
       return 3;
    }
 
-   public boolean checkCompatibility(Enchantment p_77326_1_) {
-      return super.checkCompatibility(p_77326_1_);
+   public boolean canApplyTogether(Enchantment ench) {
+      return super.canApplyTogether(ench);
    }
 }

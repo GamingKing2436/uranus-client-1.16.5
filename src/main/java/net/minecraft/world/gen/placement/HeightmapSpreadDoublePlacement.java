@@ -8,18 +8,18 @@ import net.minecraft.world.gen.Heightmap;
 import net.minecraft.world.gen.feature.WorldDecoratingHelper;
 
 public class HeightmapSpreadDoublePlacement<DC extends IPlacementConfig> extends HeightmapBasedPlacement<DC> {
-   public HeightmapSpreadDoublePlacement(Codec<DC> p_i242027_1_) {
-      super(p_i242027_1_);
+   public HeightmapSpreadDoublePlacement(Codec<DC> codec) {
+      super(codec);
    }
 
-   protected Heightmap.Type type(DC p_241858_1_) {
+   protected Heightmap.Type func_241858_a(DC config) {
       return Heightmap.Type.MOTION_BLOCKING;
    }
 
-   public Stream<BlockPos> getPositions(WorldDecoratingHelper p_241857_1_, Random p_241857_2_, DC p_241857_3_, BlockPos p_241857_4_) {
-      int i = p_241857_4_.getX();
-      int j = p_241857_4_.getZ();
-      int k = p_241857_1_.getHeight(this.type(p_241857_3_), i, j);
-      return k == 0 ? Stream.of() : Stream.of(new BlockPos(i, p_241857_2_.nextInt(k * 2), j));
+   public Stream<BlockPos> getPositions(WorldDecoratingHelper helper, Random rand, DC config, BlockPos pos) {
+      int i = pos.getX();
+      int j = pos.getZ();
+      int k = helper.func_242893_a(this.func_241858_a(config), i, j);
+      return k == 0 ? Stream.of() : Stream.of(new BlockPos(i, rand.nextInt(k * 2), j));
    }
 }

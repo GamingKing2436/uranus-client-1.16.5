@@ -4,19 +4,19 @@ public class StringTextComponent extends TextComponent {
    public static final ITextComponent EMPTY = new StringTextComponent("");
    private final String text;
 
-   public StringTextComponent(String p_i45159_1_) {
-      this.text = p_i45159_1_;
+   public StringTextComponent(String msg) {
+      this.text = msg;
    }
 
    public String getText() {
       return this.text;
    }
 
-   public String getContents() {
+   public String getUnformattedComponentText() {
       return this.text;
    }
 
-   public StringTextComponent plainCopy() {
+   public StringTextComponent copyRaw() {
       return new StringTextComponent(this.text);
    }
 

@@ -13,15 +13,15 @@ import net.minecraft.server.management.PlayerList;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class OpCommand {
-   private static final SimpleCommandExceptionType ERROR_ALREADY_OP = new SimpleCommandExceptionType(new TranslationTextComponent("commands.op.failed"));
+   private static final SimpleCommandExceptionType ALREADY_OP = new SimpleCommandExceptionType(new TranslationTextComponent("commands.op.failed"));
 
-   public static void register(CommandDispatcher<CommandSource> p_198541_0_) {
-      p_198541_0_.register(Commands.literal("op").requires((p_198545_0_) -> {
-         return p_198545_0_.hasPermission(3);
+   public static void register(CommandDispatcher<CommandSource> dispatcher) {
+      dispatcher.register(Commands.literal("op").requires((p_198545_0_) -> {
+         return p_198545_0_.hasPermissionLevel(3);
       }).then(Commands.argument("targets", GameProfileArgument.gameProfile()).suggests((p_198543_0_, p_198543_1_) -> {
          PlayerList playerlist = p_198543_0_.getSource().getServer().getPlayerList();
          return ISuggestionProvider.suggest(playerlist.getPlayers().stream().filter((p_198540_1_) -> {
-            return !playerlist.isOp(p_198540_1_.getGameProfile());
+            return !playerlist.canSendCommands(p_198540_1_.getGameProfile());
          }).map((p_200545_0_) -> {
             return p_200545_0_.getGameProfile().getName();
          }), p_198543_1_);
@@ -30,20 +30,20 @@ public class OpCommand {
       })));
    }
 
-   private static int opPlayers(CommandSource p_198542_0_, Collection<GameProfile> p_198542_1_) throws CommandSyntaxException {
-      PlayerList playerlist = p_198542_0_.getServer().getPlayerList();
+   private static int opPlayers(CommandSource source, Collection<GameProfile> gameProfiles) throws CommandSyntaxException {
+      PlayerList playerlist = source.getServer().getPlayerList();
       int i = 0;
 
-      for(GameProfile gameprofile : p_198542_1_) {
-         if (!playerlist.isOp(gameprofile)) {
-            playerlist.op(gameprofile);
+      for(GameProfile gameprofile : gameProfiles) {
+         if (!playerlist.canSendCommands(gameprofile)) {
+            playerlist.addOp(gameprofile);
             ++i;
-            p_198542_0_.sendSuccess(new TranslationTextComponent("commands.op.success", p_198542_1_.iterator().next().getName()), true);
+            source.sendFeedback(new TranslationTextComponent("commands.op.success", gameProfiles.iterator().next().getName()), true);
          }
       }
 
       if (i == 0) {
-         throw ERROR_ALREADY_OP.create();
+         throw ALREADY_OP.create();
       } else {
          return i;
       }

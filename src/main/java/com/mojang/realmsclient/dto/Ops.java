@@ -10,9 +10,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class Ops extends ValueObject {
-   public Set<String> ops = Sets.newHashSet();
+   public Set<String> field_230562_a_ = Sets.newHashSet();
 
-   public static Ops parse(String p_230754_0_) {
+   public static Ops func_230754_a_(String p_230754_0_) {
       Ops ops = new Ops();
       JsonParser jsonparser = new JsonParser();
 
@@ -22,7 +22,7 @@ public class Ops extends ValueObject {
          JsonElement jsonelement1 = jsonobject.get("ops");
          if (jsonelement1.isJsonArray()) {
             for(JsonElement jsonelement2 : jsonelement1.getAsJsonArray()) {
-               ops.ops.add(jsonelement2.getAsString());
+               ops.field_230562_a_.add(jsonelement2.getAsString());
             }
          }
       } catch (Exception exception) {

@@ -13,9 +13,9 @@ import net.minecraft.util.datafix.TypeReferences;
 public abstract class EntityRename extends DataFix {
    protected final String name;
 
-   public EntityRename(String p_i49715_1_, Schema p_i49715_2_, boolean p_i49715_3_) {
-      super(p_i49715_2_, p_i49715_3_);
-      this.name = p_i49715_1_;
+   public EntityRename(String name, Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
+      this.name = name;
    }
 
    public TypeRewriteRule makeRule() {

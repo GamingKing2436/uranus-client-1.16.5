@@ -3,15 +3,15 @@ package net.minecraft.enchantment;
 import net.minecraft.inventory.EquipmentSlotType;
 
 public class RiptideEnchantment extends Enchantment {
-   public RiptideEnchantment(Enchantment.Rarity p_i48784_1_, EquipmentSlotType... p_i48784_2_) {
-      super(p_i48784_1_, EnchantmentType.TRIDENT, p_i48784_2_);
+   public RiptideEnchantment(Enchantment.Rarity rarityIn, EquipmentSlotType... slots) {
+      super(rarityIn, EnchantmentType.TRIDENT, slots);
    }
 
-   public int getMinCost(int p_77321_1_) {
-      return 10 + p_77321_1_ * 7;
+   public int getMinEnchantability(int enchantmentLevel) {
+      return 10 + enchantmentLevel * 7;
    }
 
-   public int getMaxCost(int p_223551_1_) {
+   public int getMaxEnchantability(int enchantmentLevel) {
       return 50;
    }
 
@@ -19,7 +19,7 @@ public class RiptideEnchantment extends Enchantment {
       return 3;
    }
 
-   public boolean checkCompatibility(Enchantment p_77326_1_) {
-      return super.checkCompatibility(p_77326_1_) && p_77326_1_ != Enchantments.LOYALTY && p_77326_1_ != Enchantments.CHANNELING;
+   public boolean canApplyTogether(Enchantment ench) {
+      return super.canApplyTogether(ench) && ench != Enchantments.LOYALTY && ench != Enchantments.CHANNELING;
    }
 }

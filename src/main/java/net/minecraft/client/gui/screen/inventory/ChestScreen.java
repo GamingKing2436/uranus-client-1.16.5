@@ -12,31 +12,31 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ChestScreen extends ContainerScreen<ChestContainer> implements IHasContainer<ChestContainer> {
-   private static final ResourceLocation CONTAINER_BACKGROUND = new ResourceLocation("textures/gui/container/generic_54.png");
-   private final int containerRows;
+   private static final ResourceLocation CHEST_GUI_TEXTURE = new ResourceLocation("textures/gui/container/generic_54.png");
+   private final int inventoryRows;
 
-   public ChestScreen(ChestContainer p_i51095_1_, PlayerInventory p_i51095_2_, ITextComponent p_i51095_3_) {
-      super(p_i51095_1_, p_i51095_2_, p_i51095_3_);
+   public ChestScreen(ChestContainer container, PlayerInventory playerInventory, ITextComponent title) {
+      super(container, playerInventory, title);
       this.passEvents = false;
       int i = 222;
       int j = 114;
-      this.containerRows = p_i51095_1_.getRowCount();
-      this.imageHeight = 114 + this.containerRows * 18;
-      this.inventoryLabelY = this.imageHeight - 94;
+      this.inventoryRows = container.getNumRows();
+      this.ySize = 114 + this.inventoryRows * 18;
+      this.playerInventoryTitleY = this.ySize - 94;
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.renderBackground(p_230430_1_);
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
-      this.renderTooltip(p_230430_1_, p_230430_2_, p_230430_3_);
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.renderBackground(matrixStack);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
+      this.renderHoveredTooltip(matrixStack, mouseX, mouseY);
    }
 
-   protected void renderBg(MatrixStack p_230450_1_, float p_230450_2_, int p_230450_3_, int p_230450_4_) {
+   protected void drawGuiContainerBackgroundLayer(MatrixStack matrixStack, float partialTicks, int x, int y) {
       RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-      this.minecraft.getTextureManager().bind(CONTAINER_BACKGROUND);
-      int i = (this.width - this.imageWidth) / 2;
-      int j = (this.height - this.imageHeight) / 2;
-      this.blit(p_230450_1_, i, j, 0, 0, this.imageWidth, this.containerRows * 18 + 17);
-      this.blit(p_230450_1_, i, j + this.containerRows * 18 + 17, 0, 126, this.imageWidth, 96);
+      this.minecraft.getTextureManager().bindTexture(CHEST_GUI_TEXTURE);
+      int i = (this.width - this.xSize) / 2;
+      int j = (this.height - this.ySize) / 2;
+      this.blit(matrixStack, i, j, 0, 0, this.xSize, this.inventoryRows * 18 + 17);
+      this.blit(matrixStack, i, j + this.inventoryRows * 18 + 17, 0, 126, this.xSize, 96);
    }
 }

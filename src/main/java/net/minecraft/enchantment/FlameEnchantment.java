@@ -3,15 +3,15 @@ package net.minecraft.enchantment;
 import net.minecraft.inventory.EquipmentSlotType;
 
 public class FlameEnchantment extends Enchantment {
-   public FlameEnchantment(Enchantment.Rarity p_i46737_1_, EquipmentSlotType... p_i46737_2_) {
-      super(p_i46737_1_, EnchantmentType.BOW, p_i46737_2_);
+   public FlameEnchantment(Enchantment.Rarity rarityIn, EquipmentSlotType... slots) {
+      super(rarityIn, EnchantmentType.BOW, slots);
    }
 
-   public int getMinCost(int p_77321_1_) {
+   public int getMinEnchantability(int enchantmentLevel) {
       return 20;
    }
 
-   public int getMaxCost(int p_223551_1_) {
+   public int getMaxEnchantability(int enchantmentLevel) {
       return 50;
    }
 

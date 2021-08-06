@@ -21,30 +21,30 @@ public class CUpdateSignPacket implements IPacket<IServerPlayNetHandler> {
       this.lines = new String[]{p_i232585_2_, p_i232585_3_, p_i232585_4_, p_i232585_5_};
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.pos = p_148837_1_.readBlockPos();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.pos = buf.readBlockPos();
       this.lines = new String[4];
 
       for(int i = 0; i < 4; ++i) {
-         this.lines[i] = p_148837_1_.readUtf(384);
+         this.lines[i] = buf.readString(384);
       }
 
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeBlockPos(this.pos);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeBlockPos(this.pos);
 
       for(int i = 0; i < 4; ++i) {
-         p_148840_1_.writeUtf(this.lines[i]);
+         buf.writeString(this.lines[i]);
       }
 
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleSignUpdate(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processUpdateSign(this);
    }
 
-   public BlockPos getPos() {
+   public BlockPos getPosition() {
       return this.pos;
    }
 

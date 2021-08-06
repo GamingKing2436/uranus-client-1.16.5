@@ -28,81 +28,81 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class BrewingStandBlock extends ContainerBlock {
    public static final BooleanProperty[] HAS_BOTTLE = new BooleanProperty[]{BlockStateProperties.HAS_BOTTLE_0, BlockStateProperties.HAS_BOTTLE_1, BlockStateProperties.HAS_BOTTLE_2};
-   protected static final VoxelShape SHAPE = VoxelShapes.or(Block.box(1.0D, 0.0D, 1.0D, 15.0D, 2.0D, 15.0D), Block.box(7.0D, 0.0D, 7.0D, 9.0D, 14.0D, 9.0D));
+   protected static final VoxelShape SHAPE = VoxelShapes.or(Block.makeCuboidShape(1.0D, 0.0D, 1.0D, 15.0D, 2.0D, 15.0D), Block.makeCuboidShape(7.0D, 0.0D, 7.0D, 9.0D, 14.0D, 9.0D));
 
-   public BrewingStandBlock(AbstractBlock.Properties p_i48438_1_) {
-      super(p_i48438_1_);
-      this.registerDefaultState(this.stateDefinition.any().setValue(HAS_BOTTLE[0], Boolean.valueOf(false)).setValue(HAS_BOTTLE[1], Boolean.valueOf(false)).setValue(HAS_BOTTLE[2], Boolean.valueOf(false)));
+   public BrewingStandBlock(AbstractBlock.Properties properties) {
+      super(properties);
+      this.setDefaultState(this.stateContainer.getBaseState().with(HAS_BOTTLE[0], Boolean.valueOf(false)).with(HAS_BOTTLE[1], Boolean.valueOf(false)).with(HAS_BOTTLE[2], Boolean.valueOf(false)));
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.MODEL;
    }
 
-   public TileEntity newBlockEntity(IBlockReader p_196283_1_) {
+   public TileEntity createNewTileEntity(IBlockReader worldIn) {
       return new BrewingStandTileEntity();
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
       return SHAPE;
    }
 
-   public ActionResultType use(BlockState p_225533_1_, World p_225533_2_, BlockPos p_225533_3_, PlayerEntity p_225533_4_, Hand p_225533_5_, BlockRayTraceResult p_225533_6_) {
-      if (p_225533_2_.isClientSide) {
+   public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+      if (worldIn.isRemote) {
          return ActionResultType.SUCCESS;
       } else {
-         TileEntity tileentity = p_225533_2_.getBlockEntity(p_225533_3_);
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof BrewingStandTileEntity) {
-            p_225533_4_.openMenu((BrewingStandTileEntity)tileentity);
-            p_225533_4_.awardStat(Stats.INTERACT_WITH_BREWINGSTAND);
+            player.openContainer((BrewingStandTileEntity)tileentity);
+            player.addStat(Stats.INTERACT_WITH_BREWINGSTAND);
          }
 
          return ActionResultType.CONSUME;
       }
    }
 
-   public void setPlacedBy(World p_180633_1_, BlockPos p_180633_2_, BlockState p_180633_3_, LivingEntity p_180633_4_, ItemStack p_180633_5_) {
-      if (p_180633_5_.hasCustomHoverName()) {
-         TileEntity tileentity = p_180633_1_.getBlockEntity(p_180633_2_);
+   public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+      if (stack.hasDisplayName()) {
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof BrewingStandTileEntity) {
-            ((BrewingStandTileEntity)tileentity).setCustomName(p_180633_5_.getHoverName());
+            ((BrewingStandTileEntity)tileentity).setCustomName(stack.getDisplayName());
          }
       }
 
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void animateTick(BlockState p_180655_1_, World p_180655_2_, BlockPos p_180655_3_, Random p_180655_4_) {
-      double d0 = (double)p_180655_3_.getX() + 0.4D + (double)p_180655_4_.nextFloat() * 0.2D;
-      double d1 = (double)p_180655_3_.getY() + 0.7D + (double)p_180655_4_.nextFloat() * 0.3D;
-      double d2 = (double)p_180655_3_.getZ() + 0.4D + (double)p_180655_4_.nextFloat() * 0.2D;
-      p_180655_2_.addParticle(ParticleTypes.SMOKE, d0, d1, d2, 0.0D, 0.0D, 0.0D);
+   public void animateTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand) {
+      double d0 = (double)pos.getX() + 0.4D + (double)rand.nextFloat() * 0.2D;
+      double d1 = (double)pos.getY() + 0.7D + (double)rand.nextFloat() * 0.3D;
+      double d2 = (double)pos.getZ() + 0.4D + (double)rand.nextFloat() * 0.2D;
+      worldIn.addParticle(ParticleTypes.SMOKE, d0, d1, d2, 0.0D, 0.0D, 0.0D);
    }
 
-   public void onRemove(BlockState p_196243_1_, World p_196243_2_, BlockPos p_196243_3_, BlockState p_196243_4_, boolean p_196243_5_) {
-      if (!p_196243_1_.is(p_196243_4_.getBlock())) {
-         TileEntity tileentity = p_196243_2_.getBlockEntity(p_196243_3_);
+   public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
+      if (!state.isIn(newState.getBlock())) {
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof BrewingStandTileEntity) {
-            InventoryHelper.dropContents(p_196243_2_, p_196243_3_, (BrewingStandTileEntity)tileentity);
+            InventoryHelper.dropInventoryItems(worldIn, pos, (BrewingStandTileEntity)tileentity);
          }
 
-         super.onRemove(p_196243_1_, p_196243_2_, p_196243_3_, p_196243_4_, p_196243_5_);
+         super.onReplaced(state, worldIn, pos, newState, isMoving);
       }
    }
 
-   public boolean hasAnalogOutputSignal(BlockState p_149740_1_) {
+   public boolean hasComparatorInputOverride(BlockState state) {
       return true;
    }
 
-   public int getAnalogOutputSignal(BlockState p_180641_1_, World p_180641_2_, BlockPos p_180641_3_) {
-      return Container.getRedstoneSignalFromBlockEntity(p_180641_2_.getBlockEntity(p_180641_3_));
+   public int getComparatorInputOverride(BlockState blockState, World worldIn, BlockPos pos) {
+      return Container.calcRedstone(worldIn.getTileEntity(pos));
    }
 
-   protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> p_206840_1_) {
-      p_206840_1_.add(HAS_BOTTLE[0], HAS_BOTTLE[1], HAS_BOTTLE[2]);
+   protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+      builder.add(HAS_BOTTLE[0], HAS_BOTTLE[1], HAS_BOTTLE[2]);
    }
 
-   public boolean isPathfindable(BlockState p_196266_1_, IBlockReader p_196266_2_, BlockPos p_196266_3_, PathType p_196266_4_) {
+   public boolean allowsMovement(BlockState state, IBlockReader worldIn, BlockPos pos, PathType type) {
       return false;
    }
 }

@@ -9,8 +9,8 @@ import java.util.Optional;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class OptionsLowerCaseLanguage extends DataFix {
-   public OptionsLowerCaseLanguage(Schema p_i49619_1_, boolean p_i49619_2_) {
-      super(p_i49619_1_, p_i49619_2_);
+   public OptionsLowerCaseLanguage(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {

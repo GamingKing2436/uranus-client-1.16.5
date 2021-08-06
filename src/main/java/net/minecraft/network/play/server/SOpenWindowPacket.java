@@ -12,44 +12,44 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SOpenWindowPacket implements IPacket<IClientPlayNetHandler> {
-   private int containerId;
-   private int type;
+   private int windowId;
+   private int menuId;
    private ITextComponent title;
 
    public SOpenWindowPacket() {
    }
 
-   public SOpenWindowPacket(int p_i50769_1_, ContainerType<?> p_i50769_2_, ITextComponent p_i50769_3_) {
-      this.containerId = p_i50769_1_;
-      this.type = Registry.MENU.getId(p_i50769_2_);
-      this.title = p_i50769_3_;
+   public SOpenWindowPacket(int windowIdIn, ContainerType<?> menuIdIn, ITextComponent titleIn) {
+      this.windowId = windowIdIn;
+      this.menuId = Registry.MENU.getId(menuIdIn);
+      this.title = titleIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.containerId = p_148837_1_.readVarInt();
-      this.type = p_148837_1_.readVarInt();
-      this.title = p_148837_1_.readComponent();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.windowId = buf.readVarInt();
+      this.menuId = buf.readVarInt();
+      this.title = buf.readTextComponent();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(this.containerId);
-      p_148840_1_.writeVarInt(this.type);
-      p_148840_1_.writeComponent(this.title);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(this.windowId);
+      buf.writeVarInt(this.menuId);
+      buf.writeTextComponent(this.title);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleOpenScreen(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleOpenWindowPacket(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getContainerId() {
-      return this.containerId;
+   public int getWindowId() {
+      return this.windowId;
    }
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public ContainerType<?> getType() {
-      return Registry.MENU.byId(this.type);
+   public ContainerType<?> getContainerType() {
+      return Registry.MENU.getByValue(this.menuId);
    }
 
    @OnlyIn(Dist.CLIENT)

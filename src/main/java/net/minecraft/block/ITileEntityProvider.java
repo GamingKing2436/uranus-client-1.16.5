@@ -6,5 +6,5 @@ import net.minecraft.world.IBlockReader;
 
 public interface ITileEntityProvider {
    @Nullable
-   TileEntity newBlockEntity(IBlockReader p_196283_1_);
+   TileEntity createNewTileEntity(IBlockReader worldIn);
 }

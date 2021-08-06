@@ -49,40 +49,40 @@ public class ItemStackTileEntityRenderer {
    private static final ShulkerBoxTileEntity[] SHULKER_BOXES = Arrays.stream(DyeColor.values()).sorted(Comparator.comparingInt(DyeColor::getId)).map(ShulkerBoxTileEntity::new).toArray((p_199929_0_) -> {
       return new ShulkerBoxTileEntity[p_199929_0_];
    });
-   private static final ShulkerBoxTileEntity DEFAULT_SHULKER_BOX = new ShulkerBoxTileEntity((DyeColor)null);
+   private static final ShulkerBoxTileEntity SHULKER_BOX = new ShulkerBoxTileEntity((DyeColor)null);
    public static final ItemStackTileEntityRenderer instance = new ItemStackTileEntityRenderer();
-   private final ChestTileEntity chest = new ChestTileEntity();
-   private final ChestTileEntity trappedChest = new TrappedChestTileEntity();
+   private final ChestTileEntity chestBasic = new ChestTileEntity();
+   private final ChestTileEntity chestTrap = new TrappedChestTileEntity();
    private final EnderChestTileEntity enderChest = new EnderChestTileEntity();
    private final BannerTileEntity banner = new BannerTileEntity();
    private final BedTileEntity bed = new BedTileEntity();
    private final ConduitTileEntity conduit = new ConduitTileEntity();
-   private final ShieldModel shieldModel = new ShieldModel();
-   private final TridentModel tridentModel = new TridentModel();
+   private final ShieldModel modelShield = new ShieldModel();
+   private final TridentModel trident = new TridentModel();
 
-   public void renderByItem(ItemStack p_239207_1_, ItemCameraTransforms.TransformType p_239207_2_, MatrixStack p_239207_3_, IRenderTypeBuffer p_239207_4_, int p_239207_5_, int p_239207_6_) {
-      Item item = p_239207_1_.getItem();
+   public void func_239207_a_(ItemStack stack, ItemCameraTransforms.TransformType p_239207_2_, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLight, int combinedOverlay) {
+      Item item = stack.getItem();
       if (item instanceof BlockItem) {
          Block block = ((BlockItem)item).getBlock();
          if (block instanceof AbstractSkullBlock) {
             GameProfile gameprofile = null;
-            if (p_239207_1_.hasTag()) {
-               CompoundNBT compoundnbt = p_239207_1_.getTag();
+            if (stack.hasTag()) {
+               CompoundNBT compoundnbt = stack.getTag();
                if (compoundnbt.contains("SkullOwner", 10)) {
                   gameprofile = NBTUtil.readGameProfile(compoundnbt.getCompound("SkullOwner"));
                } else if (compoundnbt.contains("SkullOwner", 8) && !StringUtils.isBlank(compoundnbt.getString("SkullOwner"))) {
                   GameProfile gameprofile1 = new GameProfile((UUID)null, compoundnbt.getString("SkullOwner"));
-                  gameprofile = SkullTileEntity.updateGameprofile(gameprofile1);
+                  gameprofile = SkullTileEntity.updateGameProfile(gameprofile1);
                   compoundnbt.remove("SkullOwner");
                   compoundnbt.put("SkullOwner", NBTUtil.writeGameProfile(new CompoundNBT(), gameprofile));
                }
             }
 
-            SkullTileEntityRenderer.renderSkull((Direction)null, 180.0F, ((AbstractSkullBlock)block).getType(), gameprofile, 0.0F, p_239207_3_, p_239207_4_, p_239207_5_);
+            SkullTileEntityRenderer.render((Direction)null, 180.0F, ((AbstractSkullBlock)block).getSkullType(), gameprofile, 0.0F, matrixStack, buffer, combinedLight);
          } else {
             TileEntity tileentity;
             if (block instanceof AbstractBannerBlock) {
-               this.banner.fromItem(p_239207_1_, ((AbstractBannerBlock)block).getColor());
+               this.banner.loadFromItemStack(stack, ((AbstractBannerBlock)block).getColor());
                tileentity = this.banner;
             } else if (block instanceof BedBlock) {
                this.bed.setColor(((BedBlock)block).getColor());
@@ -90,11 +90,11 @@ public class ItemStackTileEntityRenderer {
             } else if (block == Blocks.CONDUIT) {
                tileentity = this.conduit;
             } else if (block == Blocks.CHEST) {
-               tileentity = this.chest;
+               tileentity = this.chestBasic;
             } else if (block == Blocks.ENDER_CHEST) {
                tileentity = this.enderChest;
             } else if (block == Blocks.TRAPPED_CHEST) {
-               tileentity = this.trappedChest;
+               tileentity = this.chestTrap;
             } else {
                if (!(block instanceof ShulkerBoxBlock)) {
                   return;
@@ -102,36 +102,36 @@ public class ItemStackTileEntityRenderer {
 
                DyeColor dyecolor = ShulkerBoxBlock.getColorFromItem(item);
                if (dyecolor == null) {
-                  tileentity = DEFAULT_SHULKER_BOX;
+                  tileentity = SHULKER_BOX;
                } else {
                   tileentity = SHULKER_BOXES[dyecolor.getId()];
                }
             }
 
-            TileEntityRendererDispatcher.instance.renderItem(tileentity, p_239207_3_, p_239207_4_, p_239207_5_, p_239207_6_);
+            TileEntityRendererDispatcher.instance.renderItem(tileentity, matrixStack, buffer, combinedLight, combinedOverlay);
          }
       } else {
          if (item == Items.SHIELD) {
-            boolean flag = p_239207_1_.getTagElement("BlockEntityTag") != null;
-            p_239207_3_.pushPose();
-            p_239207_3_.scale(1.0F, -1.0F, -1.0F);
-            RenderMaterial rendermaterial = flag ? ModelBakery.SHIELD_BASE : ModelBakery.NO_PATTERN_SHIELD;
-            IVertexBuilder ivertexbuilder = rendermaterial.sprite().wrap(ItemRenderer.getFoilBufferDirect(p_239207_4_, this.shieldModel.renderType(rendermaterial.atlasLocation()), true, p_239207_1_.hasFoil()));
-            this.shieldModel.handle().render(p_239207_3_, ivertexbuilder, p_239207_5_, p_239207_6_, 1.0F, 1.0F, 1.0F, 1.0F);
+            boolean flag = stack.getChildTag("BlockEntityTag") != null;
+            matrixStack.push();
+            matrixStack.scale(1.0F, -1.0F, -1.0F);
+            RenderMaterial rendermaterial = flag ? ModelBakery.LOCATION_SHIELD_BASE : ModelBakery.LOCATION_SHIELD_NO_PATTERN;
+            IVertexBuilder ivertexbuilder = rendermaterial.getSprite().wrapBuffer(ItemRenderer.getEntityGlintVertexBuilder(buffer, this.modelShield.getRenderType(rendermaterial.getAtlasLocation()), true, stack.hasEffect()));
+            this.modelShield.func_228294_b_().render(matrixStack, ivertexbuilder, combinedLight, combinedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
             if (flag) {
-               List<Pair<BannerPattern, DyeColor>> list = BannerTileEntity.createPatterns(ShieldItem.getColor(p_239207_1_), BannerTileEntity.getItemPatterns(p_239207_1_));
-               BannerTileEntityRenderer.renderPatterns(p_239207_3_, p_239207_4_, p_239207_5_, p_239207_6_, this.shieldModel.plate(), rendermaterial, false, list, p_239207_1_.hasFoil());
+               List<Pair<BannerPattern, DyeColor>> list = BannerTileEntity.getPatternColorData(ShieldItem.getColor(stack), BannerTileEntity.getPatternData(stack));
+               BannerTileEntityRenderer.func_241717_a_(matrixStack, buffer, combinedLight, combinedOverlay, this.modelShield.func_228293_a_(), rendermaterial, false, list, stack.hasEffect());
             } else {
-               this.shieldModel.plate().render(p_239207_3_, ivertexbuilder, p_239207_5_, p_239207_6_, 1.0F, 1.0F, 1.0F, 1.0F);
+               this.modelShield.func_228293_a_().render(matrixStack, ivertexbuilder, combinedLight, combinedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
             }
 
-            p_239207_3_.popPose();
+            matrixStack.pop();
          } else if (item == Items.TRIDENT) {
-            p_239207_3_.pushPose();
-            p_239207_3_.scale(1.0F, -1.0F, -1.0F);
-            IVertexBuilder ivertexbuilder1 = ItemRenderer.getFoilBufferDirect(p_239207_4_, this.tridentModel.renderType(TridentModel.TEXTURE), false, p_239207_1_.hasFoil());
-            this.tridentModel.renderToBuffer(p_239207_3_, ivertexbuilder1, p_239207_5_, p_239207_6_, 1.0F, 1.0F, 1.0F, 1.0F);
-            p_239207_3_.popPose();
+            matrixStack.push();
+            matrixStack.scale(1.0F, -1.0F, -1.0F);
+            IVertexBuilder ivertexbuilder1 = ItemRenderer.getEntityGlintVertexBuilder(buffer, this.trident.getRenderType(TridentModel.TEXTURE_LOCATION), false, stack.hasEffect());
+            this.trident.render(matrixStack, ivertexbuilder1, combinedLight, combinedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+            matrixStack.pop();
          }
 
       }

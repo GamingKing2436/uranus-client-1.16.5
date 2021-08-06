@@ -18,22 +18,22 @@ public class WoodType {
    public static final WoodType WARPED = register(new WoodType("warped"));
    private final String name;
 
-   protected WoodType(String p_i225775_1_) {
-      this.name = p_i225775_1_;
+   protected WoodType(String nameIn) {
+      this.name = nameIn;
    }
 
-   private static WoodType register(WoodType p_227047_0_) {
-      VALUES.add(p_227047_0_);
-      return p_227047_0_;
+   private static WoodType register(WoodType woodTypeIn) {
+      VALUES.add(woodTypeIn);
+      return woodTypeIn;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static Stream<WoodType> values() {
+   public static Stream<WoodType> getValues() {
       return VALUES.stream();
    }
 
    @OnlyIn(Dist.CLIENT)
-   public String name() {
+   public String getName() {
       return this.name;
    }
 }

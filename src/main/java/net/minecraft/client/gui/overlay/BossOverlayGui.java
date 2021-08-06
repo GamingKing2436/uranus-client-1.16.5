@@ -17,31 +17,31 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class BossOverlayGui extends AbstractGui {
-   private static final ResourceLocation GUI_BARS_LOCATION = new ResourceLocation("textures/gui/bars.png");
-   private final Minecraft minecraft;
-   private final Map<UUID, ClientBossInfo> events = Maps.newLinkedHashMap();
+   private static final ResourceLocation GUI_BARS_TEXTURES = new ResourceLocation("textures/gui/bars.png");
+   private final Minecraft client;
+   private final Map<UUID, ClientBossInfo> mapBossInfos = Maps.newLinkedHashMap();
 
-   public BossOverlayGui(Minecraft p_i46606_1_) {
-      this.minecraft = p_i46606_1_;
+   public BossOverlayGui(Minecraft clientIn) {
+      this.client = clientIn;
    }
 
-   public void render(MatrixStack p_238484_1_) {
-      if (!this.events.isEmpty()) {
-         int i = this.minecraft.getWindow().getGuiScaledWidth();
+   public void func_238484_a_(MatrixStack p_238484_1_) {
+      if (!this.mapBossInfos.isEmpty()) {
+         int i = this.client.getMainWindow().getScaledWidth();
          int j = 12;
 
-         for(ClientBossInfo clientbossinfo : this.events.values()) {
+         for(ClientBossInfo clientbossinfo : this.mapBossInfos.values()) {
             int k = i / 2 - 91;
             RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-            this.minecraft.getTextureManager().bind(GUI_BARS_LOCATION);
-            this.drawBar(p_238484_1_, k, j, clientbossinfo);
+            this.client.getTextureManager().bindTexture(GUI_BARS_TEXTURES);
+            this.func_238485_a_(p_238484_1_, k, j, clientbossinfo);
             ITextComponent itextcomponent = clientbossinfo.getName();
-            int l = this.minecraft.font.width(itextcomponent);
+            int l = this.client.fontRenderer.getStringPropertyWidth(itextcomponent);
             int i1 = i / 2 - l / 2;
             int j1 = j - 9;
-            this.minecraft.font.drawShadow(p_238484_1_, itextcomponent, (float)i1, (float)j1, 16777215);
+            this.client.fontRenderer.func_243246_a(p_238484_1_, itextcomponent, (float)i1, (float)j1, 16777215);
             j += 10 + 9;
-            if (j >= this.minecraft.getWindow().getGuiScaledHeight() / 3) {
+            if (j >= this.client.getMainWindow().getScaledHeight() / 3) {
                break;
             }
          }
@@ -49,7 +49,7 @@ public class BossOverlayGui extends AbstractGui {
       }
    }
 
-   private void drawBar(MatrixStack p_238485_1_, int p_238485_2_, int p_238485_3_, BossInfo p_238485_4_) {
+   private void func_238485_a_(MatrixStack p_238485_1_, int p_238485_2_, int p_238485_3_, BossInfo p_238485_4_) {
       this.blit(p_238485_1_, p_238485_2_, p_238485_3_, 0, p_238485_4_.getColor().ordinal() * 5 * 2, 182, 5);
       if (p_238485_4_.getOverlay() != BossInfo.Overlay.PROGRESS) {
          this.blit(p_238485_1_, p_238485_2_, p_238485_3_, 0, 80 + (p_238485_4_.getOverlay().ordinal() - 1) * 5 * 2, 182, 5);
@@ -65,25 +65,25 @@ public class BossOverlayGui extends AbstractGui {
 
    }
 
-   public void update(SUpdateBossInfoPacket p_184055_1_) {
-      if (p_184055_1_.getOperation() == SUpdateBossInfoPacket.Operation.ADD) {
-         this.events.put(p_184055_1_.getId(), new ClientBossInfo(p_184055_1_));
-      } else if (p_184055_1_.getOperation() == SUpdateBossInfoPacket.Operation.REMOVE) {
-         this.events.remove(p_184055_1_.getId());
+   public void read(SUpdateBossInfoPacket packetIn) {
+      if (packetIn.getOperation() == SUpdateBossInfoPacket.Operation.ADD) {
+         this.mapBossInfos.put(packetIn.getUniqueId(), new ClientBossInfo(packetIn));
+      } else if (packetIn.getOperation() == SUpdateBossInfoPacket.Operation.REMOVE) {
+         this.mapBossInfos.remove(packetIn.getUniqueId());
       } else {
-         this.events.get(p_184055_1_.getId()).update(p_184055_1_);
+         this.mapBossInfos.get(packetIn.getUniqueId()).updateFromPacket(packetIn);
       }
 
    }
 
-   public void reset() {
-      this.events.clear();
+   public void clearBossInfos() {
+      this.mapBossInfos.clear();
    }
 
-   public boolean shouldPlayMusic() {
-      if (!this.events.isEmpty()) {
-         for(BossInfo bossinfo : this.events.values()) {
-            if (bossinfo.shouldPlayBossMusic()) {
+   public boolean shouldPlayEndBossMusic() {
+      if (!this.mapBossInfos.isEmpty()) {
+         for(BossInfo bossinfo : this.mapBossInfos.values()) {
+            if (bossinfo.shouldPlayEndBossMusic()) {
                return true;
             }
          }
@@ -92,10 +92,10 @@ public class BossOverlayGui extends AbstractGui {
       return false;
    }
 
-   public boolean shouldDarkenScreen() {
-      if (!this.events.isEmpty()) {
-         for(BossInfo bossinfo : this.events.values()) {
-            if (bossinfo.shouldDarkenScreen()) {
+   public boolean shouldDarkenSky() {
+      if (!this.mapBossInfos.isEmpty()) {
+         for(BossInfo bossinfo : this.mapBossInfos.values()) {
+            if (bossinfo.shouldDarkenSky()) {
                return true;
             }
          }
@@ -104,10 +104,10 @@ public class BossOverlayGui extends AbstractGui {
       return false;
    }
 
-   public boolean shouldCreateWorldFog() {
-      if (!this.events.isEmpty()) {
-         for(BossInfo bossinfo : this.events.values()) {
-            if (bossinfo.shouldCreateWorldFog()) {
+   public boolean shouldCreateFog() {
+      if (!this.mapBossInfos.isEmpty()) {
+         for(BossInfo bossinfo : this.mapBossInfos.values()) {
+            if (bossinfo.shouldCreateFog()) {
                return true;
             }
          }

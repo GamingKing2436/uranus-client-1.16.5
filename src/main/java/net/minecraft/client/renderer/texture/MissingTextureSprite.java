@@ -12,10 +12,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public final class MissingTextureSprite extends TextureAtlasSprite {
-   private static final ResourceLocation MISSING_TEXTURE_LOCATION = new ResourceLocation("missingno");
+   private static final ResourceLocation LOCATION = new ResourceLocation("missingno");
    @Nullable
-   private static DynamicTexture missingTexture;
-   private static final LazyValue<NativeImage> MISSING_IMAGE_DATA = new LazyValue<>(() -> {
+   private static DynamicTexture dynamicTexture;
+   private static final LazyValue<NativeImage> IMAGE = new LazyValue<>(() -> {
       NativeImage nativeimage = new NativeImage(16, 16, false);
       int i = -16777216;
       int j = -524040;
@@ -33,37 +33,37 @@ public final class MissingTextureSprite extends TextureAtlasSprite {
       nativeimage.untrack();
       return nativeimage;
    });
-   private static final TextureAtlasSprite.Info INFO = new TextureAtlasSprite.Info(MISSING_TEXTURE_LOCATION, 16, 16, new AnimationMetadataSection(Lists.newArrayList(new AnimationFrame(0, -1)), 16, 16, 1, false));
+   private static final TextureAtlasSprite.Info spriteInfo = new TextureAtlasSprite.Info(LOCATION, 16, 16, new AnimationMetadataSection(Lists.newArrayList(new AnimationFrame(0, -1)), 16, 16, 1, false));
 
-   private MissingTextureSprite(AtlasTexture p_i226044_1_, int p_i226044_2_, int p_i226044_3_, int p_i226044_4_, int p_i226044_5_, int p_i226044_6_) {
-      super(p_i226044_1_, INFO, p_i226044_2_, p_i226044_3_, p_i226044_4_, p_i226044_5_, p_i226044_6_, MISSING_IMAGE_DATA.get());
+   private MissingTextureSprite(AtlasTexture atlasTextureIn, int mipmapLevelIn, int atlasWidthIn, int atlasHeightIn, int xIn, int yIn) {
+      super(atlasTextureIn, spriteInfo, mipmapLevelIn, atlasWidthIn, atlasHeightIn, xIn, yIn, IMAGE.getValue());
    }
 
-   public static MissingTextureSprite newInstance(AtlasTexture p_229176_0_, int p_229176_1_, int p_229176_2_, int p_229176_3_, int p_229176_4_, int p_229176_5_) {
-      return new MissingTextureSprite(p_229176_0_, p_229176_1_, p_229176_2_, p_229176_3_, p_229176_4_, p_229176_5_);
+   public static MissingTextureSprite create(AtlasTexture atlasTextureIn, int mipmapLevelIn, int atlasWidthIn, int atlasHeightIn, int xIn, int yIn) {
+      return new MissingTextureSprite(atlasTextureIn, mipmapLevelIn, atlasWidthIn, atlasHeightIn, xIn, yIn);
    }
 
    public static ResourceLocation getLocation() {
-      return MISSING_TEXTURE_LOCATION;
+      return LOCATION;
    }
 
-   public static TextureAtlasSprite.Info info() {
-      return INFO;
+   public static TextureAtlasSprite.Info getSpriteInfo() {
+      return spriteInfo;
    }
 
    public void close() {
-      for(int i = 1; i < this.mainImage.length; ++i) {
-         this.mainImage[i].close();
+      for(int i = 1; i < this.frames.length; ++i) {
+         this.frames[i].close();
       }
 
    }
 
-   public static DynamicTexture getTexture() {
-      if (missingTexture == null) {
-         missingTexture = new DynamicTexture(MISSING_IMAGE_DATA.get());
-         Minecraft.getInstance().getTextureManager().register(MISSING_TEXTURE_LOCATION, missingTexture);
+   public static DynamicTexture getDynamicTexture() {
+      if (dynamicTexture == null) {
+         dynamicTexture = new DynamicTexture(IMAGE.getValue());
+         Minecraft.getInstance().getTextureManager().loadTexture(LOCATION, dynamicTexture);
       }
 
-      return missingTexture;
+      return dynamicTexture;
    }
 }

@@ -14,21 +14,21 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class UUIDArgument implements ArgumentType<UUID> {
-   public static final SimpleCommandExceptionType ERROR_INVALID_UUID = new SimpleCommandExceptionType(new TranslationTextComponent("argument.uuid.invalid"));
-   private static final Collection<String> EXAMPLES = Arrays.asList("dd12be42-52a9-4a91-a8a1-11c01849e498");
-   private static final Pattern ALLOWED_CHARACTERS = Pattern.compile("^([-A-Fa-f0-9]+)");
+   public static final SimpleCommandExceptionType field_239191_a_ = new SimpleCommandExceptionType(new TranslationTextComponent("argument.uuid.invalid"));
+   private static final Collection<String> field_239192_b_ = Arrays.asList("dd12be42-52a9-4a91-a8a1-11c01849e498");
+   private static final Pattern field_239193_c_ = Pattern.compile("^([-A-Fa-f0-9]+)");
 
-   public static UUID getUuid(CommandContext<CommandSource> p_239195_0_, String p_239195_1_) {
+   public static UUID func_239195_a_(CommandContext<CommandSource> p_239195_0_, String p_239195_1_) {
       return p_239195_0_.getArgument(p_239195_1_, UUID.class);
    }
 
-   public static UUIDArgument uuid() {
+   public static UUIDArgument func_239194_a_() {
       return new UUIDArgument();
    }
 
    public UUID parse(StringReader p_parse_1_) throws CommandSyntaxException {
       String s = p_parse_1_.getRemaining();
-      Matcher matcher = ALLOWED_CHARACTERS.matcher(s);
+      Matcher matcher = field_239193_c_.matcher(s);
       if (matcher.find()) {
          String s1 = matcher.group(1);
 
@@ -40,10 +40,10 @@ public class UUIDArgument implements ArgumentType<UUID> {
          }
       }
 
-      throw ERROR_INVALID_UUID.create();
+      throw field_239191_a_.create();
    }
 
    public Collection<String> getExamples() {
-      return EXAMPLES;
+      return field_239192_b_;
    }
 }

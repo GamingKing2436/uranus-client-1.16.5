@@ -32,51 +32,51 @@ import org.apache.logging.log4j.Logger;
 @OnlyIn(Dist.CLIENT)
 public class WinGameScreen extends Screen {
    private static final Logger LOGGER = LogManager.getLogger();
-   private static final ResourceLocation LOGO_LOCATION = new ResourceLocation("textures/gui/title/minecraft.png");
-   private static final ResourceLocation EDITION_LOCATION = new ResourceLocation("textures/gui/title/edition.png");
-   private static final ResourceLocation VIGNETTE_LOCATION = new ResourceLocation("textures/misc/vignette.png");
-   private static final String OBFUSCATE_TOKEN = "" + TextFormatting.WHITE + TextFormatting.OBFUSCATED + TextFormatting.GREEN + TextFormatting.AQUA;
+   private static final ResourceLocation MINECRAFT_LOGO = new ResourceLocation("textures/gui/title/minecraft.png");
+   private static final ResourceLocation MINECRAFT_EDITION = new ResourceLocation("textures/gui/title/edition.png");
+   private static final ResourceLocation VIGNETTE_TEXTURE = new ResourceLocation("textures/misc/vignette.png");
+   private static final String field_238663_q_ = "" + TextFormatting.WHITE + TextFormatting.OBFUSCATED + TextFormatting.GREEN + TextFormatting.AQUA;
    private final boolean poem;
    private final Runnable onFinished;
    private float time;
    private List<IReorderingProcessor> lines;
-   private IntSet centeredLines;
+   private IntSet field_238664_v_;
    private int totalScrollLength;
    private float scrollSpeed = 0.5F;
 
-   public WinGameScreen(boolean p_i47590_1_, Runnable p_i47590_2_) {
-      super(NarratorChatListener.NO_TITLE);
-      this.poem = p_i47590_1_;
-      this.onFinished = p_i47590_2_;
-      if (!p_i47590_1_) {
+   public WinGameScreen(boolean poemIn, Runnable onFinishedIn) {
+      super(NarratorChatListener.EMPTY);
+      this.poem = poemIn;
+      this.onFinished = onFinishedIn;
+      if (!poemIn) {
          this.scrollSpeed = 0.75F;
       }
 
    }
 
    public void tick() {
-      this.minecraft.getMusicManager().tick();
-      this.minecraft.getSoundManager().tick(false);
+      this.minecraft.getMusicTicker().tick();
+      this.minecraft.getSoundHandler().tick(false);
       float f = (float)(this.totalScrollLength + this.height + this.height + 24) / this.scrollSpeed;
       if (this.time > f) {
-         this.respawn();
+         this.sendRespawnPacket();
       }
 
    }
 
-   public void onClose() {
-      this.respawn();
+   public void closeScreen() {
+      this.sendRespawnPacket();
    }
 
-   private void respawn() {
+   private void sendRespawnPacket() {
       this.onFinished.run();
-      this.minecraft.setScreen((Screen)null);
+      this.minecraft.displayGuiScreen((Screen)null);
    }
 
    protected void init() {
       if (this.lines == null) {
          this.lines = Lists.newArrayList();
-         this.centeredLines = new IntOpenHashSet();
+         this.field_238664_v_ = new IntOpenHashSet();
          IResource iresource = null;
 
          try {
@@ -92,19 +92,19 @@ public class WinGameScreen extends Screen {
                   int j;
                   String s1;
                   String s2;
-                  for(s = s.replaceAll("PLAYERNAME", this.minecraft.getUser().getName()); (j = s.indexOf(OBFUSCATE_TOKEN)) != -1; s = s1 + TextFormatting.WHITE + TextFormatting.OBFUSCATED + "XXXXXXXX".substring(0, random.nextInt(4) + 3) + s2) {
+                  for(s = s.replaceAll("PLAYERNAME", this.minecraft.getSession().getUsername()); (j = s.indexOf(field_238663_q_)) != -1; s = s1 + TextFormatting.WHITE + TextFormatting.OBFUSCATED + "XXXXXXXX".substring(0, random.nextInt(4) + 3) + s2) {
                      s1 = s.substring(0, j);
-                     s2 = s.substring(j + OBFUSCATE_TOKEN.length());
+                     s2 = s.substring(j + field_238663_q_.length());
                   }
 
-                  this.lines.addAll(this.minecraft.font.split(new StringTextComponent(s), 274));
-                  this.lines.add(IReorderingProcessor.EMPTY);
+                  this.lines.addAll(this.minecraft.fontRenderer.trimStringToWidth(new StringTextComponent(s), 274));
+                  this.lines.add(IReorderingProcessor.field_242232_a);
                }
 
                inputstream.close();
 
                for(int k = 0; k < 8; ++k) {
-                  this.lines.add(IReorderingProcessor.EMPTY);
+                  this.lines.add(IReorderingProcessor.field_242232_a);
                }
             }
 
@@ -113,7 +113,7 @@ public class WinGameScreen extends Screen {
 
             String s3;
             while((s3 = bufferedreader1.readLine()) != null) {
-               s3 = s3.replaceAll("PLAYERNAME", this.minecraft.getUser().getName());
+               s3 = s3.replaceAll("PLAYERNAME", this.minecraft.getSession().getUsername());
                s3 = s3.replaceAll("\t", "    ");
                boolean flag;
                if (s3.startsWith("[C]")) {
@@ -123,15 +123,15 @@ public class WinGameScreen extends Screen {
                   flag = false;
                }
 
-               for(IReorderingProcessor ireorderingprocessor : this.minecraft.font.split(new StringTextComponent(s3), 274)) {
+               for(IReorderingProcessor ireorderingprocessor : this.minecraft.fontRenderer.trimStringToWidth(new StringTextComponent(s3), 274)) {
                   if (flag) {
-                     this.centeredLines.add(this.lines.size());
+                     this.field_238664_v_.add(this.lines.size());
                   }
 
                   this.lines.add(ireorderingprocessor);
                }
 
-               this.lines.add(IReorderingProcessor.EMPTY);
+               this.lines.add(IReorderingProcessor.field_242232_a);
             }
 
             inputstream1.close();
@@ -145,8 +145,8 @@ public class WinGameScreen extends Screen {
       }
    }
 
-   private void renderBg(int p_146575_1_, int p_146575_2_, float p_146575_3_) {
-      this.minecraft.getTextureManager().bind(AbstractGui.BACKGROUND_LOCATION);
+   private void drawWinGameScreen(int mouseX, int mouseY, float partialTicks) {
+      this.minecraft.getTextureManager().bindTexture(AbstractGui.BACKGROUND_LOCATION);
       int i = this.width;
       float f = -this.time * 0.5F * this.scrollSpeed;
       float f1 = (float)this.height - this.time * 0.5F * this.scrollSpeed;
@@ -165,35 +165,35 @@ public class WinGameScreen extends Screen {
       f3 = f3 * f3;
       f3 = f3 * 96.0F / 255.0F;
       Tessellator tessellator = Tessellator.getInstance();
-      BufferBuilder bufferbuilder = tessellator.getBuilder();
+      BufferBuilder bufferbuilder = tessellator.getBuffer();
       bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-      bufferbuilder.vertex(0.0D, (double)this.height, (double)this.getBlitOffset()).uv(0.0F, f * 0.015625F).color(f3, f3, f3, 1.0F).endVertex();
-      bufferbuilder.vertex((double)i, (double)this.height, (double)this.getBlitOffset()).uv((float)i * 0.015625F, f * 0.015625F).color(f3, f3, f3, 1.0F).endVertex();
-      bufferbuilder.vertex((double)i, 0.0D, (double)this.getBlitOffset()).uv((float)i * 0.015625F, f1 * 0.015625F).color(f3, f3, f3, 1.0F).endVertex();
-      bufferbuilder.vertex(0.0D, 0.0D, (double)this.getBlitOffset()).uv(0.0F, f1 * 0.015625F).color(f3, f3, f3, 1.0F).endVertex();
-      tessellator.end();
+      bufferbuilder.pos(0.0D, (double)this.height, (double)this.getBlitOffset()).tex(0.0F, f * 0.015625F).color(f3, f3, f3, 1.0F).endVertex();
+      bufferbuilder.pos((double)i, (double)this.height, (double)this.getBlitOffset()).tex((float)i * 0.015625F, f * 0.015625F).color(f3, f3, f3, 1.0F).endVertex();
+      bufferbuilder.pos((double)i, 0.0D, (double)this.getBlitOffset()).tex((float)i * 0.015625F, f1 * 0.015625F).color(f3, f3, f3, 1.0F).endVertex();
+      bufferbuilder.pos(0.0D, 0.0D, (double)this.getBlitOffset()).tex(0.0F, f1 * 0.015625F).color(f3, f3, f3, 1.0F).endVertex();
+      tessellator.draw();
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
-      this.renderBg(p_230430_2_, p_230430_3_, p_230430_4_);
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+      this.drawWinGameScreen(mouseX, mouseY, partialTicks);
       int i = 274;
       int j = this.width / 2 - 137;
       int k = this.height + 50;
-      this.time += p_230430_4_;
+      this.time += partialTicks;
       float f = -this.time * this.scrollSpeed;
       RenderSystem.pushMatrix();
       RenderSystem.translatef(0.0F, f, 0.0F);
-      this.minecraft.getTextureManager().bind(LOGO_LOCATION);
+      this.minecraft.getTextureManager().bindTexture(MINECRAFT_LOGO);
       RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
       RenderSystem.enableAlphaTest();
       RenderSystem.enableBlend();
-      this.blitOutlineBlack(j, k, (p_238665_2_, p_238665_3_) -> {
-         this.blit(p_230430_1_, p_238665_2_ + 0, p_238665_3_, 0, 0, 155, 44);
-         this.blit(p_230430_1_, p_238665_2_ + 155, p_238665_3_, 0, 45, 155, 44);
+      this.blitBlackOutline(j, k, (p_238665_2_, p_238665_3_) -> {
+         this.blit(matrixStack, p_238665_2_ + 0, p_238665_3_, 0, 0, 155, 44);
+         this.blit(matrixStack, p_238665_2_ + 155, p_238665_3_, 0, 45, 155, 44);
       });
       RenderSystem.disableBlend();
-      this.minecraft.getTextureManager().bind(EDITION_LOCATION);
-      blit(p_230430_1_, j + 88, k + 37, 0.0F, 0.0F, 98, 14, 128, 16);
+      this.minecraft.getTextureManager().bindTexture(MINECRAFT_EDITION);
+      blit(matrixStack, j + 88, k + 37, 0.0F, 0.0F, 98, 14, 128, 16);
       RenderSystem.disableAlphaTest();
       int l = k + 100;
 
@@ -207,11 +207,11 @@ public class WinGameScreen extends Screen {
 
          if ((float)l + f + 12.0F + 8.0F > 0.0F && (float)l + f < (float)this.height) {
             IReorderingProcessor ireorderingprocessor = this.lines.get(i1);
-            if (this.centeredLines.contains(i1)) {
-               this.font.drawShadow(p_230430_1_, ireorderingprocessor, (float)(j + (274 - this.font.width(ireorderingprocessor)) / 2), (float)l, 16777215);
+            if (this.field_238664_v_.contains(i1)) {
+               this.font.func_238407_a_(matrixStack, ireorderingprocessor, (float)(j + (274 - this.font.func_243245_a(ireorderingprocessor)) / 2), (float)l, 16777215);
             } else {
                this.font.random.setSeed((long)((float)((long)i1 * 4238972211L) + this.time / 4.0F));
-               this.font.drawShadow(p_230430_1_, ireorderingprocessor, (float)j, (float)l, 16777215);
+               this.font.func_238407_a_(matrixStack, ireorderingprocessor, (float)j, (float)l, 16777215);
             }
          }
 
@@ -219,20 +219,20 @@ public class WinGameScreen extends Screen {
       }
 
       RenderSystem.popMatrix();
-      this.minecraft.getTextureManager().bind(VIGNETTE_LOCATION);
+      this.minecraft.getTextureManager().bindTexture(VIGNETTE_TEXTURE);
       RenderSystem.enableBlend();
       RenderSystem.blendFunc(GlStateManager.SourceFactor.ZERO, GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR);
       int j1 = this.width;
       int k1 = this.height;
       Tessellator tessellator = Tessellator.getInstance();
-      BufferBuilder bufferbuilder = tessellator.getBuilder();
+      BufferBuilder bufferbuilder = tessellator.getBuffer();
       bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-      bufferbuilder.vertex(0.0D, (double)k1, (double)this.getBlitOffset()).uv(0.0F, 1.0F).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
-      bufferbuilder.vertex((double)j1, (double)k1, (double)this.getBlitOffset()).uv(1.0F, 1.0F).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
-      bufferbuilder.vertex((double)j1, 0.0D, (double)this.getBlitOffset()).uv(1.0F, 0.0F).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
-      bufferbuilder.vertex(0.0D, 0.0D, (double)this.getBlitOffset()).uv(0.0F, 0.0F).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
-      tessellator.end();
+      bufferbuilder.pos(0.0D, (double)k1, (double)this.getBlitOffset()).tex(0.0F, 1.0F).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+      bufferbuilder.pos((double)j1, (double)k1, (double)this.getBlitOffset()).tex(1.0F, 1.0F).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+      bufferbuilder.pos((double)j1, 0.0D, (double)this.getBlitOffset()).tex(1.0F, 0.0F).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+      bufferbuilder.pos(0.0D, 0.0D, (double)this.getBlitOffset()).tex(0.0F, 0.0F).color(1.0F, 1.0F, 1.0F, 1.0F).endVertex();
+      tessellator.draw();
       RenderSystem.disableBlend();
-      super.render(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+      super.render(matrixStack, mouseX, mouseY, partialTicks);
    }
 }

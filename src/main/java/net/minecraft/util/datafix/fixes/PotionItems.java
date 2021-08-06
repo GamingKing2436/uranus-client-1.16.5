@@ -16,7 +16,7 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class PotionItems extends DataFix {
-   private static final String[] POTIONS = DataFixUtils.make(new String[128], (p_209316_0_) -> {
+   private static final String[] POTION_IDS = DataFixUtils.make(new String[128], (p_209316_0_) -> {
       p_209316_0_[0] = "minecraft:water";
       p_209316_0_[1] = "minecraft:regeneration";
       p_209316_0_[2] = "minecraft:swiftness";
@@ -147,13 +147,13 @@ public class PotionItems extends DataFix {
       p_209316_0_[127] = null;
    });
 
-   public PotionItems(Schema p_i49642_1_, boolean p_i49642_2_) {
-      super(p_i49642_1_, p_i49642_2_);
+   public PotionItems(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
       Type<?> type = this.getInputSchema().getType(TypeReferences.ITEM_STACK);
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
       OpticFinder<?> opticfinder1 = type.findField("tag");
       return this.fixTypeEverywhereTyped("ItemPotionFix", type, (p_206351_2_) -> {
          Optional<Pair<String, String>> optional = p_206351_2_.getOptional(opticfinder);
@@ -166,7 +166,7 @@ public class PotionItems extends DataFix {
                Dynamic<?> dynamic1 = optional1.get().get(DSL.remainderFinder());
                Optional<String> optional2 = dynamic1.get("Potion").asString().result();
                if (!optional2.isPresent()) {
-                  String s = POTIONS[short1 & 127];
+                  String s = POTION_IDS[short1 & 127];
                   Typed<?> typed1 = optional1.get().set(DSL.remainderFinder(), dynamic1.set("Potion", dynamic1.createString(s == null ? "minecraft:water" : s)));
                   typed = p_206351_2_.set(opticfinder1, typed1);
                   if ((short1 & 16384) == 16384) {

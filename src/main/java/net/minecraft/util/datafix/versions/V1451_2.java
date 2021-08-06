@@ -9,8 +9,8 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class V1451_2 extends NamespacedSchema {
-   public V1451_2(int p_i49601_1_, Schema p_i49601_2_) {
-      super(p_i49601_1_, p_i49601_2_);
+   public V1451_2(int versionKey, Schema parent) {
+      super(versionKey, parent);
    }
 
    public Map<String, Supplier<TypeTemplate>> registerBlockEntities(Schema p_registerBlockEntities_1_) {

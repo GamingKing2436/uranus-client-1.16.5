@@ -20,21 +20,21 @@ public class SSelectAdvancementsTabPacket implements IPacket<IClientPlayNetHandl
       this.tab = p_i47596_1_;
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleSelectAdvancementsTab(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleSelectAdvancementsTab(this);
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      if (p_148837_1_.readBoolean()) {
-         this.tab = p_148837_1_.readResourceLocation();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      if (buf.readBoolean()) {
+         this.tab = buf.readResourceLocation();
       }
 
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeBoolean(this.tab != null);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeBoolean(this.tab != null);
       if (this.tab != null) {
-         p_148840_1_.writeResourceLocation(this.tab);
+         buf.writeResourceLocation(this.tab);
       }
 
    }

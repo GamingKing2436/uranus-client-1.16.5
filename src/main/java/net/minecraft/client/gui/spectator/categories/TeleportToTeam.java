@@ -24,14 +24,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class TeleportToTeam implements ISpectatorMenuView, ISpectatorMenuObject {
-   private static final ITextComponent TELEPORT_TEXT = new TranslationTextComponent("spectatorMenu.team_teleport");
-   private static final ITextComponent TELEPORT_PROMPT = new TranslationTextComponent("spectatorMenu.team_teleport.prompt");
+   private static final ITextComponent field_243487_a = new TranslationTextComponent("spectatorMenu.team_teleport");
+   private static final ITextComponent field_243488_b = new TranslationTextComponent("spectatorMenu.team_teleport.prompt");
    private final List<ISpectatorMenuObject> items = Lists.newArrayList();
 
    public TeleportToTeam() {
       Minecraft minecraft = Minecraft.getInstance();
 
-      for(ScorePlayerTeam scoreplayerteam : minecraft.level.getScoreboard().getPlayerTeams()) {
+      for(ScorePlayerTeam scoreplayerteam : minecraft.world.getScoreboard().getTeams()) {
          this.items.add(new TeleportToTeam.TeamSelectionObject(scoreplayerteam));
       }
 
@@ -42,19 +42,19 @@ public class TeleportToTeam implements ISpectatorMenuView, ISpectatorMenuObject 
    }
 
    public ITextComponent getPrompt() {
-      return TELEPORT_PROMPT;
+      return field_243488_b;
    }
 
-   public void selectItem(SpectatorMenu p_178661_1_) {
-      p_178661_1_.selectCategory(this);
+   public void selectItem(SpectatorMenu menu) {
+      menu.selectCategory(this);
    }
 
-   public ITextComponent getName() {
-      return TELEPORT_TEXT;
+   public ITextComponent getSpectatorName() {
+      return field_243487_a;
    }
 
-   public void renderIcon(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
-      Minecraft.getInstance().getTextureManager().bind(SpectatorGui.SPECTATOR_LOCATION);
+   public void func_230485_a_(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
+      Minecraft.getInstance().getTextureManager().bindTexture(SpectatorGui.SPECTATOR_WIDGETS);
       AbstractGui.blit(p_230485_1_, 0, 0, 16.0F, 0.0F, 16, 16, 256, 256);
    }
 
@@ -74,11 +74,11 @@ public class TeleportToTeam implements ISpectatorMenuView, ISpectatorMenuObject 
       private final ResourceLocation location;
       private final List<NetworkPlayerInfo> players;
 
-      public TeamSelectionObject(ScorePlayerTeam p_i45492_2_) {
-         this.team = p_i45492_2_;
+      public TeamSelectionObject(ScorePlayerTeam teamIn) {
+         this.team = teamIn;
          this.players = Lists.newArrayList();
 
-         for(String s : p_i45492_2_.getPlayers()) {
+         for(String s : teamIn.getMembershipCollection()) {
             NetworkPlayerInfo networkplayerinfo = Minecraft.getInstance().getConnection().getPlayerInfo(s);
             if (networkplayerinfo != null) {
                this.players.add(networkplayerinfo);
@@ -86,33 +86,33 @@ public class TeleportToTeam implements ISpectatorMenuView, ISpectatorMenuObject 
          }
 
          if (this.players.isEmpty()) {
-            this.location = DefaultPlayerSkin.getDefaultSkin();
+            this.location = DefaultPlayerSkin.getDefaultSkinLegacy();
          } else {
-            String s1 = this.players.get((new Random()).nextInt(this.players.size())).getProfile().getName();
-            this.location = AbstractClientPlayerEntity.getSkinLocation(s1);
-            AbstractClientPlayerEntity.registerSkinTexture(this.location, s1);
+            String s1 = this.players.get((new Random()).nextInt(this.players.size())).getGameProfile().getName();
+            this.location = AbstractClientPlayerEntity.getLocationSkin(s1);
+            AbstractClientPlayerEntity.getDownloadImageSkin(this.location, s1);
          }
 
       }
 
-      public void selectItem(SpectatorMenu p_178661_1_) {
-         p_178661_1_.selectCategory(new TeleportToPlayer(this.players));
+      public void selectItem(SpectatorMenu menu) {
+         menu.selectCategory(new TeleportToPlayer(this.players));
       }
 
-      public ITextComponent getName() {
+      public ITextComponent getSpectatorName() {
          return this.team.getDisplayName();
       }
 
-      public void renderIcon(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
+      public void func_230485_a_(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
          Integer integer = this.team.getColor().getColor();
          if (integer != null) {
             float f = (float)(integer >> 16 & 255) / 255.0F;
             float f1 = (float)(integer >> 8 & 255) / 255.0F;
             float f2 = (float)(integer & 255) / 255.0F;
-            AbstractGui.fill(p_230485_1_, 1, 1, 15, 15, MathHelper.color(f * p_230485_2_, f1 * p_230485_2_, f2 * p_230485_2_) | p_230485_3_ << 24);
+            AbstractGui.fill(p_230485_1_, 1, 1, 15, 15, MathHelper.rgb(f * p_230485_2_, f1 * p_230485_2_, f2 * p_230485_2_) | p_230485_3_ << 24);
          }
 
-         Minecraft.getInstance().getTextureManager().bind(this.location);
+         Minecraft.getInstance().getTextureManager().bindTexture(this.location);
          RenderSystem.color4f(p_230485_2_, p_230485_2_, p_230485_2_, (float)p_230485_3_ / 255.0F);
          AbstractGui.blit(p_230485_1_, 2, 2, 12, 12, 8.0F, 8.0F, 8, 8, 64, 64);
          AbstractGui.blit(p_230485_1_, 2, 2, 12, 12, 40.0F, 8.0F, 8, 8, 64, 64);

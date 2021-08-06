@@ -6,15 +6,15 @@ import net.minecraft.server.MinecraftServer;
 
 public class PlayerListComponent extends JList<String> {
    private final MinecraftServer server;
-   private int tickCount;
+   private int ticks;
 
-   public PlayerListComponent(MinecraftServer p_i2366_1_) {
-      this.server = p_i2366_1_;
-      p_i2366_1_.addTickable(this::tick);
+   public PlayerListComponent(MinecraftServer server) {
+      this.server = server;
+      server.registerTickable(this::tick);
    }
 
    public void tick() {
-      if (this.tickCount++ % 20 == 0) {
+      if (this.ticks++ % 20 == 0) {
          Vector<String> vector = new Vector<>();
 
          for(int i = 0; i < this.server.getPlayerList().getPlayers().size(); ++i) {

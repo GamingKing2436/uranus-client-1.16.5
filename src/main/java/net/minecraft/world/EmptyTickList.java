@@ -5,21 +5,21 @@ import net.minecraft.util.math.BlockPos;
 public class EmptyTickList<T> implements ITickList<T> {
    private static final EmptyTickList<Object> INSTANCE = new EmptyTickList<>();
 
-   public static <T> EmptyTickList<T> empty() {
+   public static <T> EmptyTickList<T> get() {
       return (EmptyTickList<T>) INSTANCE;
    }
 
-   public boolean hasScheduledTick(BlockPos p_205359_1_, T p_205359_2_) {
+   public boolean isTickScheduled(BlockPos pos, T itemIn) {
       return false;
    }
 
-   public void scheduleTick(BlockPos p_205360_1_, T p_205360_2_, int p_205360_3_) {
+   public void scheduleTick(BlockPos pos, T itemIn, int scheduledTime) {
    }
 
-   public void scheduleTick(BlockPos p_205362_1_, T p_205362_2_, int p_205362_3_, TickPriority p_205362_4_) {
+   public void scheduleTick(BlockPos pos, T itemIn, int scheduledTime, TickPriority priority) {
    }
 
-   public boolean willTickThisTick(BlockPos p_205361_1_, T p_205361_2_) {
+   public boolean isTickPending(BlockPos pos, T obj) {
       return false;
    }
 }

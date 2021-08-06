@@ -7,8 +7,8 @@ import java.util.function.Supplier;
 import net.minecraft.util.datafix.NamespacedSchema;
 
 public class V1510 extends NamespacedSchema {
-   public V1510(int p_i49589_1_, Schema p_i49589_2_) {
-      super(p_i49589_1_, p_i49589_2_);
+   public V1510(int versionKey, Schema schema) {
+      super(versionKey, schema);
    }
 
    public Map<String, Supplier<TypeTemplate>> registerEntities(Schema p_registerEntities_1_) {

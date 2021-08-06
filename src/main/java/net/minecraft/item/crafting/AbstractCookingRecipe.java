@@ -15,28 +15,28 @@ public abstract class AbstractCookingRecipe implements IRecipe<IInventory> {
    protected final Ingredient ingredient;
    protected final ItemStack result;
    protected final float experience;
-   protected final int cookingTime;
+   protected final int cookTime;
 
-   public AbstractCookingRecipe(IRecipeType<?> p_i50032_1_, ResourceLocation p_i50032_2_, String p_i50032_3_, Ingredient p_i50032_4_, ItemStack p_i50032_5_, float p_i50032_6_, int p_i50032_7_) {
-      this.type = p_i50032_1_;
-      this.id = p_i50032_2_;
-      this.group = p_i50032_3_;
-      this.ingredient = p_i50032_4_;
-      this.result = p_i50032_5_;
-      this.experience = p_i50032_6_;
-      this.cookingTime = p_i50032_7_;
+   public AbstractCookingRecipe(IRecipeType<?> typeIn, ResourceLocation idIn, String groupIn, Ingredient ingredientIn, ItemStack resultIn, float experienceIn, int cookTimeIn) {
+      this.type = typeIn;
+      this.id = idIn;
+      this.group = groupIn;
+      this.ingredient = ingredientIn;
+      this.result = resultIn;
+      this.experience = experienceIn;
+      this.cookTime = cookTimeIn;
    }
 
-   public boolean matches(IInventory p_77569_1_, World p_77569_2_) {
-      return this.ingredient.test(p_77569_1_.getItem(0));
+   public boolean matches(IInventory inv, World worldIn) {
+      return this.ingredient.test(inv.getStackInSlot(0));
    }
 
-   public ItemStack assemble(IInventory p_77572_1_) {
+   public ItemStack getCraftingResult(IInventory inv) {
       return this.result.copy();
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
+   public boolean canFit(int width, int height) {
       return true;
    }
 
@@ -50,7 +50,7 @@ public abstract class AbstractCookingRecipe implements IRecipe<IInventory> {
       return this.experience;
    }
 
-   public ItemStack getResultItem() {
+   public ItemStack getRecipeOutput() {
       return this.result;
    }
 
@@ -59,8 +59,8 @@ public abstract class AbstractCookingRecipe implements IRecipe<IInventory> {
       return this.group;
    }
 
-   public int getCookingTime() {
-      return this.cookingTime;
+   public int getCookTime() {
+      return this.cookTime;
    }
 
    public ResourceLocation getId() {

@@ -29,86 +29,86 @@ import org.apache.logging.log4j.Logger;
 
 public class HTTPUtil {
    private static final Logger LOGGER = LogManager.getLogger();
-   public static final ListeningExecutorService DOWNLOAD_EXECUTOR = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool((new ThreadFactoryBuilder()).setDaemon(true).setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).setNameFormat("Downloader %d").build()));
+   public static final ListeningExecutorService DOWNLOADER_EXECUTOR = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool((new ThreadFactoryBuilder()).setDaemon(true).setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).setNameFormat("Downloader %d").build()));
 
    @OnlyIn(Dist.CLIENT)
-   public static CompletableFuture<?> downloadTo(File p_180192_0_, String p_180192_1_, Map<String, String> p_180192_2_, int p_180192_3_, @Nullable IProgressUpdate p_180192_4_, Proxy p_180192_5_) {
+   public static CompletableFuture<?> downloadResourcePack(File saveFile, String packUrl, Map<String, String> requestProperties, int maxSize, @Nullable IProgressUpdate progressCallback, Proxy proxyIn) {
       return CompletableFuture.supplyAsync(() -> {
          HttpURLConnection httpurlconnection = null;
          InputStream inputstream = null;
          OutputStream outputstream = null;
-         if (p_180192_4_ != null) {
-            p_180192_4_.progressStart(new TranslationTextComponent("resourcepack.downloading"));
-            p_180192_4_.progressStage(new TranslationTextComponent("resourcepack.requesting"));
+         if (progressCallback != null) {
+            progressCallback.resetProgressAndMessage(new TranslationTextComponent("resourcepack.downloading"));
+            progressCallback.displayLoadingString(new TranslationTextComponent("resourcepack.requesting"));
          }
 
          try {
             try {
                byte[] abyte = new byte[4096];
-               URL url = new URL(p_180192_1_);
-               httpurlconnection = (HttpURLConnection)url.openConnection(p_180192_5_);
+               URL url = new URL(packUrl);
+               httpurlconnection = (HttpURLConnection)url.openConnection(proxyIn);
                httpurlconnection.setInstanceFollowRedirects(true);
                float f = 0.0F;
-               float f1 = (float)p_180192_2_.entrySet().size();
+               float f1 = (float)requestProperties.entrySet().size();
 
-               for(Entry<String, String> entry : p_180192_2_.entrySet()) {
+               for(Entry<String, String> entry : requestProperties.entrySet()) {
                   httpurlconnection.setRequestProperty(entry.getKey(), entry.getValue());
-                  if (p_180192_4_ != null) {
-                     p_180192_4_.progressStagePercentage((int)(++f / f1 * 100.0F));
+                  if (progressCallback != null) {
+                     progressCallback.setLoadingProgress((int)(++f / f1 * 100.0F));
                   }
                }
 
                inputstream = httpurlconnection.getInputStream();
                f1 = (float)httpurlconnection.getContentLength();
                int i = httpurlconnection.getContentLength();
-               if (p_180192_4_ != null) {
-                  p_180192_4_.progressStage(new TranslationTextComponent("resourcepack.progress", String.format(Locale.ROOT, "%.2f", f1 / 1000.0F / 1000.0F)));
+               if (progressCallback != null) {
+                  progressCallback.displayLoadingString(new TranslationTextComponent("resourcepack.progress", String.format(Locale.ROOT, "%.2f", f1 / 1000.0F / 1000.0F)));
                }
 
-               if (p_180192_0_.exists()) {
-                  long j = p_180192_0_.length();
+               if (saveFile.exists()) {
+                  long j = saveFile.length();
                   if (j == (long)i) {
-                     if (p_180192_4_ != null) {
-                        p_180192_4_.stop();
+                     if (progressCallback != null) {
+                        progressCallback.setDoneWorking();
                      }
 
                      return null;
                   }
 
-                  LOGGER.warn("Deleting {} as it does not match what we currently have ({} vs our {}).", p_180192_0_, i, j);
-                  FileUtils.deleteQuietly(p_180192_0_);
-               } else if (p_180192_0_.getParentFile() != null) {
-                  p_180192_0_.getParentFile().mkdirs();
+                  LOGGER.warn("Deleting {} as it does not match what we currently have ({} vs our {}).", saveFile, i, j);
+                  FileUtils.deleteQuietly(saveFile);
+               } else if (saveFile.getParentFile() != null) {
+                  saveFile.getParentFile().mkdirs();
                }
 
-               outputstream = new DataOutputStream(new FileOutputStream(p_180192_0_));
-               if (p_180192_3_ > 0 && f1 > (float)p_180192_3_) {
-                  if (p_180192_4_ != null) {
-                     p_180192_4_.stop();
+               outputstream = new DataOutputStream(new FileOutputStream(saveFile));
+               if (maxSize > 0 && f1 > (float)maxSize) {
+                  if (progressCallback != null) {
+                     progressCallback.setDoneWorking();
                   }
 
-                  throw new IOException("Filesize is bigger than maximum allowed (file is " + f + ", limit is " + p_180192_3_ + ")");
+                  throw new IOException("Filesize is bigger than maximum allowed (file is " + f + ", limit is " + maxSize + ")");
                }
 
                int k;
                while((k = inputstream.read(abyte)) >= 0) {
                   f += (float)k;
-                  if (p_180192_4_ != null) {
-                     p_180192_4_.progressStagePercentage((int)(f / f1 * 100.0F));
+                  if (progressCallback != null) {
+                     progressCallback.setLoadingProgress((int)(f / f1 * 100.0F));
                   }
 
-                  if (p_180192_3_ > 0 && f > (float)p_180192_3_) {
-                     if (p_180192_4_ != null) {
-                        p_180192_4_.stop();
+                  if (maxSize > 0 && f > (float)maxSize) {
+                     if (progressCallback != null) {
+                        progressCallback.setDoneWorking();
                      }
 
-                     throw new IOException("Filesize was bigger than maximum allowed (got >= " + f + ", limit was " + p_180192_3_ + ")");
+                     throw new IOException("Filesize was bigger than maximum allowed (got >= " + f + ", limit was " + maxSize + ")");
                   }
 
                   if (Thread.interrupted()) {
                      LOGGER.error("INTERRUPTED");
-                     if (p_180192_4_ != null) {
-                        p_180192_4_.stop();
+                     if (progressCallback != null) {
+                        progressCallback.setDoneWorking();
                      }
 
                      return null;
@@ -117,8 +117,8 @@ public class HTTPUtil {
                   outputstream.write(abyte, 0, k);
                }
 
-               if (p_180192_4_ != null) {
-                  p_180192_4_.stop();
+               if (progressCallback != null) {
+                  progressCallback.setDoneWorking();
                   return null;
                }
             } catch (Throwable throwable) {
@@ -133,8 +133,8 @@ public class HTTPUtil {
                   }
                }
 
-               if (p_180192_4_ != null) {
-                  p_180192_4_.stop();
+               if (progressCallback != null) {
+                  progressCallback.setDoneWorking();
                   return null;
                }
             }
@@ -144,10 +144,10 @@ public class HTTPUtil {
             IOUtils.closeQuietly(inputstream);
             IOUtils.closeQuietly(outputstream);
          }
-      }, DOWNLOAD_EXECUTOR);
+      }, DOWNLOADER_EXECUTOR);
    }
 
-   public static int getAvailablePort() {
+   public static int getSuitableLanPort() {
       try (ServerSocket serversocket = new ServerSocket(0)) {
          return serversocket.getLocalPort();
       } catch (IOException ioexception) {

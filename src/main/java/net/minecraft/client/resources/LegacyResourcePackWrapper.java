@@ -21,15 +21,15 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class LegacyResourcePackWrapper implements IResourcePack {
-   private final IResourcePack source;
-   private final Map<ResourceLocation, ResourceLocation> patches;
-   public static final Map<ResourceLocation, ResourceLocation> V3 = Util.make(() -> {
+   private final IResourcePack locationMap;
+   private final Map<ResourceLocation, ResourceLocation> field_211855_c;
+   public static final Map<ResourceLocation, ResourceLocation> NEW_TO_LEGACY_MAP = Util.make(() -> {
       Builder<ResourceLocation, ResourceLocation> builder = ImmutableMap.builder();
       BiConsumer<String, String> biconsumer = (p_239468_1_, p_239468_2_) -> {
          ResourceLocation resourcelocation = new ResourceLocation(p_239468_1_);
          ResourceLocation resourcelocation1 = new ResourceLocation(p_239468_2_);
          builder.put(resourcelocation, resourcelocation1);
-         builder.put(toMetaLocation(resourcelocation), toMetaLocation(resourcelocation1));
+         builder.put(getMetaFileLocation(resourcelocation), getMetaFileLocation(resourcelocation1));
       };
       biconsumer.accept("textures/block/melon_stem.png", "textures/block/pumpkin_stem.png");
       biconsumer.accept("textures/block/anvil.png", "textures/blocks/anvil_base.png");
@@ -888,49 +888,49 @@ public class LegacyResourcePackWrapper implements IResourcePack {
       return builder.build();
    });
 
-   private static ResourceLocation toMetaLocation(ResourceLocation p_211850_0_) {
+   private static ResourceLocation getMetaFileLocation(ResourceLocation p_211850_0_) {
       return new ResourceLocation(p_211850_0_.getNamespace(), p_211850_0_.getPath() + ".mcmeta");
    }
 
    public LegacyResourcePackWrapper(IResourcePack p_i49785_1_, Map<ResourceLocation, ResourceLocation> p_i49785_2_) {
-      this.source = p_i49785_1_;
-      this.patches = p_i49785_2_;
+      this.locationMap = p_i49785_1_;
+      this.field_211855_c = p_i49785_2_;
    }
 
-   private ResourceLocation map(ResourceLocation p_211851_1_) {
-      return this.patches.getOrDefault(p_211851_1_, p_211851_1_);
+   private ResourceLocation toLegacyLocation(ResourceLocation p_211851_1_) {
+      return this.field_211855_c.getOrDefault(p_211851_1_, p_211851_1_);
    }
 
-   public InputStream getRootResource(String p_195763_1_) throws IOException {
-      return this.source.getRootResource(p_195763_1_);
+   public InputStream getRootResourceStream(String fileName) throws IOException {
+      return this.locationMap.getRootResourceStream(fileName);
    }
 
-   public InputStream getResource(ResourcePackType p_195761_1_, ResourceLocation p_195761_2_) throws IOException {
-      return this.source.getResource(p_195761_1_, this.map(p_195761_2_));
+   public InputStream getResourceStream(ResourcePackType type, ResourceLocation location) throws IOException {
+      return this.locationMap.getResourceStream(type, this.toLegacyLocation(location));
    }
 
-   public Collection<ResourceLocation> getResources(ResourcePackType p_225637_1_, String p_225637_2_, String p_225637_3_, int p_225637_4_, Predicate<String> p_225637_5_) {
+   public Collection<ResourceLocation> getAllResourceLocations(ResourcePackType type, String namespaceIn, String pathIn, int maxDepthIn, Predicate<String> filterIn) {
       return Collections.emptyList();
    }
 
-   public boolean hasResource(ResourcePackType p_195764_1_, ResourceLocation p_195764_2_) {
-      return this.source.hasResource(p_195764_1_, this.map(p_195764_2_));
+   public boolean resourceExists(ResourcePackType type, ResourceLocation location) {
+      return this.locationMap.resourceExists(type, this.toLegacyLocation(location));
    }
 
-   public Set<String> getNamespaces(ResourcePackType p_195759_1_) {
-      return this.source.getNamespaces(p_195759_1_);
+   public Set<String> getResourceNamespaces(ResourcePackType type) {
+      return this.locationMap.getResourceNamespaces(type);
    }
 
    @Nullable
-   public <T> T getMetadataSection(IMetadataSectionSerializer<T> p_195760_1_) throws IOException {
-      return this.source.getMetadataSection(p_195760_1_);
+   public <T> T getMetadata(IMetadataSectionSerializer<T> deserializer) throws IOException {
+      return this.locationMap.getMetadata(deserializer);
    }
 
    public String getName() {
-      return this.source.getName();
+      return this.locationMap.getName();
    }
 
    public void close() {
-      this.source.close();
+      this.locationMap.close();
    }
 }

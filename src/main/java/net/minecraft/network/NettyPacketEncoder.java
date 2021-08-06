@@ -11,21 +11,21 @@ import org.apache.logging.log4j.MarkerManager;
 
 public class NettyPacketEncoder extends MessageToByteEncoder<IPacket<?>> {
    private static final Logger LOGGER = LogManager.getLogger();
-   private static final Marker MARKER = MarkerManager.getMarker("PACKET_SENT", NetworkManager.PACKET_MARKER);
-   private final PacketDirection flow;
+   private static final Marker RECEIVED_PACKET_MARKER = MarkerManager.getMarker("PACKET_SENT", NetworkManager.NETWORK_PACKETS_MARKER);
+   private final PacketDirection direction;
 
-   public NettyPacketEncoder(PacketDirection p_i45998_1_) {
-      this.flow = p_i45998_1_;
+   public NettyPacketEncoder(PacketDirection direction) {
+      this.direction = direction;
    }
 
    protected void encode(ChannelHandlerContext p_encode_1_, IPacket<?> p_encode_2_, ByteBuf p_encode_3_) throws Exception {
-      ProtocolType protocoltype = p_encode_1_.channel().attr(NetworkManager.ATTRIBUTE_PROTOCOL).get();
+      ProtocolType protocoltype = p_encode_1_.channel().attr(NetworkManager.PROTOCOL_ATTRIBUTE_KEY).get();
       if (protocoltype == null) {
          throw new RuntimeException("ConnectionProtocol unknown: " + p_encode_2_);
       } else {
-         Integer integer = protocoltype.getPacketId(this.flow, p_encode_2_);
+         Integer integer = protocoltype.getPacketId(this.direction, p_encode_2_);
          if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(MARKER, "OUT: [{}:{}] {}", p_encode_1_.channel().attr(NetworkManager.ATTRIBUTE_PROTOCOL).get(), integer, p_encode_2_.getClass().getName());
+            LOGGER.debug(RECEIVED_PACKET_MARKER, "OUT: [{}:{}] {}", p_encode_1_.channel().attr(NetworkManager.PROTOCOL_ATTRIBUTE_KEY).get(), integer, p_encode_2_.getClass().getName());
          }
 
          if (integer == null) {
@@ -35,10 +35,10 @@ public class NettyPacketEncoder extends MessageToByteEncoder<IPacket<?>> {
             packetbuffer.writeVarInt(integer);
 
             try {
-               p_encode_2_.write(packetbuffer);
+               p_encode_2_.writePacketData(packetbuffer);
             } catch (Throwable throwable) {
                LOGGER.error(throwable);
-               if (p_encode_2_.isSkippable()) {
+               if (p_encode_2_.shouldSkipErrors()) {
                   throw new SkipableEncoderException(throwable);
                } else {
                   throw throwable;

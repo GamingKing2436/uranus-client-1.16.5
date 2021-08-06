@@ -7,8 +7,8 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ShulkerBoxEntityColor extends NamedEntityFix {
-   public ShulkerBoxEntityColor(Schema p_i49654_1_, boolean p_i49654_2_) {
-      super(p_i49654_1_, p_i49654_2_, "EntityShulkerColorFix", TypeReferences.ENTITY, "minecraft:shulker");
+   public ShulkerBoxEntityColor(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "EntityShulkerColorFix", TypeReferences.ENTITY, "minecraft:shulker");
    }
 
    public Dynamic<?> fixTag(Dynamic<?> p_209653_1_) {

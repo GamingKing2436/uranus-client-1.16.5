@@ -6,34 +6,34 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class LocationPart {
-   public static final SimpleCommandExceptionType ERROR_EXPECTED_DOUBLE = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos.missing.double"));
-   public static final SimpleCommandExceptionType ERROR_EXPECTED_INT = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos.missing.int"));
+   public static final SimpleCommandExceptionType EXPECTED_DOUBLE = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos.missing.double"));
+   public static final SimpleCommandExceptionType EXPECTED_INT = new SimpleCommandExceptionType(new TranslationTextComponent("argument.pos.missing.int"));
    private final boolean relative;
    private final double value;
 
-   public LocationPart(boolean p_i47963_1_, double p_i47963_2_) {
-      this.relative = p_i47963_1_;
-      this.value = p_i47963_2_;
+   public LocationPart(boolean relativeIn, double valueIn) {
+      this.relative = relativeIn;
+      this.value = valueIn;
    }
 
-   public double get(double p_197306_1_) {
-      return this.relative ? this.value + p_197306_1_ : this.value;
+   public double get(double coord) {
+      return this.relative ? this.value + coord : this.value;
    }
 
-   public static LocationPart parseDouble(StringReader p_197308_0_, boolean p_197308_1_) throws CommandSyntaxException {
-      if (p_197308_0_.canRead() && p_197308_0_.peek() == '^') {
-         throw Vec3Argument.ERROR_MIXED_TYPE.createWithContext(p_197308_0_);
-      } else if (!p_197308_0_.canRead()) {
-         throw ERROR_EXPECTED_DOUBLE.createWithContext(p_197308_0_);
+   public static LocationPart parseDouble(StringReader reader, boolean centerIntegers) throws CommandSyntaxException {
+      if (reader.canRead() && reader.peek() == '^') {
+         throw Vec3Argument.POS_MIXED_TYPES.createWithContext(reader);
+      } else if (!reader.canRead()) {
+         throw EXPECTED_DOUBLE.createWithContext(reader);
       } else {
-         boolean flag = isRelative(p_197308_0_);
-         int i = p_197308_0_.getCursor();
-         double d0 = p_197308_0_.canRead() && p_197308_0_.peek() != ' ' ? p_197308_0_.readDouble() : 0.0D;
-         String s = p_197308_0_.getString().substring(i, p_197308_0_.getCursor());
+         boolean flag = isRelative(reader);
+         int i = reader.getCursor();
+         double d0 = reader.canRead() && reader.peek() != ' ' ? reader.readDouble() : 0.0D;
+         String s = reader.getString().substring(i, reader.getCursor());
          if (flag && s.isEmpty()) {
             return new LocationPart(true, 0.0D);
          } else {
-            if (!s.contains(".") && !flag && p_197308_1_) {
+            if (!s.contains(".") && !flag && centerIntegers) {
                d0 += 0.5D;
             }
 
@@ -42,16 +42,16 @@ public class LocationPart {
       }
    }
 
-   public static LocationPart parseInt(StringReader p_197307_0_) throws CommandSyntaxException {
-      if (p_197307_0_.canRead() && p_197307_0_.peek() == '^') {
-         throw Vec3Argument.ERROR_MIXED_TYPE.createWithContext(p_197307_0_);
-      } else if (!p_197307_0_.canRead()) {
-         throw ERROR_EXPECTED_INT.createWithContext(p_197307_0_);
+   public static LocationPart parseInt(StringReader reader) throws CommandSyntaxException {
+      if (reader.canRead() && reader.peek() == '^') {
+         throw Vec3Argument.POS_MIXED_TYPES.createWithContext(reader);
+      } else if (!reader.canRead()) {
+         throw EXPECTED_INT.createWithContext(reader);
       } else {
-         boolean flag = isRelative(p_197307_0_);
+         boolean flag = isRelative(reader);
          double d0;
-         if (p_197307_0_.canRead() && p_197307_0_.peek() != ' ') {
-            d0 = flag ? p_197307_0_.readDouble() : (double)p_197307_0_.readInt();
+         if (reader.canRead() && reader.peek() != ' ') {
+            d0 = flag ? reader.readDouble() : (double)reader.readInt();
          } else {
             d0 = 0.0D;
          }
@@ -60,11 +60,11 @@ public class LocationPart {
       }
    }
 
-   public static boolean isRelative(StringReader p_197309_0_) {
+   public static boolean isRelative(StringReader reader) {
       boolean flag;
-      if (p_197309_0_.peek() == '~') {
+      if (reader.peek() == '~') {
          flag = true;
-         p_197309_0_.skip();
+         reader.skip();
       } else {
          flag = false;
       }

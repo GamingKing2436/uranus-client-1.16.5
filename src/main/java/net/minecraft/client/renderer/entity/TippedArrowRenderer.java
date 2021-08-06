@@ -7,14 +7,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class TippedArrowRenderer extends ArrowRenderer<ArrowEntity> {
-   public static final ResourceLocation NORMAL_ARROW_LOCATION = new ResourceLocation("textures/entity/projectiles/arrow.png");
-   public static final ResourceLocation TIPPED_ARROW_LOCATION = new ResourceLocation("textures/entity/projectiles/tipped_arrow.png");
+   public static final ResourceLocation RES_ARROW = new ResourceLocation("textures/entity/projectiles/arrow.png");
+   public static final ResourceLocation RES_TIPPED_ARROW = new ResourceLocation("textures/entity/projectiles/tipped_arrow.png");
 
-   public TippedArrowRenderer(EntityRendererManager p_i46547_1_) {
-      super(p_i46547_1_);
+   public TippedArrowRenderer(EntityRendererManager manager) {
+      super(manager);
    }
 
-   public ResourceLocation getTextureLocation(ArrowEntity p_110775_1_) {
-      return p_110775_1_.getColor() > 0 ? TIPPED_ARROW_LOCATION : NORMAL_ARROW_LOCATION;
+   public ResourceLocation getEntityTexture(ArrowEntity entity) {
+      return entity.getColor() > 0 ? RES_TIPPED_ARROW : RES_ARROW;
    }
 }

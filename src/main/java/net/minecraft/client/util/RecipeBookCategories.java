@@ -32,33 +32,33 @@ public enum RecipeBookCategories {
    CAMPFIRE(new ItemStack(Items.PORKCHOP)),
    UNKNOWN(new ItemStack(Items.BARRIER));
 
-   public static final List<RecipeBookCategories> SMOKER_CATEGORIES = ImmutableList.of(SMOKER_SEARCH, SMOKER_FOOD);
-   public static final List<RecipeBookCategories> BLAST_FURNACE_CATEGORIES = ImmutableList.of(BLAST_FURNACE_SEARCH, BLAST_FURNACE_BLOCKS, BLAST_FURNACE_MISC);
-   public static final List<RecipeBookCategories> FURNACE_CATEGORIES = ImmutableList.of(FURNACE_SEARCH, FURNACE_FOOD, FURNACE_BLOCKS, FURNACE_MISC);
-   public static final List<RecipeBookCategories> CRAFTING_CATEGORIES = ImmutableList.of(CRAFTING_SEARCH, CRAFTING_EQUIPMENT, CRAFTING_BUILDING_BLOCKS, CRAFTING_MISC, CRAFTING_REDSTONE);
-   public static final Map<RecipeBookCategories, List<RecipeBookCategories>> AGGREGATE_CATEGORIES = ImmutableMap.of(CRAFTING_SEARCH, ImmutableList.of(CRAFTING_EQUIPMENT, CRAFTING_BUILDING_BLOCKS, CRAFTING_MISC, CRAFTING_REDSTONE), FURNACE_SEARCH, ImmutableList.of(FURNACE_FOOD, FURNACE_BLOCKS, FURNACE_MISC), BLAST_FURNACE_SEARCH, ImmutableList.of(BLAST_FURNACE_BLOCKS, BLAST_FURNACE_MISC), SMOKER_SEARCH, ImmutableList.of(SMOKER_FOOD));
-   private final List<ItemStack> itemIcons;
+   public static final List<RecipeBookCategories> field_243231_s = ImmutableList.of(SMOKER_SEARCH, SMOKER_FOOD);
+   public static final List<RecipeBookCategories> field_243232_t = ImmutableList.of(BLAST_FURNACE_SEARCH, BLAST_FURNACE_BLOCKS, BLAST_FURNACE_MISC);
+   public static final List<RecipeBookCategories> field_243233_u = ImmutableList.of(FURNACE_SEARCH, FURNACE_FOOD, FURNACE_BLOCKS, FURNACE_MISC);
+   public static final List<RecipeBookCategories> field_243234_v = ImmutableList.of(CRAFTING_SEARCH, CRAFTING_EQUIPMENT, CRAFTING_BUILDING_BLOCKS, CRAFTING_MISC, CRAFTING_REDSTONE);
+   public static final Map<RecipeBookCategories, List<RecipeBookCategories>> field_243235_w = ImmutableMap.of(CRAFTING_SEARCH, ImmutableList.of(CRAFTING_EQUIPMENT, CRAFTING_BUILDING_BLOCKS, CRAFTING_MISC, CRAFTING_REDSTONE), FURNACE_SEARCH, ImmutableList.of(FURNACE_FOOD, FURNACE_BLOCKS, FURNACE_MISC), BLAST_FURNACE_SEARCH, ImmutableList.of(BLAST_FURNACE_BLOCKS, BLAST_FURNACE_MISC), SMOKER_SEARCH, ImmutableList.of(SMOKER_FOOD));
+   private final List<ItemStack> icons;
 
    private RecipeBookCategories(ItemStack... p_i48836_3_) {
-      this.itemIcons = ImmutableList.copyOf(p_i48836_3_);
+      this.icons = ImmutableList.copyOf(p_i48836_3_);
    }
 
-   public static List<RecipeBookCategories> getCategories(RecipeBookCategory p_243236_0_) {
+   public static List<RecipeBookCategories> func_243236_a(RecipeBookCategory p_243236_0_) {
       switch(p_243236_0_) {
       case CRAFTING:
-         return CRAFTING_CATEGORIES;
+         return field_243234_v;
       case FURNACE:
-         return FURNACE_CATEGORIES;
+         return field_243233_u;
       case BLAST_FURNACE:
-         return BLAST_FURNACE_CATEGORIES;
+         return field_243232_t;
       case SMOKER:
-         return SMOKER_CATEGORIES;
+         return field_243231_s;
       default:
          return ImmutableList.of();
       }
    }
 
-   public List<ItemStack> getIconItems() {
-      return this.itemIcons;
+   public List<ItemStack> getIcons() {
+      return this.icons;
    }
 }

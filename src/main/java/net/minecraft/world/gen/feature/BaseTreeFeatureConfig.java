@@ -16,51 +16,51 @@ public class BaseTreeFeatureConfig implements IFeatureConfig {
          return p_236693_0_.trunkProvider;
       }), BlockStateProvider.CODEC.fieldOf("leaves_provider").forGetter((p_236692_0_) -> {
          return p_236692_0_.leavesProvider;
-      }), FoliagePlacer.CODEC.fieldOf("foliage_placer").forGetter((p_236691_0_) -> {
+      }), FoliagePlacer.field_236749_d_.fieldOf("foliage_placer").forGetter((p_236691_0_) -> {
          return p_236691_0_.foliagePlacer;
-      }), AbstractTrunkPlacer.CODEC.fieldOf("trunk_placer").forGetter((p_236690_0_) -> {
+      }), AbstractTrunkPlacer.field_236905_c_.fieldOf("trunk_placer").forGetter((p_236690_0_) -> {
          return p_236690_0_.trunkPlacer;
       }), AbstractFeatureSizeType.CODEC.fieldOf("minimum_size").forGetter((p_236689_0_) -> {
          return p_236689_0_.minimumSize;
-      }), TreeDecorator.CODEC.listOf().fieldOf("decorators").forGetter((p_236688_0_) -> {
+      }), TreeDecorator.field_236874_c_.listOf().fieldOf("decorators").forGetter((p_236688_0_) -> {
          return p_236688_0_.decorators;
       }), Codec.INT.fieldOf("max_water_depth").orElse(0).forGetter((p_236687_0_) -> {
          return p_236687_0_.maxWaterDepth;
       }), Codec.BOOL.fieldOf("ignore_vines").orElse(false).forGetter((p_236686_0_) -> {
          return p_236686_0_.ignoreVines;
       }), Heightmap.Type.CODEC.fieldOf("heightmap").forGetter((p_236684_0_) -> {
-         return p_236684_0_.heightmap;
+         return p_236684_0_.field_236682_l_;
       })).apply(p_236683_0_, BaseTreeFeatureConfig::new);
    });
    public final BlockStateProvider trunkProvider;
    public final BlockStateProvider leavesProvider;
    public final List<TreeDecorator> decorators;
-   public transient boolean fromSapling;
+   public transient boolean forcePlacement;
    public final FoliagePlacer foliagePlacer;
    public final AbstractTrunkPlacer trunkPlacer;
    public final AbstractFeatureSizeType minimumSize;
    public final int maxWaterDepth;
    public final boolean ignoreVines;
-   public final Heightmap.Type heightmap;
+   public final Heightmap.Type field_236682_l_;
 
-   protected BaseTreeFeatureConfig(BlockStateProvider p_i232020_1_, BlockStateProvider p_i232020_2_, FoliagePlacer p_i232020_3_, AbstractTrunkPlacer p_i232020_4_, AbstractFeatureSizeType p_i232020_5_, List<TreeDecorator> p_i232020_6_, int p_i232020_7_, boolean p_i232020_8_, Heightmap.Type p_i232020_9_) {
-      this.trunkProvider = p_i232020_1_;
-      this.leavesProvider = p_i232020_2_;
-      this.decorators = p_i232020_6_;
-      this.foliagePlacer = p_i232020_3_;
-      this.minimumSize = p_i232020_5_;
-      this.trunkPlacer = p_i232020_4_;
-      this.maxWaterDepth = p_i232020_7_;
-      this.ignoreVines = p_i232020_8_;
-      this.heightmap = p_i232020_9_;
+   protected BaseTreeFeatureConfig(BlockStateProvider trunkProvider, BlockStateProvider leavesProvider, FoliagePlacer foliagePlacer, AbstractTrunkPlacer trunkPlacer, AbstractFeatureSizeType minimumSize, List<TreeDecorator> decorators, int maxWaterDepth, boolean ignoreVines, Heightmap.Type p_i232020_9_) {
+      this.trunkProvider = trunkProvider;
+      this.leavesProvider = leavesProvider;
+      this.decorators = decorators;
+      this.foliagePlacer = foliagePlacer;
+      this.minimumSize = minimumSize;
+      this.trunkPlacer = trunkPlacer;
+      this.maxWaterDepth = maxWaterDepth;
+      this.ignoreVines = ignoreVines;
+      this.field_236682_l_ = p_i232020_9_;
    }
 
-   public void setFromSapling() {
-      this.fromSapling = true;
+   public void forcePlacement() {
+      this.forcePlacement = true;
    }
 
-   public BaseTreeFeatureConfig withDecorators(List<TreeDecorator> p_236685_1_) {
-      return new BaseTreeFeatureConfig(this.trunkProvider, this.leavesProvider, this.foliagePlacer, this.trunkPlacer, this.minimumSize, p_236685_1_, this.maxWaterDepth, this.ignoreVines, this.heightmap);
+   public BaseTreeFeatureConfig func_236685_a_(List<TreeDecorator> decorators) {
+      return new BaseTreeFeatureConfig(this.trunkProvider, this.leavesProvider, this.foliagePlacer, this.trunkPlacer, this.minimumSize, decorators, this.maxWaterDepth, this.ignoreVines, this.field_236682_l_);
    }
 
    public static class Builder {
@@ -72,38 +72,38 @@ public class BaseTreeFeatureConfig implements IFeatureConfig {
       private List<TreeDecorator> decorators = ImmutableList.of();
       private int maxWaterDepth;
       private boolean ignoreVines;
-      private Heightmap.Type heightmap = Heightmap.Type.OCEAN_FLOOR;
+      private Heightmap.Type field_236699_i_ = Heightmap.Type.OCEAN_FLOOR;
 
-      public Builder(BlockStateProvider p_i232021_1_, BlockStateProvider p_i232021_2_, FoliagePlacer p_i232021_3_, AbstractTrunkPlacer p_i232021_4_, AbstractFeatureSizeType p_i232021_5_) {
-         this.trunkProvider = p_i232021_1_;
-         this.leavesProvider = p_i232021_2_;
-         this.foliagePlacer = p_i232021_3_;
-         this.trunkPlacer = p_i232021_4_;
-         this.minimumSize = p_i232021_5_;
+      public Builder(BlockStateProvider trunkProvider, BlockStateProvider leavesProvider, FoliagePlacer foliagePlacer, AbstractTrunkPlacer trunkPlacer, AbstractFeatureSizeType minimumSize) {
+         this.trunkProvider = trunkProvider;
+         this.leavesProvider = leavesProvider;
+         this.foliagePlacer = foliagePlacer;
+         this.trunkPlacer = trunkPlacer;
+         this.minimumSize = minimumSize;
       }
 
-      public BaseTreeFeatureConfig.Builder decorators(List<TreeDecorator> p_236703_1_) {
-         this.decorators = p_236703_1_;
+      public BaseTreeFeatureConfig.Builder setDecorators(List<TreeDecorator> decorators) {
+         this.decorators = decorators;
          return this;
       }
 
-      public BaseTreeFeatureConfig.Builder maxWaterDepth(int p_236701_1_) {
+      public BaseTreeFeatureConfig.Builder setMaxWaterDepth(int p_236701_1_) {
          this.maxWaterDepth = p_236701_1_;
          return this;
       }
 
-      public BaseTreeFeatureConfig.Builder ignoreVines() {
+      public BaseTreeFeatureConfig.Builder setIgnoreVines() {
          this.ignoreVines = true;
          return this;
       }
 
-      public BaseTreeFeatureConfig.Builder heightmap(Heightmap.Type p_236702_1_) {
-         this.heightmap = p_236702_1_;
+      public BaseTreeFeatureConfig.Builder func_236702_a_(Heightmap.Type p_236702_1_) {
+         this.field_236699_i_ = p_236702_1_;
          return this;
       }
 
       public BaseTreeFeatureConfig build() {
-         return new BaseTreeFeatureConfig(this.trunkProvider, this.leavesProvider, this.foliagePlacer, this.trunkPlacer, this.minimumSize, this.decorators, this.maxWaterDepth, this.ignoreVines, this.heightmap);
+         return new BaseTreeFeatureConfig(this.trunkProvider, this.leavesProvider, this.foliagePlacer, this.trunkPlacer, this.minimumSize, this.decorators, this.maxWaterDepth, this.ignoreVines, this.field_236699_i_);
       }
    }
 }

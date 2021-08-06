@@ -24,39 +24,39 @@ import org.apache.logging.log4j.Logger;
 
 public class EntityDataManager {
    private static final Logger LOGGER = LogManager.getLogger();
-   private static final Map<Class<? extends Entity>, Integer> ENTITY_ID_POOL = Maps.newHashMap();
+   private static final Map<Class<? extends Entity>, Integer> NEXT_ID_MAP = Maps.newHashMap();
    private final Entity entity;
-   private final Map<Integer, EntityDataManager.DataEntry<?>> itemsById = Maps.newHashMap();
+   private final Map<Integer, EntityDataManager.DataEntry<?>> entries = Maps.newHashMap();
    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-   private boolean isEmpty = true;
-   private boolean isDirty;
+   private boolean empty = true;
+   private boolean dirty;
 
-   public EntityDataManager(Entity p_i46840_1_) {
-      this.entity = p_i46840_1_;
+   public EntityDataManager(Entity entityIn) {
+      this.entity = entityIn;
    }
 
-   public static <T> DataParameter<T> defineId(Class<? extends Entity> p_187226_0_, IDataSerializer<T> p_187226_1_) {
+   public static <T> DataParameter<T> createKey(Class<? extends Entity> clazz, IDataSerializer<T> serializer) {
       if (LOGGER.isDebugEnabled()) {
          try {
             Class<?> oclass = Class.forName(Thread.currentThread().getStackTrace()[2].getClassName());
-            if (!oclass.equals(p_187226_0_)) {
-               LOGGER.debug("defineId called for: {} from {}", p_187226_0_, oclass, new RuntimeException());
+            if (!oclass.equals(clazz)) {
+               LOGGER.debug("defineId called for: {} from {}", clazz, oclass, new RuntimeException());
             }
          } catch (ClassNotFoundException classnotfoundexception) {
          }
       }
 
       int j;
-      if (ENTITY_ID_POOL.containsKey(p_187226_0_)) {
-         j = ENTITY_ID_POOL.get(p_187226_0_) + 1;
+      if (NEXT_ID_MAP.containsKey(clazz)) {
+         j = NEXT_ID_MAP.get(clazz) + 1;
       } else {
          int i = 0;
-         Class<?> oclass1 = p_187226_0_;
+         Class<?> oclass1 = clazz;
 
          while(oclass1 != Entity.class) {
             oclass1 = oclass1.getSuperclass();
-            if (ENTITY_ID_POOL.containsKey(oclass1)) {
-               i = ENTITY_ID_POOL.get(oclass1) + 1;
+            if (NEXT_ID_MAP.containsKey(oclass1)) {
+               i = NEXT_ID_MAP.get(oclass1) + 1;
                break;
             }
          }
@@ -67,42 +67,42 @@ public class EntityDataManager {
       if (j > 254) {
          throw new IllegalArgumentException("Data value id is too big with " + j + "! (Max is " + 254 + ")");
       } else {
-         ENTITY_ID_POOL.put(p_187226_0_, j);
-         return p_187226_1_.createAccessor(j);
+         NEXT_ID_MAP.put(clazz, j);
+         return serializer.createKey(j);
       }
    }
 
-   public <T> void define(DataParameter<T> p_187214_1_, T p_187214_2_) {
-      int i = p_187214_1_.getId();
+   public <T> void register(DataParameter<T> key, T value) {
+      int i = key.getId();
       if (i > 254) {
          throw new IllegalArgumentException("Data value id is too big with " + i + "! (Max is " + 254 + ")");
-      } else if (this.itemsById.containsKey(i)) {
+      } else if (this.entries.containsKey(i)) {
          throw new IllegalArgumentException("Duplicate id value for " + i + "!");
-      } else if (DataSerializers.getSerializedId(p_187214_1_.getSerializer()) < 0) {
-         throw new IllegalArgumentException("Unregistered serializer " + p_187214_1_.getSerializer() + " for " + i + "!");
+      } else if (DataSerializers.getSerializerId(key.getSerializer()) < 0) {
+         throw new IllegalArgumentException("Unregistered serializer " + key.getSerializer() + " for " + i + "!");
       } else {
-         this.createDataItem(p_187214_1_, p_187214_2_);
+         this.setEntry(key, value);
       }
    }
 
-   private <T> void createDataItem(DataParameter<T> p_187222_1_, T p_187222_2_) {
-      EntityDataManager.DataEntry<T> dataentry = new EntityDataManager.DataEntry<>(p_187222_1_, p_187222_2_);
+   private <T> void setEntry(DataParameter<T> key, T value) {
+      EntityDataManager.DataEntry<T> dataentry = new EntityDataManager.DataEntry<>(key, value);
       this.lock.writeLock().lock();
-      this.itemsById.put(p_187222_1_.getId(), dataentry);
-      this.isEmpty = false;
+      this.entries.put(key.getId(), dataentry);
+      this.empty = false;
       this.lock.writeLock().unlock();
    }
 
-   private <T> EntityDataManager.DataEntry<T> getItem(DataParameter<T> p_187219_1_) {
+   private <T> EntityDataManager.DataEntry<T> getEntry(DataParameter<T> key) {
       this.lock.readLock().lock();
 
       EntityDataManager.DataEntry<T> dataentry;
       try {
-         dataentry = (DataEntry<T>) this.itemsById.get(p_187219_1_.getId());
+         dataentry = (DataEntry<T>) this.entries.get(key.getId());
       } catch (Throwable throwable) {
-         CrashReport crashreport = CrashReport.forThrowable(throwable, "Getting synched entity data");
-         CrashReportCategory crashreportcategory = crashreport.addCategory("Synched entity data");
-         crashreportcategory.setDetail("Data ID", p_187219_1_);
+         CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Getting synched entity data");
+         CrashReportCategory crashreportcategory = crashreport.makeCategory("Synched entity data");
+         crashreportcategory.addDetail("Data ID", key);
          throw new ReportedException(crashreport);
       } finally {
          this.lock.readLock().unlock();
@@ -111,44 +111,44 @@ public class EntityDataManager {
       return dataentry;
    }
 
-   public <T> T get(DataParameter<T> p_187225_1_) {
-      return this.getItem(p_187225_1_).getValue();
+   public <T> T get(DataParameter<T> key) {
+      return this.getEntry(key).getValue();
    }
 
-   public <T> void set(DataParameter<T> p_187227_1_, T p_187227_2_) {
-      EntityDataManager.DataEntry<T> dataentry = this.getItem(p_187227_1_);
-      if (ObjectUtils.notEqual(p_187227_2_, dataentry.getValue())) {
-         dataentry.setValue(p_187227_2_);
-         this.entity.onSyncedDataUpdated(p_187227_1_);
+   public <T> void set(DataParameter<T> key, T value) {
+      EntityDataManager.DataEntry<T> dataentry = this.getEntry(key);
+      if (ObjectUtils.notEqual(value, dataentry.getValue())) {
+         dataentry.setValue(value);
+         this.entity.notifyDataManagerChange(key);
          dataentry.setDirty(true);
-         this.isDirty = true;
+         this.dirty = true;
       }
 
    }
 
    public boolean isDirty() {
-      return this.isDirty;
+      return this.dirty;
    }
 
-   public static void pack(List<EntityDataManager.DataEntry<?>> p_187229_0_, PacketBuffer p_187229_1_) throws IOException {
-      if (p_187229_0_ != null) {
+   public static void writeEntries(List<EntityDataManager.DataEntry<?>> entriesIn, PacketBuffer buf) throws IOException {
+      if (entriesIn != null) {
          int i = 0;
 
-         for(int j = p_187229_0_.size(); i < j; ++i) {
-            writeDataItem(p_187229_1_, p_187229_0_.get(i));
+         for(int j = entriesIn.size(); i < j; ++i) {
+            writeEntry(buf, entriesIn.get(i));
          }
       }
 
-      p_187229_1_.writeByte(255);
+      buf.writeByte(255);
    }
 
    @Nullable
-   public List<EntityDataManager.DataEntry<?>> packDirty() {
+   public List<EntityDataManager.DataEntry<?>> getDirty() {
       List<EntityDataManager.DataEntry<?>> list = null;
-      if (this.isDirty) {
+      if (this.dirty) {
          this.lock.readLock().lock();
 
-         for(EntityDataManager.DataEntry<?> dataentry : this.itemsById.values()) {
+         for(EntityDataManager.DataEntry<?> dataentry : this.entries.values()) {
             if (dataentry.isDirty()) {
                dataentry.setDirty(false);
                if (list == null) {
@@ -162,7 +162,7 @@ public class EntityDataManager {
          this.lock.readLock().unlock();
       }
 
-      this.isDirty = false;
+      this.dirty = false;
       return list;
    }
 
@@ -171,7 +171,7 @@ public class EntityDataManager {
       List<EntityDataManager.DataEntry<?>> list = null;
       this.lock.readLock().lock();
 
-      for(EntityDataManager.DataEntry<?> dataentry : this.itemsById.values()) {
+      for(EntityDataManager.DataEntry<?> dataentry : this.entries.values()) {
          if (list == null) {
             list = Lists.newArrayList();
          }
@@ -183,78 +183,78 @@ public class EntityDataManager {
       return list;
    }
 
-   private static <T> void writeDataItem(PacketBuffer p_187220_0_, EntityDataManager.DataEntry<T> p_187220_1_) throws IOException {
-      DataParameter<T> dataparameter = p_187220_1_.getAccessor();
-      int i = DataSerializers.getSerializedId(dataparameter.getSerializer());
+   private static <T> void writeEntry(PacketBuffer buf, EntityDataManager.DataEntry<T> entry) throws IOException {
+      DataParameter<T> dataparameter = entry.getKey();
+      int i = DataSerializers.getSerializerId(dataparameter.getSerializer());
       if (i < 0) {
          throw new EncoderException("Unknown serializer type " + dataparameter.getSerializer());
       } else {
-         p_187220_0_.writeByte(dataparameter.getId());
-         p_187220_0_.writeVarInt(i);
-         dataparameter.getSerializer().write(p_187220_0_, p_187220_1_.getValue());
+         buf.writeByte(dataparameter.getId());
+         buf.writeVarInt(i);
+         dataparameter.getSerializer().write(buf, entry.getValue());
       }
    }
 
    @Nullable
-   public static List<EntityDataManager.DataEntry<?>> unpack(PacketBuffer p_187215_0_) throws IOException {
+   public static List<EntityDataManager.DataEntry<?>> readEntries(PacketBuffer buf) throws IOException {
       List<EntityDataManager.DataEntry<?>> list = null;
 
       int i;
-      while((i = p_187215_0_.readUnsignedByte()) != 255) {
+      while((i = buf.readUnsignedByte()) != 255) {
          if (list == null) {
             list = Lists.newArrayList();
          }
 
-         int j = p_187215_0_.readVarInt();
+         int j = buf.readVarInt();
          IDataSerializer<?> idataserializer = DataSerializers.getSerializer(j);
          if (idataserializer == null) {
             throw new DecoderException("Unknown serializer type " + j);
          }
 
-         list.add(genericHelper(p_187215_0_, i, idataserializer));
+         list.add(makeDataEntry(buf, i, idataserializer));
       }
 
       return list;
    }
 
-   private static <T> EntityDataManager.DataEntry<T> genericHelper(PacketBuffer p_198167_0_, int p_198167_1_, IDataSerializer<T> p_198167_2_) {
-      return new EntityDataManager.DataEntry<>(p_198167_2_.createAccessor(p_198167_1_), p_198167_2_.read(p_198167_0_));
+   private static <T> EntityDataManager.DataEntry<T> makeDataEntry(PacketBuffer bufferIn, int idIn, IDataSerializer<T> serializerIn) {
+      return new EntityDataManager.DataEntry<>(serializerIn.createKey(idIn), serializerIn.read(bufferIn));
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void assignValues(List<EntityDataManager.DataEntry<?>> p_187218_1_) {
+   public void setEntryValues(List<EntityDataManager.DataEntry<?>> entriesIn) {
       this.lock.writeLock().lock();
 
-      for(EntityDataManager.DataEntry<?> dataentry : p_187218_1_) {
-         EntityDataManager.DataEntry<?> dataentry1 = this.itemsById.get(dataentry.getAccessor().getId());
+      for(EntityDataManager.DataEntry<?> dataentry : entriesIn) {
+         EntityDataManager.DataEntry<?> dataentry1 = this.entries.get(dataentry.getKey().getId());
          if (dataentry1 != null) {
-            this.assignValue(dataentry1, dataentry);
-            this.entity.onSyncedDataUpdated(dataentry.getAccessor());
+            this.setEntryValue(dataentry1, dataentry);
+            this.entity.notifyDataManagerChange(dataentry.getKey());
          }
       }
 
       this.lock.writeLock().unlock();
-      this.isDirty = true;
+      this.dirty = true;
    }
 
    @OnlyIn(Dist.CLIENT)
-   private <T> void assignValue(EntityDataManager.DataEntry<T> p_187224_1_, EntityDataManager.DataEntry<?> p_187224_2_) {
-      if (!Objects.equals(p_187224_2_.accessor.getSerializer(), p_187224_1_.accessor.getSerializer())) {
-         throw new IllegalStateException(String.format("Invalid entity data item type for field %d on entity %s: old=%s(%s), new=%s(%s)", p_187224_1_.accessor.getId(), this.entity, p_187224_1_.value, p_187224_1_.value.getClass(), p_187224_2_.value, p_187224_2_.value.getClass()));
+   private <T> void setEntryValue(EntityDataManager.DataEntry<T> target, EntityDataManager.DataEntry<?> source) {
+      if (!Objects.equals(source.key.getSerializer(), target.key.getSerializer())) {
+         throw new IllegalStateException(String.format("Invalid entity data item type for field %d on entity %s: old=%s(%s), new=%s(%s)", target.key.getId(), this.entity, target.value, target.value.getClass(), source.value, source.value.getClass()));
       } else {
-         p_187224_1_.setValue((T)p_187224_2_.getValue());
+         target.setValue((T)source.getValue());
       }
    }
 
    public boolean isEmpty() {
-      return this.isEmpty;
+      return this.empty;
    }
 
-   public void clearDirty() {
-      this.isDirty = false;
+   public void setClean() {
+      this.dirty = false;
       this.lock.readLock().lock();
 
-      for(EntityDataManager.DataEntry<?> dataentry : this.itemsById.values()) {
+      for(EntityDataManager.DataEntry<?> dataentry : this.entries.values()) {
          dataentry.setDirty(false);
       }
 
@@ -262,22 +262,22 @@ public class EntityDataManager {
    }
 
    public static class DataEntry<T> {
-      private final DataParameter<T> accessor;
+      private final DataParameter<T> key;
       private T value;
       private boolean dirty;
 
-      public DataEntry(DataParameter<T> p_i47010_1_, T p_i47010_2_) {
-         this.accessor = p_i47010_1_;
-         this.value = p_i47010_2_;
+      public DataEntry(DataParameter<T> keyIn, T valueIn) {
+         this.key = keyIn;
+         this.value = valueIn;
          this.dirty = true;
       }
 
-      public DataParameter<T> getAccessor() {
-         return this.accessor;
+      public DataParameter<T> getKey() {
+         return this.key;
       }
 
-      public void setValue(T p_187210_1_) {
-         this.value = p_187210_1_;
+      public void setValue(T valueIn) {
+         this.value = valueIn;
       }
 
       public T getValue() {
@@ -288,12 +288,12 @@ public class EntityDataManager {
          return this.dirty;
       }
 
-      public void setDirty(boolean p_187208_1_) {
-         this.dirty = p_187208_1_;
+      public void setDirty(boolean dirtyIn) {
+         this.dirty = dirtyIn;
       }
 
       public EntityDataManager.DataEntry<T> copy() {
-         return new EntityDataManager.DataEntry<>(this.accessor, this.accessor.getSerializer().copy(this.value));
+         return new EntityDataManager.DataEntry<>(this.key, this.key.getSerializer().copyValue(this.value));
       }
    }
 }

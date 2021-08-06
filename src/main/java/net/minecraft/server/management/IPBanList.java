@@ -5,30 +5,30 @@ import java.io.File;
 import java.net.SocketAddress;
 
 public class IPBanList extends UserList<String, IPBanEntry> {
-   public IPBanList(File p_i1490_1_) {
-      super(p_i1490_1_);
+   public IPBanList(File bansFile) {
+      super(bansFile);
    }
 
-   protected UserListEntry<String> createEntry(JsonObject p_152682_1_) {
-      return new IPBanEntry(p_152682_1_);
+   protected UserListEntry<String> createEntry(JsonObject entryData) {
+      return new IPBanEntry(entryData);
    }
 
-   public boolean isBanned(SocketAddress p_152708_1_) {
-      String s = this.getIpFromAddress(p_152708_1_);
-      return this.contains(s);
+   public boolean isBanned(SocketAddress address) {
+      String s = this.addressToString(address);
+      return this.hasEntry(s);
    }
 
    public boolean isBanned(String p_199044_1_) {
-      return this.contains(p_199044_1_);
+      return this.hasEntry(p_199044_1_);
    }
 
-   public IPBanEntry get(SocketAddress p_152709_1_) {
-      String s = this.getIpFromAddress(p_152709_1_);
-      return this.get(s);
+   public IPBanEntry getBanEntry(SocketAddress address) {
+      String s = this.addressToString(address);
+      return this.getEntry(s);
    }
 
-   private String getIpFromAddress(SocketAddress p_152707_1_) {
-      String s = p_152707_1_.toString();
+   private String addressToString(SocketAddress address) {
+      String s = address.toString();
       if (s.contains("/")) {
          s = s.substring(s.indexOf(47) + 1);
       }

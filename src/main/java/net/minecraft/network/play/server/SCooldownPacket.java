@@ -10,28 +10,28 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SCooldownPacket implements IPacket<IClientPlayNetHandler> {
    private Item item;
-   private int duration;
+   private int ticks;
 
    public SCooldownPacket() {
    }
 
-   public SCooldownPacket(Item p_i46950_1_, int p_i46950_2_) {
-      this.item = p_i46950_1_;
-      this.duration = p_i46950_2_;
+   public SCooldownPacket(Item itemIn, int ticksIn) {
+      this.item = itemIn;
+      this.ticks = ticksIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.item = Item.byId(p_148837_1_.readVarInt());
-      this.duration = p_148837_1_.readVarInt();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.item = Item.getItemById(buf.readVarInt());
+      this.ticks = buf.readVarInt();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeVarInt(Item.getId(this.item));
-      p_148840_1_.writeVarInt(this.duration);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeVarInt(Item.getIdFromItem(this.item));
+      buf.writeVarInt(this.ticks);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleItemCooldown(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleCooldown(this);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -40,7 +40,7 @@ public class SCooldownPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getDuration() {
-      return this.duration;
+   public int getTicks() {
+      return this.ticks;
    }
 }

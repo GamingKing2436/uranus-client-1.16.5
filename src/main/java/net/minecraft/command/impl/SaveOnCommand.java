@@ -8,26 +8,26 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.server.ServerWorld;
 
 public class SaveOnCommand {
-   private static final SimpleCommandExceptionType ERROR_ALREADY_ON = new SimpleCommandExceptionType(new TranslationTextComponent("commands.save.alreadyOn"));
+   private static final SimpleCommandExceptionType SAVE_ALREADY_ON_EXCEPTION = new SimpleCommandExceptionType(new TranslationTextComponent("commands.save.alreadyOn"));
 
-   public static void register(CommandDispatcher<CommandSource> p_198621_0_) {
-      p_198621_0_.register(Commands.literal("save-on").requires((p_198623_0_) -> {
-         return p_198623_0_.hasPermission(4);
+   public static void register(CommandDispatcher<CommandSource> dispatcher) {
+      dispatcher.register(Commands.literal("save-on").requires((p_198623_0_) -> {
+         return p_198623_0_.hasPermissionLevel(4);
       }).executes((p_198622_0_) -> {
          CommandSource commandsource = p_198622_0_.getSource();
          boolean flag = false;
 
-         for(ServerWorld serverworld : commandsource.getServer().getAllLevels()) {
-            if (serverworld != null && serverworld.noSave) {
-               serverworld.noSave = false;
+         for(ServerWorld serverworld : commandsource.getServer().getWorlds()) {
+            if (serverworld != null && serverworld.disableLevelSaving) {
+               serverworld.disableLevelSaving = false;
                flag = true;
             }
          }
 
          if (!flag) {
-            throw ERROR_ALREADY_ON.create();
+            throw SAVE_ALREADY_ON_EXCEPTION.create();
          } else {
-            commandsource.sendSuccess(new TranslationTextComponent("commands.save.enabled"), true);
+            commandsource.sendFeedback(new TranslationTextComponent("commands.save.enabled"), true);
             return 1;
          }
       }));

@@ -10,7 +10,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class PingResult extends ValueObject implements IPersistentSerializable {
    @SerializedName("pingResults")
-   public List<RegionPingResult> pingResults = Lists.newArrayList();
+   public List<RegionPingResult> field_230571_a_ = Lists.newArrayList();
    @SerializedName("worldIds")
-   public List<Long> worldIds = Lists.newArrayList();
+   public List<Long> field_230572_b_ = Lists.newArrayList();
 }

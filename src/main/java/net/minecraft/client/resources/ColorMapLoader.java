@@ -11,10 +11,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class ColorMapLoader {
    @Deprecated
-   public static int[] getPixels(IResourceManager p_217820_0_, ResourceLocation p_217820_1_) throws IOException {
+   public static int[] loadColors(IResourceManager manager, ResourceLocation location) throws IOException {
       int[] aint;
       try (
-         IResource iresource = p_217820_0_.getResource(p_217820_1_);
+         IResource iresource = manager.getResource(location);
          NativeImage nativeimage = NativeImage.read(iresource.getInputStream());
       ) {
          aint = nativeimage.makePixelArray();

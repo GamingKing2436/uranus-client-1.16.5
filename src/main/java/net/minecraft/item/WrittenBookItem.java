@@ -28,79 +28,79 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class WrittenBookItem extends Item {
-   public WrittenBookItem(Item.Properties p_i48454_1_) {
-      super(p_i48454_1_);
+   public WrittenBookItem(Item.Properties builder) {
+      super(builder);
    }
 
-   public static boolean makeSureTagIsValid(@Nullable CompoundNBT p_77828_0_) {
-      if (!WritableBookItem.makeSureTagIsValid(p_77828_0_)) {
+   public static boolean validBookTagContents(@Nullable CompoundNBT nbt) {
+      if (!WritableBookItem.isNBTValid(nbt)) {
          return false;
-      } else if (!p_77828_0_.contains("title", 8)) {
+      } else if (!nbt.contains("title", 8)) {
          return false;
       } else {
-         String s = p_77828_0_.getString("title");
-         return s.length() > 32 ? false : p_77828_0_.contains("author", 8);
+         String s = nbt.getString("title");
+         return s.length() > 32 ? false : nbt.contains("author", 8);
       }
    }
 
-   public static int getGeneration(ItemStack p_179230_0_) {
-      return p_179230_0_.getTag().getInt("generation");
+   public static int getGeneration(ItemStack book) {
+      return book.getTag().getInt("generation");
    }
 
-   public static int getPageCount(ItemStack p_220049_0_) {
-      CompoundNBT compoundnbt = p_220049_0_.getTag();
+   public static int getPageCount(ItemStack stack) {
+      CompoundNBT compoundnbt = stack.getTag();
       return compoundnbt != null ? compoundnbt.getList("pages", 8).size() : 0;
    }
 
-   public ITextComponent getName(ItemStack p_200295_1_) {
-      if (p_200295_1_.hasTag()) {
-         CompoundNBT compoundnbt = p_200295_1_.getTag();
+   public ITextComponent getDisplayName(ItemStack stack) {
+      if (stack.hasTag()) {
+         CompoundNBT compoundnbt = stack.getTag();
          String s = compoundnbt.getString("title");
          if (!StringUtils.isNullOrEmpty(s)) {
             return new StringTextComponent(s);
          }
       }
 
-      return super.getName(p_200295_1_);
+      return super.getDisplayName(stack);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void appendHoverText(ItemStack p_77624_1_, @Nullable World p_77624_2_, List<ITextComponent> p_77624_3_, ITooltipFlag p_77624_4_) {
-      if (p_77624_1_.hasTag()) {
-         CompoundNBT compoundnbt = p_77624_1_.getTag();
+   public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+      if (stack.hasTag()) {
+         CompoundNBT compoundnbt = stack.getTag();
          String s = compoundnbt.getString("author");
          if (!StringUtils.isNullOrEmpty(s)) {
-            p_77624_3_.add((new TranslationTextComponent("book.byAuthor", s)).withStyle(TextFormatting.GRAY));
+            tooltip.add((new TranslationTextComponent("book.byAuthor", s)).mergeStyle(TextFormatting.GRAY));
          }
 
-         p_77624_3_.add((new TranslationTextComponent("book.generation." + compoundnbt.getInt("generation"))).withStyle(TextFormatting.GRAY));
+         tooltip.add((new TranslationTextComponent("book.generation." + compoundnbt.getInt("generation"))).mergeStyle(TextFormatting.GRAY));
       }
 
    }
 
-   public ActionResultType useOn(ItemUseContext p_195939_1_) {
-      World world = p_195939_1_.getLevel();
-      BlockPos blockpos = p_195939_1_.getClickedPos();
+   public ActionResultType onItemUse(ItemUseContext context) {
+      World world = context.getWorld();
+      BlockPos blockpos = context.getPos();
       BlockState blockstate = world.getBlockState(blockpos);
-      if (blockstate.is(Blocks.LECTERN)) {
-         return LecternBlock.tryPlaceBook(world, blockpos, blockstate, p_195939_1_.getItemInHand()) ? ActionResultType.sidedSuccess(world.isClientSide) : ActionResultType.PASS;
+      if (blockstate.isIn(Blocks.LECTERN)) {
+         return LecternBlock.tryPlaceBook(world, blockpos, blockstate, context.getItem()) ? ActionResultType.func_233537_a_(world.isRemote) : ActionResultType.PASS;
       } else {
          return ActionResultType.PASS;
       }
    }
 
-   public ActionResult<ItemStack> use(World p_77659_1_, PlayerEntity p_77659_2_, Hand p_77659_3_) {
-      ItemStack itemstack = p_77659_2_.getItemInHand(p_77659_3_);
-      p_77659_2_.openItemGui(itemstack, p_77659_3_);
-      p_77659_2_.awardStat(Stats.ITEM_USED.get(this));
-      return ActionResult.sidedSuccess(itemstack, p_77659_1_.isClientSide());
+   public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
+      ItemStack itemstack = playerIn.getHeldItem(handIn);
+      playerIn.openBook(itemstack, handIn);
+      playerIn.addStat(Stats.ITEM_USED.get(this));
+      return ActionResult.func_233538_a_(itemstack, worldIn.isRemote());
    }
 
-   public static boolean resolveBookComponents(ItemStack p_220050_0_, @Nullable CommandSource p_220050_1_, @Nullable PlayerEntity p_220050_2_) {
-      CompoundNBT compoundnbt = p_220050_0_.getTag();
+   public static boolean resolveContents(ItemStack stack, @Nullable CommandSource resolvingSource, @Nullable PlayerEntity resolvingPlayer) {
+      CompoundNBT compoundnbt = stack.getTag();
       if (compoundnbt != null && !compoundnbt.getBoolean("resolved")) {
          compoundnbt.putBoolean("resolved", true);
-         if (!makeSureTagIsValid(compoundnbt)) {
+         if (!validBookTagContents(compoundnbt)) {
             return false;
          } else {
             ListNBT listnbt = compoundnbt.getList("pages", 8);
@@ -110,8 +110,8 @@ public class WrittenBookItem extends Item {
 
                ITextComponent itextcomponent;
                try {
-                  itextcomponent = ITextComponent.Serializer.fromJsonLenient(s);
-                  itextcomponent = TextComponentUtils.updateForEntity(p_220050_1_, itextcomponent, p_220050_2_, 0);
+                  itextcomponent = ITextComponent.Serializer.getComponentFromJsonLenient(s);
+                  itextcomponent = TextComponentUtils.func_240645_a_(resolvingSource, itextcomponent, resolvingPlayer, 0);
                } catch (Exception exception) {
                   itextcomponent = new StringTextComponent(s);
                }
@@ -127,7 +127,7 @@ public class WrittenBookItem extends Item {
       }
    }
 
-   public boolean isFoil(ItemStack p_77636_1_) {
+   public boolean hasEffect(ItemStack stack) {
       return true;
    }
 }

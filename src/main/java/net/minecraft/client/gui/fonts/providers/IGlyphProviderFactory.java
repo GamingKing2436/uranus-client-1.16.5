@@ -8,5 +8,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public interface IGlyphProviderFactory {
    @Nullable
-   IGlyphProvider create(IResourceManager p_211246_1_);
+   IGlyphProvider create(IResourceManager resourceManagerIn);
 }

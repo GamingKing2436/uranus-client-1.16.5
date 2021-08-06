@@ -6,15 +6,15 @@ public enum ActionResultType {
    PASS,
    FAIL;
 
-   public boolean consumesAction() {
+   public boolean isSuccessOrConsume() {
       return this == SUCCESS || this == CONSUME;
    }
 
-   public boolean shouldSwing() {
+   public boolean isSuccess() {
       return this == SUCCESS;
    }
 
-   public static ActionResultType sidedSuccess(boolean p_233537_0_) {
-      return p_233537_0_ ? SUCCESS : CONSUME;
+   public static ActionResultType func_233537_a_(boolean isRemote) {
+      return isRemote ? SUCCESS : CONSUME;
    }
 }

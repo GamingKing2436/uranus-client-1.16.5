@@ -13,8 +13,8 @@ import net.minecraft.scoreboard.ScoreCriteria;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ObjectiveRenderType extends DataFix {
-   public ObjectiveRenderType(Schema p_i49781_1_, boolean p_i49781_2_) {
-      super(p_i49781_1_, p_i49781_2_);
+   public ObjectiveRenderType(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    private static ScoreCriteria.RenderType getRenderType(String p_211858_0_) {

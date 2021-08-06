@@ -8,13 +8,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class TextureMetadataSectionSerializer implements IMetadataSectionSerializer<TextureMetadataSection> {
-   public TextureMetadataSection fromJson(JsonObject p_195812_1_) {
-      boolean flag = JSONUtils.getAsBoolean(p_195812_1_, "blur", false);
-      boolean flag1 = JSONUtils.getAsBoolean(p_195812_1_, "clamp", false);
+   public TextureMetadataSection deserialize(JsonObject json) {
+      boolean flag = JSONUtils.getBoolean(json, "blur", false);
+      boolean flag1 = JSONUtils.getBoolean(json, "clamp", false);
       return new TextureMetadataSection(flag, flag1);
    }
 
-   public String getMetadataSectionName() {
+   public String getSectionName() {
       return "texture";
    }
 }

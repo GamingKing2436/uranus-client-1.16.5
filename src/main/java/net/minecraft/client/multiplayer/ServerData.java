@@ -13,89 +13,89 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ServerData {
-   public String name;
-   public String ip;
-   public ITextComponent status;
-   public ITextComponent motd;
-   public long ping;
-   public int protocol = SharedConstants.getCurrentVersion().getProtocolVersion();
-   public ITextComponent version = new StringTextComponent(SharedConstants.getCurrentVersion().getName());
+   public String serverName;
+   public String serverIP;
+   public ITextComponent populationInfo;
+   public ITextComponent serverMOTD;
+   public long pingToServer;
+   public int version = SharedConstants.getVersion().getProtocolVersion();
+   public ITextComponent gameVersion = new StringTextComponent(SharedConstants.getVersion().getName());
    public boolean pinged;
    public List<ITextComponent> playerList = Collections.emptyList();
-   private ServerData.ServerResourceMode packStatus = ServerData.ServerResourceMode.PROMPT;
+   private ServerData.ServerResourceMode resourceMode = ServerData.ServerResourceMode.PROMPT;
    @Nullable
-   private String iconB64;
-   private boolean lan;
+   private String serverIcon;
+   private boolean lanServer;
 
-   public ServerData(String p_i46420_1_, String p_i46420_2_, boolean p_i46420_3_) {
-      this.name = p_i46420_1_;
-      this.ip = p_i46420_2_;
-      this.lan = p_i46420_3_;
+   public ServerData(String name, String ip, boolean isLan) {
+      this.serverName = name;
+      this.serverIP = ip;
+      this.lanServer = isLan;
    }
 
-   public CompoundNBT write() {
+   public CompoundNBT getNBTCompound() {
       CompoundNBT compoundnbt = new CompoundNBT();
-      compoundnbt.putString("name", this.name);
-      compoundnbt.putString("ip", this.ip);
-      if (this.iconB64 != null) {
-         compoundnbt.putString("icon", this.iconB64);
+      compoundnbt.putString("name", this.serverName);
+      compoundnbt.putString("ip", this.serverIP);
+      if (this.serverIcon != null) {
+         compoundnbt.putString("icon", this.serverIcon);
       }
 
-      if (this.packStatus == ServerData.ServerResourceMode.ENABLED) {
+      if (this.resourceMode == ServerData.ServerResourceMode.ENABLED) {
          compoundnbt.putBoolean("acceptTextures", true);
-      } else if (this.packStatus == ServerData.ServerResourceMode.DISABLED) {
+      } else if (this.resourceMode == ServerData.ServerResourceMode.DISABLED) {
          compoundnbt.putBoolean("acceptTextures", false);
       }
 
       return compoundnbt;
    }
 
-   public ServerData.ServerResourceMode getResourcePackStatus() {
-      return this.packStatus;
+   public ServerData.ServerResourceMode getResourceMode() {
+      return this.resourceMode;
    }
 
-   public void setResourcePackStatus(ServerData.ServerResourceMode p_152584_1_) {
-      this.packStatus = p_152584_1_;
+   public void setResourceMode(ServerData.ServerResourceMode mode) {
+      this.resourceMode = mode;
    }
 
-   public static ServerData read(CompoundNBT p_78837_0_) {
-      ServerData serverdata = new ServerData(p_78837_0_.getString("name"), p_78837_0_.getString("ip"), false);
-      if (p_78837_0_.contains("icon", 8)) {
-         serverdata.setIconB64(p_78837_0_.getString("icon"));
+   public static ServerData getServerDataFromNBTCompound(CompoundNBT nbtCompound) {
+      ServerData serverdata = new ServerData(nbtCompound.getString("name"), nbtCompound.getString("ip"), false);
+      if (nbtCompound.contains("icon", 8)) {
+         serverdata.setBase64EncodedIconData(nbtCompound.getString("icon"));
       }
 
-      if (p_78837_0_.contains("acceptTextures", 1)) {
-         if (p_78837_0_.getBoolean("acceptTextures")) {
-            serverdata.setResourcePackStatus(ServerData.ServerResourceMode.ENABLED);
+      if (nbtCompound.contains("acceptTextures", 1)) {
+         if (nbtCompound.getBoolean("acceptTextures")) {
+            serverdata.setResourceMode(ServerData.ServerResourceMode.ENABLED);
          } else {
-            serverdata.setResourcePackStatus(ServerData.ServerResourceMode.DISABLED);
+            serverdata.setResourceMode(ServerData.ServerResourceMode.DISABLED);
          }
       } else {
-         serverdata.setResourcePackStatus(ServerData.ServerResourceMode.PROMPT);
+         serverdata.setResourceMode(ServerData.ServerResourceMode.PROMPT);
       }
 
       return serverdata;
    }
 
    @Nullable
-   public String getIconB64() {
-      return this.iconB64;
+   public String getBase64EncodedIconData() {
+      return this.serverIcon;
    }
 
-   public void setIconB64(@Nullable String p_147407_1_) {
-      this.iconB64 = p_147407_1_;
+   public void setBase64EncodedIconData(@Nullable String icon) {
+      this.serverIcon = icon;
    }
 
-   public boolean isLan() {
-      return this.lan;
+   public boolean isOnLAN() {
+      return this.lanServer;
    }
 
-   public void copyFrom(ServerData p_152583_1_) {
-      this.ip = p_152583_1_.ip;
-      this.name = p_152583_1_.name;
-      this.setResourcePackStatus(p_152583_1_.getResourcePackStatus());
-      this.iconB64 = p_152583_1_.iconB64;
-      this.lan = p_152583_1_.lan;
+   public void copyFrom(ServerData serverDataIn) {
+      this.serverIP = serverDataIn.serverIP;
+      this.serverName = serverDataIn.serverName;
+      this.setResourceMode(serverDataIn.getResourceMode());
+      this.serverIcon = serverDataIn.serverIcon;
+      this.lanServer = serverDataIn.lanServer;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -104,14 +104,14 @@ public class ServerData {
       DISABLED("disabled"),
       PROMPT("prompt");
 
-      private final ITextComponent name;
+      private final ITextComponent motd;
 
-      private ServerResourceMode(String p_i1053_3_) {
-         this.name = new TranslationTextComponent("addServer.resourcePack." + p_i1053_3_);
+      private ServerResourceMode(String name) {
+         this.motd = new TranslationTextComponent("addServer.resourcePack." + name);
       }
 
-      public ITextComponent getName() {
-         return this.name;
+      public ITextComponent getMotd() {
+         return this.motd;
       }
    }
 }

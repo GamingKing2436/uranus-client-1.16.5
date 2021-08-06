@@ -15,10 +15,10 @@ import net.minecraft.world.gen.feature.template.Template;
 import net.minecraft.world.gen.feature.template.TemplateManager;
 
 public class ListJigsawPiece extends JigsawPiece {
-   public static final Codec<ListJigsawPiece> CODEC = RecordCodecBuilder.create((p_236835_0_) -> {
-      return p_236835_0_.group(JigsawPiece.CODEC.listOf().fieldOf("elements").forGetter((p_236836_0_) -> {
+   public static final Codec<ListJigsawPiece> field_236834_a_ = RecordCodecBuilder.create((p_236835_0_) -> {
+      return p_236835_0_.group(JigsawPiece.field_236847_e_.listOf().fieldOf("elements").forGetter((p_236836_0_) -> {
          return p_236836_0_.elements;
-      }), projectionCodec()).apply(p_236835_0_, ListJigsawPiece::new);
+      }), func_236848_d_()).apply(p_236835_0_, ListJigsawPiece::new);
    });
    private final List<JigsawPiece> elements;
 
@@ -32,24 +32,24 @@ public class ListJigsawPiece extends JigsawPiece {
       }
    }
 
-   public List<Template.BlockInfo> getShuffledJigsawBlocks(TemplateManager p_214849_1_, BlockPos p_214849_2_, Rotation p_214849_3_, Random p_214849_4_) {
-      return this.elements.get(0).getShuffledJigsawBlocks(p_214849_1_, p_214849_2_, p_214849_3_, p_214849_4_);
+   public List<Template.BlockInfo> getJigsawBlocks(TemplateManager templateManagerIn, BlockPos pos, Rotation rotationIn, Random rand) {
+      return this.elements.get(0).getJigsawBlocks(templateManagerIn, pos, rotationIn, rand);
    }
 
-   public MutableBoundingBox getBoundingBox(TemplateManager p_214852_1_, BlockPos p_214852_2_, Rotation p_214852_3_) {
-      MutableBoundingBox mutableboundingbox = MutableBoundingBox.getUnknownBox();
+   public MutableBoundingBox getBoundingBox(TemplateManager templateManagerIn, BlockPos pos, Rotation rotationIn) {
+      MutableBoundingBox mutableboundingbox = MutableBoundingBox.getNewBoundingBox();
 
       for(JigsawPiece jigsawpiece : this.elements) {
-         MutableBoundingBox mutableboundingbox1 = jigsawpiece.getBoundingBox(p_214852_1_, p_214852_2_, p_214852_3_);
-         mutableboundingbox.expand(mutableboundingbox1);
+         MutableBoundingBox mutableboundingbox1 = jigsawpiece.getBoundingBox(templateManagerIn, pos, rotationIn);
+         mutableboundingbox.expandTo(mutableboundingbox1);
       }
 
       return mutableboundingbox;
    }
 
-   public boolean place(TemplateManager p_230378_1_, ISeedReader p_230378_2_, StructureManager p_230378_3_, ChunkGenerator p_230378_4_, BlockPos p_230378_5_, BlockPos p_230378_6_, Rotation p_230378_7_, MutableBoundingBox p_230378_8_, Random p_230378_9_, boolean p_230378_10_) {
+   public boolean func_230378_a_(TemplateManager p_230378_1_, ISeedReader p_230378_2_, StructureManager p_230378_3_, ChunkGenerator p_230378_4_, BlockPos p_230378_5_, BlockPos p_230378_6_, Rotation p_230378_7_, MutableBoundingBox p_230378_8_, Random p_230378_9_, boolean p_230378_10_) {
       for(JigsawPiece jigsawpiece : this.elements) {
-         if (!jigsawpiece.place(p_230378_1_, p_230378_2_, p_230378_3_, p_230378_4_, p_230378_5_, p_230378_6_, p_230378_7_, p_230378_8_, p_230378_9_, p_230378_10_)) {
+         if (!jigsawpiece.func_230378_a_(p_230378_1_, p_230378_2_, p_230378_3_, p_230378_4_, p_230378_5_, p_230378_6_, p_230378_7_, p_230378_8_, p_230378_9_, p_230378_10_)) {
             return false;
          }
       }
@@ -58,12 +58,12 @@ public class ListJigsawPiece extends JigsawPiece {
    }
 
    public IJigsawDeserializer<?> getType() {
-      return IJigsawDeserializer.LIST;
+      return IJigsawDeserializer.LIST_POOL_ELEMENT;
    }
 
-   public JigsawPiece setProjection(JigsawPattern.PlacementBehaviour p_214845_1_) {
-      super.setProjection(p_214845_1_);
-      this.setProjectionOnEachElement(p_214845_1_);
+   public JigsawPiece setPlacementBehaviour(JigsawPattern.PlacementBehaviour placementBehaviour) {
+      super.setPlacementBehaviour(placementBehaviour);
+      this.setProjectionOnEachElement(placementBehaviour);
       return this;
    }
 
@@ -73,7 +73,7 @@ public class ListJigsawPiece extends JigsawPiece {
 
    private void setProjectionOnEachElement(JigsawPattern.PlacementBehaviour p_214864_1_) {
       this.elements.forEach((p_214863_1_) -> {
-         p_214863_1_.setProjection(p_214864_1_);
+         p_214863_1_.setPlacementBehaviour(p_214864_1_);
       });
    }
 }

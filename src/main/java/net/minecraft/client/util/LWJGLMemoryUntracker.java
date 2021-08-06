@@ -14,7 +14,7 @@ import org.lwjgl.system.Pointer;
 @OnlyIn(Dist.CLIENT)
 public class LWJGLMemoryUntracker {
    @Nullable
-   private static final MethodHandle UNTRACK = GLX.make(() -> {
+   private static final MethodHandle HANDLE = GLX.make(() -> {
       try {
          Lookup lookup = MethodHandles.lookup();
          Class<?> oclass = Class.forName("org.lwjgl.system.MemoryManage$DebugAllocator");
@@ -29,17 +29,17 @@ public class LWJGLMemoryUntracker {
       }
    });
 
-   public static void untrack(long p_197933_0_) {
-      if (UNTRACK != null) {
+   public static void untrack(long memAddr) {
+      if (HANDLE != null) {
          try {
-            UNTRACK.invoke(p_197933_0_);
+            HANDLE.invoke(memAddr);
          } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
          }
       }
    }
 
-   public static void untrack(Pointer p_211545_0_) {
-      untrack(p_211545_0_.address());
+   public static void untrack(Pointer pointer) {
+      untrack(pointer.address());
    }
 }

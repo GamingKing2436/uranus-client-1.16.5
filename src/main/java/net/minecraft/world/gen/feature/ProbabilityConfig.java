@@ -12,7 +12,7 @@ public class ProbabilityConfig implements ICarverConfig, IFeatureConfig {
    });
    public final float probability;
 
-   public ProbabilityConfig(float p_i48847_1_) {
-      this.probability = p_i48847_1_;
+   public ProbabilityConfig(float probability) {
+      this.probability = probability;
    }
 }

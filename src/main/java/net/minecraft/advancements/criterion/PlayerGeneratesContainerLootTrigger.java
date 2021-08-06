@@ -14,36 +14,36 @@ public class PlayerGeneratesContainerLootTrigger extends AbstractCriterionTrigge
       return ID;
    }
 
-   protected PlayerGeneratesContainerLootTrigger.Instance createInstance(JsonObject p_230241_1_, EntityPredicate.AndPredicate p_230241_2_, ConditionArrayParser p_230241_3_) {
-      ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getAsString(p_230241_1_, "loot_table"));
-      return new PlayerGeneratesContainerLootTrigger.Instance(p_230241_2_, resourcelocation);
+   protected PlayerGeneratesContainerLootTrigger.Instance deserializeTrigger(JsonObject json, EntityPredicate.AndPredicate entityPredicate, ConditionArrayParser conditionsParser) {
+      ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getString(json, "loot_table"));
+      return new PlayerGeneratesContainerLootTrigger.Instance(entityPredicate, resourcelocation);
    }
 
-   public void trigger(ServerPlayerEntity p_235478_1_, ResourceLocation p_235478_2_) {
-      this.trigger(p_235478_1_, (p_235477_1_) -> {
-         return p_235477_1_.matches(p_235478_2_);
+   public void test(ServerPlayerEntity player, ResourceLocation generatedLoot) {
+      this.triggerListeners(player, (p_235477_1_) -> {
+         return p_235477_1_.test(generatedLoot);
       });
    }
 
    public static class Instance extends CriterionInstance {
-      private final ResourceLocation lootTable;
+      private final ResourceLocation generatedLoot;
 
-      public Instance(EntityPredicate.AndPredicate p_i231684_1_, ResourceLocation p_i231684_2_) {
-         super(PlayerGeneratesContainerLootTrigger.ID, p_i231684_1_);
-         this.lootTable = p_i231684_2_;
+      public Instance(EntityPredicate.AndPredicate player, ResourceLocation generatedLoot) {
+         super(PlayerGeneratesContainerLootTrigger.ID, player);
+         this.generatedLoot = generatedLoot;
       }
 
-      public static PlayerGeneratesContainerLootTrigger.Instance lootTableUsed(ResourceLocation p_235481_0_) {
-         return new PlayerGeneratesContainerLootTrigger.Instance(EntityPredicate.AndPredicate.ANY, p_235481_0_);
+      public static PlayerGeneratesContainerLootTrigger.Instance create(ResourceLocation generatedLoot) {
+         return new PlayerGeneratesContainerLootTrigger.Instance(EntityPredicate.AndPredicate.ANY_AND, generatedLoot);
       }
 
-      public boolean matches(ResourceLocation p_235482_1_) {
-         return this.lootTable.equals(p_235482_1_);
+      public boolean test(ResourceLocation generatedLoot) {
+         return this.generatedLoot.equals(generatedLoot);
       }
 
-      public JsonObject serializeToJson(ConditionArraySerializer p_230240_1_) {
-         JsonObject jsonobject = super.serializeToJson(p_230240_1_);
-         jsonobject.addProperty("loot_table", this.lootTable.toString());
+      public JsonObject serialize(ConditionArraySerializer conditions) {
+         JsonObject jsonobject = super.serialize(conditions);
+         jsonobject.addProperty("loot_table", this.generatedLoot.toString());
          return jsonobject;
       }
    }

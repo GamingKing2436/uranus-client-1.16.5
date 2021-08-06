@@ -12,171 +12,171 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
 public abstract class AgeableEntity extends CreatureEntity {
-   private static final DataParameter<Boolean> DATA_BABY_ID = EntityDataManager.defineId(AgeableEntity.class, DataSerializers.BOOLEAN);
-   protected int age;
+   private static final DataParameter<Boolean> BABY = EntityDataManager.createKey(AgeableEntity.class, DataSerializers.BOOLEAN);
+   protected int growingAge;
    protected int forcedAge;
    protected int forcedAgeTimer;
 
-   protected AgeableEntity(EntityType<? extends AgeableEntity> p_i48581_1_, World p_i48581_2_) {
-      super(p_i48581_1_, p_i48581_2_);
+   protected AgeableEntity(EntityType<? extends AgeableEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
-   public ILivingEntityData finalizeSpawn(IServerWorld p_213386_1_, DifficultyInstance p_213386_2_, SpawnReason p_213386_3_, @Nullable ILivingEntityData p_213386_4_, @Nullable CompoundNBT p_213386_5_) {
-      if (p_213386_4_ == null) {
-         p_213386_4_ = new AgeableEntity.AgeableData(true);
+   public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+      if (spawnDataIn == null) {
+         spawnDataIn = new AgeableEntity.AgeableData(true);
       }
 
-      AgeableEntity.AgeableData ageableentity$ageabledata = (AgeableEntity.AgeableData)p_213386_4_;
-      if (ageableentity$ageabledata.isShouldSpawnBaby() && ageableentity$ageabledata.getGroupSize() > 0 && this.random.nextFloat() <= ageableentity$ageabledata.getBabySpawnChance()) {
-         this.setAge(-24000);
+      AgeableEntity.AgeableData ageableentity$ageabledata = (AgeableEntity.AgeableData)spawnDataIn;
+      if (ageableentity$ageabledata.canBabySpawn() && ageableentity$ageabledata.getIndexInGroup() > 0 && this.rand.nextFloat() <= ageableentity$ageabledata.getBabySpawnProbability()) {
+         this.setGrowingAge(-24000);
       }
 
-      ageableentity$ageabledata.increaseGroupSizeByOne();
-      return super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, p_213386_4_, p_213386_5_);
+      ageableentity$ageabledata.incrementIndexInGroup();
+      return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
    }
 
    @Nullable
-   public abstract AgeableEntity getBreedOffspring(ServerWorld p_241840_1_, AgeableEntity p_241840_2_);
+   public abstract AgeableEntity func_241840_a(ServerWorld p_241840_1_, AgeableEntity p_241840_2_);
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_BABY_ID, false);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(BABY, false);
    }
 
    public boolean canBreed() {
       return false;
    }
 
-   public int getAge() {
-      if (this.level.isClientSide) {
-         return this.entityData.get(DATA_BABY_ID) ? -1 : 1;
+   public int getGrowingAge() {
+      if (this.world.isRemote) {
+         return this.dataManager.get(BABY) ? -1 : 1;
       } else {
-         return this.age;
+         return this.growingAge;
       }
    }
 
-   public void ageUp(int p_175501_1_, boolean p_175501_2_) {
-      int i = this.getAge();
-      i = i + p_175501_1_ * 20;
+   public void ageUp(int growthSeconds, boolean updateForcedAge) {
+      int i = this.getGrowingAge();
+      i = i + growthSeconds * 20;
       if (i > 0) {
          i = 0;
       }
 
       int j = i - i;
-      this.setAge(i);
-      if (p_175501_2_) {
+      this.setGrowingAge(i);
+      if (updateForcedAge) {
          this.forcedAge += j;
          if (this.forcedAgeTimer == 0) {
             this.forcedAgeTimer = 40;
          }
       }
 
-      if (this.getAge() == 0) {
-         this.setAge(this.forcedAge);
+      if (this.getGrowingAge() == 0) {
+         this.setGrowingAge(this.forcedAge);
       }
 
    }
 
-   public void ageUp(int p_110195_1_) {
-      this.ageUp(p_110195_1_, false);
+   public void addGrowth(int growth) {
+      this.ageUp(growth, false);
    }
 
-   public void setAge(int p_70873_1_) {
-      int i = this.age;
-      this.age = p_70873_1_;
-      if (i < 0 && p_70873_1_ >= 0 || i >= 0 && p_70873_1_ < 0) {
-         this.entityData.set(DATA_BABY_ID, p_70873_1_ < 0);
-         this.ageBoundaryReached();
+   public void setGrowingAge(int age) {
+      int i = this.growingAge;
+      this.growingAge = age;
+      if (i < 0 && age >= 0 || i >= 0 && age < 0) {
+         this.dataManager.set(BABY, age < 0);
+         this.onGrowingAdult();
       }
 
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      p_213281_1_.putInt("Age", this.getAge());
-      p_213281_1_.putInt("ForcedAge", this.forcedAge);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      compound.putInt("Age", this.getGrowingAge());
+      compound.putInt("ForcedAge", this.forcedAge);
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.setAge(p_70037_1_.getInt("Age"));
-      this.forcedAge = p_70037_1_.getInt("ForcedAge");
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.setGrowingAge(compound.getInt("Age"));
+      this.forcedAge = compound.getInt("ForcedAge");
    }
 
-   public void onSyncedDataUpdated(DataParameter<?> p_184206_1_) {
-      if (DATA_BABY_ID.equals(p_184206_1_)) {
-         this.refreshDimensions();
+   public void notifyDataManagerChange(DataParameter<?> key) {
+      if (BABY.equals(key)) {
+         this.recalculateSize();
       }
 
-      super.onSyncedDataUpdated(p_184206_1_);
+      super.notifyDataManagerChange(key);
    }
 
-   public void aiStep() {
-      super.aiStep();
-      if (this.level.isClientSide) {
+   public void livingTick() {
+      super.livingTick();
+      if (this.world.isRemote) {
          if (this.forcedAgeTimer > 0) {
             if (this.forcedAgeTimer % 4 == 0) {
-               this.level.addParticle(ParticleTypes.HAPPY_VILLAGER, this.getRandomX(1.0D), this.getRandomY() + 0.5D, this.getRandomZ(1.0D), 0.0D, 0.0D, 0.0D);
+               this.world.addParticle(ParticleTypes.HAPPY_VILLAGER, this.getPosXRandom(1.0D), this.getPosYRandom() + 0.5D, this.getPosZRandom(1.0D), 0.0D, 0.0D, 0.0D);
             }
 
             --this.forcedAgeTimer;
          }
       } else if (this.isAlive()) {
-         int i = this.getAge();
+         int i = this.getGrowingAge();
          if (i < 0) {
             ++i;
-            this.setAge(i);
+            this.setGrowingAge(i);
          } else if (i > 0) {
             --i;
-            this.setAge(i);
+            this.setGrowingAge(i);
          }
       }
 
    }
 
-   protected void ageBoundaryReached() {
+   protected void onGrowingAdult() {
    }
 
-   public boolean isBaby() {
-      return this.getAge() < 0;
+   public boolean isChild() {
+      return this.getGrowingAge() < 0;
    }
 
-   public void setBaby(boolean p_82227_1_) {
-      this.setAge(p_82227_1_ ? -24000 : 0);
+   public void setChild(boolean childZombie) {
+      this.setGrowingAge(childZombie ? -24000 : 0);
    }
 
    public static class AgeableData implements ILivingEntityData {
-      private int groupSize;
-      private final boolean shouldSpawnBaby;
-      private final float babySpawnChance;
+      private int indexInGroup;
+      private final boolean canBabySpawn;
+      private final float babySpawnProbability;
 
-      private AgeableData(boolean p_i241905_1_, float p_i241905_2_) {
-         this.shouldSpawnBaby = p_i241905_1_;
-         this.babySpawnChance = p_i241905_2_;
+      private AgeableData(boolean canBabySpawn, float babySpawnProbability) {
+         this.canBabySpawn = canBabySpawn;
+         this.babySpawnProbability = babySpawnProbability;
       }
 
-      public AgeableData(boolean p_i241904_1_) {
-         this(p_i241904_1_, 0.05F);
+      public AgeableData(boolean canBabySpawn) {
+         this(canBabySpawn, 0.05F);
       }
 
-      public AgeableData(float p_i241903_1_) {
-         this(true, p_i241903_1_);
+      public AgeableData(float babySpawnProbability) {
+         this(true, babySpawnProbability);
       }
 
-      public int getGroupSize() {
-         return this.groupSize;
+      public int getIndexInGroup() {
+         return this.indexInGroup;
       }
 
-      public void increaseGroupSizeByOne() {
-         ++this.groupSize;
+      public void incrementIndexInGroup() {
+         ++this.indexInGroup;
       }
 
-      public boolean isShouldSpawnBaby() {
-         return this.shouldSpawnBaby;
+      public boolean canBabySpawn() {
+         return this.canBabySpawn;
       }
 
-      public float getBabySpawnChance() {
-         return this.babySpawnChance;
+      public float getBabySpawnProbability() {
+         return this.babySpawnProbability;
       }
    }
 }

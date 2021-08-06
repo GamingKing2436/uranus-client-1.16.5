@@ -11,30 +11,30 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class CreeperRenderer extends MobRenderer<CreeperEntity, CreeperModel<CreeperEntity>> {
-   private static final ResourceLocation CREEPER_LOCATION = new ResourceLocation("textures/entity/creeper/creeper.png");
+   private static final ResourceLocation CREEPER_TEXTURES = new ResourceLocation("textures/entity/creeper/creeper.png");
 
-   public CreeperRenderer(EntityRendererManager p_i46186_1_) {
-      super(p_i46186_1_, new CreeperModel<>(), 0.5F);
+   public CreeperRenderer(EntityRendererManager renderManagerIn) {
+      super(renderManagerIn, new CreeperModel<>(), 0.5F);
       this.addLayer(new CreeperChargeLayer(this));
    }
 
-   protected void scale(CreeperEntity p_225620_1_, MatrixStack p_225620_2_, float p_225620_3_) {
-      float f = p_225620_1_.getSwelling(p_225620_3_);
+   protected void preRenderCallback(CreeperEntity entitylivingbaseIn, MatrixStack matrixStackIn, float partialTickTime) {
+      float f = entitylivingbaseIn.getCreeperFlashIntensity(partialTickTime);
       float f1 = 1.0F + MathHelper.sin(f * 100.0F) * f * 0.01F;
       f = MathHelper.clamp(f, 0.0F, 1.0F);
       f = f * f;
       f = f * f;
       float f2 = (1.0F + f * 0.4F) * f1;
       float f3 = (1.0F + f * 0.1F) / f1;
-      p_225620_2_.scale(f2, f3, f2);
+      matrixStackIn.scale(f2, f3, f2);
    }
 
-   protected float getWhiteOverlayProgress(CreeperEntity p_225625_1_, float p_225625_2_) {
-      float f = p_225625_1_.getSwelling(p_225625_2_);
+   protected float getOverlayProgress(CreeperEntity livingEntityIn, float partialTicks) {
+      float f = livingEntityIn.getCreeperFlashIntensity(partialTicks);
       return (int)(f * 10.0F) % 2 == 0 ? 0.0F : MathHelper.clamp(f, 0.5F, 1.0F);
    }
 
-   public ResourceLocation getTextureLocation(CreeperEntity p_110775_1_) {
-      return CREEPER_LOCATION;
+   public ResourceLocation getEntityTexture(CreeperEntity entity) {
+      return CREEPER_TEXTURES;
    }
 }

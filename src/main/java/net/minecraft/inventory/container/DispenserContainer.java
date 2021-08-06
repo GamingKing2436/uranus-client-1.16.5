@@ -7,17 +7,17 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 
 public class DispenserContainer extends Container {
-   private final IInventory dispenser;
+   private final IInventory dispenserInventory;
 
    public DispenserContainer(int p_i50087_1_, PlayerInventory p_i50087_2_) {
       this(p_i50087_1_, p_i50087_2_, new Inventory(9));
    }
 
    public DispenserContainer(int p_i50088_1_, PlayerInventory p_i50088_2_, IInventory p_i50088_3_) {
-      super(ContainerType.GENERIC_3x3, p_i50088_1_);
-      checkContainerSize(p_i50088_3_, 9);
-      this.dispenser = p_i50088_3_;
-      p_i50088_3_.startOpen(p_i50088_2_.player);
+      super(ContainerType.GENERIC_3X3, p_i50088_1_);
+      assertInventorySize(p_i50088_3_, 9);
+      this.dispenserInventory = p_i50088_3_;
+      p_i50088_3_.openInventory(p_i50088_2_.player);
 
       for(int i = 0; i < 3; ++i) {
          for(int j = 0; j < 3; ++j) {
@@ -37,42 +37,42 @@ public class DispenserContainer extends Container {
 
    }
 
-   public boolean stillValid(PlayerEntity p_75145_1_) {
-      return this.dispenser.stillValid(p_75145_1_);
+   public boolean canInteractWith(PlayerEntity playerIn) {
+      return this.dispenserInventory.isUsableByPlayer(playerIn);
    }
 
-   public ItemStack quickMoveStack(PlayerEntity p_82846_1_, int p_82846_2_) {
+   public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
       ItemStack itemstack = ItemStack.EMPTY;
-      Slot slot = this.slots.get(p_82846_2_);
-      if (slot != null && slot.hasItem()) {
-         ItemStack itemstack1 = slot.getItem();
+      Slot slot = this.inventorySlots.get(index);
+      if (slot != null && slot.getHasStack()) {
+         ItemStack itemstack1 = slot.getStack();
          itemstack = itemstack1.copy();
-         if (p_82846_2_ < 9) {
-            if (!this.moveItemStackTo(itemstack1, 9, 45, true)) {
+         if (index < 9) {
+            if (!this.mergeItemStack(itemstack1, 9, 45, true)) {
                return ItemStack.EMPTY;
             }
-         } else if (!this.moveItemStackTo(itemstack1, 0, 9, false)) {
+         } else if (!this.mergeItemStack(itemstack1, 0, 9, false)) {
             return ItemStack.EMPTY;
          }
 
          if (itemstack1.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
+            slot.putStack(ItemStack.EMPTY);
          } else {
-            slot.setChanged();
+            slot.onSlotChanged();
          }
 
          if (itemstack1.getCount() == itemstack.getCount()) {
             return ItemStack.EMPTY;
          }
 
-         slot.onTake(p_82846_1_, itemstack1);
+         slot.onTake(playerIn, itemstack1);
       }
 
       return itemstack;
    }
 
-   public void removed(PlayerEntity p_75134_1_) {
-      super.removed(p_75134_1_);
-      this.dispenser.stopOpen(p_75134_1_);
+   public void onContainerClosed(PlayerEntity playerIn) {
+      super.onContainerClosed(playerIn);
+      this.dispenserInventory.closeInventory(playerIn);
    }
 }

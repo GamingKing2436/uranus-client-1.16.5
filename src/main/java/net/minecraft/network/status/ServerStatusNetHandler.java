@@ -10,34 +10,34 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class ServerStatusNetHandler implements IServerStatusNetHandler {
-   private static final ITextComponent DISCONNECT_REASON = new TranslationTextComponent("multiplayer.status.request_handled");
+   private static final ITextComponent EXIT_MESSAGE = new TranslationTextComponent("multiplayer.status.request_handled");
    private final MinecraftServer server;
-   private final NetworkManager connection;
-   private boolean hasRequestedStatus;
+   private final NetworkManager networkManager;
+   private boolean handled;
 
-   public ServerStatusNetHandler(MinecraftServer p_i45299_1_, NetworkManager p_i45299_2_) {
-      this.server = p_i45299_1_;
-      this.connection = p_i45299_2_;
+   public ServerStatusNetHandler(MinecraftServer serverIn, NetworkManager netManager) {
+      this.server = serverIn;
+      this.networkManager = netManager;
    }
 
-   public void onDisconnect(ITextComponent p_147231_1_) {
+   public void onDisconnect(ITextComponent reason) {
    }
 
-   public NetworkManager getConnection() {
-      return this.connection;
+   public NetworkManager getNetworkManager() {
+      return this.networkManager;
    }
 
-   public void handleStatusRequest(CServerQueryPacket p_147312_1_) {
-      if (this.hasRequestedStatus) {
-         this.connection.disconnect(DISCONNECT_REASON);
+   public void processServerQuery(CServerQueryPacket packetIn) {
+      if (this.handled) {
+         this.networkManager.closeChannel(EXIT_MESSAGE);
       } else {
-         this.hasRequestedStatus = true;
-         this.connection.send(new SServerInfoPacket(this.server.getStatus()));
+         this.handled = true;
+         this.networkManager.sendPacket(new SServerInfoPacket(this.server.getServerStatusResponse()));
       }
    }
 
-   public void handlePingRequest(CPingPacket p_147311_1_) {
-      this.connection.send(new SPongPacket(p_147311_1_.getTime()));
-      this.connection.disconnect(DISCONNECT_REASON);
+   public void processPing(CPingPacket packetIn) {
+      this.networkManager.sendPacket(new SPongPacket(packetIn.getClientTime()));
+      this.networkManager.closeChannel(EXIT_MESSAGE);
    }
 }

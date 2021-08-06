@@ -11,119 +11,119 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SUpdateBossInfoPacket implements IPacket<IClientPlayNetHandler> {
-   private UUID id;
+   private UUID uniqueId;
    private SUpdateBossInfoPacket.Operation operation;
    private ITextComponent name;
-   private float pct;
+   private float percent;
    private BossInfo.Color color;
    private BossInfo.Overlay overlay;
-   private boolean darkenScreen;
-   private boolean playMusic;
-   private boolean createWorldFog;
+   private boolean darkenSky;
+   private boolean playEndBossMusic;
+   private boolean createFog;
 
    public SUpdateBossInfoPacket() {
    }
 
-   public SUpdateBossInfoPacket(SUpdateBossInfoPacket.Operation p_i46964_1_, BossInfo p_i46964_2_) {
-      this.operation = p_i46964_1_;
-      this.id = p_i46964_2_.getId();
-      this.name = p_i46964_2_.getName();
-      this.pct = p_i46964_2_.getPercent();
-      this.color = p_i46964_2_.getColor();
-      this.overlay = p_i46964_2_.getOverlay();
-      this.darkenScreen = p_i46964_2_.shouldDarkenScreen();
-      this.playMusic = p_i46964_2_.shouldPlayBossMusic();
-      this.createWorldFog = p_i46964_2_.shouldCreateWorldFog();
+   public SUpdateBossInfoPacket(SUpdateBossInfoPacket.Operation operationIn, BossInfo data) {
+      this.operation = operationIn;
+      this.uniqueId = data.getUniqueId();
+      this.name = data.getName();
+      this.percent = data.getPercent();
+      this.color = data.getColor();
+      this.overlay = data.getOverlay();
+      this.darkenSky = data.shouldDarkenSky();
+      this.playEndBossMusic = data.shouldPlayEndBossMusic();
+      this.createFog = data.shouldCreateFog();
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.id = p_148837_1_.readUUID();
-      this.operation = p_148837_1_.readEnum(SUpdateBossInfoPacket.Operation.class);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.uniqueId = buf.readUniqueId();
+      this.operation = buf.readEnumValue(SUpdateBossInfoPacket.Operation.class);
       switch(this.operation) {
       case ADD:
-         this.name = p_148837_1_.readComponent();
-         this.pct = p_148837_1_.readFloat();
-         this.color = p_148837_1_.readEnum(BossInfo.Color.class);
-         this.overlay = p_148837_1_.readEnum(BossInfo.Overlay.class);
-         this.decodeProperties(p_148837_1_.readUnsignedByte());
+         this.name = buf.readTextComponent();
+         this.percent = buf.readFloat();
+         this.color = buf.readEnumValue(BossInfo.Color.class);
+         this.overlay = buf.readEnumValue(BossInfo.Overlay.class);
+         this.setFlags(buf.readUnsignedByte());
       case REMOVE:
       default:
          break;
       case UPDATE_PCT:
-         this.pct = p_148837_1_.readFloat();
+         this.percent = buf.readFloat();
          break;
       case UPDATE_NAME:
-         this.name = p_148837_1_.readComponent();
+         this.name = buf.readTextComponent();
          break;
       case UPDATE_STYLE:
-         this.color = p_148837_1_.readEnum(BossInfo.Color.class);
-         this.overlay = p_148837_1_.readEnum(BossInfo.Overlay.class);
+         this.color = buf.readEnumValue(BossInfo.Color.class);
+         this.overlay = buf.readEnumValue(BossInfo.Overlay.class);
          break;
       case UPDATE_PROPERTIES:
-         this.decodeProperties(p_148837_1_.readUnsignedByte());
+         this.setFlags(buf.readUnsignedByte());
       }
 
    }
 
-   private void decodeProperties(int p_186903_1_) {
-      this.darkenScreen = (p_186903_1_ & 1) > 0;
-      this.playMusic = (p_186903_1_ & 2) > 0;
-      this.createWorldFog = (p_186903_1_ & 4) > 0;
+   private void setFlags(int flags) {
+      this.darkenSky = (flags & 1) > 0;
+      this.playEndBossMusic = (flags & 2) > 0;
+      this.createFog = (flags & 4) > 0;
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeUUID(this.id);
-      p_148840_1_.writeEnum(this.operation);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeUniqueId(this.uniqueId);
+      buf.writeEnumValue(this.operation);
       switch(this.operation) {
       case ADD:
-         p_148840_1_.writeComponent(this.name);
-         p_148840_1_.writeFloat(this.pct);
-         p_148840_1_.writeEnum(this.color);
-         p_148840_1_.writeEnum(this.overlay);
-         p_148840_1_.writeByte(this.encodeProperties());
+         buf.writeTextComponent(this.name);
+         buf.writeFloat(this.percent);
+         buf.writeEnumValue(this.color);
+         buf.writeEnumValue(this.overlay);
+         buf.writeByte(this.getFlags());
       case REMOVE:
       default:
          break;
       case UPDATE_PCT:
-         p_148840_1_.writeFloat(this.pct);
+         buf.writeFloat(this.percent);
          break;
       case UPDATE_NAME:
-         p_148840_1_.writeComponent(this.name);
+         buf.writeTextComponent(this.name);
          break;
       case UPDATE_STYLE:
-         p_148840_1_.writeEnum(this.color);
-         p_148840_1_.writeEnum(this.overlay);
+         buf.writeEnumValue(this.color);
+         buf.writeEnumValue(this.overlay);
          break;
       case UPDATE_PROPERTIES:
-         p_148840_1_.writeByte(this.encodeProperties());
+         buf.writeByte(this.getFlags());
       }
 
    }
 
-   private int encodeProperties() {
+   private int getFlags() {
       int i = 0;
-      if (this.darkenScreen) {
+      if (this.darkenSky) {
          i |= 1;
       }
 
-      if (this.playMusic) {
+      if (this.playEndBossMusic) {
          i |= 2;
       }
 
-      if (this.createWorldFog) {
+      if (this.createFog) {
          i |= 4;
       }
 
       return i;
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleBossUpdate(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleUpdateBossInfo(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public UUID getId() {
-      return this.id;
+   public UUID getUniqueId() {
+      return this.uniqueId;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -138,7 +138,7 @@ public class SUpdateBossInfoPacket implements IPacket<IClientPlayNetHandler> {
 
    @OnlyIn(Dist.CLIENT)
    public float getPercent() {
-      return this.pct;
+      return this.percent;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -152,18 +152,18 @@ public class SUpdateBossInfoPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean shouldDarkenScreen() {
-      return this.darkenScreen;
+   public boolean shouldDarkenSky() {
+      return this.darkenSky;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean shouldPlayMusic() {
-      return this.playMusic;
+   public boolean shouldPlayEndBossMusic() {
+      return this.playEndBossMusic;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean shouldCreateWorldFog() {
-      return this.createWorldFog;
+   public boolean shouldCreateFog() {
+      return this.createFog;
    }
 
    public static enum Operation {

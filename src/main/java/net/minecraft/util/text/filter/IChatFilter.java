@@ -5,11 +5,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public interface IChatFilter {
-   void join();
+   void func_244800_a();
 
-   void leave();
+   void func_244434_b();
 
-   CompletableFuture<Optional<String>> processStreamMessage(String p_244432_1_);
+   CompletableFuture<Optional<String>> func_244432_a(String p_244432_1_);
 
-   CompletableFuture<Optional<List<String>>> processMessageBundle(List<String> p_244433_1_);
+   CompletableFuture<Optional<List<String>>> func_244433_a(List<String> p_244433_1_);
 }

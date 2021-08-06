@@ -15,18 +15,18 @@ public class NBTToSNBTConverter implements IDataProvider {
    private static final Logger LOGGER = LogManager.getLogger();
    private final DataGenerator generator;
 
-   public NBTToSNBTConverter(DataGenerator p_i48258_1_) {
-      this.generator = p_i48258_1_;
+   public NBTToSNBTConverter(DataGenerator generatorIn) {
+      this.generator = generatorIn;
    }
 
-   public void run(DirectoryCache p_200398_1_) throws IOException {
+   public void act(DirectoryCache cache) throws IOException {
       Path path = this.generator.getOutputFolder();
 
       for(Path path1 : this.generator.getInputFolders()) {
          Files.walk(path1).filter((p_200416_0_) -> {
             return p_200416_0_.toString().endsWith(".nbt");
          }).forEach((p_200415_3_) -> {
-            convertStructure(p_200415_3_, this.getName(path1, p_200415_3_), path);
+            convertNBTToSNBT(p_200415_3_, this.getFileName(path1, p_200415_3_), path);
          });
       }
 
@@ -36,28 +36,28 @@ public class NBTToSNBTConverter implements IDataProvider {
       return "NBT to SNBT";
    }
 
-   private String getName(Path p_200417_1_, Path p_200417_2_) {
-      String s = p_200417_1_.relativize(p_200417_2_).toString().replaceAll("\\\\", "/");
+   private String getFileName(Path inputFolder, Path fileIn) {
+      String s = inputFolder.relativize(fileIn).toString().replaceAll("\\\\", "/");
       return s.substring(0, s.length() - ".nbt".length());
    }
 
    @Nullable
-   public static Path convertStructure(Path p_229443_0_, String p_229443_1_, Path p_229443_2_) {
+   public static Path convertNBTToSNBT(Path snbtPath, String name, Path nbtPath) {
       try {
-         CompoundNBT compoundnbt = CompressedStreamTools.readCompressed(Files.newInputStream(p_229443_0_));
-         ITextComponent itextcomponent = compoundnbt.getPrettyDisplay("    ", 0);
+         CompoundNBT compoundnbt = CompressedStreamTools.readCompressed(Files.newInputStream(snbtPath));
+         ITextComponent itextcomponent = compoundnbt.toFormattedComponent("    ", 0);
          String s = itextcomponent.getString() + "\n";
-         Path path = p_229443_2_.resolve(p_229443_1_ + ".snbt");
+         Path path = nbtPath.resolve(name + ".snbt");
          Files.createDirectories(path.getParent());
 
          try (BufferedWriter bufferedwriter = Files.newBufferedWriter(path)) {
             bufferedwriter.write(s);
          }
 
-         LOGGER.info("Converted {} from NBT to SNBT", (Object)p_229443_1_);
+         LOGGER.info("Converted {} from NBT to SNBT", (Object)name);
          return path;
       } catch (IOException ioexception) {
-         LOGGER.error("Couldn't convert {} from NBT to SNBT at {}", p_229443_1_, p_229443_0_, ioexception);
+         LOGGER.error("Couldn't convert {} from NBT to SNBT at {}", name, snbtPath, ioexception);
          return null;
       }
    }

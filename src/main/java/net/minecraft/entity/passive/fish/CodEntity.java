@@ -13,23 +13,23 @@ public class CodEntity extends AbstractGroupFishEntity {
       super(p_i50279_1_, p_i50279_2_);
    }
 
-   protected ItemStack getBucketItemStack() {
+   protected ItemStack getFishBucket() {
       return new ItemStack(Items.COD_BUCKET);
    }
 
    protected SoundEvent getAmbientSound() {
-      return SoundEvents.COD_AMBIENT;
+      return SoundEvents.ENTITY_COD_AMBIENT;
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.COD_DEATH;
+      return SoundEvents.ENTITY_COD_DEATH;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.COD_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_COD_HURT;
    }
 
    protected SoundEvent getFlopSound() {
-      return SoundEvents.COD_FLOP;
+      return SoundEvents.ENTITY_COD_FLOP;
    }
 }

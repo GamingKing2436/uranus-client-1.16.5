@@ -12,10 +12,10 @@ public class BlockPartRotation {
    public final float angle;
    public final boolean rescale;
 
-   public BlockPartRotation(Vector3f p_i47623_1_, Direction.Axis p_i47623_2_, float p_i47623_3_, boolean p_i47623_4_) {
-      this.origin = p_i47623_1_;
-      this.axis = p_i47623_2_;
-      this.angle = p_i47623_3_;
-      this.rescale = p_i47623_4_;
+   public BlockPartRotation(Vector3f origin, Direction.Axis axis, float angle, boolean rescale) {
+      this.origin = origin;
+      this.axis = axis;
+      this.angle = angle;
+      this.rescale = rescale;
    }
 }

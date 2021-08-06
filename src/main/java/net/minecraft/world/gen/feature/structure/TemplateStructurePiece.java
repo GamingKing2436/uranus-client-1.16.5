@@ -27,34 +27,34 @@ public abstract class TemplateStructurePiece extends StructurePiece {
    protected PlacementSettings placeSettings;
    protected BlockPos templatePosition;
 
-   public TemplateStructurePiece(IStructurePieceType p_i51338_1_, int p_i51338_2_) {
-      super(p_i51338_1_, p_i51338_2_);
+   public TemplateStructurePiece(IStructurePieceType structurePieceTypeIn, int componentTypeIn) {
+      super(structurePieceTypeIn, componentTypeIn);
    }
 
-   public TemplateStructurePiece(IStructurePieceType p_i51339_1_, CompoundNBT p_i51339_2_) {
-      super(p_i51339_1_, p_i51339_2_);
-      this.templatePosition = new BlockPos(p_i51339_2_.getInt("TPX"), p_i51339_2_.getInt("TPY"), p_i51339_2_.getInt("TPZ"));
+   public TemplateStructurePiece(IStructurePieceType structurePieceTypeIn, CompoundNBT nbt) {
+      super(structurePieceTypeIn, nbt);
+      this.templatePosition = new BlockPos(nbt.getInt("TPX"), nbt.getInt("TPY"), nbt.getInt("TPZ"));
    }
 
-   protected void setup(Template p_186173_1_, BlockPos p_186173_2_, PlacementSettings p_186173_3_) {
-      this.template = p_186173_1_;
-      this.setOrientation(Direction.NORTH);
-      this.templatePosition = p_186173_2_;
-      this.placeSettings = p_186173_3_;
-      this.boundingBox = p_186173_1_.getBoundingBox(p_186173_3_, p_186173_2_);
+   protected void setup(Template templateIn, BlockPos pos, PlacementSettings settings) {
+      this.template = templateIn;
+      this.setCoordBaseMode(Direction.NORTH);
+      this.templatePosition = pos;
+      this.placeSettings = settings;
+      this.boundingBox = templateIn.getMutableBoundingBox(settings, pos);
    }
 
-   protected void addAdditionalSaveData(CompoundNBT p_143011_1_) {
-      p_143011_1_.putInt("TPX", this.templatePosition.getX());
-      p_143011_1_.putInt("TPY", this.templatePosition.getY());
-      p_143011_1_.putInt("TPZ", this.templatePosition.getZ());
+   protected void readAdditional(CompoundNBT tagCompound) {
+      tagCompound.putInt("TPX", this.templatePosition.getX());
+      tagCompound.putInt("TPY", this.templatePosition.getY());
+      tagCompound.putInt("TPZ", this.templatePosition.getZ());
    }
 
-   public boolean postProcess(ISeedReader p_230383_1_, StructureManager p_230383_2_, ChunkGenerator p_230383_3_, Random p_230383_4_, MutableBoundingBox p_230383_5_, ChunkPos p_230383_6_, BlockPos p_230383_7_) {
+   public boolean func_230383_a_(ISeedReader p_230383_1_, StructureManager p_230383_2_, ChunkGenerator p_230383_3_, Random p_230383_4_, MutableBoundingBox p_230383_5_, ChunkPos p_230383_6_, BlockPos p_230383_7_) {
       this.placeSettings.setBoundingBox(p_230383_5_);
-      this.boundingBox = this.template.getBoundingBox(this.placeSettings, this.templatePosition);
-      if (this.template.placeInWorld(p_230383_1_, this.templatePosition, p_230383_7_, this.placeSettings, p_230383_4_, 2)) {
-         for(Template.BlockInfo template$blockinfo : this.template.filterBlocks(this.templatePosition, this.placeSettings, Blocks.STRUCTURE_BLOCK)) {
+      this.boundingBox = this.template.getMutableBoundingBox(this.placeSettings, this.templatePosition);
+      if (this.template.func_237146_a_(p_230383_1_, this.templatePosition, p_230383_7_, this.placeSettings, p_230383_4_, 2)) {
+         for(Template.BlockInfo template$blockinfo : this.template.func_215381_a(this.templatePosition, this.placeSettings, Blocks.STRUCTURE_BLOCK)) {
             if (template$blockinfo.nbt != null) {
                StructureMode structuremode = StructureMode.valueOf(template$blockinfo.nbt.getString("mode"));
                if (structuremode == StructureMode.DATA) {
@@ -63,11 +63,11 @@ public abstract class TemplateStructurePiece extends StructurePiece {
             }
          }
 
-         for(Template.BlockInfo template$blockinfo1 : this.template.filterBlocks(this.templatePosition, this.placeSettings, Blocks.JIGSAW)) {
+         for(Template.BlockInfo template$blockinfo1 : this.template.func_215381_a(this.templatePosition, this.placeSettings, Blocks.JIGSAW)) {
             if (template$blockinfo1.nbt != null) {
                String s = template$blockinfo1.nbt.getString("final_state");
                BlockStateParser blockstateparser = new BlockStateParser(new StringReader(s), false);
-               BlockState blockstate = Blocks.AIR.defaultBlockState();
+               BlockState blockstate = Blocks.AIR.getDefaultState();
 
                try {
                   blockstateparser.parse(true);
@@ -81,7 +81,7 @@ public abstract class TemplateStructurePiece extends StructurePiece {
                   LOGGER.error("Error while parsing blockstate {} in jigsaw block @ {}", s, template$blockinfo1.pos);
                }
 
-               p_230383_1_.setBlock(template$blockinfo1.pos, blockstate, 3);
+               p_230383_1_.setBlockState(template$blockinfo1.pos, blockstate, 3);
             }
          }
       }
@@ -89,11 +89,11 @@ public abstract class TemplateStructurePiece extends StructurePiece {
       return true;
    }
 
-   protected abstract void handleDataMarker(String p_186175_1_, BlockPos p_186175_2_, IServerWorld p_186175_3_, Random p_186175_4_, MutableBoundingBox p_186175_5_);
+   protected abstract void handleDataMarker(String function, BlockPos pos, IServerWorld worldIn, Random rand, MutableBoundingBox sbb);
 
-   public void move(int p_181138_1_, int p_181138_2_, int p_181138_3_) {
-      super.move(p_181138_1_, p_181138_2_, p_181138_3_);
-      this.templatePosition = this.templatePosition.offset(p_181138_1_, p_181138_2_, p_181138_3_);
+   public void offset(int x, int y, int z) {
+      super.offset(x, y, z);
+      this.templatePosition = this.templatePosition.add(x, y, z);
    }
 
    public Rotation getRotation() {

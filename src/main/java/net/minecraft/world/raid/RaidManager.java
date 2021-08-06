@@ -26,68 +26,68 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraft.world.storage.WorldSavedData;
 
 public class RaidManager extends WorldSavedData {
-   private final Map<Integer, Raid> raidMap = Maps.newHashMap();
-   private final ServerWorld level;
-   private int nextAvailableID;
+   private final Map<Integer, Raid> byId = Maps.newHashMap();
+   private final ServerWorld world;
+   private int nextAvailableId;
    private int tick;
 
    public RaidManager(ServerWorld p_i50142_1_) {
-      super(getFileId(p_i50142_1_.dimensionType()));
-      this.level = p_i50142_1_;
-      this.nextAvailableID = 1;
-      this.setDirty();
+      super(func_234620_a_(p_i50142_1_.getDimensionType()));
+      this.world = p_i50142_1_;
+      this.nextAvailableId = 1;
+      this.markDirty();
    }
 
-   public Raid get(int p_215167_1_) {
-      return this.raidMap.get(p_215167_1_);
+   public Raid get(int id) {
+      return this.byId.get(id);
    }
 
    public void tick() {
       ++this.tick;
-      Iterator<Raid> iterator = this.raidMap.values().iterator();
+      Iterator<Raid> iterator = this.byId.values().iterator();
 
       while(iterator.hasNext()) {
          Raid raid = iterator.next();
-         if (this.level.getGameRules().getBoolean(GameRules.RULE_DISABLE_RAIDS)) {
+         if (this.world.getGameRules().getBoolean(GameRules.DISABLE_RAIDS)) {
             raid.stop();
          }
 
          if (raid.isStopped()) {
             iterator.remove();
-            this.setDirty();
+            this.markDirty();
          } else {
             raid.tick();
          }
       }
 
       if (this.tick % 200 == 0) {
-         this.setDirty();
+         this.markDirty();
       }
 
-      DebugPacketSender.sendRaids(this.level, this.raidMap.values());
+      DebugPacketSender.sendRaids(this.world, this.byId.values());
    }
 
    public static boolean canJoinRaid(AbstractRaiderEntity p_215165_0_, Raid p_215165_1_) {
-      if (p_215165_0_ != null && p_215165_1_ != null && p_215165_1_.getLevel() != null) {
-         return p_215165_0_.isAlive() && p_215165_0_.canJoinRaid() && p_215165_0_.getNoActionTime() <= 2400 && p_215165_0_.level.dimensionType() == p_215165_1_.getLevel().dimensionType();
+      if (p_215165_0_ != null && p_215165_1_ != null && p_215165_1_.getWorld() != null) {
+         return p_215165_0_.isAlive() && p_215165_0_.canJoinRaid() && p_215165_0_.getIdleTime() <= 2400 && p_215165_0_.world.getDimensionType() == p_215165_1_.getWorld().getDimensionType();
       } else {
          return false;
       }
    }
 
    @Nullable
-   public Raid createOrExtendRaid(ServerPlayerEntity p_215170_1_) {
+   public Raid badOmenTick(ServerPlayerEntity p_215170_1_) {
       if (p_215170_1_.isSpectator()) {
          return null;
-      } else if (this.level.getGameRules().getBoolean(GameRules.RULE_DISABLE_RAIDS)) {
+      } else if (this.world.getGameRules().getBoolean(GameRules.DISABLE_RAIDS)) {
          return null;
       } else {
-         DimensionType dimensiontype = p_215170_1_.level.dimensionType();
-         if (!dimensiontype.hasRaids()) {
+         DimensionType dimensiontype = p_215170_1_.world.getDimensionType();
+         if (!dimensiontype.isHasRaids()) {
             return null;
          } else {
-            BlockPos blockpos = p_215170_1_.blockPosition();
-            List<PointOfInterest> list = this.level.getPoiManager().getInRange(PointOfInterestType.ALL, blockpos, 64, PointOfInterestManager.Status.IS_OCCUPIED).collect(Collectors.toList());
+            BlockPos blockpos = p_215170_1_.getPosition();
+            List<PointOfInterest> list = this.world.getPointOfInterestManager().func_219146_b(PointOfInterestType.MATCH_ANY, blockpos, 64, PointOfInterestManager.Status.IS_OCCUPIED).collect(Collectors.toList());
             int i = 0;
             Vector3d vector3d = Vector3d.ZERO;
 
@@ -105,84 +105,84 @@ public class RaidManager extends WorldSavedData {
                blockpos1 = blockpos;
             }
 
-            Raid raid = this.getOrCreateRaid(p_215170_1_.getLevel(), blockpos1);
+            Raid raid = this.findOrCreateRaid(p_215170_1_.getServerWorld(), blockpos1);
             boolean flag = false;
             if (!raid.isStarted()) {
-               if (!this.raidMap.containsKey(raid.getId())) {
-                  this.raidMap.put(raid.getId(), raid);
+               if (!this.byId.containsKey(raid.getId())) {
+                  this.byId.put(raid.getId(), raid);
                }
 
                flag = true;
-            } else if (raid.getBadOmenLevel() < raid.getMaxBadOmenLevel()) {
+            } else if (raid.getBadOmenLevel() < raid.getMaxLevel()) {
                flag = true;
             } else {
-               p_215170_1_.removeEffect(Effects.BAD_OMEN);
-               p_215170_1_.connection.send(new SEntityStatusPacket(p_215170_1_, (byte)43));
+               p_215170_1_.removePotionEffect(Effects.BAD_OMEN);
+               p_215170_1_.connection.sendPacket(new SEntityStatusPacket(p_215170_1_, (byte)43));
             }
 
             if (flag) {
-               raid.absorbBadOmen(p_215170_1_);
-               p_215170_1_.connection.send(new SEntityStatusPacket(p_215170_1_, (byte)43));
-               if (!raid.hasFirstWaveSpawned()) {
-                  p_215170_1_.awardStat(Stats.RAID_TRIGGER);
-                  CriteriaTriggers.BAD_OMEN.trigger(p_215170_1_);
+               raid.increaseLevel(p_215170_1_);
+               p_215170_1_.connection.sendPacket(new SEntityStatusPacket(p_215170_1_, (byte)43));
+               if (!raid.func_221297_c()) {
+                  p_215170_1_.addStat(Stats.RAID_TRIGGER);
+                  CriteriaTriggers.VOLUNTARY_EXILE.trigger(p_215170_1_);
                }
             }
 
-            this.setDirty();
+            this.markDirty();
             return raid;
          }
       }
    }
 
-   private Raid getOrCreateRaid(ServerWorld p_215168_1_, BlockPos p_215168_2_) {
-      Raid raid = p_215168_1_.getRaidAt(p_215168_2_);
-      return raid != null ? raid : new Raid(this.getUniqueId(), p_215168_1_, p_215168_2_);
+   private Raid findOrCreateRaid(ServerWorld p_215168_1_, BlockPos p_215168_2_) {
+      Raid raid = p_215168_1_.findRaid(p_215168_2_);
+      return raid != null ? raid : new Raid(this.incrementNextId(), p_215168_1_, p_215168_2_);
    }
 
-   public void load(CompoundNBT p_76184_1_) {
-      this.nextAvailableID = p_76184_1_.getInt("NextAvailableID");
-      this.tick = p_76184_1_.getInt("Tick");
-      ListNBT listnbt = p_76184_1_.getList("Raids", 10);
+   public void read(CompoundNBT nbt) {
+      this.nextAvailableId = nbt.getInt("NextAvailableID");
+      this.tick = nbt.getInt("Tick");
+      ListNBT listnbt = nbt.getList("Raids", 10);
 
       for(int i = 0; i < listnbt.size(); ++i) {
          CompoundNBT compoundnbt = listnbt.getCompound(i);
-         Raid raid = new Raid(this.level, compoundnbt);
-         this.raidMap.put(raid.getId(), raid);
+         Raid raid = new Raid(this.world, compoundnbt);
+         this.byId.put(raid.getId(), raid);
       }
 
    }
 
-   public CompoundNBT save(CompoundNBT p_189551_1_) {
-      p_189551_1_.putInt("NextAvailableID", this.nextAvailableID);
-      p_189551_1_.putInt("Tick", this.tick);
+   public CompoundNBT write(CompoundNBT compound) {
+      compound.putInt("NextAvailableID", this.nextAvailableId);
+      compound.putInt("Tick", this.tick);
       ListNBT listnbt = new ListNBT();
 
-      for(Raid raid : this.raidMap.values()) {
+      for(Raid raid : this.byId.values()) {
          CompoundNBT compoundnbt = new CompoundNBT();
-         raid.save(compoundnbt);
+         raid.write(compoundnbt);
          listnbt.add(compoundnbt);
       }
 
-      p_189551_1_.put("Raids", listnbt);
-      return p_189551_1_;
+      compound.put("Raids", listnbt);
+      return compound;
    }
 
-   public static String getFileId(DimensionType p_234620_0_) {
-      return "raids" + p_234620_0_.getFileSuffix();
+   public static String func_234620_a_(DimensionType p_234620_0_) {
+      return "raids" + p_234620_0_.getSuffix();
    }
 
-   private int getUniqueId() {
-      return ++this.nextAvailableID;
+   private int incrementNextId() {
+      return ++this.nextAvailableId;
    }
 
    @Nullable
-   public Raid getNearbyRaid(BlockPos p_215174_1_, int p_215174_2_) {
+   public Raid findRaid(BlockPos p_215174_1_, int distance) {
       Raid raid = null;
-      double d0 = (double)p_215174_2_;
+      double d0 = (double)distance;
 
-      for(Raid raid1 : this.raidMap.values()) {
-         double d1 = raid1.getCenter().distSqr(p_215174_1_);
+      for(Raid raid1 : this.byId.values()) {
+         double d1 = raid1.getCenter().distanceSq(p_215174_1_);
          if (raid1.isActive() && d1 < d0) {
             raid = raid1;
             d0 = d1;

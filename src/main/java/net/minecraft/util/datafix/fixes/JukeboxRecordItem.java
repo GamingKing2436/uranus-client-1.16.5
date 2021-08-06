@@ -9,8 +9,8 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class JukeboxRecordItem extends NamedEntityFix {
-   public JukeboxRecordItem(Schema p_i49683_1_, boolean p_i49683_2_) {
-      super(p_i49683_1_, p_i49683_2_, "BlockEntityJukeboxFix", TypeReferences.BLOCK_ENTITY, "minecraft:jukebox");
+   public JukeboxRecordItem(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "BlockEntityJukeboxFix", TypeReferences.BLOCK_ENTITY, "minecraft:jukebox");
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {

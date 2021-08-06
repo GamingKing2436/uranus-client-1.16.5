@@ -12,12 +12,12 @@ import org.apache.commons.lang3.ArrayUtils;
 
 public class ByteArrayNBT extends CollectionNBT<ByteNBT> {
    public static final INBTType<ByteArrayNBT> TYPE = new INBTType<ByteArrayNBT>() {
-      public ByteArrayNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(192L);
-         int i = p_225649_1_.readInt();
-         p_225649_3_.accountBits(8L * (long)i);
+      public ByteArrayNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(192L);
+         int i = input.readInt();
+         accounter.read(8L * (long)i);
          byte[] abyte = new byte[i];
-         p_225649_1_.readFully(abyte);
+         input.readFully(abyte);
          return new ByteArrayNBT(abyte);
       }
 
@@ -25,34 +25,34 @@ public class ByteArrayNBT extends CollectionNBT<ByteNBT> {
          return "BYTE[]";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_Byte_Array";
       }
    };
    private byte[] data;
 
-   public ByteArrayNBT(byte[] p_i45128_1_) {
-      this.data = p_i45128_1_;
+   public ByteArrayNBT(byte[] data) {
+      this.data = data;
    }
 
-   public ByteArrayNBT(List<Byte> p_i47529_1_) {
-      this(toArray(p_i47529_1_));
+   public ByteArrayNBT(List<Byte> bytes) {
+      this(toArray(bytes));
    }
 
-   private static byte[] toArray(List<Byte> p_193589_0_) {
-      byte[] abyte = new byte[p_193589_0_.size()];
+   private static byte[] toArray(List<Byte> bytes) {
+      byte[] abyte = new byte[bytes.size()];
 
-      for(int i = 0; i < p_193589_0_.size(); ++i) {
-         Byte obyte = p_193589_0_.get(i);
+      for(int i = 0; i < bytes.size(); ++i) {
+         Byte obyte = bytes.get(i);
          abyte[i] = obyte == null ? 0 : obyte;
       }
 
       return abyte;
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      p_74734_1_.writeInt(this.data.length);
-      p_74734_1_.write(this.data);
+   public void write(DataOutput output) throws IOException {
+      output.writeInt(this.data.length);
+      output.write(this.data);
    }
 
    public byte getId() {
@@ -95,23 +95,23 @@ public class ByteArrayNBT extends CollectionNBT<ByteNBT> {
       return Arrays.hashCode(this.data);
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
-      ITextComponent itextcomponent = (new StringTextComponent("B")).withStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
-      IFormattableTextComponent iformattabletextcomponent = (new StringTextComponent("[")).append(itextcomponent).append(";");
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
+      ITextComponent itextcomponent = (new StringTextComponent("B")).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
+      IFormattableTextComponent iformattabletextcomponent = (new StringTextComponent("[")).append(itextcomponent).appendString(";");
 
       for(int i = 0; i < this.data.length; ++i) {
-         IFormattableTextComponent iformattabletextcomponent1 = (new StringTextComponent(String.valueOf((int)this.data[i]))).withStyle(SYNTAX_HIGHLIGHTING_NUMBER);
-         iformattabletextcomponent.append(" ").append(iformattabletextcomponent1).append(itextcomponent);
+         IFormattableTextComponent iformattabletextcomponent1 = (new StringTextComponent(String.valueOf((int)this.data[i]))).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER);
+         iformattabletextcomponent.appendString(" ").append(iformattabletextcomponent1).append(itextcomponent);
          if (i != this.data.length - 1) {
-            iformattabletextcomponent.append(",");
+            iformattabletextcomponent.appendString(",");
          }
       }
 
-      iformattabletextcomponent.append("]");
+      iformattabletextcomponent.appendString("]");
       return iformattabletextcomponent;
    }
 
-   public byte[] getAsByteArray() {
+   public byte[] getByteArray() {
       return this.data;
    }
 
@@ -125,26 +125,26 @@ public class ByteArrayNBT extends CollectionNBT<ByteNBT> {
 
    public ByteNBT set(int p_set_1_, ByteNBT p_set_2_) {
       byte b0 = this.data[p_set_1_];
-      this.data[p_set_1_] = p_set_2_.getAsByte();
+      this.data[p_set_1_] = p_set_2_.getByte();
       return ByteNBT.valueOf(b0);
    }
 
    public void add(int p_add_1_, ByteNBT p_add_2_) {
-      this.data = ArrayUtils.add(this.data, p_add_1_, p_add_2_.getAsByte());
+      this.data = ArrayUtils.add(this.data, p_add_1_, p_add_2_.getByte());
    }
 
-   public boolean setTag(int p_218659_1_, INBT p_218659_2_) {
-      if (p_218659_2_ instanceof NumberNBT) {
-         this.data[p_218659_1_] = ((NumberNBT)p_218659_2_).getAsByte();
+   public boolean setNBTByIndex(int index, INBT nbt) {
+      if (nbt instanceof NumberNBT) {
+         this.data[index] = ((NumberNBT)nbt).getByte();
          return true;
       } else {
          return false;
       }
    }
 
-   public boolean addTag(int p_218660_1_, INBT p_218660_2_) {
-      if (p_218660_2_ instanceof NumberNBT) {
-         this.data = ArrayUtils.add(this.data, p_218660_1_, ((NumberNBT)p_218660_2_).getAsByte());
+   public boolean addNBTByIndex(int index, INBT nbt) {
+      if (nbt instanceof NumberNBT) {
+         this.data = ArrayUtils.add(this.data, index, ((NumberNBT)nbt).getByte());
          return true;
       } else {
          return false;
@@ -157,7 +157,7 @@ public class ByteArrayNBT extends CollectionNBT<ByteNBT> {
       return ByteNBT.valueOf(b0);
    }
 
-   public byte getElementType() {
+   public byte getTagType() {
       return 1;
    }
 

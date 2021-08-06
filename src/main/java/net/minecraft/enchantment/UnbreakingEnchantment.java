@@ -6,31 +6,31 @@ import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
 
 public class UnbreakingEnchantment extends Enchantment {
-   protected UnbreakingEnchantment(Enchantment.Rarity p_i46733_1_, EquipmentSlotType... p_i46733_2_) {
-      super(p_i46733_1_, EnchantmentType.BREAKABLE, p_i46733_2_);
+   protected UnbreakingEnchantment(Enchantment.Rarity rarityIn, EquipmentSlotType... slots) {
+      super(rarityIn, EnchantmentType.BREAKABLE, slots);
    }
 
-   public int getMinCost(int p_77321_1_) {
-      return 5 + (p_77321_1_ - 1) * 8;
+   public int getMinEnchantability(int enchantmentLevel) {
+      return 5 + (enchantmentLevel - 1) * 8;
    }
 
-   public int getMaxCost(int p_223551_1_) {
-      return super.getMinCost(p_223551_1_) + 50;
+   public int getMaxEnchantability(int enchantmentLevel) {
+      return super.getMinEnchantability(enchantmentLevel) + 50;
    }
 
    public int getMaxLevel() {
       return 3;
    }
 
-   public boolean canEnchant(ItemStack p_92089_1_) {
-      return p_92089_1_.isDamageableItem() ? true : super.canEnchant(p_92089_1_);
+   public boolean canApply(ItemStack stack) {
+      return stack.isDamageable() ? true : super.canApply(stack);
    }
 
-   public static boolean shouldIgnoreDurabilityDrop(ItemStack p_92097_0_, int p_92097_1_, Random p_92097_2_) {
-      if (p_92097_0_.getItem() instanceof ArmorItem && p_92097_2_.nextFloat() < 0.6F) {
+   public static boolean negateDamage(ItemStack stack, int level, Random rand) {
+      if (stack.getItem() instanceof ArmorItem && rand.nextFloat() < 0.6F) {
          return false;
       } else {
-         return p_92097_2_.nextInt(p_92097_1_ + 1) > 0;
+         return rand.nextInt(level + 1) > 0;
       }
    }
 }

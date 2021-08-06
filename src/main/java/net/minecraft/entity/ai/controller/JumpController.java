@@ -4,18 +4,18 @@ import net.minecraft.entity.MobEntity;
 
 public class JumpController {
    private final MobEntity mob;
-   protected boolean jump;
+   protected boolean isJumping;
 
-   public JumpController(MobEntity p_i1612_1_) {
-      this.mob = p_i1612_1_;
+   public JumpController(MobEntity mob) {
+      this.mob = mob;
    }
 
-   public void jump() {
-      this.jump = true;
+   public void setJumping() {
+      this.isJumping = true;
    }
 
    public void tick() {
-      this.mob.setJumping(this.jump);
-      this.jump = false;
+      this.mob.setJumping(this.isJumping);
+      this.isJumping = false;
    }
 }

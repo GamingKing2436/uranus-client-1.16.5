@@ -11,10 +11,10 @@ import java.util.Set;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class EntityHealth extends DataFix {
-   private static final Set<String> ENTITIES = Sets.newHashSet("ArmorStand", "Bat", "Blaze", "CaveSpider", "Chicken", "Cow", "Creeper", "EnderDragon", "Enderman", "Endermite", "EntityHorse", "Ghast", "Giant", "Guardian", "LavaSlime", "MushroomCow", "Ozelot", "Pig", "PigZombie", "Rabbit", "Sheep", "Shulker", "Silverfish", "Skeleton", "Slime", "SnowMan", "Spider", "Squid", "Villager", "VillagerGolem", "Witch", "WitherBoss", "Wolf", "Zombie");
+   private static final Set<String> ENTITY_LIST = Sets.newHashSet("ArmorStand", "Bat", "Blaze", "CaveSpider", "Chicken", "Cow", "Creeper", "EnderDragon", "Enderman", "Endermite", "EntityHorse", "Ghast", "Giant", "Guardian", "LavaSlime", "MushroomCow", "Ozelot", "Pig", "PigZombie", "Rabbit", "Sheep", "Shulker", "Silverfish", "Skeleton", "Slime", "SnowMan", "Spider", "Squid", "Villager", "VillagerGolem", "Witch", "WitherBoss", "Wolf", "Zombie");
 
-   public EntityHealth(Schema p_i49666_1_, boolean p_i49666_2_) {
-      super(p_i49666_1_, p_i49666_2_);
+   public EntityHealth(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public Dynamic<?> fixTag(Dynamic<?> p_209743_1_) {

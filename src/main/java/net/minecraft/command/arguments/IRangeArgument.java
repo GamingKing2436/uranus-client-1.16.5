@@ -14,7 +14,7 @@ public interface IRangeArgument<T extends MinMaxBounds<?>> extends ArgumentType<
       return new IRangeArgument.IntRange();
    }
 
-   static IRangeArgument.FloatRange floatRange() {
+   static IRangeArgument.FloatRange func_243493_b() {
       return new IRangeArgument.FloatRange();
    }
 
@@ -33,8 +33,8 @@ public interface IRangeArgument<T extends MinMaxBounds<?>> extends ArgumentType<
    public static class IntRange implements IRangeArgument<MinMaxBounds.IntBound> {
       private static final Collection<String> EXAMPLES = Arrays.asList("0..5", "0", "-5", "-100..", "..100");
 
-      public static MinMaxBounds.IntBound getRange(CommandContext<CommandSource> p_211372_0_, String p_211372_1_) {
-         return p_211372_0_.getArgument(p_211372_1_, MinMaxBounds.IntBound.class);
+      public static MinMaxBounds.IntBound getIntRange(CommandContext<CommandSource> context, String name) {
+         return context.getArgument(name, MinMaxBounds.IntBound.class);
       }
 
       public MinMaxBounds.IntBound parse(StringReader p_parse_1_) throws CommandSyntaxException {

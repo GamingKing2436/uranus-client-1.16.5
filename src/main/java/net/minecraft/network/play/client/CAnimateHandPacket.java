@@ -12,20 +12,20 @@ public class CAnimateHandPacket implements IPacket<IServerPlayNetHandler> {
    public CAnimateHandPacket() {
    }
 
-   public CAnimateHandPacket(Hand p_i46860_1_) {
-      this.hand = p_i46860_1_;
+   public CAnimateHandPacket(Hand handIn) {
+      this.hand = handIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.hand = p_148837_1_.readEnum(Hand.class);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.hand = buf.readEnumValue(Hand.class);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeEnum(this.hand);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeEnumValue(this.hand);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleAnimate(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.handleAnimation(this);
    }
 
    public Hand getHand() {

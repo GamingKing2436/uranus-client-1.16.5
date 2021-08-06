@@ -14,20 +14,20 @@ public class SDisconnectPacket implements IPacket<IClientPlayNetHandler> {
    public SDisconnectPacket() {
    }
 
-   public SDisconnectPacket(ITextComponent p_i46947_1_) {
-      this.reason = p_i46947_1_;
+   public SDisconnectPacket(ITextComponent messageIn) {
+      this.reason = messageIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.reason = p_148837_1_.readComponent();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.reason = buf.readTextComponent();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeComponent(this.reason);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeTextComponent(this.reason);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleDisconnect(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleDisconnect(this);
    }
 
    @OnlyIn(Dist.CLIENT)

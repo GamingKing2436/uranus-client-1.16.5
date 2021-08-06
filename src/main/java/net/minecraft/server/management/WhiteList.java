@@ -9,26 +9,26 @@ public class WhiteList extends UserList<GameProfile, WhitelistEntry> {
       super(p_i1132_1_);
    }
 
-   protected UserListEntry<GameProfile> createEntry(JsonObject p_152682_1_) {
-      return new WhitelistEntry(p_152682_1_);
+   protected UserListEntry<GameProfile> createEntry(JsonObject entryData) {
+      return new WhitelistEntry(entryData);
    }
 
-   public boolean isWhiteListed(GameProfile p_152705_1_) {
-      return this.contains(p_152705_1_);
+   public boolean isWhitelisted(GameProfile profile) {
+      return this.hasEntry(profile);
    }
 
-   public String[] getUserList() {
+   public String[] getKeys() {
       String[] astring = new String[this.getEntries().size()];
       int i = 0;
 
       for(UserListEntry<GameProfile> userlistentry : this.getEntries()) {
-         astring[i++] = userlistentry.getUser().getName();
+         astring[i++] = userlistentry.getValue().getName();
       }
 
       return astring;
    }
 
-   protected String getKeyForUser(GameProfile p_152681_1_) {
-      return p_152681_1_.getId().toString();
+   protected String getObjectKey(GameProfile obj) {
+      return obj.getId().toString();
    }
 }

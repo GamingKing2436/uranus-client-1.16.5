@@ -10,100 +10,100 @@ import net.minecraft.pathfinding.FlyingPathNavigator;
 import net.minecraft.pathfinding.GroundPathNavigator;
 
 public class TemptGoal extends Goal {
-   private static final EntityPredicate TEMP_TARGETING = (new EntityPredicate()).range(10.0D).allowInvulnerable().allowSameTeam().allowNonAttackable().allowUnseeable();
-   protected final CreatureEntity mob;
-   private final double speedModifier;
-   private double px;
-   private double py;
-   private double pz;
-   private double pRotX;
-   private double pRotY;
-   protected PlayerEntity player;
-   private int calmDown;
+   private static final EntityPredicate ENTITY_PREDICATE = (new EntityPredicate()).setDistance(10.0D).allowInvulnerable().allowFriendlyFire().setSkipAttackChecks().setLineOfSiteRequired();
+   protected final CreatureEntity creature;
+   private final double speed;
+   private double targetX;
+   private double targetY;
+   private double targetZ;
+   private double pitch;
+   private double yaw;
+   protected PlayerEntity closestPlayer;
+   private int delayTemptCounter;
    private boolean isRunning;
-   private final Ingredient items;
-   private final boolean canScare;
+   private final Ingredient temptItem;
+   private final boolean scaredByPlayerMovement;
 
-   public TemptGoal(CreatureEntity p_i47822_1_, double p_i47822_2_, Ingredient p_i47822_4_, boolean p_i47822_5_) {
-      this(p_i47822_1_, p_i47822_2_, p_i47822_5_, p_i47822_4_);
+   public TemptGoal(CreatureEntity creatureIn, double speedIn, Ingredient temptItemsIn, boolean scaredByPlayerMovementIn) {
+      this(creatureIn, speedIn, scaredByPlayerMovementIn, temptItemsIn);
    }
 
-   public TemptGoal(CreatureEntity p_i47823_1_, double p_i47823_2_, boolean p_i47823_4_, Ingredient p_i47823_5_) {
-      this.mob = p_i47823_1_;
-      this.speedModifier = p_i47823_2_;
-      this.items = p_i47823_5_;
-      this.canScare = p_i47823_4_;
-      this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
-      if (!(p_i47823_1_.getNavigation() instanceof GroundPathNavigator) && !(p_i47823_1_.getNavigation() instanceof FlyingPathNavigator)) {
+   public TemptGoal(CreatureEntity creatureIn, double speedIn, boolean scaredByPlayerMovementIn, Ingredient temptItemsIn) {
+      this.creature = creatureIn;
+      this.speed = speedIn;
+      this.temptItem = temptItemsIn;
+      this.scaredByPlayerMovement = scaredByPlayerMovementIn;
+      this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+      if (!(creatureIn.getNavigator() instanceof GroundPathNavigator) && !(creatureIn.getNavigator() instanceof FlyingPathNavigator)) {
          throw new IllegalArgumentException("Unsupported mob type for TemptGoal");
       }
    }
 
-   public boolean canUse() {
-      if (this.calmDown > 0) {
-         --this.calmDown;
+   public boolean shouldExecute() {
+      if (this.delayTemptCounter > 0) {
+         --this.delayTemptCounter;
          return false;
       } else {
-         this.player = this.mob.level.getNearestPlayer(TEMP_TARGETING, this.mob);
-         if (this.player == null) {
+         this.closestPlayer = this.creature.world.getClosestPlayer(ENTITY_PREDICATE, this.creature);
+         if (this.closestPlayer == null) {
             return false;
          } else {
-            return this.shouldFollowItem(this.player.getMainHandItem()) || this.shouldFollowItem(this.player.getOffhandItem());
+            return this.isTempting(this.closestPlayer.getHeldItemMainhand()) || this.isTempting(this.closestPlayer.getHeldItemOffhand());
          }
       }
    }
 
-   protected boolean shouldFollowItem(ItemStack p_188508_1_) {
-      return this.items.test(p_188508_1_);
+   protected boolean isTempting(ItemStack stack) {
+      return this.temptItem.test(stack);
    }
 
-   public boolean canContinueToUse() {
-      if (this.canScare()) {
-         if (this.mob.distanceToSqr(this.player) < 36.0D) {
-            if (this.player.distanceToSqr(this.px, this.py, this.pz) > 0.010000000000000002D) {
+   public boolean shouldContinueExecuting() {
+      if (this.isScaredByPlayerMovement()) {
+         if (this.creature.getDistanceSq(this.closestPlayer) < 36.0D) {
+            if (this.closestPlayer.getDistanceSq(this.targetX, this.targetY, this.targetZ) > 0.010000000000000002D) {
                return false;
             }
 
-            if (Math.abs((double)this.player.xRot - this.pRotX) > 5.0D || Math.abs((double)this.player.yRot - this.pRotY) > 5.0D) {
+            if (Math.abs((double)this.closestPlayer.rotationPitch - this.pitch) > 5.0D || Math.abs((double)this.closestPlayer.rotationYaw - this.yaw) > 5.0D) {
                return false;
             }
          } else {
-            this.px = this.player.getX();
-            this.py = this.player.getY();
-            this.pz = this.player.getZ();
+            this.targetX = this.closestPlayer.getPosX();
+            this.targetY = this.closestPlayer.getPosY();
+            this.targetZ = this.closestPlayer.getPosZ();
          }
 
-         this.pRotX = (double)this.player.xRot;
-         this.pRotY = (double)this.player.yRot;
+         this.pitch = (double)this.closestPlayer.rotationPitch;
+         this.yaw = (double)this.closestPlayer.rotationYaw;
       }
 
-      return this.canUse();
+      return this.shouldExecute();
    }
 
-   protected boolean canScare() {
-      return this.canScare;
+   protected boolean isScaredByPlayerMovement() {
+      return this.scaredByPlayerMovement;
    }
 
-   public void start() {
-      this.px = this.player.getX();
-      this.py = this.player.getY();
-      this.pz = this.player.getZ();
+   public void startExecuting() {
+      this.targetX = this.closestPlayer.getPosX();
+      this.targetY = this.closestPlayer.getPosY();
+      this.targetZ = this.closestPlayer.getPosZ();
       this.isRunning = true;
    }
 
-   public void stop() {
-      this.player = null;
-      this.mob.getNavigation().stop();
-      this.calmDown = 100;
+   public void resetTask() {
+      this.closestPlayer = null;
+      this.creature.getNavigator().clearPath();
+      this.delayTemptCounter = 100;
       this.isRunning = false;
    }
 
    public void tick() {
-      this.mob.getLookControl().setLookAt(this.player, (float)(this.mob.getMaxHeadYRot() + 20), (float)this.mob.getMaxHeadXRot());
-      if (this.mob.distanceToSqr(this.player) < 6.25D) {
-         this.mob.getNavigation().stop();
+      this.creature.getLookController().setLookPositionWithEntity(this.closestPlayer, (float)(this.creature.getHorizontalFaceSpeed() + 20), (float)this.creature.getVerticalFaceSpeed());
+      if (this.creature.getDistanceSq(this.closestPlayer) < 6.25D) {
+         this.creature.getNavigator().clearPath();
       } else {
-         this.mob.getNavigation().moveTo(this.player, this.speedModifier);
+         this.creature.getNavigator().tryMoveToEntityLiving(this.closestPlayer, this.speed);
       }
 
    }

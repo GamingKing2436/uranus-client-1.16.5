@@ -14,12 +14,12 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 
 public class CustomNameStringToComponentEntity extends DataFix {
-   public CustomNameStringToComponentEntity(Schema p_i49669_1_, boolean p_i49669_2_) {
-      super(p_i49669_1_, p_i49669_2_);
+   public CustomNameStringToComponentEntity(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
-      OpticFinder<String> opticfinder = DSL.fieldFinder("id", NamespacedSchema.namespacedString());
+      OpticFinder<String> opticfinder = DSL.fieldFinder("id", NamespacedSchema.func_233457_a_());
       return this.fixTypeEverywhereTyped("EntityCustomNameToComponentFix", this.getInputSchema().getType(TypeReferences.ENTITY), (p_207792_1_) -> {
          return p_207792_1_.update(DSL.remainderFinder(), (p_207791_2_) -> {
             Optional<String> optional = p_207792_1_.getOptional(opticfinder);

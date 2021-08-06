@@ -10,7 +10,7 @@ public class MouseSmoother {
    private double remainingValue;
    private double lastAmount;
 
-   public double getNewDeltaValue(double p_199102_1_, double p_199102_3_) {
+   public double smooth(double p_199102_1_, double p_199102_3_) {
       this.targetValue += p_199102_1_;
       double d0 = this.targetValue - this.remainingValue;
       double d1 = MathHelper.lerp(0.5D, this.lastAmount, d0);

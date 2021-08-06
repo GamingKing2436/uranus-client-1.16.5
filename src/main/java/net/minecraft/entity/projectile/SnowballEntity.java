@@ -22,12 +22,12 @@ public class SnowballEntity extends ProjectileItemEntity {
       super(p_i50159_1_, p_i50159_2_);
    }
 
-   public SnowballEntity(World p_i1774_1_, LivingEntity p_i1774_2_) {
-      super(EntityType.SNOWBALL, p_i1774_2_, p_i1774_1_);
+   public SnowballEntity(World worldIn, LivingEntity throwerIn) {
+      super(EntityType.SNOWBALL, throwerIn, worldIn);
    }
 
-   public SnowballEntity(World p_i1775_1_, double p_i1775_2_, double p_i1775_4_, double p_i1775_6_) {
-      super(EntityType.SNOWBALL, p_i1775_2_, p_i1775_4_, p_i1775_6_, p_i1775_1_);
+   public SnowballEntity(World worldIn, double x, double y, double z) {
+      super(EntityType.SNOWBALL, x, y, z, worldIn);
    }
 
    protected Item getDefaultItem() {
@@ -35,34 +35,34 @@ public class SnowballEntity extends ProjectileItemEntity {
    }
 
    @OnlyIn(Dist.CLIENT)
-   private IParticleData getParticle() {
-      ItemStack itemstack = this.getItemRaw();
+   private IParticleData makeParticle() {
+      ItemStack itemstack = this.func_213882_k();
       return (IParticleData)(itemstack.isEmpty() ? ParticleTypes.ITEM_SNOWBALL : new ItemParticleData(ParticleTypes.ITEM, itemstack));
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void handleEntityEvent(byte p_70103_1_) {
-      if (p_70103_1_ == 3) {
-         IParticleData iparticledata = this.getParticle();
+   public void handleStatusUpdate(byte id) {
+      if (id == 3) {
+         IParticleData iparticledata = this.makeParticle();
 
          for(int i = 0; i < 8; ++i) {
-            this.level.addParticle(iparticledata, this.getX(), this.getY(), this.getZ(), 0.0D, 0.0D, 0.0D);
+            this.world.addParticle(iparticledata, this.getPosX(), this.getPosY(), this.getPosZ(), 0.0D, 0.0D, 0.0D);
          }
       }
 
    }
 
-   protected void onHitEntity(EntityRayTraceResult p_213868_1_) {
-      super.onHitEntity(p_213868_1_);
+   protected void onEntityHit(EntityRayTraceResult p_213868_1_) {
+      super.onEntityHit(p_213868_1_);
       Entity entity = p_213868_1_.getEntity();
       int i = entity instanceof BlazeEntity ? 3 : 0;
-      entity.hurt(DamageSource.thrown(this, this.getOwner()), (float)i);
+      entity.attackEntityFrom(DamageSource.causeThrownDamage(this, this.func_234616_v_()), (float)i);
    }
 
-   protected void onHit(RayTraceResult p_70227_1_) {
-      super.onHit(p_70227_1_);
-      if (!this.level.isClientSide) {
-         this.level.broadcastEntityEvent(this, (byte)3);
+   protected void onImpact(RayTraceResult result) {
+      super.onImpact(result);
+      if (!this.world.isRemote) {
+         this.world.setEntityState(this, (byte)3);
          this.remove();
       }
 

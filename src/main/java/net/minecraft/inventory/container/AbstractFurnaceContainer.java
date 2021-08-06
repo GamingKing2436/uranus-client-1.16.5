@@ -21,11 +21,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class AbstractFurnaceContainer extends RecipeBookContainer<IInventory> {
-   private final IInventory container;
-   private final IIntArray data;
-   protected final World level;
+   private final IInventory furnaceInventory;
+   private final IIntArray furnaceData;
+   protected final World world;
    private final IRecipeType<? extends AbstractCookingRecipe> recipeType;
-   private final RecipeBookCategory recipeBookType;
+   private final RecipeBookCategory field_242384_g;
 
    protected AbstractFurnaceContainer(ContainerType<?> p_i241921_1_, IRecipeType<? extends AbstractCookingRecipe> p_i241921_2_, RecipeBookCategory p_i241921_3_, int p_i241921_4_, PlayerInventory p_i241921_5_) {
       this(p_i241921_1_, p_i241921_2_, p_i241921_3_, p_i241921_4_, p_i241921_5_, new Inventory(3), new IntArray(4));
@@ -34,12 +34,12 @@ public abstract class AbstractFurnaceContainer extends RecipeBookContainer<IInve
    protected AbstractFurnaceContainer(ContainerType<?> p_i241922_1_, IRecipeType<? extends AbstractCookingRecipe> p_i241922_2_, RecipeBookCategory p_i241922_3_, int p_i241922_4_, PlayerInventory p_i241922_5_, IInventory p_i241922_6_, IIntArray p_i241922_7_) {
       super(p_i241922_1_, p_i241922_4_);
       this.recipeType = p_i241922_2_;
-      this.recipeBookType = p_i241922_3_;
-      checkContainerSize(p_i241922_6_, 3);
-      checkContainerDataCount(p_i241922_7_, 4);
-      this.container = p_i241922_6_;
-      this.data = p_i241922_7_;
-      this.level = p_i241922_5_.player.level;
+      this.field_242384_g = p_i241922_3_;
+      assertInventorySize(p_i241922_6_, 3);
+      assertIntArraySize(p_i241922_7_, 4);
+      this.furnaceInventory = p_i241922_6_;
+      this.furnaceData = p_i241922_7_;
+      this.world = p_i241922_5_.player.world;
       this.addSlot(new Slot(p_i241922_6_, 0, 56, 17));
       this.addSlot(new FurnaceFuelSlot(this, p_i241922_6_, 1, 56, 53));
       this.addSlot(new FurnaceResultSlot(p_i241922_5_.player, p_i241922_6_, 2, 116, 35));
@@ -54,37 +54,37 @@ public abstract class AbstractFurnaceContainer extends RecipeBookContainer<IInve
          this.addSlot(new Slot(p_i241922_5_, k, 8 + k * 18, 142));
       }
 
-      this.addDataSlots(p_i241922_7_);
+      this.trackIntArray(p_i241922_7_);
    }
 
-   public void fillCraftSlotsStackedContents(RecipeItemHelper p_201771_1_) {
-      if (this.container instanceof IRecipeHelperPopulator) {
-         ((IRecipeHelperPopulator)this.container).fillStackedContents(p_201771_1_);
+   public void fillStackedContents(RecipeItemHelper itemHelperIn) {
+      if (this.furnaceInventory instanceof IRecipeHelperPopulator) {
+         ((IRecipeHelperPopulator)this.furnaceInventory).fillStackedContents(itemHelperIn);
       }
 
    }
 
-   public void clearCraftingContent() {
-      this.container.clearContent();
+   public void clear() {
+      this.furnaceInventory.clear();
    }
 
-   public void handlePlacement(boolean p_217056_1_, IRecipe<?> p_217056_2_, ServerPlayerEntity p_217056_3_) {
-      (new ServerRecipePlacerFurnace<>(this)).recipeClicked(p_217056_3_, (IRecipe<IInventory>) p_217056_2_, p_217056_1_);
+   public void func_217056_a(boolean p_217056_1_, IRecipe<?> p_217056_2_, ServerPlayerEntity player) {
+      (new ServerRecipePlacerFurnace<>(this)).place(player, (IRecipe<IInventory>) p_217056_2_, p_217056_1_);
    }
 
-   public boolean recipeMatches(IRecipe<? super IInventory> p_201769_1_) {
-      return p_201769_1_.matches(this.container, this.level);
+   public boolean matches(IRecipe<? super IInventory> recipeIn) {
+      return recipeIn.matches(this.furnaceInventory, this.world);
    }
 
-   public int getResultSlotIndex() {
+   public int getOutputSlot() {
       return 2;
    }
 
-   public int getGridWidth() {
+   public int getWidth() {
       return 1;
    }
 
-   public int getGridHeight() {
+   public int getHeight() {
       return 1;
    }
 
@@ -93,90 +93,90 @@ public abstract class AbstractFurnaceContainer extends RecipeBookContainer<IInve
       return 3;
    }
 
-   public boolean stillValid(PlayerEntity p_75145_1_) {
-      return this.container.stillValid(p_75145_1_);
+   public boolean canInteractWith(PlayerEntity playerIn) {
+      return this.furnaceInventory.isUsableByPlayer(playerIn);
    }
 
-   public ItemStack quickMoveStack(PlayerEntity p_82846_1_, int p_82846_2_) {
+   public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
       ItemStack itemstack = ItemStack.EMPTY;
-      Slot slot = this.slots.get(p_82846_2_);
-      if (slot != null && slot.hasItem()) {
-         ItemStack itemstack1 = slot.getItem();
+      Slot slot = this.inventorySlots.get(index);
+      if (slot != null && slot.getHasStack()) {
+         ItemStack itemstack1 = slot.getStack();
          itemstack = itemstack1.copy();
-         if (p_82846_2_ == 2) {
-            if (!this.moveItemStackTo(itemstack1, 3, 39, true)) {
+         if (index == 2) {
+            if (!this.mergeItemStack(itemstack1, 3, 39, true)) {
                return ItemStack.EMPTY;
             }
 
-            slot.onQuickCraft(itemstack1, itemstack);
-         } else if (p_82846_2_ != 1 && p_82846_2_ != 0) {
-            if (this.canSmelt(itemstack1)) {
-               if (!this.moveItemStackTo(itemstack1, 0, 1, false)) {
+            slot.onSlotChange(itemstack1, itemstack);
+         } else if (index != 1 && index != 0) {
+            if (this.hasRecipe(itemstack1)) {
+               if (!this.mergeItemStack(itemstack1, 0, 1, false)) {
                   return ItemStack.EMPTY;
                }
             } else if (this.isFuel(itemstack1)) {
-               if (!this.moveItemStackTo(itemstack1, 1, 2, false)) {
+               if (!this.mergeItemStack(itemstack1, 1, 2, false)) {
                   return ItemStack.EMPTY;
                }
-            } else if (p_82846_2_ >= 3 && p_82846_2_ < 30) {
-               if (!this.moveItemStackTo(itemstack1, 30, 39, false)) {
+            } else if (index >= 3 && index < 30) {
+               if (!this.mergeItemStack(itemstack1, 30, 39, false)) {
                   return ItemStack.EMPTY;
                }
-            } else if (p_82846_2_ >= 30 && p_82846_2_ < 39 && !this.moveItemStackTo(itemstack1, 3, 30, false)) {
+            } else if (index >= 30 && index < 39 && !this.mergeItemStack(itemstack1, 3, 30, false)) {
                return ItemStack.EMPTY;
             }
-         } else if (!this.moveItemStackTo(itemstack1, 3, 39, false)) {
+         } else if (!this.mergeItemStack(itemstack1, 3, 39, false)) {
             return ItemStack.EMPTY;
          }
 
          if (itemstack1.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
+            slot.putStack(ItemStack.EMPTY);
          } else {
-            slot.setChanged();
+            slot.onSlotChanged();
          }
 
          if (itemstack1.getCount() == itemstack.getCount()) {
             return ItemStack.EMPTY;
          }
 
-         slot.onTake(p_82846_1_, itemstack1);
+         slot.onTake(playerIn, itemstack1);
       }
 
       return itemstack;
    }
 
-   protected boolean canSmelt(ItemStack p_217057_1_) {
-      return this.level.getRecipeManager().getRecipeFor((IRecipeType)this.recipeType, new Inventory(p_217057_1_), this.level).isPresent();
+   protected boolean hasRecipe(ItemStack stack) {
+      return this.world.getRecipeManager().getRecipe((IRecipeType)this.recipeType, new Inventory(stack), this.world).isPresent();
    }
 
-   protected boolean isFuel(ItemStack p_217058_1_) {
-      return AbstractFurnaceTileEntity.isFuel(p_217058_1_);
+   protected boolean isFuel(ItemStack stack) {
+      return AbstractFurnaceTileEntity.isFuel(stack);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getBurnProgress() {
-      int i = this.data.get(2);
-      int j = this.data.get(3);
+   public int getCookProgressionScaled() {
+      int i = this.furnaceData.get(2);
+      int j = this.furnaceData.get(3);
       return j != 0 && i != 0 ? i * 24 / j : 0;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getLitProgress() {
-      int i = this.data.get(1);
+   public int getBurnLeftScaled() {
+      int i = this.furnaceData.get(1);
       if (i == 0) {
          i = 200;
       }
 
-      return this.data.get(0) * 13 / i;
+      return this.furnaceData.get(0) * 13 / i;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean isLit() {
-      return this.data.get(0) > 0;
+   public boolean isBurning() {
+      return this.furnaceData.get(0) > 0;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public RecipeBookCategory getRecipeBookType() {
-      return this.recipeBookType;
+   public RecipeBookCategory func_241850_m() {
+      return this.field_242384_g;
    }
 }

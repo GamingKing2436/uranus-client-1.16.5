@@ -9,15 +9,15 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class PotionSpriteUploader extends SpriteUploader {
-   public PotionSpriteUploader(TextureManager p_i50908_1_) {
-      super(p_i50908_1_, new ResourceLocation("textures/atlas/mob_effects.png"), "mob_effect");
+   public PotionSpriteUploader(TextureManager textureManagerIn) {
+      super(textureManagerIn, new ResourceLocation("textures/atlas/mob_effects.png"), "mob_effect");
    }
 
-   protected Stream<ResourceLocation> getResourcesToLoad() {
-      return Registry.MOB_EFFECT.keySet().stream();
+   protected Stream<ResourceLocation> getResourceLocations() {
+      return Registry.EFFECTS.keySet().stream();
    }
 
-   public TextureAtlasSprite get(Effect p_215288_1_) {
-      return this.getSprite(Registry.MOB_EFFECT.getKey(p_215288_1_));
+   public TextureAtlasSprite getSprite(Effect effectIn) {
+      return this.getSprite(Registry.EFFECTS.getKey(effectIn));
    }
 }

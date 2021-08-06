@@ -12,22 +12,22 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class ClientHandshakeNetHandler implements IHandshakeNetHandler {
    private final MinecraftServer server;
-   private final NetworkManager connection;
+   private final NetworkManager networkManager;
 
-   public ClientHandshakeNetHandler(MinecraftServer p_i45287_1_, NetworkManager p_i45287_2_) {
-      this.server = p_i45287_1_;
-      this.connection = p_i45287_2_;
+   public ClientHandshakeNetHandler(MinecraftServer mcServerIn, NetworkManager networkManagerIn) {
+      this.server = mcServerIn;
+      this.networkManager = networkManagerIn;
    }
 
-   public void handleIntention(CHandshakePacket p_147383_1_) {
-      this.connection.setProtocol(p_147383_1_.getIntention());
-      this.connection.setListener(new ServerLoginNetHandler(this.server, this.connection));
+   public void processHandshake(CHandshakePacket packetIn) {
+      this.networkManager.setConnectionState(packetIn.getRequestedState());
+      this.networkManager.setNetHandler(new ServerLoginNetHandler(this.server, this.networkManager));
    }
 
-   public void onDisconnect(ITextComponent p_147231_1_) {
+   public void onDisconnect(ITextComponent reason) {
    }
 
-   public NetworkManager getConnection() {
-      return this.connection;
+   public NetworkManager getNetworkManager() {
+      return this.networkManager;
    }
 }

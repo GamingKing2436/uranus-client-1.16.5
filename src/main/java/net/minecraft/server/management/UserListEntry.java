@@ -5,20 +5,20 @@ import javax.annotation.Nullable;
 
 public abstract class UserListEntry<T> {
    @Nullable
-   private final T user;
+   private final T value;
 
-   public UserListEntry(@Nullable T p_i1146_1_) {
-      this.user = p_i1146_1_;
+   public UserListEntry(@Nullable T valueIn) {
+      this.value = valueIn;
    }
 
    @Nullable
-   T getUser() {
-      return this.user;
+   T getValue() {
+      return this.value;
    }
 
-   boolean hasExpired() {
+   boolean hasBanExpired() {
       return false;
    }
 
-   protected abstract void serialize(JsonObject p_152641_1_);
+   protected abstract void onSerialization(JsonObject data);
 }

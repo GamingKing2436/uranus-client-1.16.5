@@ -37,34 +37,34 @@ public class Advancement {
    private final Map<String, Criterion> criteria;
    private final String[][] requirements;
    private final Set<Advancement> children = Sets.newLinkedHashSet();
-   private final ITextComponent chatComponent;
+   private final ITextComponent displayText;
 
-   public Advancement(ResourceLocation p_i47472_1_, @Nullable Advancement p_i47472_2_, @Nullable DisplayInfo p_i47472_3_, AdvancementRewards p_i47472_4_, Map<String, Criterion> p_i47472_5_, String[][] p_i47472_6_) {
-      this.id = p_i47472_1_;
-      this.display = p_i47472_3_;
-      this.criteria = ImmutableMap.copyOf(p_i47472_5_);
-      this.parent = p_i47472_2_;
-      this.rewards = p_i47472_4_;
-      this.requirements = p_i47472_6_;
-      if (p_i47472_2_ != null) {
-         p_i47472_2_.addChild(this);
+   public Advancement(ResourceLocation id, @Nullable Advancement parentIn, @Nullable DisplayInfo displayIn, AdvancementRewards rewardsIn, Map<String, Criterion> criteriaIn, String[][] requirementsIn) {
+      this.id = id;
+      this.display = displayIn;
+      this.criteria = ImmutableMap.copyOf(criteriaIn);
+      this.parent = parentIn;
+      this.rewards = rewardsIn;
+      this.requirements = requirementsIn;
+      if (parentIn != null) {
+         parentIn.addChild(this);
       }
 
-      if (p_i47472_3_ == null) {
-         this.chatComponent = new StringTextComponent(p_i47472_1_.toString());
+      if (displayIn == null) {
+         this.displayText = new StringTextComponent(id.toString());
       } else {
-         ITextComponent itextcomponent = p_i47472_3_.getTitle();
-         TextFormatting textformatting = p_i47472_3_.getFrame().getChatColor();
-         ITextComponent itextcomponent1 = TextComponentUtils.mergeStyles(itextcomponent.copy(), Style.EMPTY.withColor(textformatting)).append("\n").append(p_i47472_3_.getDescription());
-         ITextComponent itextcomponent2 = itextcomponent.copy().withStyle((p_211567_1_) -> {
-            return p_211567_1_.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, itextcomponent1));
+         ITextComponent itextcomponent = displayIn.getTitle();
+         TextFormatting textformatting = displayIn.getFrame().getFormat();
+         ITextComponent itextcomponent1 = TextComponentUtils.func_240648_a_(itextcomponent.deepCopy(), Style.EMPTY.setFormatting(textformatting)).appendString("\n").append(displayIn.getDescription());
+         ITextComponent itextcomponent2 = itextcomponent.deepCopy().modifyStyle((p_211567_1_) -> {
+            return p_211567_1_.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, itextcomponent1));
          });
-         this.chatComponent = TextComponentUtils.wrapInSquareBrackets(itextcomponent2).withStyle(textformatting);
+         this.displayText = TextComponentUtils.wrapWithSquareBrackets(itextcomponent2).mergeStyle(textformatting);
       }
 
    }
 
-   public Advancement.Builder deconstruct() {
+   public Advancement.Builder copy() {
       return new Advancement.Builder(this.parent == null ? null : this.parent.getId(), this.display, this.rewards, this.criteria, this.requirements);
    }
 
@@ -95,12 +95,12 @@ public class Advancement {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getMaxCriteraRequired() {
+   public int getRequirementCount() {
       return this.requirements.length;
    }
 
-   public void addChild(Advancement p_192071_1_) {
-      this.children.add(p_192071_1_);
+   public void addChild(Advancement advancementIn) {
+      this.children.add(advancementIn);
    }
 
    public ResourceLocation getId() {
@@ -126,8 +126,8 @@ public class Advancement {
       return this.requirements;
    }
 
-   public ITextComponent getChatComponent() {
-      return this.chatComponent;
+   public ITextComponent getDisplayText() {
+      return this.displayText;
    }
 
    public static class Builder {
@@ -139,85 +139,85 @@ public class Advancement {
       private String[][] requirements;
       private IRequirementsStrategy requirementsStrategy = IRequirementsStrategy.AND;
 
-      private Builder(@Nullable ResourceLocation p_i47414_1_, @Nullable DisplayInfo p_i47414_2_, AdvancementRewards p_i47414_3_, Map<String, Criterion> p_i47414_4_, String[][] p_i47414_5_) {
-         this.parentId = p_i47414_1_;
-         this.display = p_i47414_2_;
-         this.rewards = p_i47414_3_;
-         this.criteria = p_i47414_4_;
-         this.requirements = p_i47414_5_;
+      private Builder(@Nullable ResourceLocation parentIdIn, @Nullable DisplayInfo displayIn, AdvancementRewards rewardsIn, Map<String, Criterion> criteriaIn, String[][] requirementsIn) {
+         this.parentId = parentIdIn;
+         this.display = displayIn;
+         this.rewards = rewardsIn;
+         this.criteria = criteriaIn;
+         this.requirements = requirementsIn;
       }
 
       private Builder() {
       }
 
-      public static Advancement.Builder advancement() {
+      public static Advancement.Builder builder() {
          return new Advancement.Builder();
       }
 
-      public Advancement.Builder parent(Advancement p_203905_1_) {
-         this.parent = p_203905_1_;
+      public Advancement.Builder withParent(Advancement parentIn) {
+         this.parent = parentIn;
          return this;
       }
 
-      public Advancement.Builder parent(ResourceLocation p_200272_1_) {
-         this.parentId = p_200272_1_;
+      public Advancement.Builder withParentId(ResourceLocation parentIdIn) {
+         this.parentId = parentIdIn;
          return this;
       }
 
-      public Advancement.Builder display(ItemStack p_215092_1_, ITextComponent p_215092_2_, ITextComponent p_215092_3_, @Nullable ResourceLocation p_215092_4_, FrameType p_215092_5_, boolean p_215092_6_, boolean p_215092_7_, boolean p_215092_8_) {
-         return this.display(new DisplayInfo(p_215092_1_, p_215092_2_, p_215092_3_, p_215092_4_, p_215092_5_, p_215092_6_, p_215092_7_, p_215092_8_));
+      public Advancement.Builder withDisplay(ItemStack stack, ITextComponent title, ITextComponent description, @Nullable ResourceLocation background, FrameType frame, boolean showToast, boolean announceToChat, boolean hidden) {
+         return this.withDisplay(new DisplayInfo(stack, title, description, background, frame, showToast, announceToChat, hidden));
       }
 
-      public Advancement.Builder display(IItemProvider p_203902_1_, ITextComponent p_203902_2_, ITextComponent p_203902_3_, @Nullable ResourceLocation p_203902_4_, FrameType p_203902_5_, boolean p_203902_6_, boolean p_203902_7_, boolean p_203902_8_) {
-         return this.display(new DisplayInfo(new ItemStack(p_203902_1_.asItem()), p_203902_2_, p_203902_3_, p_203902_4_, p_203902_5_, p_203902_6_, p_203902_7_, p_203902_8_));
+      public Advancement.Builder withDisplay(IItemProvider itemIn, ITextComponent title, ITextComponent description, @Nullable ResourceLocation background, FrameType frame, boolean showToast, boolean announceToChat, boolean hidden) {
+         return this.withDisplay(new DisplayInfo(new ItemStack(itemIn.asItem()), title, description, background, frame, showToast, announceToChat, hidden));
       }
 
-      public Advancement.Builder display(DisplayInfo p_203903_1_) {
-         this.display = p_203903_1_;
+      public Advancement.Builder withDisplay(DisplayInfo displayIn) {
+         this.display = displayIn;
          return this;
       }
 
-      public Advancement.Builder rewards(AdvancementRewards.Builder p_200271_1_) {
-         return this.rewards(p_200271_1_.build());
+      public Advancement.Builder withRewards(AdvancementRewards.Builder rewardsBuilder) {
+         return this.withRewards(rewardsBuilder.build());
       }
 
-      public Advancement.Builder rewards(AdvancementRewards p_200274_1_) {
-         this.rewards = p_200274_1_;
+      public Advancement.Builder withRewards(AdvancementRewards rewards) {
+         this.rewards = rewards;
          return this;
       }
 
-      public Advancement.Builder addCriterion(String p_200275_1_, ICriterionInstance p_200275_2_) {
-         return this.addCriterion(p_200275_1_, new Criterion(p_200275_2_));
+      public Advancement.Builder withCriterion(String key, ICriterionInstance criterionIn) {
+         return this.withCriterion(key, new Criterion(criterionIn));
       }
 
-      public Advancement.Builder addCriterion(String p_200276_1_, Criterion p_200276_2_) {
-         if (this.criteria.containsKey(p_200276_1_)) {
-            throw new IllegalArgumentException("Duplicate criterion " + p_200276_1_);
+      public Advancement.Builder withCriterion(String key, Criterion criterionIn) {
+         if (this.criteria.containsKey(key)) {
+            throw new IllegalArgumentException("Duplicate criterion " + key);
          } else {
-            this.criteria.put(p_200276_1_, p_200276_2_);
+            this.criteria.put(key, criterionIn);
             return this;
          }
       }
 
-      public Advancement.Builder requirements(IRequirementsStrategy p_200270_1_) {
-         this.requirementsStrategy = p_200270_1_;
+      public Advancement.Builder withRequirementsStrategy(IRequirementsStrategy strategy) {
+         this.requirementsStrategy = strategy;
          return this;
       }
 
-      public boolean canBuild(Function<ResourceLocation, Advancement> p_192058_1_) {
+      public boolean resolveParent(Function<ResourceLocation, Advancement> lookup) {
          if (this.parentId == null) {
             return true;
          } else {
             if (this.parent == null) {
-               this.parent = p_192058_1_.apply(this.parentId);
+               this.parent = lookup.apply(this.parentId);
             }
 
             return this.parent != null;
          }
       }
 
-      public Advancement build(ResourceLocation p_192056_1_) {
-         if (!this.canBuild((p_199750_0_) -> {
+      public Advancement build(ResourceLocation id) {
+         if (!this.resolveParent((p_199750_0_) -> {
             return null;
          })) {
             throw new IllegalStateException("Tried to build incomplete advancement!");
@@ -226,17 +226,17 @@ public class Advancement {
                this.requirements = this.requirementsStrategy.createRequirements(this.criteria.keySet());
             }
 
-            return new Advancement(p_192056_1_, this.parent, this.display, this.rewards, this.criteria, this.requirements);
+            return new Advancement(id, this.parent, this.display, this.rewards, this.criteria, this.requirements);
          }
       }
 
-      public Advancement save(Consumer<Advancement> p_203904_1_, String p_203904_2_) {
-         Advancement advancement = this.build(new ResourceLocation(p_203904_2_));
-         p_203904_1_.accept(advancement);
+      public Advancement register(Consumer<Advancement> consumer, String id) {
+         Advancement advancement = this.build(new ResourceLocation(id));
+         consumer.accept(advancement);
          return advancement;
       }
 
-      public JsonObject serializeToJson() {
+      public JsonObject serialize() {
          if (this.requirements == null) {
             this.requirements = this.requirementsStrategy.createRequirements(this.criteria.keySet());
          }
@@ -249,14 +249,14 @@ public class Advancement {
          }
 
          if (this.display != null) {
-            jsonobject.add("display", this.display.serializeToJson());
+            jsonobject.add("display", this.display.serialize());
          }
 
-         jsonobject.add("rewards", this.rewards.serializeToJson());
+         jsonobject.add("rewards", this.rewards.serialize());
          JsonObject jsonobject1 = new JsonObject();
 
          for(Entry<String, Criterion> entry : this.criteria.entrySet()) {
-            jsonobject1.add(entry.getKey(), entry.getValue().serializeToJson());
+            jsonobject1.add(entry.getKey(), entry.getValue().serialize());
          }
 
          jsonobject.add("criteria", jsonobject1);
@@ -276,29 +276,29 @@ public class Advancement {
          return jsonobject;
       }
 
-      public void serializeToNetwork(PacketBuffer p_192057_1_) {
+      public void writeTo(PacketBuffer buf) {
          if (this.parentId == null) {
-            p_192057_1_.writeBoolean(false);
+            buf.writeBoolean(false);
          } else {
-            p_192057_1_.writeBoolean(true);
-            p_192057_1_.writeResourceLocation(this.parentId);
+            buf.writeBoolean(true);
+            buf.writeResourceLocation(this.parentId);
          }
 
          if (this.display == null) {
-            p_192057_1_.writeBoolean(false);
+            buf.writeBoolean(false);
          } else {
-            p_192057_1_.writeBoolean(true);
-            this.display.serializeToNetwork(p_192057_1_);
+            buf.writeBoolean(true);
+            this.display.write(buf);
          }
 
-         Criterion.serializeToNetwork(this.criteria, p_192057_1_);
-         p_192057_1_.writeVarInt(this.requirements.length);
+         Criterion.serializeToNetwork(this.criteria, buf);
+         buf.writeVarInt(this.requirements.length);
 
          for(String[] astring : this.requirements) {
-            p_192057_1_.writeVarInt(astring.length);
+            buf.writeVarInt(astring.length);
 
             for(String s : astring) {
-               p_192057_1_.writeUtf(s);
+               buf.writeString(s);
             }
          }
 
@@ -308,23 +308,23 @@ public class Advancement {
          return "Task Advancement{parentId=" + this.parentId + ", display=" + this.display + ", rewards=" + this.rewards + ", criteria=" + this.criteria + ", requirements=" + Arrays.deepToString(this.requirements) + '}';
       }
 
-      public static Advancement.Builder fromJson(JsonObject p_241043_0_, ConditionArrayParser p_241043_1_) {
-         ResourceLocation resourcelocation = p_241043_0_.has("parent") ? new ResourceLocation(JSONUtils.getAsString(p_241043_0_, "parent")) : null;
-         DisplayInfo displayinfo = p_241043_0_.has("display") ? DisplayInfo.fromJson(JSONUtils.getAsJsonObject(p_241043_0_, "display")) : null;
-         AdvancementRewards advancementrewards = p_241043_0_.has("rewards") ? AdvancementRewards.deserialize(JSONUtils.getAsJsonObject(p_241043_0_, "rewards")) : AdvancementRewards.EMPTY;
-         Map<String, Criterion> map = Criterion.criteriaFromJson(JSONUtils.getAsJsonObject(p_241043_0_, "criteria"), p_241043_1_);
+      public static Advancement.Builder deserialize(JsonObject json, ConditionArrayParser conditionParser) {
+         ResourceLocation resourcelocation = json.has("parent") ? new ResourceLocation(JSONUtils.getString(json, "parent")) : null;
+         DisplayInfo displayinfo = json.has("display") ? DisplayInfo.deserialize(JSONUtils.getJsonObject(json, "display")) : null;
+         AdvancementRewards advancementrewards = json.has("rewards") ? AdvancementRewards.deserializeRewards(JSONUtils.getJsonObject(json, "rewards")) : AdvancementRewards.EMPTY;
+         Map<String, Criterion> map = Criterion.deserializeAll(JSONUtils.getJsonObject(json, "criteria"), conditionParser);
          if (map.isEmpty()) {
             throw new JsonSyntaxException("Advancement criteria cannot be empty");
          } else {
-            JsonArray jsonarray = JSONUtils.getAsJsonArray(p_241043_0_, "requirements", new JsonArray());
+            JsonArray jsonarray = JSONUtils.getJsonArray(json, "requirements", new JsonArray());
             String[][] astring = new String[jsonarray.size()][];
 
             for(int i = 0; i < jsonarray.size(); ++i) {
-               JsonArray jsonarray1 = JSONUtils.convertToJsonArray(jsonarray.get(i), "requirements[" + i + "]");
+               JsonArray jsonarray1 = JSONUtils.getJsonArray(jsonarray.get(i), "requirements[" + i + "]");
                astring[i] = new String[jsonarray1.size()];
 
                for(int j = 0; j < jsonarray1.size(); ++j) {
-                  astring[i][j] = JSONUtils.convertToString(jsonarray1.get(j), "requirements[" + i + "][" + j + "]");
+                  astring[i][j] = JSONUtils.getString(jsonarray1.get(j), "requirements[" + i + "][" + j + "]");
                }
             }
 
@@ -368,17 +368,17 @@ public class Advancement {
          }
       }
 
-      public static Advancement.Builder fromNetwork(PacketBuffer p_192060_0_) {
-         ResourceLocation resourcelocation = p_192060_0_.readBoolean() ? p_192060_0_.readResourceLocation() : null;
-         DisplayInfo displayinfo = p_192060_0_.readBoolean() ? DisplayInfo.fromNetwork(p_192060_0_) : null;
-         Map<String, Criterion> map = Criterion.criteriaFromNetwork(p_192060_0_);
-         String[][] astring = new String[p_192060_0_.readVarInt()][];
+      public static Advancement.Builder readFrom(PacketBuffer buf) {
+         ResourceLocation resourcelocation = buf.readBoolean() ? buf.readResourceLocation() : null;
+         DisplayInfo displayinfo = buf.readBoolean() ? DisplayInfo.read(buf) : null;
+         Map<String, Criterion> map = Criterion.criteriaFromNetwork(buf);
+         String[][] astring = new String[buf.readVarInt()][];
 
          for(int i = 0; i < astring.length; ++i) {
-            astring[i] = new String[p_192060_0_.readVarInt()];
+            astring[i] = new String[buf.readVarInt()];
 
             for(int j = 0; j < astring[i].length; ++j) {
-               astring[i][j] = p_192060_0_.readUtf(32767);
+               astring[i][j] = buf.readString(32767);
             }
          }
 

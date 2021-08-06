@@ -45,8 +45,8 @@ public class LeavesFix extends DataFix {
    });
    private static final Set<String> LOGS = ImmutableSet.of("minecraft:acacia_bark", "minecraft:birch_bark", "minecraft:dark_oak_bark", "minecraft:jungle_bark", "minecraft:oak_bark", "minecraft:spruce_bark", "minecraft:acacia_log", "minecraft:birch_log", "minecraft:dark_oak_log", "minecraft:jungle_log", "minecraft:oak_log", "minecraft:spruce_log", "minecraft:stripped_acacia_log", "minecraft:stripped_birch_log", "minecraft:stripped_dark_oak_log", "minecraft:stripped_jungle_log", "minecraft:stripped_oak_log", "minecraft:stripped_spruce_log");
 
-   public LeavesFix(Schema p_i49629_1_, boolean p_i49629_2_) {
-      super(p_i49629_1_, p_i49629_2_);
+   public LeavesFix(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    protected TypeRewriteRule makeRule() {
@@ -188,37 +188,37 @@ public class LeavesFix extends DataFix {
 
    public static final class LeavesSection extends LeavesFix.Section {
       @Nullable
-      private IntSet leaveIds;
+      private IntSet field_212523_f;
       @Nullable
-      private IntSet logIds;
+      private IntSet field_212524_g;
       @Nullable
-      private Int2IntMap stateToIdMap;
+      private Int2IntMap field_212525_h;
 
       public LeavesSection(Typed<?> p_i49851_1_, Schema p_i49851_2_) {
          super(p_i49851_1_, p_i49851_2_);
       }
 
-      protected boolean skippable() {
-         this.leaveIds = new IntOpenHashSet();
-         this.logIds = new IntOpenHashSet();
-         this.stateToIdMap = new Int2IntOpenHashMap();
+      protected boolean func_212508_a() {
+         this.field_212523_f = new IntOpenHashSet();
+         this.field_212524_g = new IntOpenHashSet();
+         this.field_212525_h = new Int2IntOpenHashMap();
 
          for(int i = 0; i < this.palette.size(); ++i) {
             Dynamic<?> dynamic = this.palette.get(i);
             String s = dynamic.get("Name").asString("");
             if (LeavesFix.LEAVES.containsKey(s)) {
                boolean flag = Objects.equals(dynamic.get("Properties").get("decayable").asString(""), "false");
-               this.leaveIds.add(i);
-               this.stateToIdMap.put(this.getStateId(s, flag, 7), i);
+               this.field_212523_f.add(i);
+               this.field_212525_h.put(this.getStateId(s, flag, 7), i);
                this.palette.set(i, this.makeLeafTag(dynamic, s, flag, 7));
             }
 
             if (LeavesFix.LOGS.contains(s)) {
-               this.logIds.add(i);
+               this.field_212524_g.add(i);
             }
          }
 
-         return this.leaveIds.isEmpty() && this.logIds.isEmpty();
+         return this.field_212523_f.isEmpty() && this.field_212524_g.isEmpty();
       }
 
       private Dynamic<?> makeLeafTag(Dynamic<?> p_209770_1_, String p_209770_2_, boolean p_209770_3_, int p_209770_4_) {
@@ -231,11 +231,11 @@ public class LeavesFix extends DataFix {
       }
 
       public boolean isLog(int p_208457_1_) {
-         return this.logIds.contains(p_208457_1_);
+         return this.field_212524_g.contains(p_208457_1_);
       }
 
       public boolean isLeaf(int p_208460_1_) {
-         return this.leaveIds.contains(p_208460_1_);
+         return this.field_212523_f.contains(p_208460_1_);
       }
 
       private int getDistance(int p_208459_1_) {
@@ -247,25 +247,25 @@ public class LeavesFix extends DataFix {
          String s = dynamic.get("Name").asString("");
          boolean flag = Objects.equals(dynamic.get("Properties").get("persistent").asString(""), "true");
          int i = this.getStateId(s, flag, p_208454_3_);
-         if (!this.stateToIdMap.containsKey(i)) {
+         if (!this.field_212525_h.containsKey(i)) {
             int j = this.palette.size();
-            this.leaveIds.add(j);
-            this.stateToIdMap.put(i, j);
+            this.field_212523_f.add(j);
+            this.field_212525_h.put(i, j);
             this.palette.add(this.makeLeafTag(dynamic, s, flag, p_208454_3_));
          }
 
-         int l = this.stateToIdMap.get(i);
-         if (1 << this.storage.getBits() <= l) {
-            ArbitraryBitLengthIntArray arbitrarybitlengthintarray = new ArbitraryBitLengthIntArray(this.storage.getBits() + 1, 4096);
+         int l = this.field_212525_h.get(i);
+         if (1 << this.storage.func_233050_b_() <= l) {
+            ArbitraryBitLengthIntArray arbitrarybitlengthintarray = new ArbitraryBitLengthIntArray(this.storage.func_233050_b_() + 1, 4096);
 
             for(int k = 0; k < 4096; ++k) {
-               arbitrarybitlengthintarray.set(k, this.storage.get(k));
+               arbitrarybitlengthintarray.func_233049_a_(k, this.storage.func_233048_a_(k));
             }
 
             this.storage = arbitrarybitlengthintarray;
          }
 
-         this.storage.set(p_208454_1_, l);
+         this.storage.func_233049_a_(p_208454_1_, l);
       }
    }
 
@@ -287,12 +287,12 @@ public class LeavesFix extends DataFix {
             }).orElse(ImmutableList.of());
             Dynamic<?> dynamic = p_i49850_1_.get(DSL.remainderFinder());
             this.index = dynamic.get("Y").asInt(0);
-            this.readStorage(dynamic);
+            this.func_212507_a(dynamic);
          }
       }
 
-      protected void readStorage(Dynamic<?> p_212507_1_) {
-         if (this.skippable()) {
+      protected void func_212507_a(Dynamic<?> p_212507_1_) {
+         if (this.func_212508_a()) {
             this.storage = null;
          } else {
             long[] along = p_212507_1_.get("BlockStates").asLongStream().toArray();
@@ -304,7 +304,7 @@ public class LeavesFix extends DataFix {
 
       public Typed<?> write(Typed<?> p_208465_1_) {
          return this.isSkippable() ? p_208465_1_ : p_208465_1_.update(DSL.remainderFinder(), (p_212510_1_) -> {
-            return p_212510_1_.set("BlockStates", p_212510_1_.createLongList(Arrays.stream(this.storage.getRaw())));
+            return p_212510_1_.set("BlockStates", p_212510_1_.createLongList(Arrays.stream(this.storage.func_233047_a_())));
          }).set(this.paletteFinder, this.palette.stream().<Pair<String, Dynamic<?>>>map((p_212509_0_) -> {
             return Pair.of(TypeReferences.BLOCK_STATE.typeName(), p_212509_0_);
          }).collect(Collectors.toList()));
@@ -315,7 +315,7 @@ public class LeavesFix extends DataFix {
       }
 
       public int getBlock(int p_208453_1_) {
-         return this.storage.get(p_208453_1_);
+         return this.storage.func_233048_a_(p_208453_1_);
       }
 
       protected int getStateId(String p_208464_1_, boolean p_208464_2_, int p_208464_3_) {
@@ -326,6 +326,6 @@ public class LeavesFix extends DataFix {
          return this.index;
       }
 
-      protected abstract boolean skippable();
+      protected abstract boolean func_212508_a();
    }
 }

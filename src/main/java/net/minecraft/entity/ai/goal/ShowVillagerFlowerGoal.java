@@ -6,43 +6,43 @@ import net.minecraft.entity.merchant.villager.VillagerEntity;
 import net.minecraft.entity.passive.IronGolemEntity;
 
 public class ShowVillagerFlowerGoal extends Goal {
-   private static final EntityPredicate OFFER_TARGER_CONTEXT = (new EntityPredicate()).range(6.0D).allowSameTeam().allowInvulnerable();
-   private final IronGolemEntity golem;
+   private static final EntityPredicate field_220738_a = (new EntityPredicate()).setDistance(6.0D).allowFriendlyFire().allowInvulnerable();
+   private final IronGolemEntity ironGolem;
    private VillagerEntity villager;
-   private int tick;
+   private int lookTime;
 
-   public ShowVillagerFlowerGoal(IronGolemEntity p_i1643_1_) {
-      this.golem = p_i1643_1_;
-      this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+   public ShowVillagerFlowerGoal(IronGolemEntity ironGolemIn) {
+      this.ironGolem = ironGolemIn;
+      this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
    }
 
-   public boolean canUse() {
-      if (!this.golem.level.isDay()) {
+   public boolean shouldExecute() {
+      if (!this.ironGolem.world.isDaytime()) {
          return false;
-      } else if (this.golem.getRandom().nextInt(8000) != 0) {
+      } else if (this.ironGolem.getRNG().nextInt(8000) != 0) {
          return false;
       } else {
-         this.villager = this.golem.level.getNearestEntity(VillagerEntity.class, OFFER_TARGER_CONTEXT, this.golem, this.golem.getX(), this.golem.getY(), this.golem.getZ(), this.golem.getBoundingBox().inflate(6.0D, 2.0D, 6.0D));
+         this.villager = this.ironGolem.world.getClosestEntityWithinAABB(VillagerEntity.class, field_220738_a, this.ironGolem, this.ironGolem.getPosX(), this.ironGolem.getPosY(), this.ironGolem.getPosZ(), this.ironGolem.getBoundingBox().grow(6.0D, 2.0D, 6.0D));
          return this.villager != null;
       }
    }
 
-   public boolean canContinueToUse() {
-      return this.tick > 0;
+   public boolean shouldContinueExecuting() {
+      return this.lookTime > 0;
    }
 
-   public void start() {
-      this.tick = 400;
-      this.golem.offerFlower(true);
+   public void startExecuting() {
+      this.lookTime = 400;
+      this.ironGolem.setHoldingRose(true);
    }
 
-   public void stop() {
-      this.golem.offerFlower(false);
+   public void resetTask() {
+      this.ironGolem.setHoldingRose(false);
       this.villager = null;
    }
 
    public void tick() {
-      this.golem.getLookControl().setLookAt(this.villager, 30.0F, 30.0F);
-      --this.tick;
+      this.ironGolem.getLookController().setLookPositionWithEntity(this.villager, 30.0F, 30.0F);
+      --this.lookTime;
    }
 }

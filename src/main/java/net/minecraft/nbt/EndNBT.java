@@ -8,8 +8,8 @@ import net.minecraft.util.text.StringTextComponent;
 
 public class EndNBT implements INBT {
    public static final INBTType<EndNBT> TYPE = new INBTType<EndNBT>() {
-      public EndNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) {
-         p_225649_3_.accountBits(64L);
+      public EndNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) {
+         accounter.read(64L);
          return EndNBT.INSTANCE;
       }
 
@@ -17,11 +17,11 @@ public class EndNBT implements INBT {
          return "END";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_End";
       }
 
-      public boolean isValue() {
+      public boolean isPrimitive() {
          return true;
       }
    };
@@ -30,7 +30,7 @@ public class EndNBT implements INBT {
    private EndNBT() {
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
+   public void write(DataOutput output) throws IOException {
    }
 
    public byte getId() {
@@ -49,7 +49,7 @@ public class EndNBT implements INBT {
       return this;
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
       return StringTextComponent.EMPTY;
    }
 }

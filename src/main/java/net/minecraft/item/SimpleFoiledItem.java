@@ -1,11 +1,11 @@
 package net.minecraft.item;
 
 public class SimpleFoiledItem extends Item {
-   public SimpleFoiledItem(Item.Properties p_i48467_1_) {
-      super(p_i48467_1_);
+   public SimpleFoiledItem(Item.Properties builder) {
+      super(builder);
    }
 
-   public boolean isFoil(ItemStack p_77636_1_) {
+   public boolean hasEffect(ItemStack stack) {
       return true;
    }
 }

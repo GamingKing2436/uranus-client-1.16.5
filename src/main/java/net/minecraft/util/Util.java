@@ -62,39 +62,39 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class Util {
-   private static final AtomicInteger WORKER_COUNT = new AtomicInteger(1);
-   private static final ExecutorService BOOTSTRAP_EXECUTOR = makeExecutor("Bootstrap");
-   private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
-   private static final ExecutorService IO_POOL = makeIoExecutor();
-   public static LongSupplier timeSource = System::nanoTime;
-   public static final UUID NIL_UUID = new UUID(0L, 0L);
+   private static final AtomicInteger NEXT_SERVER_WORKER_ID = new AtomicInteger(1);
+   private static final ExecutorService BOOTSTRAP_SERVICE = createNamedService("Bootstrap");
+   private static final ExecutorService SERVER_EXECUTOR = createNamedService("Main");
+   private static final ExecutorService RENDERING_SERVICE = startThreadedService();
+   public static LongSupplier nanoTimeSupplier = System::nanoTime;
+   public static final UUID DUMMY_UUID = new UUID(0L, 0L);
    private static final Logger LOGGER = LogManager.getLogger();
 
-   public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> toMap() {
+   public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> toMapCollector() {
       return Collectors.toMap(Entry::getKey, Entry::getValue);
    }
 
-   public static <T extends Comparable<T>> String getPropertyName(Property<T> p_200269_0_, Object p_200269_1_) {
-      return p_200269_0_.getName((T)(p_200269_1_));
+   public static <T extends Comparable<T>> String getValueName(Property<T> property, Object value) {
+      return property.getName((T)(value));
    }
 
-   public static String makeDescriptionId(String p_200697_0_, @Nullable ResourceLocation p_200697_1_) {
-      return p_200697_1_ == null ? p_200697_0_ + ".unregistered_sadface" : p_200697_0_ + '.' + p_200697_1_.getNamespace() + '.' + p_200697_1_.getPath().replace('/', '.');
+   public static String makeTranslationKey(String type, @Nullable ResourceLocation id) {
+      return id == null ? type + ".unregistered_sadface" : type + '.' + id.getNamespace() + '.' + id.getPath().replace('/', '.');
    }
 
-   public static long getMillis() {
-      return getNanos() / 1000000L;
+   public static long milliTime() {
+      return nanoTime() / 1000000L;
    }
 
-   public static long getNanos() {
-      return timeSource.getAsLong();
+   public static long nanoTime() {
+      return nanoTimeSupplier.getAsLong();
    }
 
-   public static long getEpochMillis() {
+   public static long millisecondsSinceEpoch() {
       return Instant.now().toEpochMilli();
    }
 
-   private static ExecutorService makeExecutor(String p_240979_0_) {
+   private static ExecutorService createNamedService(String serviceName) {
       int i = MathHelper.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, 7);
       ExecutorService executorservice;
       if (i <= 0) {
@@ -112,32 +112,32 @@ public class Util {
                   super.onTermination(p_onTermination_1_);
                }
             };
-            forkjoinworkerthread.setName("Worker-" + p_240979_0_ + "-" + WORKER_COUNT.getAndIncrement());
+            forkjoinworkerthread.setName("Worker-" + serviceName + "-" + NEXT_SERVER_WORKER_ID.getAndIncrement());
             return forkjoinworkerthread;
-         }, Util::onThreadException, true);
+         }, Util::printException, true);
       }
 
       return executorservice;
    }
 
-   public static Executor bootstrapExecutor() {
-      return BOOTSTRAP_EXECUTOR;
+   public static Executor getBootstrapService() {
+      return BOOTSTRAP_SERVICE;
    }
 
-   public static Executor backgroundExecutor() {
-      return BACKGROUND_EXECUTOR;
+   public static Executor getServerExecutor() {
+      return SERVER_EXECUTOR;
    }
 
-   public static Executor ioPool() {
-      return IO_POOL;
+   public static Executor getRenderingService() {
+      return RENDERING_SERVICE;
    }
 
-   public static void shutdownExecutors() {
-      shutdownExecutor(BACKGROUND_EXECUTOR);
-      shutdownExecutor(IO_POOL);
+   public static void shutdown() {
+      shutdownService(SERVER_EXECUTOR);
+      shutdownService(RENDERING_SERVICE);
    }
 
-   private static void shutdownExecutor(ExecutorService p_240985_0_) {
+   private static void shutdownService(ExecutorService p_240985_0_) {
       p_240985_0_.shutdown();
 
       boolean flag;
@@ -153,55 +153,55 @@ public class Util {
 
    }
 
-   private static ExecutorService makeIoExecutor() {
+   private static ExecutorService startThreadedService() {
       return Executors.newCachedThreadPool((p_240978_0_) -> {
          Thread thread = new Thread(p_240978_0_);
-         thread.setName("IO-Worker-" + WORKER_COUNT.getAndIncrement());
-         thread.setUncaughtExceptionHandler(Util::onThreadException);
+         thread.setName("IO-Worker-" + NEXT_SERVER_WORKER_ID.getAndIncrement());
+         thread.setUncaughtExceptionHandler(Util::printException);
          return thread;
       });
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static <T> CompletableFuture<T> failedFuture(Throwable p_215087_0_) {
+   public static <T> CompletableFuture<T> completedExceptionallyFuture(Throwable throwableIn) {
       CompletableFuture<T> completablefuture = new CompletableFuture<>();
-      completablefuture.completeExceptionally(p_215087_0_);
+      completablefuture.completeExceptionally(throwableIn);
       return completablefuture;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static void throwAsRuntime(Throwable p_229756_0_) {
-      throw p_229756_0_ instanceof RuntimeException ? (RuntimeException)p_229756_0_ : new RuntimeException(p_229756_0_);
+   public static void toRuntimeException(Throwable throwableIn) {
+      throw throwableIn instanceof RuntimeException ? (RuntimeException)throwableIn : new RuntimeException(throwableIn);
    }
 
-   private static void onThreadException(Thread p_240983_0_, Throwable p_240983_1_) {
-      pauseInIde(p_240983_1_);
-      if (p_240983_1_ instanceof CompletionException) {
-         p_240983_1_ = p_240983_1_.getCause();
+   private static void printException(Thread thread, Throwable throwable) {
+      pauseDevMode(throwable);
+      if (throwable instanceof CompletionException) {
+         throwable = throwable.getCause();
       }
 
-      if (p_240983_1_ instanceof ReportedException) {
-         Bootstrap.realStdoutPrintln(((ReportedException)p_240983_1_).getReport().getFriendlyReport());
+      if (throwable instanceof ReportedException) {
+         Bootstrap.printToSYSOUT(((ReportedException)throwable).getCrashReport().getCompleteReport());
          System.exit(-1);
       }
 
-      LOGGER.error(String.format("Caught exception in thread %s", p_240983_0_), p_240983_1_);
+      LOGGER.error(String.format("Caught exception in thread %s", thread), throwable);
    }
 
    @Nullable
-   public static Type<?> fetchChoiceType(TypeReference p_240976_0_, String p_240976_1_) {
-      return !SharedConstants.CHECK_DATA_FIXER_SCHEMA ? null : doFetchChoiceType(p_240976_0_, p_240976_1_);
+   public static Type<?> attemptDataFix(TypeReference type, String choiceName) {
+      return !SharedConstants.useDatafixers ? null : attemptDataFixInternal(type, choiceName);
    }
 
    @Nullable
-   private static Type<?> doFetchChoiceType(TypeReference p_240990_0_, String p_240990_1_) {
+   private static Type<?> attemptDataFixInternal(TypeReference typeIn, String choiceName) {
       Type<?> type = null;
 
       try {
-         type = DataFixesManager.getDataFixer().getSchema(DataFixUtils.makeKey(SharedConstants.getCurrentVersion().getWorldVersion())).getChoiceType(p_240990_0_, p_240990_1_);
+         type = DataFixesManager.getDataFixer().getSchema(DataFixUtils.makeKey(SharedConstants.getVersion().getWorldVersion())).getChoiceType(typeIn, choiceName);
       } catch (IllegalArgumentException illegalargumentexception) {
-         LOGGER.error("No data fixer registered for {}", (Object)p_240990_1_);
-         if (SharedConstants.IS_RUNNING_IN_IDE) {
+         LOGGER.error("No data fixer registered for {}", (Object)choiceName);
+         if (SharedConstants.developmentMode) {
             throw illegalargumentexception;
          }
       }
@@ -209,7 +209,7 @@ public class Util {
       return type;
    }
 
-   public static Util.OS getPlatform() {
+   public static Util.OS getOSType() {
       String s = System.getProperty("os.name").toLowerCase(Locale.ROOT);
       if (s.contains("win")) {
          return Util.OS.WINDOWS;
@@ -226,24 +226,24 @@ public class Util {
       }
    }
 
-   public static Stream<String> getVmArguments() {
+   public static Stream<String> getJvmFlags() {
       RuntimeMXBean runtimemxbean = ManagementFactory.getRuntimeMXBean();
       return runtimemxbean.getInputArguments().stream().filter((p_211566_0_) -> {
          return p_211566_0_.startsWith("-X");
       });
    }
 
-   public static <T> T lastOf(List<T> p_223378_0_) {
-      return p_223378_0_.get(p_223378_0_.size() - 1);
+   public static <T> T getLast(List<T> listIn) {
+      return listIn.get(listIn.size() - 1);
    }
 
-   public static <T> T findNextInIterable(Iterable<T> p_195647_0_, @Nullable T p_195647_1_) {
-      Iterator<T> iterator = p_195647_0_.iterator();
+   public static <T> T getElementAfter(Iterable<T> iterable, @Nullable T element) {
+      Iterator<T> iterator = iterable.iterator();
       T t = iterator.next();
-      if (p_195647_1_ != null) {
+      if (element != null) {
          T t1 = t;
 
-         while(t1 != p_195647_1_) {
+         while(t1 != element) {
             if (iterator.hasNext()) {
                t1 = iterator.next();
             }
@@ -257,16 +257,16 @@ public class Util {
       return t;
    }
 
-   public static <T> T findPreviousInIterable(Iterable<T> p_195648_0_, @Nullable T p_195648_1_) {
-      Iterator<T> iterator = p_195648_0_.iterator();
+   public static <T> T getElementBefore(Iterable<T> iterable, @Nullable T current) {
+      Iterator<T> iterator = iterable.iterator();
 
       T t;
       T t1;
       for(t = null; iterator.hasNext(); t = t1) {
          t1 = iterator.next();
-         if (t1 == p_195648_1_) {
+         if (t1 == current) {
             if (t == null) {
-               t = (T)(iterator.hasNext() ? Iterators.getLast(iterator) : p_195648_1_);
+               t = (T)(iterator.hasNext() ? Iterators.getLast(iterator) : current);
             }
             break;
          }
@@ -275,24 +275,24 @@ public class Util {
       return t;
    }
 
-   public static <T> T make(Supplier<T> p_199748_0_) {
-      return p_199748_0_.get();
+   public static <T> T make(Supplier<T> supplier) {
+      return supplier.get();
    }
 
-   public static <T> T make(T p_200696_0_, Consumer<T> p_200696_1_) {
-      p_200696_1_.accept(p_200696_0_);
-      return p_200696_0_;
+   public static <T> T make(T object, Consumer<T> consumer) {
+      consumer.accept(object);
+      return object;
    }
 
-   public static <K> Strategy<K> identityStrategy() {
+   public static <K> Strategy<K> identityHashStrategy() {
       return (Strategy<K>)Util.IdentityStrategy.INSTANCE;
    }
 
-   public static <V> CompletableFuture<List<V>> sequence(List<? extends CompletableFuture<? extends V>> p_215079_0_) {
-      List<V> list = Lists.newArrayListWithCapacity(p_215079_0_.size());
-      CompletableFuture<?>[] completablefuture = new CompletableFuture[p_215079_0_.size()];
+   public static <V> CompletableFuture<List<V>> gather(List<? extends CompletableFuture<? extends V>> futuresIn) {
+      List<V> list = Lists.newArrayListWithCapacity(futuresIn.size());
+      CompletableFuture<?>[] completablefuture = new CompletableFuture[futuresIn.size()];
       CompletableFuture<Void> completablefuture1 = new CompletableFuture<>();
-      p_215079_0_.forEach((p_215083_3_) -> {
+      futuresIn.forEach((p_215083_3_) -> {
          int i = list.size();
          list.add((V)null);
          completablefuture[i] = p_215083_3_.whenComplete((p_215085_3_, p_215085_4_) -> {
@@ -309,58 +309,58 @@ public class Util {
       });
    }
 
-   public static <T> Stream<T> toStream(Optional<? extends T> p_215081_0_) {
-      return DataFixUtils.orElseGet(p_215081_0_.map(Stream::of), Stream::empty);
+   public static <T> Stream<T> streamOptional(Optional<? extends T> optionalIn) {
+      return DataFixUtils.orElseGet(optionalIn.map(Stream::of), Stream::empty);
    }
 
-   public static <T> Optional<T> ifElse(Optional<T> p_215077_0_, Consumer<T> p_215077_1_, Runnable p_215077_2_) {
-      if (p_215077_0_.isPresent()) {
-         p_215077_1_.accept(p_215077_0_.get());
+   public static <T> Optional<T> acceptOrElse(Optional<T> opt, Consumer<T> consumer, Runnable orElse) {
+      if (opt.isPresent()) {
+         consumer.accept(opt.get());
       } else {
-         p_215077_2_.run();
+         orElse.run();
       }
 
-      return p_215077_0_;
+      return opt;
    }
 
-   public static Runnable name(Runnable p_215075_0_, Supplier<String> p_215075_1_) {
-      return p_215075_0_;
+   public static Runnable namedRunnable(Runnable runnableIn, Supplier<String> supplierIn) {
+      return runnableIn;
    }
 
-   public static <T extends Throwable> T pauseInIde(T p_229757_0_) {
-      if (SharedConstants.IS_RUNNING_IN_IDE) {
-         LOGGER.error("Trying to throw a fatal exception, pausing in IDE", p_229757_0_);
+   public static <T extends Throwable> T pauseDevMode(T throwableIn) {
+      if (SharedConstants.developmentMode) {
+         LOGGER.error("Trying to throw a fatal exception, pausing in IDE", throwableIn);
 
          while(true) {
             try {
                Thread.sleep(1000L);
                LOGGER.error("paused");
             } catch (InterruptedException interruptedexception) {
-               return p_229757_0_;
+               return throwableIn;
             }
          }
       } else {
-         return p_229757_0_;
+         return throwableIn;
       }
    }
 
-   public static String describeError(Throwable p_229758_0_) {
-      if (p_229758_0_.getCause() != null) {
-         return describeError(p_229758_0_.getCause());
+   public static String getMessage(Throwable throwableIn) {
+      if (throwableIn.getCause() != null) {
+         return getMessage(throwableIn.getCause());
       } else {
-         return p_229758_0_.getMessage() != null ? p_229758_0_.getMessage() : p_229758_0_.toString();
+         return throwableIn.getMessage() != null ? throwableIn.getMessage() : throwableIn.toString();
       }
    }
 
-   public static <T> T getRandom(T[] p_240989_0_, Random p_240989_1_) {
-      return p_240989_0_[p_240989_1_.nextInt(p_240989_0_.length)];
+   public static <T> T getRandomObject(T[] selections, Random rand) {
+      return selections[rand.nextInt(selections.length)];
    }
 
-   public static int getRandom(int[] p_240988_0_, Random p_240988_1_) {
-      return p_240988_0_[p_240988_1_.nextInt(p_240988_0_.length)];
+   public static int getRandomInt(int[] selections, Random rand) {
+      return selections[rand.nextInt(selections.length)];
    }
 
-   private static BooleanSupplier createRenamer(final Path p_244363_0_, final Path p_244363_1_) {
+   private static BooleanSupplier func_244363_a(final Path p_244363_0_, final Path p_244363_1_) {
       return new BooleanSupplier() {
          public boolean getAsBoolean() {
             try {
@@ -378,7 +378,7 @@ public class Util {
       };
    }
 
-   private static BooleanSupplier createDeleter(final Path p_244362_0_) {
+   private static BooleanSupplier func_244362_a(final Path p_244362_0_) {
       return new BooleanSupplier() {
          public boolean getAsBoolean() {
             try {
@@ -396,7 +396,7 @@ public class Util {
       };
    }
 
-   private static BooleanSupplier createFileDeletedCheck(final Path p_244366_0_) {
+   private static BooleanSupplier func_244366_b(final Path p_244366_0_) {
       return new BooleanSupplier() {
          public boolean getAsBoolean() {
             return !Files.exists(p_244366_0_);
@@ -408,7 +408,7 @@ public class Util {
       };
    }
 
-   private static BooleanSupplier createFileCreatedCheck(final Path p_244367_0_) {
+   private static BooleanSupplier func_244367_c(final Path p_244367_0_) {
       return new BooleanSupplier() {
          public boolean getAsBoolean() {
             return Files.isRegularFile(p_244367_0_);
@@ -420,7 +420,7 @@ public class Util {
       };
    }
 
-   private static boolean executeInSequence(BooleanSupplier... p_244365_0_) {
+   private static boolean func_244365_a(BooleanSupplier... p_244365_0_) {
       for(BooleanSupplier booleansupplier : p_244365_0_) {
          if (!booleansupplier.getAsBoolean()) {
             LOGGER.warn("Failed to execute {}", (Object)booleansupplier);
@@ -431,9 +431,9 @@ public class Util {
       return true;
    }
 
-   private static boolean runWithRetries(int p_244359_0_, String p_244359_1_, BooleanSupplier... p_244359_2_) {
+   private static boolean func_244359_a(int p_244359_0_, String p_244359_1_, BooleanSupplier... p_244359_2_) {
       for(int i = 0; i < p_244359_0_; ++i) {
-         if (executeInSequence(p_244359_2_)) {
+         if (func_244365_a(p_244359_2_)) {
             return true;
          }
 
@@ -444,16 +444,16 @@ public class Util {
       return false;
    }
 
-   public static void safeReplaceFile(File p_240977_0_, File p_240977_1_, File p_240977_2_) {
-      safeReplaceFile(p_240977_0_.toPath(), p_240977_1_.toPath(), p_240977_2_.toPath());
+   public static void backupThenUpdate(File current, File latest, File oldBackup) {
+      func_244364_a(current.toPath(), latest.toPath(), oldBackup.toPath());
    }
 
-   public static void safeReplaceFile(Path p_244364_0_, Path p_244364_1_, Path p_244364_2_) {
+   public static void func_244364_a(Path p_244364_0_, Path p_244364_1_, Path p_244364_2_) {
       int i = 10;
-      if (!Files.exists(p_244364_0_) || runWithRetries(10, "create backup " + p_244364_2_, createDeleter(p_244364_2_), createRenamer(p_244364_0_, p_244364_2_), createFileCreatedCheck(p_244364_2_))) {
-         if (runWithRetries(10, "remove old " + p_244364_0_, createDeleter(p_244364_0_), createFileDeletedCheck(p_244364_0_))) {
-            if (!runWithRetries(10, "replace " + p_244364_0_ + " with " + p_244364_1_, createRenamer(p_244364_1_, p_244364_0_), createFileCreatedCheck(p_244364_0_))) {
-               runWithRetries(10, "restore " + p_244364_0_ + " from " + p_244364_2_, createRenamer(p_244364_2_, p_244364_0_), createFileCreatedCheck(p_244364_0_));
+      if (!Files.exists(p_244364_0_) || func_244359_a(10, "create backup " + p_244364_2_, func_244362_a(p_244364_2_), func_244363_a(p_244364_0_, p_244364_2_), func_244367_c(p_244364_2_))) {
+         if (func_244359_a(10, "remove old " + p_244364_0_, func_244362_a(p_244364_0_), func_244366_b(p_244364_0_))) {
+            if (!func_244359_a(10, "replace " + p_244364_0_ + " with " + p_244364_1_, func_244363_a(p_244364_1_, p_244364_0_), func_244367_c(p_244364_0_))) {
+               func_244359_a(10, "restore " + p_244364_0_ + " from " + p_244364_2_, func_244363_a(p_244364_2_, p_244364_0_), func_244367_c(p_244364_0_));
             }
 
          }
@@ -461,7 +461,7 @@ public class Util {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static int offsetByCodepoints(String p_240980_0_, int p_240980_1_, int p_240980_2_) {
+   public static int func_240980_a_(String p_240980_0_, int p_240980_1_, int p_240980_2_) {
       int i = p_240980_0_.length();
       if (p_240980_2_ >= 0) {
          for(int j = 0; p_240980_1_ < i && j < p_240980_2_; ++j) {
@@ -481,23 +481,23 @@ public class Util {
       return p_240980_1_;
    }
 
-   public static Consumer<String> prefix(String p_240982_0_, Consumer<String> p_240982_1_) {
+   public static Consumer<String> func_240982_a_(String prefix, Consumer<String> p_240982_1_) {
       return (p_240986_2_) -> {
-         p_240982_1_.accept(p_240982_0_ + p_240986_2_);
+         p_240982_1_.accept(prefix + p_240986_2_);
       };
    }
 
-   public static DataResult<int[]> fixedSize(IntStream p_240987_0_, int p_240987_1_) {
-      int[] aint = p_240987_0_.limit((long)(p_240987_1_ + 1)).toArray();
-      if (aint.length != p_240987_1_) {
-         String s = "Input is not a list of " + p_240987_1_ + " ints";
-         return aint.length >= p_240987_1_ ? DataResult.error(s, Arrays.copyOf(aint, p_240987_1_)) : DataResult.error(s);
+   public static DataResult<int[]> validateIntStreamSize(IntStream stream, int size) {
+      int[] aint = stream.limit((long)(size + 1)).toArray();
+      if (aint.length != size) {
+         String s = "Input is not a list of " + size + " ints";
+         return aint.length >= size ? DataResult.error(s, Arrays.copyOf(aint, size)) : DataResult.error(s);
       } else {
          return DataResult.success(aint);
       }
    }
 
-   public static void startTimerHackThread() {
+   public static void func_240994_l_() {
       Thread thread = new Thread("Timer hack thread") {
          public void run() {
             while(true) {
@@ -516,14 +516,14 @@ public class Util {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static void copyBetweenDirs(Path p_240984_0_, Path p_240984_1_, Path p_240984_2_) throws IOException {
+   public static void func_240984_a_(Path p_240984_0_, Path p_240984_1_, Path p_240984_2_) throws IOException {
       Path path = p_240984_0_.relativize(p_240984_2_);
       Path path1 = p_240984_1_.resolve(path);
       Files.copy(p_240984_2_, path1);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static String sanitizeName(String p_244361_0_, ICharacterPredicate p_244361_1_) {
+   public static String func_244361_a(String p_244361_0_, ICharacterPredicate p_244361_1_) {
       return p_244361_0_.toLowerCase(Locale.ROOT).chars().mapToObj((p_244360_1_) -> {
          return p_244361_1_.test((char)p_244360_1_) ? Character.toString((char)p_244360_1_) : "_";
       }).collect(Collectors.joining());
@@ -546,14 +546,14 @@ public class Util {
       SOLARIS,
       WINDOWS {
          @OnlyIn(Dist.CLIENT)
-         protected String[] getOpenUrlArguments(URL p_195643_1_) {
-            return new String[]{"rundll32", "url.dll,FileProtocolHandler", p_195643_1_.toString()};
+         protected String[] getOpenCommandLine(URL url) {
+            return new String[]{"rundll32", "url.dll,FileProtocolHandler", url.toString()};
          }
       },
       OSX {
          @OnlyIn(Dist.CLIENT)
-         protected String[] getOpenUrlArguments(URL p_195643_1_) {
-            return new String[]{"open", p_195643_1_.toString()};
+         protected String[] getOpenCommandLine(URL url) {
+            return new String[]{"open", url.toString()};
          }
       },
       UNKNOWN;
@@ -562,10 +562,10 @@ public class Util {
       }
 
       @OnlyIn(Dist.CLIENT)
-      public void openUrl(URL p_195639_1_) {
+      public void openURL(URL url) {
          try {
             Process process = AccessController.doPrivileged((PrivilegedExceptionAction<Process>)(() -> {
-               return Runtime.getRuntime().exec(this.getOpenUrlArguments(p_195639_1_));
+               return Runtime.getRuntime().exec(this.getOpenCommandLine(url));
             }));
 
             for(String s : IOUtils.readLines(process.getErrorStream())) {
@@ -576,35 +576,35 @@ public class Util {
             process.getErrorStream().close();
             process.getOutputStream().close();
          } catch (IOException | PrivilegedActionException privilegedactionexception) {
-            Util.LOGGER.error("Couldn't open url '{}'", p_195639_1_, privilegedactionexception);
+            Util.LOGGER.error("Couldn't open url '{}'", url, privilegedactionexception);
          }
 
       }
 
       @OnlyIn(Dist.CLIENT)
-      public void openUri(URI p_195642_1_) {
+      public void openURI(URI uri) {
          try {
-            this.openUrl(p_195642_1_.toURL());
+            this.openURL(uri.toURL());
          } catch (MalformedURLException malformedurlexception) {
-            Util.LOGGER.error("Couldn't open uri '{}'", p_195642_1_, malformedurlexception);
+            Util.LOGGER.error("Couldn't open uri '{}'", uri, malformedurlexception);
          }
 
       }
 
       @OnlyIn(Dist.CLIENT)
-      public void openFile(File p_195641_1_) {
+      public void openFile(File fileIn) {
          try {
-            this.openUrl(p_195641_1_.toURI().toURL());
+            this.openURL(fileIn.toURI().toURL());
          } catch (MalformedURLException malformedurlexception) {
-            Util.LOGGER.error("Couldn't open file '{}'", p_195641_1_, malformedurlexception);
+            Util.LOGGER.error("Couldn't open file '{}'", fileIn, malformedurlexception);
          }
 
       }
 
       @OnlyIn(Dist.CLIENT)
-      protected String[] getOpenUrlArguments(URL p_195643_1_) {
-         String s = p_195643_1_.toString();
-         if ("file".equals(p_195643_1_.getProtocol())) {
+      protected String[] getOpenCommandLine(URL url) {
+         String s = url.toString();
+         if ("file".equals(url.getProtocol())) {
             s = s.replace("file:", "file://");
          }
 
@@ -612,11 +612,11 @@ public class Util {
       }
 
       @OnlyIn(Dist.CLIENT)
-      public void openUri(String p_195640_1_) {
+      public void openURI(String uri) {
          try {
-            this.openUrl((new URI(p_195640_1_)).toURL());
+            this.openURL((new URI(uri)).toURL());
          } catch (MalformedURLException | IllegalArgumentException | URISyntaxException urisyntaxexception) {
-            Util.LOGGER.error("Couldn't open uri '{}'", p_195640_1_, urisyntaxexception);
+            Util.LOGGER.error("Couldn't open uri '{}'", uri, urisyntaxexception);
          }
 
       }

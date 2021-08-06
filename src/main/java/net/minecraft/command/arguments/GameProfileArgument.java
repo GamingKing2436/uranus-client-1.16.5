@@ -21,10 +21,10 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class GameProfileArgument implements ArgumentType<GameProfileArgument.IProfileProvider> {
    private static final Collection<String> EXAMPLES = Arrays.asList("Player", "0123", "dd12be42-52a9-4a91-a8a1-11c01849e498", "@e");
-   public static final SimpleCommandExceptionType ERROR_UNKNOWN_PLAYER = new SimpleCommandExceptionType(new TranslationTextComponent("argument.player.unknown"));
+   public static final SimpleCommandExceptionType PLAYER_UNKNOWN = new SimpleCommandExceptionType(new TranslationTextComponent("argument.player.unknown"));
 
-   public static Collection<GameProfile> getGameProfiles(CommandContext<CommandSource> p_197109_0_, String p_197109_1_) throws CommandSyntaxException {
-      return p_197109_0_.getArgument(p_197109_1_, GameProfileArgument.IProfileProvider.class).getNames(p_197109_0_.getSource());
+   public static Collection<GameProfile> getGameProfiles(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      return context.getArgument(name, GameProfileArgument.IProfileProvider.class).getNames(context.getSource());
    }
 
    public static GameProfileArgument gameProfile() {
@@ -36,7 +36,7 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.IPr
          EntitySelectorParser entityselectorparser = new EntitySelectorParser(p_parse_1_);
          EntitySelector entityselector = entityselectorparser.parse();
          if (entityselector.includesEntities()) {
-            throw EntityArgument.ERROR_ONLY_PLAYERS_ALLOWED.create();
+            throw EntityArgument.ONLY_PLAYERS_ALLOWED.create();
          } else {
             return new GameProfileArgument.ProfileProvider(entityselector);
          }
@@ -49,9 +49,9 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.IPr
 
          String s = p_parse_1_.getString().substring(i, p_parse_1_.getCursor());
          return (p_197107_1_) -> {
-            GameProfile gameprofile = p_197107_1_.getServer().getProfileCache().get(s);
+            GameProfile gameprofile = p_197107_1_.getServer().getPlayerProfileCache().getGameProfileForUsername(s);
             if (gameprofile == null) {
-               throw ERROR_UNKNOWN_PLAYER.create();
+               throw PLAYER_UNKNOWN.create();
             } else {
                return Collections.singleton(gameprofile);
             }
@@ -71,7 +71,7 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.IPr
          }
 
          return entityselectorparser.fillSuggestions(p_listSuggestions_2_, (p_201943_1_) -> {
-            ISuggestionProvider.suggest(((ISuggestionProvider)p_listSuggestions_1_.getSource()).getOnlinePlayerNames(), p_201943_1_);
+            ISuggestionProvider.suggest(((ISuggestionProvider)p_listSuggestions_1_.getSource()).getPlayerNames(), p_201943_1_);
          });
       } else {
          return Suggestions.empty();
@@ -90,14 +90,14 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.IPr
    public static class ProfileProvider implements GameProfileArgument.IProfileProvider {
       private final EntitySelector selector;
 
-      public ProfileProvider(EntitySelector p_i48084_1_) {
-         this.selector = p_i48084_1_;
+      public ProfileProvider(EntitySelector selectorIn) {
+         this.selector = selectorIn;
       }
 
       public Collection<GameProfile> getNames(CommandSource p_getNames_1_) throws CommandSyntaxException {
-         List<ServerPlayerEntity> list = this.selector.findPlayers(p_getNames_1_);
+         List<ServerPlayerEntity> list = this.selector.selectPlayers(p_getNames_1_);
          if (list.isEmpty()) {
-            throw EntityArgument.NO_PLAYERS_FOUND.create();
+            throw EntityArgument.PLAYER_NOT_FOUND.create();
          } else {
             List<GameProfile> list1 = Lists.newArrayList();
 

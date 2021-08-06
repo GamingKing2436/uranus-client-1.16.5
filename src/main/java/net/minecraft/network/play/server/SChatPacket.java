@@ -11,38 +11,38 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SChatPacket implements IPacket<IClientPlayNetHandler> {
-   private ITextComponent message;
+   private ITextComponent chatComponent;
    private ChatType type;
-   private UUID sender;
+   private UUID field_240809_c_;
 
    public SChatPacket() {
    }
 
    public SChatPacket(ITextComponent p_i232578_1_, ChatType p_i232578_2_, UUID p_i232578_3_) {
-      this.message = p_i232578_1_;
+      this.chatComponent = p_i232578_1_;
       this.type = p_i232578_2_;
-      this.sender = p_i232578_3_;
+      this.field_240809_c_ = p_i232578_3_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.message = p_148837_1_.readComponent();
-      this.type = ChatType.getForIndex(p_148837_1_.readByte());
-      this.sender = p_148837_1_.readUUID();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.chatComponent = buf.readTextComponent();
+      this.type = ChatType.byId(buf.readByte());
+      this.field_240809_c_ = buf.readUniqueId();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeComponent(this.message);
-      p_148840_1_.writeByte(this.type.getIndex());
-      p_148840_1_.writeUUID(this.sender);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeTextComponent(this.chatComponent);
+      buf.writeByte(this.type.getId());
+      buf.writeUniqueId(this.field_240809_c_);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleChat(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleChat(this);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ITextComponent getMessage() {
-      return this.message;
+   public ITextComponent getChatComponent() {
+      return this.chatComponent;
    }
 
    public boolean isSystem() {
@@ -54,11 +54,11 @@ public class SChatPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public UUID getSender() {
-      return this.sender;
+   public UUID func_240810_e_() {
+      return this.field_240809_c_;
    }
 
-   public boolean isSkippable() {
+   public boolean shouldSkipErrors() {
       return true;
    }
 }

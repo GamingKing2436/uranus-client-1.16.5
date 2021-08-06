@@ -8,12 +8,12 @@ import net.minecraft.world.gen.feature.Features;
 
 public class DarkOakTree extends BigTree {
    @Nullable
-   protected ConfiguredFeature<BaseTreeFeatureConfig, ?> getConfiguredFeature(Random p_225546_1_, boolean p_225546_2_) {
+   protected ConfiguredFeature<BaseTreeFeatureConfig, ?> getTreeFeature(Random randomIn, boolean largeHive) {
       return null;
    }
 
    @Nullable
-   protected ConfiguredFeature<BaseTreeFeatureConfig, ?> getConfiguredMegaFeature(Random p_225547_1_) {
+   protected ConfiguredFeature<BaseTreeFeatureConfig, ?> getHugeTreeFeature(Random rand) {
       return Features.DARK_OAK;
    }
 }

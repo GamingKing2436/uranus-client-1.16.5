@@ -20,14 +20,14 @@ import net.minecraft.util.ResourceLocation;
 import org.apache.commons.io.IOUtils;
 
 public class FilePack extends ResourcePack {
-   public static final Splitter SPLITTER = Splitter.on('/').omitEmptyStrings().limit(3);
+   public static final Splitter PATH_SPLITTER = Splitter.on('/').omitEmptyStrings().limit(3);
    private ZipFile zipFile;
 
-   public FilePack(File p_i47915_1_) {
-      super(p_i47915_1_);
+   public FilePack(File fileIn) {
+      super(fileIn);
    }
 
-   private ZipFile getOrCreateZipFile() throws IOException {
+   private ZipFile getResourcePackZipFile() throws IOException {
       if (this.zipFile == null) {
          this.zipFile = new ZipFile(this.file);
       }
@@ -35,28 +35,28 @@ public class FilePack extends ResourcePack {
       return this.zipFile;
    }
 
-   protected InputStream getResource(String p_195766_1_) throws IOException {
-      ZipFile zipfile = this.getOrCreateZipFile();
-      ZipEntry zipentry = zipfile.getEntry(p_195766_1_);
+   protected InputStream getInputStream(String resourcePath) throws IOException {
+      ZipFile zipfile = this.getResourcePackZipFile();
+      ZipEntry zipentry = zipfile.getEntry(resourcePath);
       if (zipentry == null) {
-         throw new ResourcePackFileNotFoundException(this.file, p_195766_1_);
+         throw new ResourcePackFileNotFoundException(this.file, resourcePath);
       } else {
          return zipfile.getInputStream(zipentry);
       }
    }
 
-   public boolean hasResource(String p_195768_1_) {
+   public boolean resourceExists(String resourcePath) {
       try {
-         return this.getOrCreateZipFile().getEntry(p_195768_1_) != null;
+         return this.getResourcePackZipFile().getEntry(resourcePath) != null;
       } catch (IOException ioexception) {
          return false;
       }
    }
 
-   public Set<String> getNamespaces(ResourcePackType p_195759_1_) {
+   public Set<String> getResourceNamespaces(ResourcePackType type) {
       ZipFile zipfile;
       try {
-         zipfile = this.getOrCreateZipFile();
+         zipfile = this.getResourcePackZipFile();
       } catch (IOException ioexception) {
          return Collections.emptySet();
       }
@@ -67,14 +67,14 @@ public class FilePack extends ResourcePack {
       while(enumeration.hasMoreElements()) {
          ZipEntry zipentry = enumeration.nextElement();
          String s = zipentry.getName();
-         if (s.startsWith(p_195759_1_.getDirectory() + "/")) {
-            List<String> list = Lists.newArrayList(SPLITTER.split(s));
+         if (s.startsWith(type.getDirectoryName() + "/")) {
+            List<String> list = Lists.newArrayList(PATH_SPLITTER.split(s));
             if (list.size() > 1) {
                String s1 = list.get(1);
                if (s1.equals(s1.toLowerCase(Locale.ROOT))) {
                   set.add(s1);
                } else {
-                  this.logWarning(s1);
+                  this.onIgnoreNonLowercaseNamespace(s1);
                }
             }
          }
@@ -96,18 +96,18 @@ public class FilePack extends ResourcePack {
 
    }
 
-   public Collection<ResourceLocation> getResources(ResourcePackType p_225637_1_, String p_225637_2_, String p_225637_3_, int p_225637_4_, Predicate<String> p_225637_5_) {
+   public Collection<ResourceLocation> getAllResourceLocations(ResourcePackType type, String namespaceIn, String pathIn, int maxDepthIn, Predicate<String> filterIn) {
       ZipFile zipfile;
       try {
-         zipfile = this.getOrCreateZipFile();
+         zipfile = this.getResourcePackZipFile();
       } catch (IOException ioexception) {
          return Collections.emptySet();
       }
 
       Enumeration<? extends ZipEntry> enumeration = zipfile.entries();
       List<ResourceLocation> list = Lists.newArrayList();
-      String s = p_225637_1_.getDirectory() + "/" + p_225637_2_ + "/";
-      String s1 = s + p_225637_3_ + "/";
+      String s = type.getDirectoryName() + "/" + namespaceIn + "/";
+      String s1 = s + pathIn + "/";
 
       while(enumeration.hasMoreElements()) {
          ZipEntry zipentry = enumeration.nextElement();
@@ -116,8 +116,8 @@ public class FilePack extends ResourcePack {
             if (!s2.endsWith(".mcmeta") && s2.startsWith(s1)) {
                String s3 = s2.substring(s.length());
                String[] astring = s3.split("/");
-               if (astring.length >= p_225637_4_ + 1 && p_225637_5_.test(astring[astring.length - 1])) {
-                  list.add(new ResourceLocation(p_225637_2_, s3));
+               if (astring.length >= maxDepthIn + 1 && filterIn.test(astring[astring.length - 1])) {
+                  list.add(new ResourceLocation(namespaceIn, s3));
                }
             }
          }

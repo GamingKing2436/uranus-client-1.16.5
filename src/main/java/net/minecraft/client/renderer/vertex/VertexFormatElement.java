@@ -13,25 +13,25 @@ public class VertexFormatElement {
    private final VertexFormatElement.Type type;
    private final VertexFormatElement.Usage usage;
    private final int index;
-   private final int count;
-   private final int byteSize;
+   private final int elementCount;
+   private final int sizeBytes;
 
-   public VertexFormatElement(int p_i46096_1_, VertexFormatElement.Type p_i46096_2_, VertexFormatElement.Usage p_i46096_3_, int p_i46096_4_) {
-      if (this.supportsUsage(p_i46096_1_, p_i46096_3_)) {
-         this.usage = p_i46096_3_;
+   public VertexFormatElement(int indexIn, VertexFormatElement.Type typeIn, VertexFormatElement.Usage usageIn, int count) {
+      if (this.isFirstOrUV(indexIn, usageIn)) {
+         this.usage = usageIn;
       } else {
          LOGGER.warn("Multiple vertex elements of the same type other than UVs are not supported. Forcing type to UV.");
          this.usage = VertexFormatElement.Usage.UV;
       }
 
-      this.type = p_i46096_2_;
-      this.index = p_i46096_1_;
-      this.count = p_i46096_4_;
-      this.byteSize = p_i46096_2_.getSize() * this.count;
+      this.type = typeIn;
+      this.index = indexIn;
+      this.elementCount = count;
+      this.sizeBytes = typeIn.getSize() * this.elementCount;
    }
 
-   private boolean supportsUsage(int p_177372_1_, VertexFormatElement.Usage p_177372_2_) {
-      return p_177372_1_ == 0 || p_177372_2_ == VertexFormatElement.Usage.UV;
+   private boolean isFirstOrUV(int indexIn, VertexFormatElement.Usage usageIn) {
+      return indexIn == 0 || usageIn == VertexFormatElement.Usage.UV;
    }
 
    public final VertexFormatElement.Type getType() {
@@ -47,11 +47,11 @@ public class VertexFormatElement {
    }
 
    public String toString() {
-      return this.count + "," + this.usage.getName() + "," + this.type.getName();
+      return this.elementCount + "," + this.usage.getDisplayName() + "," + this.type.getDisplayName();
    }
 
-   public final int getByteSize() {
-      return this.byteSize;
+   public final int getSize() {
+      return this.sizeBytes;
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -59,7 +59,7 @@ public class VertexFormatElement {
          return true;
       } else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass()) {
          VertexFormatElement vertexformatelement = (VertexFormatElement)p_equals_1_;
-         if (this.count != vertexformatelement.count) {
+         if (this.elementCount != vertexformatelement.elementCount) {
             return false;
          } else if (this.index != vertexformatelement.index) {
             return false;
@@ -77,11 +77,11 @@ public class VertexFormatElement {
       int i = this.type.hashCode();
       i = 31 * i + this.usage.hashCode();
       i = 31 * i + this.index;
-      return 31 * i + this.count;
+      return 31 * i + this.elementCount;
    }
 
-   public void setupBufferState(long p_227897_1_, int p_227897_3_) {
-      this.usage.setupBufferState(this.count, this.type.getGlType(), p_227897_3_, p_227897_1_, this.index);
+   public void setupBufferState(long pointerIn, int strideIn) {
+      this.usage.setupBufferState(this.elementCount, this.type.getGlConstant(), strideIn, pointerIn, this.index);
    }
 
    public void clearBufferState() {
@@ -99,87 +99,87 @@ public class VertexFormatElement {
       INT(4, "Int", 5124);
 
       private final int size;
-      private final String name;
-      private final int glType;
+      private final String displayName;
+      private final int glConstant;
 
-      private Type(int p_i46095_3_, String p_i46095_4_, int p_i46095_5_) {
-         this.size = p_i46095_3_;
-         this.name = p_i46095_4_;
-         this.glType = p_i46095_5_;
+      private Type(int sizeIn, String displayNameIn, int glConstantIn) {
+         this.size = sizeIn;
+         this.displayName = displayNameIn;
+         this.glConstant = glConstantIn;
       }
 
       public int getSize() {
          return this.size;
       }
 
-      public String getName() {
-         return this.name;
+      public String getDisplayName() {
+         return this.displayName;
       }
 
-      public int getGlType() {
-         return this.glType;
+      public int getGlConstant() {
+         return this.glConstant;
       }
    }
 
    @OnlyIn(Dist.CLIENT)
    public static enum Usage {
       POSITION("Position", (p_227914_0_, p_227914_1_, p_227914_2_, p_227914_3_, p_227914_5_) -> {
-         GlStateManager._vertexPointer(p_227914_0_, p_227914_1_, p_227914_2_, p_227914_3_);
-         GlStateManager._enableClientState(32884);
+         GlStateManager.vertexPointer(p_227914_0_, p_227914_1_, p_227914_2_, p_227914_3_);
+         GlStateManager.enableClientState(32884);
       }, (p_227912_0_) -> {
-         GlStateManager._disableClientState(32884);
+         GlStateManager.disableClientState(32884);
       }),
       NORMAL("Normal", (p_227913_0_, p_227913_1_, p_227913_2_, p_227913_3_, p_227913_5_) -> {
-         GlStateManager._normalPointer(p_227913_1_, p_227913_2_, p_227913_3_);
-         GlStateManager._enableClientState(32885);
+         GlStateManager.normalPointer(p_227913_1_, p_227913_2_, p_227913_3_);
+         GlStateManager.enableClientState(32885);
       }, (p_227910_0_) -> {
-         GlStateManager._disableClientState(32885);
+         GlStateManager.disableClientState(32885);
       }),
       COLOR("Vertex Color", (p_227911_0_, p_227911_1_, p_227911_2_, p_227911_3_, p_227911_5_) -> {
-         GlStateManager._colorPointer(p_227911_0_, p_227911_1_, p_227911_2_, p_227911_3_);
-         GlStateManager._enableClientState(32886);
+         GlStateManager.colorPointer(p_227911_0_, p_227911_1_, p_227911_2_, p_227911_3_);
+         GlStateManager.enableClientState(32886);
       }, (p_227908_0_) -> {
-         GlStateManager._disableClientState(32886);
-         GlStateManager._clearCurrentColor();
+         GlStateManager.disableClientState(32886);
+         GlStateManager.clearCurrentColor();
       }),
       UV("UV", (p_227909_0_, p_227909_1_, p_227909_2_, p_227909_3_, p_227909_5_) -> {
-         GlStateManager._glClientActiveTexture('\u84c0' + p_227909_5_);
-         GlStateManager._texCoordPointer(p_227909_0_, p_227909_1_, p_227909_2_, p_227909_3_);
-         GlStateManager._enableClientState(32888);
-         GlStateManager._glClientActiveTexture(33984);
+         GlStateManager.clientActiveTexture('\u84c0' + p_227909_5_);
+         GlStateManager.texCoordPointer(p_227909_0_, p_227909_1_, p_227909_2_, p_227909_3_);
+         GlStateManager.enableClientState(32888);
+         GlStateManager.clientActiveTexture(33984);
       }, (p_227906_0_) -> {
-         GlStateManager._glClientActiveTexture('\u84c0' + p_227906_0_);
-         GlStateManager._disableClientState(32888);
-         GlStateManager._glClientActiveTexture(33984);
+         GlStateManager.clientActiveTexture('\u84c0' + p_227906_0_);
+         GlStateManager.disableClientState(32888);
+         GlStateManager.clientActiveTexture(33984);
       }),
       PADDING("Padding", (p_227907_0_, p_227907_1_, p_227907_2_, p_227907_3_, p_227907_5_) -> {
       }, (p_227904_0_) -> {
       }),
       GENERIC("Generic", (p_227905_0_, p_227905_1_, p_227905_2_, p_227905_3_, p_227905_5_) -> {
-         GlStateManager._enableVertexAttribArray(p_227905_5_);
-         GlStateManager._vertexAttribPointer(p_227905_5_, p_227905_0_, p_227905_1_, false, p_227905_2_, p_227905_3_);
-      }, GlStateManager::_disableVertexAttribArray);
+         GlStateManager.enableVertexAttribArray(p_227905_5_);
+         GlStateManager.vertexAttribPointer(p_227905_5_, p_227905_0_, p_227905_1_, false, p_227905_2_, p_227905_3_);
+      }, GlStateManager::glEnableVertexAttribArray);
 
-      private final String name;
+      private final String displayName;
       private final VertexFormatElement.Usage.ISetupState setupState;
       private final IntConsumer clearState;
 
-      private Usage(String p_i225912_3_, VertexFormatElement.Usage.ISetupState p_i225912_4_, IntConsumer p_i225912_5_) {
-         this.name = p_i225912_3_;
-         this.setupState = p_i225912_4_;
-         this.clearState = p_i225912_5_;
+      private Usage(String displayNameIn, VertexFormatElement.Usage.ISetupState setupStateIn, IntConsumer clearStateIn) {
+         this.displayName = displayNameIn;
+         this.setupState = setupStateIn;
+         this.clearState = clearStateIn;
       }
 
-      private void setupBufferState(int p_227902_1_, int p_227902_2_, int p_227902_3_, long p_227902_4_, int p_227902_6_) {
-         this.setupState.setupBufferState(p_227902_1_, p_227902_2_, p_227902_3_, p_227902_4_, p_227902_6_);
+      private void setupBufferState(int countIn, int glTypeIn, int strideIn, long pointerIn, int indexIn) {
+         this.setupState.setupBufferState(countIn, glTypeIn, strideIn, pointerIn, indexIn);
       }
 
-      public void clearBufferState(int p_227901_1_) {
-         this.clearState.accept(p_227901_1_);
+      public void clearBufferState(int indexIn) {
+         this.clearState.accept(indexIn);
       }
 
-      public String getName() {
-         return this.name;
+      public String getDisplayName() {
+         return this.displayName;
       }
 
       @OnlyIn(Dist.CLIENT)

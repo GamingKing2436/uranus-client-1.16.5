@@ -7,37 +7,37 @@ import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 
 public class MinecartEntity extends AbstractMinecartEntity {
-   public MinecartEntity(EntityType<?> p_i50126_1_, World p_i50126_2_) {
-      super(p_i50126_1_, p_i50126_2_);
+   public MinecartEntity(EntityType<?> type, World world) {
+      super(type, world);
    }
 
-   public MinecartEntity(World p_i1723_1_, double p_i1723_2_, double p_i1723_4_, double p_i1723_6_) {
-      super(EntityType.MINECART, p_i1723_1_, p_i1723_2_, p_i1723_4_, p_i1723_6_);
+   public MinecartEntity(World worldIn, double x, double y, double z) {
+      super(EntityType.MINECART, worldIn, x, y, z);
    }
 
-   public ActionResultType interact(PlayerEntity p_184230_1_, Hand p_184230_2_) {
-      if (p_184230_1_.isSecondaryUseActive()) {
+   public ActionResultType processInitialInteract(PlayerEntity player, Hand hand) {
+      if (player.isSecondaryUseActive()) {
          return ActionResultType.PASS;
-      } else if (this.isVehicle()) {
+      } else if (this.isBeingRidden()) {
          return ActionResultType.PASS;
-      } else if (!this.level.isClientSide) {
-         return p_184230_1_.startRiding(this) ? ActionResultType.CONSUME : ActionResultType.PASS;
+      } else if (!this.world.isRemote) {
+         return player.startRiding(this) ? ActionResultType.CONSUME : ActionResultType.PASS;
       } else {
          return ActionResultType.SUCCESS;
       }
    }
 
-   public void activateMinecart(int p_96095_1_, int p_96095_2_, int p_96095_3_, boolean p_96095_4_) {
-      if (p_96095_4_) {
-         if (this.isVehicle()) {
-            this.ejectPassengers();
+   public void onActivatorRailPass(int x, int y, int z, boolean receivingPower) {
+      if (receivingPower) {
+         if (this.isBeingRidden()) {
+            this.removePassengers();
          }
 
-         if (this.getHurtTime() == 0) {
-            this.setHurtDir(-this.getHurtDir());
-            this.setHurtTime(10);
+         if (this.getRollingAmplitude() == 0) {
+            this.setRollingDirection(-this.getRollingDirection());
+            this.setRollingAmplitude(10);
             this.setDamage(50.0F);
-            this.markHurt();
+            this.markVelocityChanged();
          }
       }
 

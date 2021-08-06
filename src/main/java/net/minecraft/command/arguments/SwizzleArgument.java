@@ -14,14 +14,14 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class SwizzleArgument implements ArgumentType<EnumSet<Direction.Axis>> {
    private static final Collection<String> EXAMPLES = Arrays.asList("xyz", "x");
-   private static final SimpleCommandExceptionType ERROR_INVALID = new SimpleCommandExceptionType(new TranslationTextComponent("arguments.swizzle.invalid"));
+   private static final SimpleCommandExceptionType SWIZZLE_INVALID = new SimpleCommandExceptionType(new TranslationTextComponent("arguments.swizzle.invalid"));
 
    public static SwizzleArgument swizzle() {
       return new SwizzleArgument();
    }
 
-   public static EnumSet<Direction.Axis> getSwizzle(CommandContext<CommandSource> p_197291_0_, String p_197291_1_) {
-      return p_197291_0_.getArgument(p_197291_1_, EnumSet.class);
+   public static EnumSet<Direction.Axis> getSwizzle(CommandContext<CommandSource> context, String name) {
+      return context.getArgument(name, EnumSet.class);
    }
 
    public EnumSet<Direction.Axis> parse(StringReader p_parse_1_) throws CommandSyntaxException {
@@ -41,11 +41,11 @@ public class SwizzleArgument implements ArgumentType<EnumSet<Direction.Axis>> {
             direction$axis = Direction.Axis.Z;
             break;
          default:
-            throw ERROR_INVALID.create();
+            throw SWIZZLE_INVALID.create();
          }
 
          if (enumset.contains(direction$axis)) {
-            throw ERROR_INVALID.create();
+            throw SWIZZLE_INVALID.create();
          }
 
          enumset.add(direction$axis);

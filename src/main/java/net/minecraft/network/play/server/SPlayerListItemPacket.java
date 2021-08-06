@@ -18,32 +18,32 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SPlayerListItemPacket implements IPacket<IClientPlayNetHandler> {
    private SPlayerListItemPacket.Action action;
-   private final List<SPlayerListItemPacket.AddPlayerData> entries = Lists.newArrayList();
+   private final List<SPlayerListItemPacket.AddPlayerData> players = Lists.newArrayList();
 
    public SPlayerListItemPacket() {
    }
 
-   public SPlayerListItemPacket(SPlayerListItemPacket.Action p_i46929_1_, ServerPlayerEntity... p_i46929_2_) {
-      this.action = p_i46929_1_;
+   public SPlayerListItemPacket(SPlayerListItemPacket.Action actionIn, ServerPlayerEntity... playersIn) {
+      this.action = actionIn;
 
-      for(ServerPlayerEntity serverplayerentity : p_i46929_2_) {
-         this.entries.add(new SPlayerListItemPacket.AddPlayerData(serverplayerentity.getGameProfile(), serverplayerentity.latency, serverplayerentity.gameMode.getGameModeForPlayer(), serverplayerentity.getTabListDisplayName()));
+      for(ServerPlayerEntity serverplayerentity : playersIn) {
+         this.players.add(new SPlayerListItemPacket.AddPlayerData(serverplayerentity.getGameProfile(), serverplayerentity.ping, serverplayerentity.interactionManager.getGameType(), serverplayerentity.getTabListDisplayName()));
       }
 
    }
 
-   public SPlayerListItemPacket(SPlayerListItemPacket.Action p_i46930_1_, Iterable<ServerPlayerEntity> p_i46930_2_) {
-      this.action = p_i46930_1_;
+   public SPlayerListItemPacket(SPlayerListItemPacket.Action actionIn, Iterable<ServerPlayerEntity> playersIn) {
+      this.action = actionIn;
 
-      for(ServerPlayerEntity serverplayerentity : p_i46930_2_) {
-         this.entries.add(new SPlayerListItemPacket.AddPlayerData(serverplayerentity.getGameProfile(), serverplayerentity.latency, serverplayerentity.gameMode.getGameModeForPlayer(), serverplayerentity.getTabListDisplayName()));
+      for(ServerPlayerEntity serverplayerentity : playersIn) {
+         this.players.add(new SPlayerListItemPacket.AddPlayerData(serverplayerentity.getGameProfile(), serverplayerentity.ping, serverplayerentity.interactionManager.getGameType(), serverplayerentity.getTabListDisplayName()));
       }
 
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.action = p_148837_1_.readEnum(SPlayerListItemPacket.Action.class);
-      int i = p_148837_1_.readVarInt();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.action = buf.readEnumValue(SPlayerListItemPacket.Action.class);
+      int i = buf.readVarInt();
 
       for(int j = 0; j < i; ++j) {
          GameProfile gameprofile = null;
@@ -52,111 +52,111 @@ public class SPlayerListItemPacket implements IPacket<IClientPlayNetHandler> {
          ITextComponent itextcomponent = null;
          switch(this.action) {
          case ADD_PLAYER:
-            gameprofile = new GameProfile(p_148837_1_.readUUID(), p_148837_1_.readUtf(16));
-            int l = p_148837_1_.readVarInt();
+            gameprofile = new GameProfile(buf.readUniqueId(), buf.readString(16));
+            int l = buf.readVarInt();
             int i1 = 0;
 
             for(; i1 < l; ++i1) {
-               String s = p_148837_1_.readUtf(32767);
-               String s1 = p_148837_1_.readUtf(32767);
-               if (p_148837_1_.readBoolean()) {
-                  gameprofile.getProperties().put(s, new Property(s, s1, p_148837_1_.readUtf(32767)));
+               String s = buf.readString(32767);
+               String s1 = buf.readString(32767);
+               if (buf.readBoolean()) {
+                  gameprofile.getProperties().put(s, new Property(s, s1, buf.readString(32767)));
                } else {
                   gameprofile.getProperties().put(s, new Property(s, s1));
                }
             }
 
-            gametype = GameType.byId(p_148837_1_.readVarInt());
-            k = p_148837_1_.readVarInt();
-            if (p_148837_1_.readBoolean()) {
-               itextcomponent = p_148837_1_.readComponent();
+            gametype = GameType.getByID(buf.readVarInt());
+            k = buf.readVarInt();
+            if (buf.readBoolean()) {
+               itextcomponent = buf.readTextComponent();
             }
             break;
          case UPDATE_GAME_MODE:
-            gameprofile = new GameProfile(p_148837_1_.readUUID(), (String)null);
-            gametype = GameType.byId(p_148837_1_.readVarInt());
+            gameprofile = new GameProfile(buf.readUniqueId(), (String)null);
+            gametype = GameType.getByID(buf.readVarInt());
             break;
          case UPDATE_LATENCY:
-            gameprofile = new GameProfile(p_148837_1_.readUUID(), (String)null);
-            k = p_148837_1_.readVarInt();
+            gameprofile = new GameProfile(buf.readUniqueId(), (String)null);
+            k = buf.readVarInt();
             break;
          case UPDATE_DISPLAY_NAME:
-            gameprofile = new GameProfile(p_148837_1_.readUUID(), (String)null);
-            if (p_148837_1_.readBoolean()) {
-               itextcomponent = p_148837_1_.readComponent();
+            gameprofile = new GameProfile(buf.readUniqueId(), (String)null);
+            if (buf.readBoolean()) {
+               itextcomponent = buf.readTextComponent();
             }
             break;
          case REMOVE_PLAYER:
-            gameprofile = new GameProfile(p_148837_1_.readUUID(), (String)null);
+            gameprofile = new GameProfile(buf.readUniqueId(), (String)null);
          }
 
-         this.entries.add(new SPlayerListItemPacket.AddPlayerData(gameprofile, k, gametype, itextcomponent));
+         this.players.add(new SPlayerListItemPacket.AddPlayerData(gameprofile, k, gametype, itextcomponent));
       }
 
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeEnum(this.action);
-      p_148840_1_.writeVarInt(this.entries.size());
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeEnumValue(this.action);
+      buf.writeVarInt(this.players.size());
 
-      for(SPlayerListItemPacket.AddPlayerData splayerlistitempacket$addplayerdata : this.entries) {
+      for(SPlayerListItemPacket.AddPlayerData splayerlistitempacket$addplayerdata : this.players) {
          switch(this.action) {
          case ADD_PLAYER:
-            p_148840_1_.writeUUID(splayerlistitempacket$addplayerdata.getProfile().getId());
-            p_148840_1_.writeUtf(splayerlistitempacket$addplayerdata.getProfile().getName());
-            p_148840_1_.writeVarInt(splayerlistitempacket$addplayerdata.getProfile().getProperties().size());
+            buf.writeUniqueId(splayerlistitempacket$addplayerdata.getProfile().getId());
+            buf.writeString(splayerlistitempacket$addplayerdata.getProfile().getName());
+            buf.writeVarInt(splayerlistitempacket$addplayerdata.getProfile().getProperties().size());
 
             for(Property property : splayerlistitempacket$addplayerdata.getProfile().getProperties().values()) {
-               p_148840_1_.writeUtf(property.getName());
-               p_148840_1_.writeUtf(property.getValue());
+               buf.writeString(property.getName());
+               buf.writeString(property.getValue());
                if (property.hasSignature()) {
-                  p_148840_1_.writeBoolean(true);
-                  p_148840_1_.writeUtf(property.getSignature());
+                  buf.writeBoolean(true);
+                  buf.writeString(property.getSignature());
                } else {
-                  p_148840_1_.writeBoolean(false);
+                  buf.writeBoolean(false);
                }
             }
 
-            p_148840_1_.writeVarInt(splayerlistitempacket$addplayerdata.getGameMode().getId());
-            p_148840_1_.writeVarInt(splayerlistitempacket$addplayerdata.getLatency());
+            buf.writeVarInt(splayerlistitempacket$addplayerdata.getGameMode().getID());
+            buf.writeVarInt(splayerlistitempacket$addplayerdata.getPing());
             if (splayerlistitempacket$addplayerdata.getDisplayName() == null) {
-               p_148840_1_.writeBoolean(false);
+               buf.writeBoolean(false);
             } else {
-               p_148840_1_.writeBoolean(true);
-               p_148840_1_.writeComponent(splayerlistitempacket$addplayerdata.getDisplayName());
+               buf.writeBoolean(true);
+               buf.writeTextComponent(splayerlistitempacket$addplayerdata.getDisplayName());
             }
             break;
          case UPDATE_GAME_MODE:
-            p_148840_1_.writeUUID(splayerlistitempacket$addplayerdata.getProfile().getId());
-            p_148840_1_.writeVarInt(splayerlistitempacket$addplayerdata.getGameMode().getId());
+            buf.writeUniqueId(splayerlistitempacket$addplayerdata.getProfile().getId());
+            buf.writeVarInt(splayerlistitempacket$addplayerdata.getGameMode().getID());
             break;
          case UPDATE_LATENCY:
-            p_148840_1_.writeUUID(splayerlistitempacket$addplayerdata.getProfile().getId());
-            p_148840_1_.writeVarInt(splayerlistitempacket$addplayerdata.getLatency());
+            buf.writeUniqueId(splayerlistitempacket$addplayerdata.getProfile().getId());
+            buf.writeVarInt(splayerlistitempacket$addplayerdata.getPing());
             break;
          case UPDATE_DISPLAY_NAME:
-            p_148840_1_.writeUUID(splayerlistitempacket$addplayerdata.getProfile().getId());
+            buf.writeUniqueId(splayerlistitempacket$addplayerdata.getProfile().getId());
             if (splayerlistitempacket$addplayerdata.getDisplayName() == null) {
-               p_148840_1_.writeBoolean(false);
+               buf.writeBoolean(false);
             } else {
-               p_148840_1_.writeBoolean(true);
-               p_148840_1_.writeComponent(splayerlistitempacket$addplayerdata.getDisplayName());
+               buf.writeBoolean(true);
+               buf.writeTextComponent(splayerlistitempacket$addplayerdata.getDisplayName());
             }
             break;
          case REMOVE_PLAYER:
-            p_148840_1_.writeUUID(splayerlistitempacket$addplayerdata.getProfile().getId());
+            buf.writeUniqueId(splayerlistitempacket$addplayerdata.getProfile().getId());
          }
       }
 
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handlePlayerInfo(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handlePlayerListItem(this);
    }
 
    @OnlyIn(Dist.CLIENT)
    public List<SPlayerListItemPacket.AddPlayerData> getEntries() {
-      return this.entries;
+      return this.players;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -165,7 +165,7 @@ public class SPlayerListItemPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    public String toString() {
-      return MoreObjects.toStringHelper(this).add("action", this.action).add("entries", this.entries).toString();
+      return MoreObjects.toStringHelper(this).add("action", this.action).add("entries", this.players).toString();
    }
 
    public static enum Action {
@@ -177,28 +177,28 @@ public class SPlayerListItemPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    public class AddPlayerData {
-      private final int latency;
-      private final GameType gameMode;
+      private final int ping;
+      private final GameType gamemode;
       private final GameProfile profile;
       private final ITextComponent displayName;
 
-      public AddPlayerData(GameProfile p_i46663_2_, int p_i46663_3_, @Nullable GameType p_i46663_4_, @Nullable ITextComponent p_i46663_5_) {
-         this.profile = p_i46663_2_;
-         this.latency = p_i46663_3_;
-         this.gameMode = p_i46663_4_;
-         this.displayName = p_i46663_5_;
+      public AddPlayerData(GameProfile profileIn, int latencyIn, @Nullable GameType gameModeIn, @Nullable ITextComponent displayNameIn) {
+         this.profile = profileIn;
+         this.ping = latencyIn;
+         this.gamemode = gameModeIn;
+         this.displayName = displayNameIn;
       }
 
       public GameProfile getProfile() {
          return this.profile;
       }
 
-      public int getLatency() {
-         return this.latency;
+      public int getPing() {
+         return this.ping;
       }
 
       public GameType getGameMode() {
-         return this.gameMode;
+         return this.gamemode;
       }
 
       @Nullable
@@ -207,7 +207,7 @@ public class SPlayerListItemPacket implements IPacket<IClientPlayNetHandler> {
       }
 
       public String toString() {
-         return MoreObjects.toStringHelper(this).add("latency", this.latency).add("gameMode", this.gameMode).add("profile", this.profile).add("displayName", this.displayName == null ? null : ITextComponent.Serializer.toJson(this.displayName)).toString();
+         return MoreObjects.toStringHelper(this).add("latency", this.ping).add("gameMode", this.gamemode).add("profile", this.profile).add("displayName", this.displayName == null ? null : ITextComponent.Serializer.toJson(this.displayName)).toString();
       }
    }
 }

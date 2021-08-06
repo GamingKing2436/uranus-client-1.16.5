@@ -11,12 +11,12 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class CustomNameStringToComponentFixTileEntity extends DataFix {
-   public CustomNameStringToComponentFixTileEntity(Schema p_i49685_1_, boolean p_i49685_2_) {
-      super(p_i49685_1_, p_i49685_2_);
+   public CustomNameStringToComponentFixTileEntity(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
-      OpticFinder<String> opticfinder = DSL.fieldFinder("id", NamespacedSchema.namespacedString());
+      OpticFinder<String> opticfinder = DSL.fieldFinder("id", NamespacedSchema.func_233457_a_());
       return this.fixTypeEverywhereTyped("BlockEntityCustomNameToComponentFix", this.getInputSchema().getType(TypeReferences.BLOCK_ENTITY), (p_207790_1_) -> {
          return p_207790_1_.update(DSL.remainderFinder(), (p_207789_2_) -> {
             Optional<String> optional = p_207790_1_.getOptional(opticfinder);

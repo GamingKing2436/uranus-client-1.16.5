@@ -7,22 +7,22 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
 
 public interface IFinishedRecipe {
-   void serializeRecipeData(JsonObject p_218610_1_);
+   void serialize(JsonObject json);
 
-   default JsonObject serializeRecipe() {
+   default JsonObject getRecipeJson() {
       JsonObject jsonobject = new JsonObject();
-      jsonobject.addProperty("type", Registry.RECIPE_SERIALIZER.getKey(this.getType()).toString());
-      this.serializeRecipeData(jsonobject);
+      jsonobject.addProperty("type", Registry.RECIPE_SERIALIZER.getKey(this.getSerializer()).toString());
+      this.serialize(jsonobject);
       return jsonobject;
    }
 
-   ResourceLocation getId();
+   ResourceLocation getID();
 
-   IRecipeSerializer<?> getType();
-
-   @Nullable
-   JsonObject serializeAdvancement();
+   IRecipeSerializer<?> getSerializer();
 
    @Nullable
-   ResourceLocation getAdvancementId();
+   JsonObject getAdvancementJson();
+
+   @Nullable
+   ResourceLocation getAdvancementID();
 }

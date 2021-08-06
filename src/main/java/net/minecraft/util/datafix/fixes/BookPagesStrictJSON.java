@@ -16,8 +16,8 @@ import net.minecraft.util.text.StringTextComponent;
 import org.apache.commons.lang3.StringUtils;
 
 public class BookPagesStrictJSON extends DataFix {
-   public BookPagesStrictJSON(Schema p_i49630_1_, boolean p_i49630_2_) {
-      super(p_i49630_1_, p_i49630_2_);
+   public BookPagesStrictJSON(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public Dynamic<?> fixTag(Dynamic<?> p_209633_1_) {
@@ -41,14 +41,14 @@ public class BookPagesStrictJSON extends DataFix {
 
                         if (itextcomponent == null) {
                            try {
-                              itextcomponent = ITextComponent.Serializer.fromJson(s);
+                              itextcomponent = ITextComponent.Serializer.getComponentFromJson(s);
                            } catch (JsonParseException jsonparseexception1) {
                            }
                         }
 
                         if (itextcomponent == null) {
                            try {
-                              itextcomponent = ITextComponent.Serializer.fromJsonLenient(s);
+                              itextcomponent = ITextComponent.Serializer.getComponentFromJsonLenient(s);
                            } catch (JsonParseException jsonparseexception) {
                            }
                         }

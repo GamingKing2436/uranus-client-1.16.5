@@ -15,16 +15,16 @@ public class ExplosionDecay extends LootFunction {
       super(p_i51244_1_);
    }
 
-   public LootFunctionType getType() {
+   public LootFunctionType getFunctionType() {
       return LootFunctionManager.EXPLOSION_DECAY;
    }
 
-   public ItemStack run(ItemStack p_215859_1_, LootContext p_215859_2_) {
-      Float f = p_215859_2_.getParamOrNull(LootParameters.EXPLOSION_RADIUS);
+   public ItemStack doApply(ItemStack stack, LootContext context) {
+      Float f = context.get(LootParameters.EXPLOSION_RADIUS);
       if (f != null) {
-         Random random = p_215859_2_.getRandom();
+         Random random = context.getRandom();
          float f1 = 1.0F / f;
-         int i = p_215859_1_.getCount();
+         int i = stack.getCount();
          int j = 0;
 
          for(int k = 0; k < i; ++k) {
@@ -33,19 +33,19 @@ public class ExplosionDecay extends LootFunction {
             }
          }
 
-         p_215859_1_.setCount(j);
+         stack.setCount(j);
       }
 
-      return p_215859_1_;
+      return stack;
    }
 
-   public static LootFunction.Builder<?> explosionDecay() {
-      return simpleBuilder(ExplosionDecay::new);
+   public static LootFunction.Builder<?> builder() {
+      return builder(ExplosionDecay::new);
    }
 
    public static class Serializer extends LootFunction.Serializer<ExplosionDecay> {
-      public ExplosionDecay deserialize(JsonObject p_186530_1_, JsonDeserializationContext p_186530_2_, ILootCondition[] p_186530_3_) {
-         return new ExplosionDecay(p_186530_3_);
+      public ExplosionDecay deserialize(JsonObject object, JsonDeserializationContext deserializationContext, ILootCondition[] conditionsIn) {
+         return new ExplosionDecay(conditionsIn);
       }
    }
 }

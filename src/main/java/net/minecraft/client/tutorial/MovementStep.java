@@ -10,8 +10,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class MovementStep implements ITutorialStep {
-   private static final ITextComponent MOVE_TITLE = new TranslationTextComponent("tutorial.move.title", Tutorial.key("forward"), Tutorial.key("left"), Tutorial.key("back"), Tutorial.key("right"));
-   private static final ITextComponent MOVE_DESCRIPTION = new TranslationTextComponent("tutorial.move.description", Tutorial.key("jump"));
+   private static final ITextComponent MOVE_TITLE = new TranslationTextComponent("tutorial.move.title", Tutorial.createKeybindComponent("forward"), Tutorial.createKeybindComponent("left"), Tutorial.createKeybindComponent("back"), Tutorial.createKeybindComponent("right"));
+   private static final ITextComponent MOVE_DESCRIPTION = new TranslationTextComponent("tutorial.move.description", Tutorial.createKeybindComponent("jump"));
    private static final ITextComponent LOOK_TITLE = new TranslationTextComponent("tutorial.look.title");
    private static final ITextComponent LOOK_DESCRIPTION = new TranslationTextComponent("tutorial.look.description");
    private final Tutorial tutorial;
@@ -25,8 +25,8 @@ public class MovementStep implements ITutorialStep {
    private int moveCompleted = -1;
    private int lookCompleted = -1;
 
-   public MovementStep(Tutorial p_i47581_1_) {
-      this.tutorial = p_i47581_1_;
+   public MovementStep(Tutorial tutorial) {
+      this.tutorial = tutorial;
    }
 
    public void tick() {
@@ -60,7 +60,7 @@ public class MovementStep implements ITutorialStep {
       }
 
       if (this.moveCompleted != -1 && this.lookCompleted != -1) {
-         if (this.tutorial.getGameMode() == GameType.SURVIVAL) {
+         if (this.tutorial.getGameType() == GameType.SURVIVAL) {
             this.tutorial.setStep(TutorialSteps.FIND_TREE);
          } else {
             this.tutorial.setStep(TutorialSteps.NONE);
@@ -68,26 +68,26 @@ public class MovementStep implements ITutorialStep {
       }
 
       if (this.moveToast != null) {
-         this.moveToast.updateProgress((float)this.timeMoved / 40.0F);
+         this.moveToast.setProgress((float)this.timeMoved / 40.0F);
       }
 
       if (this.lookToast != null) {
-         this.lookToast.updateProgress((float)this.timeLooked / 40.0F);
+         this.lookToast.setProgress((float)this.timeLooked / 40.0F);
       }
 
       if (this.timeWaiting >= 100) {
          if (this.moveCompleted == -1 && this.moveToast == null) {
             this.moveToast = new TutorialToast(TutorialToast.Icons.MOVEMENT_KEYS, MOVE_TITLE, MOVE_DESCRIPTION, true);
-            this.tutorial.getMinecraft().getToasts().addToast(this.moveToast);
+            this.tutorial.getMinecraft().getToastGui().add(this.moveToast);
          } else if (this.moveCompleted != -1 && this.timeWaiting - this.moveCompleted >= 20 && this.lookCompleted == -1 && this.lookToast == null) {
             this.lookToast = new TutorialToast(TutorialToast.Icons.MOUSE, LOOK_TITLE, LOOK_DESCRIPTION, true);
-            this.tutorial.getMinecraft().getToasts().addToast(this.lookToast);
+            this.tutorial.getMinecraft().getToastGui().add(this.lookToast);
          }
       }
 
    }
 
-   public void clear() {
+   public void onStop() {
       if (this.moveToast != null) {
          this.moveToast.hide();
          this.moveToast = null;
@@ -100,15 +100,15 @@ public class MovementStep implements ITutorialStep {
 
    }
 
-   public void onInput(MovementInput p_193247_1_) {
-      if (p_193247_1_.up || p_193247_1_.down || p_193247_1_.left || p_193247_1_.right || p_193247_1_.jumping) {
+   public void handleMovement(MovementInput input) {
+      if (input.forwardKeyDown || input.backKeyDown || input.leftKeyDown || input.rightKeyDown || input.jump) {
          this.moved = true;
       }
 
    }
 
-   public void onMouse(double p_195870_1_, double p_195870_3_) {
-      if (Math.abs(p_195870_1_) > 0.01D || Math.abs(p_195870_3_) > 0.01D) {
+   public void onMouseMove(double velocityX, double velocityY) {
+      if (Math.abs(velocityX) > 0.01D || Math.abs(velocityY) > 0.01D) {
          this.turned = true;
       }
 

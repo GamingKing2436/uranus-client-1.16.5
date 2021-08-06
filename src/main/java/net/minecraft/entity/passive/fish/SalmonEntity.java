@@ -13,27 +13,27 @@ public class SalmonEntity extends AbstractGroupFishEntity {
       super(p_i50246_1_, p_i50246_2_);
    }
 
-   public int getMaxSchoolSize() {
+   public int getMaxGroupSize() {
       return 5;
    }
 
-   protected ItemStack getBucketItemStack() {
+   protected ItemStack getFishBucket() {
       return new ItemStack(Items.SALMON_BUCKET);
    }
 
    protected SoundEvent getAmbientSound() {
-      return SoundEvents.SALMON_AMBIENT;
+      return SoundEvents.ENTITY_SALMON_AMBIENT;
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.SALMON_DEATH;
+      return SoundEvents.ENTITY_SALMON_DEATH;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.SALMON_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_SALMON_HURT;
    }
 
    protected SoundEvent getFlopSound() {
-      return SoundEvents.SALMON_FLOP;
+      return SoundEvents.ENTITY_SALMON_FLOP;
    }
 }

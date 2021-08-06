@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 import net.minecraft.item.ItemStack;
 
 public interface ILootGenerator {
-   int getWeight(float p_186361_1_);
+   int getEffectiveWeight(float luck);
 
-   void createItemStack(Consumer<ItemStack> p_216188_1_, LootContext p_216188_2_);
+   void func_216188_a(Consumer<ItemStack> p_216188_1_, LootContext p_216188_2_);
 }

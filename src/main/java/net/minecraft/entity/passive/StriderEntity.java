@@ -70,81 +70,81 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class StriderEntity extends AnimalEntity implements IRideable, IEquipable {
-   private static final Ingredient FOOD_ITEMS = Ingredient.of(Items.WARPED_FUNGUS);
-   private static final Ingredient TEMPT_ITEMS = Ingredient.of(Items.WARPED_FUNGUS, Items.WARPED_FUNGUS_ON_A_STICK);
-   private static final DataParameter<Integer> DATA_BOOST_TIME = EntityDataManager.defineId(StriderEntity.class, DataSerializers.INT);
-   private static final DataParameter<Boolean> DATA_SUFFOCATING = EntityDataManager.defineId(StriderEntity.class, DataSerializers.BOOLEAN);
-   private static final DataParameter<Boolean> DATA_SADDLE_ID = EntityDataManager.defineId(StriderEntity.class, DataSerializers.BOOLEAN);
-   private final BoostHelper steering = new BoostHelper(this.entityData, DATA_BOOST_TIME, DATA_SADDLE_ID);
-   private TemptGoal temptGoal;
-   private PanicGoal panicGoal;
+   private static final Ingredient field_234308_bu_ = Ingredient.fromItems(Items.WARPED_FUNGUS);
+   private static final Ingredient field_234309_bv_ = Ingredient.fromItems(Items.WARPED_FUNGUS, Items.WARPED_FUNGUS_ON_A_STICK);
+   private static final DataParameter<Integer> field_234310_bw_ = EntityDataManager.createKey(StriderEntity.class, DataSerializers.VARINT);
+   private static final DataParameter<Boolean> field_234311_bx_ = EntityDataManager.createKey(StriderEntity.class, DataSerializers.BOOLEAN);
+   private static final DataParameter<Boolean> field_234312_by_ = EntityDataManager.createKey(StriderEntity.class, DataSerializers.BOOLEAN);
+   private final BoostHelper field_234313_bz_ = new BoostHelper(this.dataManager, field_234310_bw_, field_234312_by_);
+   private TemptGoal field_234306_bA_;
+   private PanicGoal field_234307_bB_;
 
    public StriderEntity(EntityType<? extends StriderEntity> p_i231562_1_, World p_i231562_2_) {
       super(p_i231562_1_, p_i231562_2_);
-      this.blocksBuilding = true;
-      this.setPathfindingMalus(PathNodeType.WATER, -1.0F);
-      this.setPathfindingMalus(PathNodeType.LAVA, 0.0F);
-      this.setPathfindingMalus(PathNodeType.DANGER_FIRE, 0.0F);
-      this.setPathfindingMalus(PathNodeType.DAMAGE_FIRE, 0.0F);
+      this.preventEntitySpawning = true;
+      this.setPathPriority(PathNodeType.WATER, -1.0F);
+      this.setPathPriority(PathNodeType.LAVA, 0.0F);
+      this.setPathPriority(PathNodeType.DANGER_FIRE, 0.0F);
+      this.setPathPriority(PathNodeType.DAMAGE_FIRE, 0.0F);
    }
 
-   public static boolean checkStriderSpawnRules(EntityType<StriderEntity> p_234314_0_, IWorld p_234314_1_, SpawnReason p_234314_2_, BlockPos p_234314_3_, Random p_234314_4_) {
-      BlockPos.Mutable blockpos$mutable = p_234314_3_.mutable();
+   public static boolean func_234314_c_(EntityType<StriderEntity> p_234314_0_, IWorld p_234314_1_, SpawnReason p_234314_2_, BlockPos p_234314_3_, Random p_234314_4_) {
+      BlockPos.Mutable blockpos$mutable = p_234314_3_.toMutable();
 
       do {
          blockpos$mutable.move(Direction.UP);
-      } while(p_234314_1_.getFluidState(blockpos$mutable).is(FluidTags.LAVA));
+      } while(p_234314_1_.getFluidState(blockpos$mutable).isTagged(FluidTags.LAVA));
 
       return p_234314_1_.getBlockState(blockpos$mutable).isAir();
    }
 
-   public void onSyncedDataUpdated(DataParameter<?> p_184206_1_) {
-      if (DATA_BOOST_TIME.equals(p_184206_1_) && this.level.isClientSide) {
-         this.steering.onSynced();
+   public void notifyDataManagerChange(DataParameter<?> key) {
+      if (field_234310_bw_.equals(key) && this.world.isRemote) {
+         this.field_234313_bz_.updateData();
       }
 
-      super.onSyncedDataUpdated(p_184206_1_);
+      super.notifyDataManagerChange(key);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_BOOST_TIME, 0);
-      this.entityData.define(DATA_SUFFOCATING, false);
-      this.entityData.define(DATA_SADDLE_ID, false);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(field_234310_bw_, 0);
+      this.dataManager.register(field_234311_bx_, false);
+      this.dataManager.register(field_234312_by_, false);
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      this.steering.addAdditionalSaveData(p_213281_1_);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      this.field_234313_bz_.setSaddledToNBT(compound);
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.steering.readAdditionalSaveData(p_70037_1_);
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.field_234313_bz_.setSaddledFromNBT(compound);
    }
 
-   public boolean isSaddled() {
-      return this.steering.hasSaddle();
+   public boolean isHorseSaddled() {
+      return this.field_234313_bz_.getSaddled();
    }
 
-   public boolean isSaddleable() {
-      return this.isAlive() && !this.isBaby();
+   public boolean func_230264_L__() {
+      return this.isAlive() && !this.isChild();
    }
 
-   public void equipSaddle(@Nullable SoundCategory p_230266_1_) {
-      this.steering.setSaddle(true);
+   public void func_230266_a_(@Nullable SoundCategory p_230266_1_) {
+      this.field_234313_bz_.setSaddledFromBoolean(true);
       if (p_230266_1_ != null) {
-         this.level.playSound((PlayerEntity)null, this, SoundEvents.STRIDER_SADDLE, p_230266_1_, 0.5F, 1.0F);
+         this.world.playMovingSound((PlayerEntity)null, this, SoundEvents.ENTITY_STRIDER_SADDLE, p_230266_1_, 0.5F, 1.0F);
       }
 
    }
 
    protected void registerGoals() {
-      this.panicGoal = new PanicGoal(this, 1.65D);
-      this.goalSelector.addGoal(1, this.panicGoal);
+      this.field_234307_bB_ = new PanicGoal(this, 1.65D);
+      this.goalSelector.addGoal(1, this.field_234307_bB_);
       this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
-      this.temptGoal = new TemptGoal(this, 1.4D, false, TEMPT_ITEMS);
-      this.goalSelector.addGoal(3, this.temptGoal);
+      this.field_234306_bA_ = new TemptGoal(this, 1.4D, false, field_234309_bv_);
+      this.goalSelector.addGoal(3, this.field_234306_bA_);
       this.goalSelector.addGoal(4, new StriderEntity.MoveToLavaGoal(this, 1.5D));
       this.goalSelector.addGoal(5, new FollowParentGoal(this, 1.1D));
       this.goalSelector.addGoal(7, new RandomWalkingGoal(this, 1.0D, 60));
@@ -153,36 +153,36 @@ public class StriderEntity extends AnimalEntity implements IRideable, IEquipable
       this.goalSelector.addGoal(9, new LookAtGoal(this, StriderEntity.class, 8.0F));
    }
 
-   public void setSuffocating(boolean p_234319_1_) {
-      this.entityData.set(DATA_SUFFOCATING, p_234319_1_);
+   public void func_234319_t_(boolean p_234319_1_) {
+      this.dataManager.set(field_234311_bx_, p_234319_1_);
    }
 
-   public boolean isSuffocating() {
-      return this.getVehicle() instanceof StriderEntity ? ((StriderEntity)this.getVehicle()).isSuffocating() : this.entityData.get(DATA_SUFFOCATING);
+   public boolean func_234315_eI_() {
+      return this.getRidingEntity() instanceof StriderEntity ? ((StriderEntity)this.getRidingEntity()).func_234315_eI_() : this.dataManager.get(field_234311_bx_);
    }
 
-   public boolean canStandOnFluid(Fluid p_230285_1_) {
-      return p_230285_1_.is(FluidTags.LAVA);
+   public boolean func_230285_a_(Fluid p_230285_1_) {
+      return p_230285_1_.isIn(FluidTags.LAVA);
    }
 
-   public double getPassengersRidingOffset() {
-      float f = Math.min(0.25F, this.animationSpeed);
-      float f1 = this.animationPosition;
-      return (double)this.getBbHeight() - 0.19D + (double)(0.12F * MathHelper.cos(f1 * 1.5F) * 2.0F * f);
+   public double getMountedYOffset() {
+      float f = Math.min(0.25F, this.limbSwingAmount);
+      float f1 = this.limbSwing;
+      return (double)this.getHeight() - 0.19D + (double)(0.12F * MathHelper.cos(f1 * 1.5F) * 2.0F * f);
    }
 
-   public boolean canBeControlledByRider() {
+   public boolean canBeSteered() {
       Entity entity = this.getControllingPassenger();
       if (!(entity instanceof PlayerEntity)) {
          return false;
       } else {
          PlayerEntity playerentity = (PlayerEntity)entity;
-         return playerentity.getMainHandItem().getItem() == Items.WARPED_FUNGUS_ON_A_STICK || playerentity.getOffhandItem().getItem() == Items.WARPED_FUNGUS_ON_A_STICK;
+         return playerentity.getHeldItemMainhand().getItem() == Items.WARPED_FUNGUS_ON_A_STICK || playerentity.getHeldItemOffhand().getItem() == Items.WARPED_FUNGUS_ON_A_STICK;
       }
    }
 
-   public boolean checkSpawnObstruction(IWorldReader p_205019_1_) {
-      return p_205019_1_.isUnobstructed(this);
+   public boolean isNotColliding(IWorldReader worldIn) {
+      return worldIn.checkNoEntityCollision(this);
    }
 
    @Nullable
@@ -190,32 +190,32 @@ public class StriderEntity extends AnimalEntity implements IRideable, IEquipable
       return this.getPassengers().isEmpty() ? null : this.getPassengers().get(0);
    }
 
-   public Vector3d getDismountLocationForPassenger(LivingEntity p_230268_1_) {
-      Vector3d[] avector3d = new Vector3d[]{getCollisionHorizontalEscapeVector((double)this.getBbWidth(), (double)p_230268_1_.getBbWidth(), p_230268_1_.yRot), getCollisionHorizontalEscapeVector((double)this.getBbWidth(), (double)p_230268_1_.getBbWidth(), p_230268_1_.yRot - 22.5F), getCollisionHorizontalEscapeVector((double)this.getBbWidth(), (double)p_230268_1_.getBbWidth(), p_230268_1_.yRot + 22.5F), getCollisionHorizontalEscapeVector((double)this.getBbWidth(), (double)p_230268_1_.getBbWidth(), p_230268_1_.yRot - 45.0F), getCollisionHorizontalEscapeVector((double)this.getBbWidth(), (double)p_230268_1_.getBbWidth(), p_230268_1_.yRot + 45.0F)};
+   public Vector3d func_230268_c_(LivingEntity livingEntity) {
+      Vector3d[] avector3d = new Vector3d[]{func_233559_a_((double)this.getWidth(), (double)livingEntity.getWidth(), livingEntity.rotationYaw), func_233559_a_((double)this.getWidth(), (double)livingEntity.getWidth(), livingEntity.rotationYaw - 22.5F), func_233559_a_((double)this.getWidth(), (double)livingEntity.getWidth(), livingEntity.rotationYaw + 22.5F), func_233559_a_((double)this.getWidth(), (double)livingEntity.getWidth(), livingEntity.rotationYaw - 45.0F), func_233559_a_((double)this.getWidth(), (double)livingEntity.getWidth(), livingEntity.rotationYaw + 45.0F)};
       Set<BlockPos> set = Sets.newLinkedHashSet();
       double d0 = this.getBoundingBox().maxY;
       double d1 = this.getBoundingBox().minY - 0.5D;
       BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
 
       for(Vector3d vector3d : avector3d) {
-         blockpos$mutable.set(this.getX() + vector3d.x, d0, this.getZ() + vector3d.z);
+         blockpos$mutable.setPos(this.getPosX() + vector3d.x, d0, this.getPosZ() + vector3d.z);
 
          for(double d2 = d0; d2 > d1; --d2) {
-            set.add(blockpos$mutable.immutable());
+            set.add(blockpos$mutable.toImmutable());
             blockpos$mutable.move(Direction.DOWN);
          }
       }
 
       for(BlockPos blockpos : set) {
-         if (!this.level.getFluidState(blockpos).is(FluidTags.LAVA)) {
-            double d3 = this.level.getBlockFloorHeight(blockpos);
-            if (TransportationHelper.isBlockFloorValid(d3)) {
-               Vector3d vector3d1 = Vector3d.upFromBottomCenterOf(blockpos, d3);
+         if (!this.world.getFluidState(blockpos).isTagged(FluidTags.LAVA)) {
+            double d3 = this.world.func_242403_h(blockpos);
+            if (TransportationHelper.func_234630_a_(d3)) {
+               Vector3d vector3d1 = Vector3d.copyCenteredWithVerticalOffset(blockpos, d3);
 
-               for(Pose pose : p_230268_1_.getDismountPoses()) {
-                  AxisAlignedBB axisalignedbb = p_230268_1_.getLocalBoundsForPose(pose);
-                  if (TransportationHelper.canDismountTo(this.level, p_230268_1_, axisalignedbb.move(vector3d1))) {
-                     p_230268_1_.setPose(pose);
+               for(Pose pose : livingEntity.getAvailablePoses()) {
+                  AxisAlignedBB axisalignedbb = livingEntity.getPoseAABB(pose);
+                  if (TransportationHelper.func_234631_a_(this.world, livingEntity, axisalignedbb.offset(vector3d1))) {
+                     livingEntity.setPose(pose);
                      return vector3d1;
                   }
                }
@@ -223,159 +223,159 @@ public class StriderEntity extends AnimalEntity implements IRideable, IEquipable
          }
       }
 
-      return new Vector3d(this.getX(), this.getBoundingBox().maxY, this.getZ());
+      return new Vector3d(this.getPosX(), this.getBoundingBox().maxY, this.getPosZ());
    }
 
-   public void travel(Vector3d p_213352_1_) {
-      this.setSpeed(this.getMoveSpeed());
-      this.travel(this, this.steering, p_213352_1_);
+   public void travel(Vector3d travelVector) {
+      this.setAIMoveSpeed(this.func_234316_eJ_());
+      this.ride(this, this.field_234313_bz_, travelVector);
    }
 
-   public float getMoveSpeed() {
-      return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED) * (this.isSuffocating() ? 0.66F : 1.0F);
+   public float func_234316_eJ_() {
+      return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED) * (this.func_234315_eI_() ? 0.66F : 1.0F);
    }
 
-   public float getSteeringSpeed() {
-      return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED) * (this.isSuffocating() ? 0.23F : 0.55F);
+   public float getMountedSpeed() {
+      return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED) * (this.func_234315_eI_() ? 0.23F : 0.55F);
    }
 
-   public void travelWithInput(Vector3d p_230267_1_) {
-      super.travel(p_230267_1_);
+   public void travelTowards(Vector3d travelVec) {
+      super.travel(travelVec);
    }
 
-   protected float nextStep() {
-      return this.moveDist + 0.6F;
+   protected float determineNextStepDistance() {
+      return this.distanceWalkedOnStepModified + 0.6F;
    }
 
-   protected void playStepSound(BlockPos p_180429_1_, BlockState p_180429_2_) {
-      this.playSound(this.isInLava() ? SoundEvents.STRIDER_STEP_LAVA : SoundEvents.STRIDER_STEP, 1.0F, 1.0F);
+   protected void playStepSound(BlockPos pos, BlockState blockIn) {
+      this.playSound(this.isInLava() ? SoundEvents.ENTITY_STRIDER_STEP_LAVA : SoundEvents.ENTITY_STRIDER_STEP, 1.0F, 1.0F);
    }
 
    public boolean boost() {
-      return this.steering.boost(this.getRandom());
+      return this.field_234313_bz_.boost(this.getRNG());
    }
 
-   protected void checkFallDamage(double p_184231_1_, boolean p_184231_3_, BlockState p_184231_4_, BlockPos p_184231_5_) {
-      this.checkInsideBlocks();
+   protected void updateFallState(double y, boolean onGroundIn, BlockState state, BlockPos pos) {
+      this.doBlockCollisions();
       if (this.isInLava()) {
          this.fallDistance = 0.0F;
       } else {
-         super.checkFallDamage(p_184231_1_, p_184231_3_, p_184231_4_, p_184231_5_);
+         super.updateFallState(y, onGroundIn, state, pos);
       }
    }
 
    public void tick() {
-      if (this.isBeingTempted() && this.random.nextInt(140) == 0) {
-         this.playSound(SoundEvents.STRIDER_HAPPY, 1.0F, this.getVoicePitch());
-      } else if (this.isPanicking() && this.random.nextInt(60) == 0) {
-         this.playSound(SoundEvents.STRIDER_RETREAT, 1.0F, this.getVoicePitch());
+      if (this.func_241398_eP_() && this.rand.nextInt(140) == 0) {
+         this.playSound(SoundEvents.ENTITY_STRIDER_HAPPY, 1.0F, this.getSoundPitch());
+      } else if (this.func_241397_eO_() && this.rand.nextInt(60) == 0) {
+         this.playSound(SoundEvents.ENTITY_STRIDER_RETREAT, 1.0F, this.getSoundPitch());
       }
 
-      BlockState blockstate = this.level.getBlockState(this.blockPosition());
-      BlockState blockstate1 = this.getBlockStateOn();
-      boolean flag = blockstate.is(BlockTags.STRIDER_WARM_BLOCKS) || blockstate1.is(BlockTags.STRIDER_WARM_BLOCKS) || this.getFluidHeight(FluidTags.LAVA) > 0.0D;
-      this.setSuffocating(!flag);
+      BlockState blockstate = this.world.getBlockState(this.getPosition());
+      BlockState blockstate1 = this.getStateBelow();
+      boolean flag = blockstate.isIn(BlockTags.STRIDER_WARM_BLOCKS) || blockstate1.isIn(BlockTags.STRIDER_WARM_BLOCKS) || this.func_233571_b_(FluidTags.LAVA) > 0.0D;
+      this.func_234319_t_(!flag);
       super.tick();
-      this.floatStrider();
-      this.checkInsideBlocks();
+      this.func_234318_eL_();
+      this.doBlockCollisions();
    }
 
-   private boolean isPanicking() {
-      return this.panicGoal != null && this.panicGoal.isRunning();
+   private boolean func_241397_eO_() {
+      return this.field_234307_bB_ != null && this.field_234307_bB_.isRunning();
    }
 
-   private boolean isBeingTempted() {
-      return this.temptGoal != null && this.temptGoal.isRunning();
+   private boolean func_241398_eP_() {
+      return this.field_234306_bA_ != null && this.field_234306_bA_.isRunning();
    }
 
-   protected boolean shouldPassengersInheritMalus() {
+   protected boolean func_230286_q_() {
       return true;
    }
 
-   private void floatStrider() {
+   private void func_234318_eL_() {
       if (this.isInLava()) {
-         ISelectionContext iselectioncontext = ISelectionContext.of(this);
-         if (iselectioncontext.isAbove(FlowingFluidBlock.STABLE_SHAPE, this.blockPosition(), true) && !this.level.getFluidState(this.blockPosition().above()).is(FluidTags.LAVA)) {
+         ISelectionContext iselectioncontext = ISelectionContext.forEntity(this);
+         if (iselectioncontext.func_216378_a(FlowingFluidBlock.LAVA_COLLISION_SHAPE, this.getPosition(), true) && !this.world.getFluidState(this.getPosition().up()).isTagged(FluidTags.LAVA)) {
             this.onGround = true;
          } else {
-            this.setDeltaMovement(this.getDeltaMovement().scale(0.5D).add(0.0D, 0.05D, 0.0D));
+            this.setMotion(this.getMotion().scale(0.5D).add(0.0D, 0.05D, 0.0D));
          }
       }
 
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return MobEntity.createMobAttributes().add(Attributes.MOVEMENT_SPEED, (double)0.175F).add(Attributes.FOLLOW_RANGE, 16.0D);
+   public static AttributeModifierMap.MutableAttribute func_234317_eK_() {
+      return MobEntity.func_233666_p_().createMutableAttribute(Attributes.MOVEMENT_SPEED, (double)0.175F).createMutableAttribute(Attributes.FOLLOW_RANGE, 16.0D);
    }
 
    protected SoundEvent getAmbientSound() {
-      return !this.isPanicking() && !this.isBeingTempted() ? SoundEvents.STRIDER_AMBIENT : null;
+      return !this.func_241397_eO_() && !this.func_241398_eP_() ? SoundEvents.ENTITY_STRIDER_AMBIENT : null;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return SoundEvents.STRIDER_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return SoundEvents.ENTITY_STRIDER_HURT;
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.STRIDER_DEATH;
+      return SoundEvents.ENTITY_STRIDER_DEATH;
    }
 
-   protected boolean canAddPassenger(Entity p_184219_1_) {
-      return this.getPassengers().isEmpty() && !this.isEyeInFluid(FluidTags.LAVA);
+   protected boolean canFitPassenger(Entity passenger) {
+      return this.getPassengers().isEmpty() && !this.areEyesInFluid(FluidTags.LAVA);
    }
 
-   public boolean isSensitiveToWater() {
+   public boolean isWaterSensitive() {
       return true;
    }
 
-   public boolean isOnFire() {
+   public boolean isBurning() {
       return false;
    }
 
-   protected PathNavigator createNavigation(World p_175447_1_) {
-      return new StriderEntity.LavaPathNavigator(this, p_175447_1_);
+   protected PathNavigator createNavigator(World worldIn) {
+      return new StriderEntity.LavaPathNavigator(this, worldIn);
    }
 
-   public float getWalkTargetValue(BlockPos p_205022_1_, IWorldReader p_205022_2_) {
-      if (p_205022_2_.getBlockState(p_205022_1_).getFluidState().is(FluidTags.LAVA)) {
+   public float getBlockPathWeight(BlockPos pos, IWorldReader worldIn) {
+      if (worldIn.getBlockState(pos).getFluidState().isTagged(FluidTags.LAVA)) {
          return 10.0F;
       } else {
          return this.isInLava() ? Float.NEGATIVE_INFINITY : 0.0F;
       }
    }
 
-   public StriderEntity getBreedOffspring(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
+   public StriderEntity func_241840_a(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
       return EntityType.STRIDER.create(p_241840_1_);
    }
 
-   public boolean isFood(ItemStack p_70877_1_) {
-      return FOOD_ITEMS.test(p_70877_1_);
+   public boolean isBreedingItem(ItemStack stack) {
+      return field_234308_bu_.test(stack);
    }
 
-   protected void dropEquipment() {
-      super.dropEquipment();
-      if (this.isSaddled()) {
-         this.spawnAtLocation(Items.SADDLE);
+   protected void dropInventory() {
+      super.dropInventory();
+      if (this.isHorseSaddled()) {
+         this.entityDropItem(Items.SADDLE);
       }
 
    }
 
-   public ActionResultType mobInteract(PlayerEntity p_230254_1_, Hand p_230254_2_) {
-      boolean flag = this.isFood(p_230254_1_.getItemInHand(p_230254_2_));
-      if (!flag && this.isSaddled() && !this.isVehicle() && !p_230254_1_.isSecondaryUseActive()) {
-         if (!this.level.isClientSide) {
+   public ActionResultType func_230254_b_(PlayerEntity p_230254_1_, Hand p_230254_2_) {
+      boolean flag = this.isBreedingItem(p_230254_1_.getHeldItem(p_230254_2_));
+      if (!flag && this.isHorseSaddled() && !this.isBeingRidden() && !p_230254_1_.isSecondaryUseActive()) {
+         if (!this.world.isRemote) {
             p_230254_1_.startRiding(this);
          }
 
-         return ActionResultType.sidedSuccess(this.level.isClientSide);
+         return ActionResultType.func_233537_a_(this.world.isRemote);
       } else {
-         ActionResultType actionresulttype = super.mobInteract(p_230254_1_, p_230254_2_);
-         if (!actionresulttype.consumesAction()) {
-            ItemStack itemstack = p_230254_1_.getItemInHand(p_230254_2_);
-            return itemstack.getItem() == Items.SADDLE ? itemstack.interactLivingEntity(p_230254_1_, this, p_230254_2_) : ActionResultType.PASS;
+         ActionResultType actionresulttype = super.func_230254_b_(p_230254_1_, p_230254_2_);
+         if (!actionresulttype.isSuccessOrConsume()) {
+            ItemStack itemstack = p_230254_1_.getHeldItem(p_230254_2_);
+            return itemstack.getItem() == Items.SADDLE ? itemstack.interactWithEntity(p_230254_1_, this, p_230254_2_) : ActionResultType.PASS;
          } else {
             if (flag && !this.isSilent()) {
-               this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.STRIDER_EAT, this.getSoundSource(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
+               this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_STRIDER_EAT, this.getSoundCategory(), 1.0F, 1.0F + (this.rand.nextFloat() - this.rand.nextFloat()) * 0.2F);
             }
 
             return actionresulttype;
@@ -384,36 +384,36 @@ public class StriderEntity extends AnimalEntity implements IRideable, IEquipable
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Vector3d getLeashOffset() {
-      return new Vector3d(0.0D, (double)(0.6F * this.getEyeHeight()), (double)(this.getBbWidth() * 0.4F));
+   public Vector3d func_241205_ce_() {
+      return new Vector3d(0.0D, (double)(0.6F * this.getEyeHeight()), (double)(this.getWidth() * 0.4F));
    }
 
    @Nullable
-   public ILivingEntityData finalizeSpawn(IServerWorld p_213386_1_, DifficultyInstance p_213386_2_, SpawnReason p_213386_3_, @Nullable ILivingEntityData p_213386_4_, @Nullable CompoundNBT p_213386_5_) {
-      if (this.isBaby()) {
-         return super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, p_213386_4_, p_213386_5_);
+   public ILivingEntityData onInitialSpawn(IServerWorld worldIn, DifficultyInstance difficultyIn, SpawnReason reason, @Nullable ILivingEntityData spawnDataIn, @Nullable CompoundNBT dataTag) {
+      if (this.isChild()) {
+         return super.onInitialSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
       } else {
          Object object;
-         if (this.random.nextInt(30) == 0) {
-            MobEntity mobentity = EntityType.ZOMBIFIED_PIGLIN.create(p_213386_1_.getLevel());
-            object = this.spawnJockey(p_213386_1_, p_213386_2_, mobentity, new ZombieEntity.GroupData(ZombieEntity.getSpawnAsBabyOdds(this.random), false));
-            mobentity.setItemSlot(EquipmentSlotType.MAINHAND, new ItemStack(Items.WARPED_FUNGUS_ON_A_STICK));
-            this.equipSaddle((SoundCategory)null);
-         } else if (this.random.nextInt(10) == 0) {
-            AgeableEntity ageableentity = EntityType.STRIDER.create(p_213386_1_.getLevel());
-            ageableentity.setAge(-24000);
-            object = this.spawnJockey(p_213386_1_, p_213386_2_, ageableentity, (ILivingEntityData)null);
+         if (this.rand.nextInt(30) == 0) {
+            MobEntity mobentity = EntityType.ZOMBIFIED_PIGLIN.create(worldIn.getWorld());
+            object = this.func_242331_a(worldIn, difficultyIn, mobentity, new ZombieEntity.GroupData(ZombieEntity.func_241399_a_(this.rand), false));
+            mobentity.setItemStackToSlot(EquipmentSlotType.MAINHAND, new ItemStack(Items.WARPED_FUNGUS_ON_A_STICK));
+            this.func_230266_a_((SoundCategory)null);
+         } else if (this.rand.nextInt(10) == 0) {
+            AgeableEntity ageableentity = EntityType.STRIDER.create(worldIn.getWorld());
+            ageableentity.setGrowingAge(-24000);
+            object = this.func_242331_a(worldIn, difficultyIn, ageableentity, (ILivingEntityData)null);
          } else {
             object = new AgeableEntity.AgeableData(0.5F);
          }
 
-         return super.finalizeSpawn(p_213386_1_, p_213386_2_, p_213386_3_, (ILivingEntityData)object, p_213386_5_);
+         return super.onInitialSpawn(worldIn, difficultyIn, reason, (ILivingEntityData)object, dataTag);
       }
    }
 
-   private ILivingEntityData spawnJockey(IServerWorld p_242331_1_, DifficultyInstance p_242331_2_, MobEntity p_242331_3_, @Nullable ILivingEntityData p_242331_4_) {
-      p_242331_3_.moveTo(this.getX(), this.getY(), this.getZ(), this.yRot, 0.0F);
-      p_242331_3_.finalizeSpawn(p_242331_1_, p_242331_2_, SpawnReason.JOCKEY, p_242331_4_, (CompoundNBT)null);
+   private ILivingEntityData func_242331_a(IServerWorld p_242331_1_, DifficultyInstance p_242331_2_, MobEntity p_242331_3_, @Nullable ILivingEntityData p_242331_4_) {
+      p_242331_3_.setLocationAndAngles(this.getPosX(), this.getPosY(), this.getPosZ(), this.rotationYaw, 0.0F);
+      p_242331_3_.onInitialSpawn(p_242331_1_, p_242331_2_, SpawnReason.JOCKEY, p_242331_4_, (CompoundNBT)null);
       p_242331_3_.startRiding(this, true);
       return new AgeableEntity.AgeableData(0.0F);
    }
@@ -423,46 +423,46 @@ public class StriderEntity extends AnimalEntity implements IRideable, IEquipable
          super(p_i231565_1_, p_i231565_2_);
       }
 
-      protected PathFinder createPathFinder(int p_179679_1_) {
-         this.nodeEvaluator = new WalkNodeProcessor();
-         return new PathFinder(this.nodeEvaluator, p_179679_1_);
+      protected PathFinder getPathFinder(int p_179679_1_) {
+         this.nodeProcessor = new WalkNodeProcessor();
+         return new PathFinder(this.nodeProcessor, p_179679_1_);
       }
 
-      protected boolean hasValidPathType(PathNodeType p_230287_1_) {
-         return p_230287_1_ != PathNodeType.LAVA && p_230287_1_ != PathNodeType.DAMAGE_FIRE && p_230287_1_ != PathNodeType.DANGER_FIRE ? super.hasValidPathType(p_230287_1_) : true;
+      protected boolean func_230287_a_(PathNodeType p_230287_1_) {
+         return p_230287_1_ != PathNodeType.LAVA && p_230287_1_ != PathNodeType.DAMAGE_FIRE && p_230287_1_ != PathNodeType.DANGER_FIRE ? super.func_230287_a_(p_230287_1_) : true;
       }
 
-      public boolean isStableDestination(BlockPos p_188555_1_) {
-         return this.level.getBlockState(p_188555_1_).is(Blocks.LAVA) || super.isStableDestination(p_188555_1_);
+      public boolean canEntityStandOnPos(BlockPos pos) {
+         return this.world.getBlockState(pos).isIn(Blocks.LAVA) || super.canEntityStandOnPos(pos);
       }
    }
 
    static class MoveToLavaGoal extends MoveToBlockGoal {
-      private final StriderEntity strider;
+      private final StriderEntity field_242332_g;
 
       private MoveToLavaGoal(StriderEntity p_i241913_1_, double p_i241913_2_) {
          super(p_i241913_1_, p_i241913_2_, 8, 2);
-         this.strider = p_i241913_1_;
+         this.field_242332_g = p_i241913_1_;
       }
 
-      public BlockPos getMoveToTarget() {
-         return this.blockPos;
+      public BlockPos func_241846_j() {
+         return this.destinationBlock;
       }
 
-      public boolean canContinueToUse() {
-         return !this.strider.isInLava() && this.isValidTarget(this.strider.level, this.blockPos);
+      public boolean shouldContinueExecuting() {
+         return !this.field_242332_g.isInLava() && this.shouldMoveTo(this.field_242332_g.world, this.destinationBlock);
       }
 
-      public boolean canUse() {
-         return !this.strider.isInLava() && super.canUse();
+      public boolean shouldExecute() {
+         return !this.field_242332_g.isInLava() && super.shouldExecute();
       }
 
-      public boolean shouldRecalculatePath() {
-         return this.tryTicks % 20 == 0;
+      public boolean shouldMove() {
+         return this.timeoutCounter % 20 == 0;
       }
 
-      protected boolean isValidTarget(IWorldReader p_179488_1_, BlockPos p_179488_2_) {
-         return p_179488_1_.getBlockState(p_179488_2_).is(Blocks.LAVA) && p_179488_1_.getBlockState(p_179488_2_.above()).isPathfindable(p_179488_1_, p_179488_2_, PathType.LAND);
+      protected boolean shouldMoveTo(IWorldReader worldIn, BlockPos pos) {
+         return worldIn.getBlockState(pos).isIn(Blocks.LAVA) && worldIn.getBlockState(pos.up()).allowsMovement(worldIn, pos, PathType.LAND);
       }
    }
 }

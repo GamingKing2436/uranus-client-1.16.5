@@ -10,7 +10,7 @@ import com.mojang.serialization.codecs.PrimitiveCodec;
 import net.minecraft.util.ResourceLocation;
 
 public class NamespacedSchema extends Schema {
-   public static final PrimitiveCodec<String> NAMESPACED_STRING_CODEC = new PrimitiveCodec<String>() {
+   public static final PrimitiveCodec<String> field_233455_a_ = new PrimitiveCodec<String>() {
       public <T> DataResult<String> read(DynamicOps<T> p_read_1_, T p_read_2_) {
          return p_read_1_.getStringValue(p_read_2_).map(NamespacedSchema::ensureNamespaced);
       }
@@ -23,19 +23,19 @@ public class NamespacedSchema extends Schema {
          return "NamespacedString";
       }
    };
-   private static final Type<String> NAMESPACED_STRING = new PrimitiveType<>(NAMESPACED_STRING_CODEC);
+   private static final Type<String> field_233456_b_ = new PrimitiveType<>(field_233455_a_);
 
-   public NamespacedSchema(int p_i49612_1_, Schema p_i49612_2_) {
-      super(p_i49612_1_, p_i49612_2_);
+   public NamespacedSchema(int versionKey, Schema schema) {
+      super(versionKey, schema);
    }
 
-   public static String ensureNamespaced(String p_206477_0_) {
-      ResourceLocation resourcelocation = ResourceLocation.tryParse(p_206477_0_);
-      return resourcelocation != null ? resourcelocation.toString() : p_206477_0_;
+   public static String ensureNamespaced(String string) {
+      ResourceLocation resourcelocation = ResourceLocation.tryCreate(string);
+      return resourcelocation != null ? resourcelocation.toString() : string;
    }
 
-   public static Type<String> namespacedString() {
-      return NAMESPACED_STRING;
+   public static Type<String> func_233457_a_() {
+      return field_233456_b_;
    }
 
    public Type<?> getChoiceType(TypeReference p_getChoiceType_1_, String p_getChoiceType_2_) {

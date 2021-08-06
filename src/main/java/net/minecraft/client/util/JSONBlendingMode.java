@@ -10,32 +10,32 @@ public class JSONBlendingMode {
    private static JSONBlendingMode lastApplied;
    private final int srcColorFactor;
    private final int srcAlphaFactor;
-   private final int dstColorFactor;
-   private final int dstAlphaFactor;
-   private final int blendFunc;
+   private final int destColorFactor;
+   private final int destAlphaFactor;
+   private final int blendFunction;
    private final boolean separateBlend;
    private final boolean opaque;
 
-   private JSONBlendingMode(boolean p_i45084_1_, boolean p_i45084_2_, int p_i45084_3_, int p_i45084_4_, int p_i45084_5_, int p_i45084_6_, int p_i45084_7_) {
-      this.separateBlend = p_i45084_1_;
-      this.srcColorFactor = p_i45084_3_;
-      this.dstColorFactor = p_i45084_4_;
-      this.srcAlphaFactor = p_i45084_5_;
-      this.dstAlphaFactor = p_i45084_6_;
-      this.opaque = p_i45084_2_;
-      this.blendFunc = p_i45084_7_;
+   private JSONBlendingMode(boolean separateBlendIn, boolean opaqueIn, int srcColorFactorIn, int destColorFactorIn, int srcAlphaFactorIn, int destAlphaFactorIn, int blendFunctionIn) {
+      this.separateBlend = separateBlendIn;
+      this.srcColorFactor = srcColorFactorIn;
+      this.destColorFactor = destColorFactorIn;
+      this.srcAlphaFactor = srcAlphaFactorIn;
+      this.destAlphaFactor = destAlphaFactorIn;
+      this.opaque = opaqueIn;
+      this.blendFunction = blendFunctionIn;
    }
 
    public JSONBlendingMode() {
       this(false, true, 1, 0, 1, 0, 32774);
    }
 
-   public JSONBlendingMode(int p_i45085_1_, int p_i45085_2_, int p_i45085_3_) {
-      this(false, false, p_i45085_1_, p_i45085_2_, p_i45085_1_, p_i45085_2_, p_i45085_3_);
+   public JSONBlendingMode(int srcFactor, int dstFactor, int blendFunctionIn) {
+      this(false, false, srcFactor, dstFactor, srcFactor, dstFactor, blendFunctionIn);
    }
 
-   public JSONBlendingMode(int p_i45086_1_, int p_i45086_2_, int p_i45086_3_, int p_i45086_4_, int p_i45086_5_) {
-      this(true, false, p_i45086_1_, p_i45086_2_, p_i45086_3_, p_i45086_4_, p_i45086_5_);
+   public JSONBlendingMode(int srcColorFactorIn, int destColorFactorIn, int srcAlphaFactorIn, int destAlphaFactorIn, int blendFunctionIn) {
+      this(true, false, srcColorFactorIn, destColorFactorIn, srcAlphaFactorIn, destAlphaFactorIn, blendFunctionIn);
    }
 
    public void apply() {
@@ -50,11 +50,11 @@ public class JSONBlendingMode {
             RenderSystem.enableBlend();
          }
 
-         RenderSystem.blendEquation(this.blendFunc);
+         RenderSystem.blendEquation(this.blendFunction);
          if (this.separateBlend) {
-            RenderSystem.blendFuncSeparate(this.srcColorFactor, this.dstColorFactor, this.srcAlphaFactor, this.dstAlphaFactor);
+            RenderSystem.blendFuncSeparate(this.srcColorFactor, this.destColorFactor, this.srcAlphaFactor, this.destAlphaFactor);
          } else {
-            RenderSystem.blendFunc(this.srcColorFactor, this.dstColorFactor);
+            RenderSystem.blendFunc(this.srcColorFactor, this.destColorFactor);
          }
 
       }
@@ -67,11 +67,11 @@ public class JSONBlendingMode {
          return false;
       } else {
          JSONBlendingMode jsonblendingmode = (JSONBlendingMode)p_equals_1_;
-         if (this.blendFunc != jsonblendingmode.blendFunc) {
+         if (this.blendFunction != jsonblendingmode.blendFunction) {
             return false;
-         } else if (this.dstAlphaFactor != jsonblendingmode.dstAlphaFactor) {
+         } else if (this.destAlphaFactor != jsonblendingmode.destAlphaFactor) {
             return false;
-         } else if (this.dstColorFactor != jsonblendingmode.dstColorFactor) {
+         } else if (this.destColorFactor != jsonblendingmode.destColorFactor) {
             return false;
          } else if (this.opaque != jsonblendingmode.opaque) {
             return false;
@@ -88,9 +88,9 @@ public class JSONBlendingMode {
    public int hashCode() {
       int i = this.srcColorFactor;
       i = 31 * i + this.srcAlphaFactor;
-      i = 31 * i + this.dstColorFactor;
-      i = 31 * i + this.dstAlphaFactor;
-      i = 31 * i + this.blendFunc;
+      i = 31 * i + this.destColorFactor;
+      i = 31 * i + this.destAlphaFactor;
+      i = 31 * i + this.blendFunction;
       i = 31 * i + (this.separateBlend ? 1 : 0);
       return 31 * i + (this.opaque ? 1 : 0);
    }
@@ -99,8 +99,8 @@ public class JSONBlendingMode {
       return this.opaque;
    }
 
-   public static int stringToBlendFunc(String p_148108_0_) {
-      String s = p_148108_0_.trim().toLowerCase(Locale.ROOT);
+   public static int stringToBlendFunction(String funcName) {
+      String s = funcName.trim().toLowerCase(Locale.ROOT);
       if ("add".equals(s)) {
          return 32774;
       } else if ("subtract".equals(s)) {
@@ -116,8 +116,8 @@ public class JSONBlendingMode {
       }
    }
 
-   public static int stringToBlendFactor(String p_148107_0_) {
-      String s = p_148107_0_.trim().toLowerCase(Locale.ROOT);
+   public static int stringToBlendFactor(String factorName) {
+      String s = factorName.trim().toLowerCase(Locale.ROOT);
       s = s.replaceAll("_", "");
       s = s.replaceAll("one", "1");
       s = s.replaceAll("zero", "0");

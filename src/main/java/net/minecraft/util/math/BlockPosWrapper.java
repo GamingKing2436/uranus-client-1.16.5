@@ -4,27 +4,27 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.vector.Vector3d;
 
 public class BlockPosWrapper implements IPosWrapper {
-   private final BlockPos blockPos;
-   private final Vector3d centerPosition;
+   private final BlockPos pos;
+   private final Vector3d centerPos;
 
-   public BlockPosWrapper(BlockPos p_i50371_1_) {
-      this.blockPos = p_i50371_1_;
-      this.centerPosition = Vector3d.atCenterOf(p_i50371_1_);
+   public BlockPosWrapper(BlockPos pos) {
+      this.pos = pos;
+      this.centerPos = Vector3d.copyCentered(pos);
    }
 
-   public Vector3d currentPosition() {
-      return this.centerPosition;
+   public Vector3d getPos() {
+      return this.centerPos;
    }
 
-   public BlockPos currentBlockPosition() {
-      return this.blockPos;
+   public BlockPos getBlockPos() {
+      return this.pos;
    }
 
-   public boolean isVisibleBy(LivingEntity p_220610_1_) {
+   public boolean isVisibleTo(LivingEntity entity) {
       return true;
    }
 
    public String toString() {
-      return "BlockPosTracker{blockPos=" + this.blockPos + ", centerPosition=" + this.centerPosition + '}';
+      return "BlockPosTracker{blockPos=" + this.pos + ", centerPosition=" + this.centerPos + '}';
    }
 }

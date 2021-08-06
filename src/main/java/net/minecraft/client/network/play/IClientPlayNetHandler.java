@@ -92,181 +92,181 @@ import net.minecraft.network.play.server.SWorldBorderPacket;
 import net.minecraft.network.play.server.SWorldSpawnChangedPacket;
 
 public interface IClientPlayNetHandler extends INetHandler {
-   void handleAddEntity(SSpawnObjectPacket p_147235_1_);
+   void handleSpawnObject(SSpawnObjectPacket packetIn);
 
-   void handleAddExperienceOrb(SSpawnExperienceOrbPacket p_147286_1_);
+   void handleSpawnExperienceOrb(SSpawnExperienceOrbPacket packetIn);
 
-   void handleAddMob(SSpawnMobPacket p_147281_1_);
+   void handleSpawnMob(SSpawnMobPacket packetIn);
 
-   void handleAddObjective(SScoreboardObjectivePacket p_147291_1_);
+   void handleScoreboardObjective(SScoreboardObjectivePacket packetIn);
 
-   void handleAddPainting(SSpawnPaintingPacket p_147288_1_);
+   void handleSpawnPainting(SSpawnPaintingPacket packetIn);
 
-   void handleAddPlayer(SSpawnPlayerPacket p_147237_1_);
+   void handleSpawnPlayer(SSpawnPlayerPacket packetIn);
 
-   void handleAnimate(SAnimateHandPacket p_147279_1_);
+   void handleAnimation(SAnimateHandPacket packetIn);
 
-   void handleAwardStats(SStatisticsPacket p_147293_1_);
+   void handleStatistics(SStatisticsPacket packetIn);
 
-   void handleAddOrRemoveRecipes(SRecipeBookPacket p_191980_1_);
+   void handleRecipeBook(SRecipeBookPacket packetIn);
 
-   void handleBlockDestruction(SAnimateBlockBreakPacket p_147294_1_);
+   void handleBlockBreakAnim(SAnimateBlockBreakPacket packetIn);
 
-   void handleOpenSignEditor(SOpenSignMenuPacket p_147268_1_);
+   void handleSignEditorOpen(SOpenSignMenuPacket packetIn);
 
-   void handleBlockEntityData(SUpdateTileEntityPacket p_147273_1_);
+   void handleUpdateTileEntity(SUpdateTileEntityPacket packetIn);
 
-   void handleBlockEvent(SBlockActionPacket p_147261_1_);
+   void handleBlockAction(SBlockActionPacket packetIn);
 
-   void handleBlockUpdate(SChangeBlockPacket p_147234_1_);
+   void handleBlockChange(SChangeBlockPacket packetIn);
 
-   void handleChat(SChatPacket p_147251_1_);
+   void handleChat(SChatPacket packetIn);
 
-   void handleChunkBlocksUpdate(SMultiBlockChangePacket p_147287_1_);
+   void handleMultiBlockChange(SMultiBlockChangePacket packetIn);
 
-   void handleMapItemData(SMapDataPacket p_147264_1_);
+   void handleMaps(SMapDataPacket packetIn);
 
-   void handleContainerAck(SConfirmTransactionPacket p_147239_1_);
+   void handleConfirmTransaction(SConfirmTransactionPacket packetIn);
 
-   void handleContainerClose(SCloseWindowPacket p_147276_1_);
+   void handleCloseWindow(SCloseWindowPacket packetIn);
 
-   void handleContainerContent(SWindowItemsPacket p_147241_1_);
+   void handleWindowItems(SWindowItemsPacket packetIn);
 
-   void handleHorseScreenOpen(SOpenHorseWindowPacket p_217271_1_);
+   void handleOpenHorseWindow(SOpenHorseWindowPacket packetIn);
 
-   void handleContainerSetData(SWindowPropertyPacket p_147245_1_);
+   void handleWindowProperty(SWindowPropertyPacket packetIn);
 
-   void handleContainerSetSlot(SSetSlotPacket p_147266_1_);
+   void handleSetSlot(SSetSlotPacket packetIn);
 
-   void handleCustomPayload(SCustomPayloadPlayPacket p_147240_1_);
+   void handleCustomPayload(SCustomPayloadPlayPacket packetIn);
 
-   void handleDisconnect(SDisconnectPacket p_147253_1_);
+   void handleDisconnect(SDisconnectPacket packetIn);
 
-   void handleEntityEvent(SEntityStatusPacket p_147236_1_);
+   void handleEntityStatus(SEntityStatusPacket packetIn);
 
-   void handleEntityLinkPacket(SMountEntityPacket p_147243_1_);
+   void handleEntityAttach(SMountEntityPacket packetIn);
 
-   void handleSetEntityPassengersPacket(SSetPassengersPacket p_184328_1_);
+   void handleSetPassengers(SSetPassengersPacket packetIn);
 
-   void handleExplosion(SExplosionPacket p_147283_1_);
+   void handleExplosion(SExplosionPacket packetIn);
 
-   void handleGameEvent(SChangeGameStatePacket p_147252_1_);
+   void handleChangeGameState(SChangeGameStatePacket packetIn);
 
-   void handleKeepAlive(SKeepAlivePacket p_147272_1_);
+   void handleKeepAlive(SKeepAlivePacket packetIn);
 
-   void handleLevelChunk(SChunkDataPacket p_147263_1_);
+   void handleChunkData(SChunkDataPacket packetIn);
 
-   void handleForgetLevelChunk(SUnloadChunkPacket p_184326_1_);
+   void processChunkUnload(SUnloadChunkPacket packetIn);
 
-   void handleLevelEvent(SPlaySoundEventPacket p_147277_1_);
+   void handleEffect(SPlaySoundEventPacket packetIn);
 
-   void handleLogin(SJoinGamePacket p_147282_1_);
+   void handleJoinGame(SJoinGamePacket packetIn);
 
-   void handleMoveEntity(SEntityPacket p_147259_1_);
+   void handleEntityMovement(SEntityPacket packetIn);
 
-   void handleMovePlayer(SPlayerPositionLookPacket p_184330_1_);
+   void handlePlayerPosLook(SPlayerPositionLookPacket packetIn);
 
-   void handleParticleEvent(SSpawnParticlePacket p_147289_1_);
+   void handleParticles(SSpawnParticlePacket packetIn);
 
-   void handlePlayerAbilities(SPlayerAbilitiesPacket p_147270_1_);
+   void handlePlayerAbilities(SPlayerAbilitiesPacket packetIn);
 
-   void handlePlayerInfo(SPlayerListItemPacket p_147256_1_);
+   void handlePlayerListItem(SPlayerListItemPacket packetIn);
 
-   void handleRemoveEntity(SDestroyEntitiesPacket p_147238_1_);
+   void handleDestroyEntities(SDestroyEntitiesPacket packetIn);
 
-   void handleRemoveMobEffect(SRemoveEntityEffectPacket p_147262_1_);
+   void handleRemoveEntityEffect(SRemoveEntityEffectPacket packetIn);
 
-   void handleRespawn(SRespawnPacket p_147280_1_);
+   void handleRespawn(SRespawnPacket packetIn);
 
-   void handleRotateMob(SEntityHeadLookPacket p_147267_1_);
+   void handleEntityHeadLook(SEntityHeadLookPacket packetIn);
 
-   void handleSetCarriedItem(SHeldItemChangePacket p_147257_1_);
+   void handleHeldItemChange(SHeldItemChangePacket packetIn);
 
-   void handleSetDisplayObjective(SDisplayObjectivePacket p_147254_1_);
+   void handleDisplayObjective(SDisplayObjectivePacket packetIn);
 
-   void handleSetEntityData(SEntityMetadataPacket p_147284_1_);
+   void handleEntityMetadata(SEntityMetadataPacket packetIn);
 
-   void handleSetEntityMotion(SEntityVelocityPacket p_147244_1_);
+   void handleEntityVelocity(SEntityVelocityPacket packetIn);
 
-   void handleSetEquipment(SEntityEquipmentPacket p_147242_1_);
+   void handleEntityEquipment(SEntityEquipmentPacket packetIn);
 
-   void handleSetExperience(SSetExperiencePacket p_147295_1_);
+   void handleSetExperience(SSetExperiencePacket packetIn);
 
-   void handleSetHealth(SUpdateHealthPacket p_147249_1_);
+   void handleUpdateHealth(SUpdateHealthPacket packetIn);
 
-   void handleSetPlayerTeamPacket(STeamsPacket p_147247_1_);
+   void handleTeams(STeamsPacket packetIn);
 
-   void handleSetScore(SUpdateScorePacket p_147250_1_);
+   void handleUpdateScore(SUpdateScorePacket packetIn);
 
-   void handleSetSpawn(SWorldSpawnChangedPacket p_230488_1_);
+   void func_230488_a_(SWorldSpawnChangedPacket p_230488_1_);
 
-   void handleSetTime(SUpdateTimePacket p_147285_1_);
+   void handleTimeUpdate(SUpdateTimePacket packetIn);
 
-   void handleSoundEvent(SPlaySoundEffectPacket p_184327_1_);
+   void handleSoundEffect(SPlaySoundEffectPacket packetIn);
 
-   void handleSoundEntityEvent(SSpawnMovingSoundEffectPacket p_217266_1_);
+   void handleSpawnMovingSoundEffect(SSpawnMovingSoundEffectPacket packetIn);
 
-   void handleCustomSoundEvent(SPlaySoundPacket p_184329_1_);
+   void handleCustomSound(SPlaySoundPacket packetIn);
 
-   void handleTakeItemEntity(SCollectItemPacket p_147246_1_);
+   void handleCollectItem(SCollectItemPacket packetIn);
 
-   void handleTeleportEntity(SEntityTeleportPacket p_147275_1_);
+   void handleEntityTeleport(SEntityTeleportPacket packetIn);
 
-   void handleUpdateAttributes(SEntityPropertiesPacket p_147290_1_);
+   void handleEntityProperties(SEntityPropertiesPacket packetIn);
 
-   void handleUpdateMobEffect(SPlayEntityEffectPacket p_147260_1_);
+   void handleEntityEffect(SPlayEntityEffectPacket packetIn);
 
-   void handleUpdateTags(STagsListPacket p_199723_1_);
+   void handleTags(STagsListPacket packetIn);
 
-   void handlePlayerCombat(SCombatPacket p_175098_1_);
+   void handleCombatEvent(SCombatPacket packetIn);
 
-   void handleChangeDifficulty(SServerDifficultyPacket p_175101_1_);
+   void handleServerDifficulty(SServerDifficultyPacket packetIn);
 
-   void handleSetCamera(SCameraPacket p_175094_1_);
+   void handleCamera(SCameraPacket packetIn);
 
-   void handleSetBorder(SWorldBorderPacket p_175093_1_);
+   void handleWorldBorder(SWorldBorderPacket packetIn);
 
-   void handleSetTitles(STitlePacket p_175099_1_);
+   void handleTitle(STitlePacket packetIn);
 
-   void handleTabListCustomisation(SPlayerListHeaderFooterPacket p_175096_1_);
+   void handlePlayerListHeaderFooter(SPlayerListHeaderFooterPacket packetIn);
 
-   void handleResourcePack(SSendResourcePackPacket p_175095_1_);
+   void handleResourcePack(SSendResourcePackPacket packetIn);
 
-   void handleBossUpdate(SUpdateBossInfoPacket p_184325_1_);
+   void handleUpdateBossInfo(SUpdateBossInfoPacket packetIn);
 
-   void handleItemCooldown(SCooldownPacket p_184324_1_);
+   void handleCooldown(SCooldownPacket packetIn);
 
-   void handleMoveVehicle(SMoveVehiclePacket p_184323_1_);
+   void handleMoveVehicle(SMoveVehiclePacket packetIn);
 
-   void handleUpdateAdvancementsPacket(SAdvancementInfoPacket p_191981_1_);
+   void handleAdvancementInfo(SAdvancementInfoPacket packetIn);
 
-   void handleSelectAdvancementsTab(SSelectAdvancementsTabPacket p_194022_1_);
+   void handleSelectAdvancementsTab(SSelectAdvancementsTabPacket packetIn);
 
-   void handlePlaceRecipe(SPlaceGhostRecipePacket p_194307_1_);
+   void handlePlaceGhostRecipe(SPlaceGhostRecipePacket packetIn);
 
-   void handleCommands(SCommandListPacket p_195511_1_);
+   void handleCommandList(SCommandListPacket packetIn);
 
-   void handleStopSoundEvent(SStopSoundPacket p_195512_1_);
+   void handleStopSound(SStopSoundPacket packetIn);
 
-   void handleCommandSuggestions(STabCompletePacket p_195510_1_);
+   void handleTabComplete(STabCompletePacket packetIn);
 
-   void handleUpdateRecipes(SUpdateRecipesPacket p_199525_1_);
+   void handleUpdateRecipes(SUpdateRecipesPacket packetIn);
 
-   void handleLookAt(SPlayerLookPacket p_200232_1_);
+   void handlePlayerLook(SPlayerLookPacket packetIn);
 
-   void handleTagQueryPacket(SQueryNBTResponsePacket p_211522_1_);
+   void handleNBTQueryResponse(SQueryNBTResponsePacket packetIn);
 
-   void handleLightUpdatePacked(SUpdateLightPacket p_217269_1_);
+   void handleUpdateLight(SUpdateLightPacket packetIn);
 
-   void handleOpenBook(SOpenBookWindowPacket p_217268_1_);
+   void handleOpenBookPacket(SOpenBookWindowPacket packetIn);
 
-   void handleOpenScreen(SOpenWindowPacket p_217272_1_);
+   void handleOpenWindowPacket(SOpenWindowPacket packetIn);
 
-   void handleMerchantOffers(SMerchantOffersPacket p_217273_1_);
+   void handleMerchantOffers(SMerchantOffersPacket packetIn);
 
-   void handleSetChunkCacheRadius(SUpdateViewDistancePacket p_217270_1_);
+   void handleUpdateViewDistancePacket(SUpdateViewDistancePacket packetIn);
 
-   void handleSetChunkCacheCenter(SUpdateChunkPositionPacket p_217267_1_);
+   void handleChunkPositionPacket(SUpdateChunkPositionPacket packetIn);
 
-   void handleBlockBreakAck(SPlayerDiggingPacket p_225312_1_);
+   void handleAcknowledgePlayerDigging(SPlayerDiggingPacket packetIn);
 }

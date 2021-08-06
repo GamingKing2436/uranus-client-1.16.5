@@ -29,94 +29,94 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class BlockModelRenderer {
    private final BlockColors blockColors;
-   private static final ThreadLocal<BlockModelRenderer.Cache> CACHE = ThreadLocal.withInitial(() -> {
+   private static final ThreadLocal<BlockModelRenderer.Cache> CACHE_COMBINED_LIGHT = ThreadLocal.withInitial(() -> {
       return new BlockModelRenderer.Cache();
    });
 
-   public BlockModelRenderer(BlockColors p_i46575_1_) {
-      this.blockColors = p_i46575_1_;
+   public BlockModelRenderer(BlockColors blockColorsIn) {
+      this.blockColors = blockColorsIn;
    }
 
-   public boolean tesselateBlock(IBlockDisplayReader p_228802_1_, IBakedModel p_228802_2_, BlockState p_228802_3_, BlockPos p_228802_4_, MatrixStack p_228802_5_, IVertexBuilder p_228802_6_, boolean p_228802_7_, Random p_228802_8_, long p_228802_9_, int p_228802_11_) {
-      boolean flag = Minecraft.useAmbientOcclusion() && p_228802_3_.getLightEmission() == 0 && p_228802_2_.useAmbientOcclusion();
-      Vector3d vector3d = p_228802_3_.getOffset(p_228802_1_, p_228802_4_);
-      p_228802_5_.translate(vector3d.x, vector3d.y, vector3d.z);
+   public boolean renderModel(IBlockDisplayReader worldIn, IBakedModel modelIn, BlockState stateIn, BlockPos posIn, MatrixStack matrixIn, IVertexBuilder buffer, boolean checkSides, Random randomIn, long rand, int combinedOverlayIn) {
+      boolean flag = Minecraft.isAmbientOcclusionEnabled() && stateIn.getLightValue() == 0 && modelIn.isAmbientOcclusion();
+      Vector3d vector3d = stateIn.getOffset(worldIn, posIn);
+      matrixIn.translate(vector3d.x, vector3d.y, vector3d.z);
 
       try {
-         return flag ? this.tesselateWithAO(p_228802_1_, p_228802_2_, p_228802_3_, p_228802_4_, p_228802_5_, p_228802_6_, p_228802_7_, p_228802_8_, p_228802_9_, p_228802_11_) : this.tesselateWithoutAO(p_228802_1_, p_228802_2_, p_228802_3_, p_228802_4_, p_228802_5_, p_228802_6_, p_228802_7_, p_228802_8_, p_228802_9_, p_228802_11_);
+         return flag ? this.renderModelSmooth(worldIn, modelIn, stateIn, posIn, matrixIn, buffer, checkSides, randomIn, rand, combinedOverlayIn) : this.renderModelFlat(worldIn, modelIn, stateIn, posIn, matrixIn, buffer, checkSides, randomIn, rand, combinedOverlayIn);
       } catch (Throwable throwable) {
-         CrashReport crashreport = CrashReport.forThrowable(throwable, "Tesselating block model");
-         CrashReportCategory crashreportcategory = crashreport.addCategory("Block model being tesselated");
-         CrashReportCategory.populateBlockDetails(crashreportcategory, p_228802_4_, p_228802_3_);
-         crashreportcategory.setDetail("Using AO", flag);
+         CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Tesselating block model");
+         CrashReportCategory crashreportcategory = crashreport.makeCategory("Block model being tesselated");
+         CrashReportCategory.addBlockInfo(crashreportcategory, posIn, stateIn);
+         crashreportcategory.addDetail("Using AO", flag);
          throw new ReportedException(crashreport);
       }
    }
 
-   public boolean tesselateWithAO(IBlockDisplayReader p_228805_1_, IBakedModel p_228805_2_, BlockState p_228805_3_, BlockPos p_228805_4_, MatrixStack p_228805_5_, IVertexBuilder p_228805_6_, boolean p_228805_7_, Random p_228805_8_, long p_228805_9_, int p_228805_11_) {
+   public boolean renderModelSmooth(IBlockDisplayReader worldIn, IBakedModel modelIn, BlockState stateIn, BlockPos posIn, MatrixStack matrixStackIn, IVertexBuilder buffer, boolean checkSides, Random randomIn, long rand, int combinedOverlayIn) {
       boolean flag = false;
       float[] afloat = new float[Direction.values().length * 2];
       BitSet bitset = new BitSet(3);
       BlockModelRenderer.AmbientOcclusionFace blockmodelrenderer$ambientocclusionface = new BlockModelRenderer.AmbientOcclusionFace();
 
       for(Direction direction : Direction.values()) {
-         p_228805_8_.setSeed(p_228805_9_);
-         List<BakedQuad> list = p_228805_2_.getQuads(p_228805_3_, direction, p_228805_8_);
-         if (!list.isEmpty() && (!p_228805_7_ || Block.shouldRenderFace(p_228805_3_, p_228805_1_, p_228805_4_, direction))) {
-            this.renderModelFaceAO(p_228805_1_, p_228805_3_, p_228805_4_, p_228805_5_, p_228805_6_, list, afloat, bitset, blockmodelrenderer$ambientocclusionface, p_228805_11_);
+         randomIn.setSeed(rand);
+         List<BakedQuad> list = modelIn.getQuads(stateIn, direction, randomIn);
+         if (!list.isEmpty() && (!checkSides || Block.shouldSideBeRendered(stateIn, worldIn, posIn, direction))) {
+            this.renderQuadsSmooth(worldIn, stateIn, posIn, matrixStackIn, buffer, list, afloat, bitset, blockmodelrenderer$ambientocclusionface, combinedOverlayIn);
             flag = true;
          }
       }
 
-      p_228805_8_.setSeed(p_228805_9_);
-      List<BakedQuad> list1 = p_228805_2_.getQuads(p_228805_3_, (Direction)null, p_228805_8_);
+      randomIn.setSeed(rand);
+      List<BakedQuad> list1 = modelIn.getQuads(stateIn, (Direction)null, randomIn);
       if (!list1.isEmpty()) {
-         this.renderModelFaceAO(p_228805_1_, p_228805_3_, p_228805_4_, p_228805_5_, p_228805_6_, list1, afloat, bitset, blockmodelrenderer$ambientocclusionface, p_228805_11_);
+         this.renderQuadsSmooth(worldIn, stateIn, posIn, matrixStackIn, buffer, list1, afloat, bitset, blockmodelrenderer$ambientocclusionface, combinedOverlayIn);
          flag = true;
       }
 
       return flag;
    }
 
-   public boolean tesselateWithoutAO(IBlockDisplayReader p_228806_1_, IBakedModel p_228806_2_, BlockState p_228806_3_, BlockPos p_228806_4_, MatrixStack p_228806_5_, IVertexBuilder p_228806_6_, boolean p_228806_7_, Random p_228806_8_, long p_228806_9_, int p_228806_11_) {
+   public boolean renderModelFlat(IBlockDisplayReader worldIn, IBakedModel modelIn, BlockState stateIn, BlockPos posIn, MatrixStack matrixStackIn, IVertexBuilder buffer, boolean checkSides, Random randomIn, long rand, int combinedOverlayIn) {
       boolean flag = false;
       BitSet bitset = new BitSet(3);
 
       for(Direction direction : Direction.values()) {
-         p_228806_8_.setSeed(p_228806_9_);
-         List<BakedQuad> list = p_228806_2_.getQuads(p_228806_3_, direction, p_228806_8_);
-         if (!list.isEmpty() && (!p_228806_7_ || Block.shouldRenderFace(p_228806_3_, p_228806_1_, p_228806_4_, direction))) {
-            int i = WorldRenderer.getLightColor(p_228806_1_, p_228806_3_, p_228806_4_.relative(direction));
-            this.renderModelFaceFlat(p_228806_1_, p_228806_3_, p_228806_4_, i, p_228806_11_, false, p_228806_5_, p_228806_6_, list, bitset);
+         randomIn.setSeed(rand);
+         List<BakedQuad> list = modelIn.getQuads(stateIn, direction, randomIn);
+         if (!list.isEmpty() && (!checkSides || Block.shouldSideBeRendered(stateIn, worldIn, posIn, direction))) {
+            int i = WorldRenderer.getPackedLightmapCoords(worldIn, stateIn, posIn.offset(direction));
+            this.renderQuadsFlat(worldIn, stateIn, posIn, i, combinedOverlayIn, false, matrixStackIn, buffer, list, bitset);
             flag = true;
          }
       }
 
-      p_228806_8_.setSeed(p_228806_9_);
-      List<BakedQuad> list1 = p_228806_2_.getQuads(p_228806_3_, (Direction)null, p_228806_8_);
+      randomIn.setSeed(rand);
+      List<BakedQuad> list1 = modelIn.getQuads(stateIn, (Direction)null, randomIn);
       if (!list1.isEmpty()) {
-         this.renderModelFaceFlat(p_228806_1_, p_228806_3_, p_228806_4_, -1, p_228806_11_, true, p_228806_5_, p_228806_6_, list1, bitset);
+         this.renderQuadsFlat(worldIn, stateIn, posIn, -1, combinedOverlayIn, true, matrixStackIn, buffer, list1, bitset);
          flag = true;
       }
 
       return flag;
    }
 
-   private void renderModelFaceAO(IBlockDisplayReader p_228799_1_, BlockState p_228799_2_, BlockPos p_228799_3_, MatrixStack p_228799_4_, IVertexBuilder p_228799_5_, List<BakedQuad> p_228799_6_, float[] p_228799_7_, BitSet p_228799_8_, BlockModelRenderer.AmbientOcclusionFace p_228799_9_, int p_228799_10_) {
-      for(BakedQuad bakedquad : p_228799_6_) {
-         this.calculateShape(p_228799_1_, p_228799_2_, p_228799_3_, bakedquad.getVertices(), bakedquad.getDirection(), p_228799_7_, p_228799_8_);
-         p_228799_9_.calculate(p_228799_1_, p_228799_2_, p_228799_3_, bakedquad.getDirection(), p_228799_7_, p_228799_8_, bakedquad.isShade());
-         this.putQuadData(p_228799_1_, p_228799_2_, p_228799_3_, p_228799_5_, p_228799_4_.last(), bakedquad, p_228799_9_.brightness[0], p_228799_9_.brightness[1], p_228799_9_.brightness[2], p_228799_9_.brightness[3], p_228799_9_.lightmap[0], p_228799_9_.lightmap[1], p_228799_9_.lightmap[2], p_228799_9_.lightmap[3], p_228799_10_);
+   private void renderQuadsSmooth(IBlockDisplayReader blockAccessIn, BlockState stateIn, BlockPos posIn, MatrixStack matrixStackIn, IVertexBuilder buffer, List<BakedQuad> list, float[] quadBounds, BitSet bitSet, BlockModelRenderer.AmbientOcclusionFace aoFace, int combinedOverlayIn) {
+      for(BakedQuad bakedquad : list) {
+         this.fillQuadBounds(blockAccessIn, stateIn, posIn, bakedquad.getVertexData(), bakedquad.getFace(), quadBounds, bitSet);
+         aoFace.renderBlockModel(blockAccessIn, stateIn, posIn, bakedquad.getFace(), quadBounds, bitSet, bakedquad.applyDiffuseLighting());
+         this.renderQuadSmooth(blockAccessIn, stateIn, posIn, buffer, matrixStackIn.getLast(), bakedquad, aoFace.vertexColorMultiplier[0], aoFace.vertexColorMultiplier[1], aoFace.vertexColorMultiplier[2], aoFace.vertexColorMultiplier[3], aoFace.vertexBrightness[0], aoFace.vertexBrightness[1], aoFace.vertexBrightness[2], aoFace.vertexBrightness[3], combinedOverlayIn);
       }
 
    }
 
-   private void putQuadData(IBlockDisplayReader p_228800_1_, BlockState p_228800_2_, BlockPos p_228800_3_, IVertexBuilder p_228800_4_, MatrixStack.Entry p_228800_5_, BakedQuad p_228800_6_, float p_228800_7_, float p_228800_8_, float p_228800_9_, float p_228800_10_, int p_228800_11_, int p_228800_12_, int p_228800_13_, int p_228800_14_, int p_228800_15_) {
+   private void renderQuadSmooth(IBlockDisplayReader blockAccessIn, BlockState stateIn, BlockPos posIn, IVertexBuilder buffer, MatrixStack.Entry matrixEntry, BakedQuad quadIn, float colorMul0, float colorMul1, float colorMul2, float colorMul3, int brightness0, int brightness1, int brightness2, int brightness3, int combinedOverlayIn) {
       float f;
       float f1;
       float f2;
-      if (p_228800_6_.isTinted()) {
-         int i = this.blockColors.getColor(p_228800_2_, p_228800_1_, p_228800_3_, p_228800_6_.getTintIndex());
+      if (quadIn.hasTintIndex()) {
+         int i = this.blockColors.getColor(stateIn, blockAccessIn, posIn, quadIn.getTintIndex());
          f = (float)(i >> 16 & 255) / 255.0F;
          f1 = (float)(i >> 8 & 255) / 255.0F;
          f2 = (float)(i & 255) / 255.0F;
@@ -126,10 +126,10 @@ public class BlockModelRenderer {
          f2 = 1.0F;
       }
 
-      p_228800_4_.putBulkData(p_228800_5_, p_228800_6_, new float[]{p_228800_7_, p_228800_8_, p_228800_9_, p_228800_10_}, f, f1, f2, new int[]{p_228800_11_, p_228800_12_, p_228800_13_, p_228800_14_}, p_228800_15_, true);
+      buffer.addQuad(matrixEntry, quadIn, new float[]{colorMul0, colorMul1, colorMul2, colorMul3}, f, f1, f2, new int[]{brightness0, brightness1, brightness2, brightness3}, combinedOverlayIn, true);
    }
 
-   private void calculateShape(IBlockDisplayReader p_228801_1_, BlockState p_228801_2_, BlockPos p_228801_3_, int[] p_228801_4_, Direction p_228801_5_, @Nullable float[] p_228801_6_, BitSet p_228801_7_) {
+   private void fillQuadBounds(IBlockDisplayReader blockReaderIn, BlockState stateIn, BlockPos posIn, int[] vertexData, Direction face, @Nullable float[] quadBounds, BitSet boundsFlags) {
       float f = 32.0F;
       float f1 = 32.0F;
       float f2 = 32.0F;
@@ -138,9 +138,9 @@ public class BlockModelRenderer {
       float f5 = -32.0F;
 
       for(int i = 0; i < 4; ++i) {
-         float f6 = Float.intBitsToFloat(p_228801_4_[i * 8]);
-         float f7 = Float.intBitsToFloat(p_228801_4_[i * 8 + 1]);
-         float f8 = Float.intBitsToFloat(p_228801_4_[i * 8 + 2]);
+         float f6 = Float.intBitsToFloat(vertexData[i * 8]);
+         float f7 = Float.intBitsToFloat(vertexData[i * 8 + 1]);
+         float f8 = Float.intBitsToFloat(vertexData[i * 8 + 2]);
          f = Math.min(f, f6);
          f1 = Math.min(f1, f7);
          f2 = Math.min(f2, f8);
@@ -149,154 +149,154 @@ public class BlockModelRenderer {
          f5 = Math.max(f5, f8);
       }
 
-      if (p_228801_6_ != null) {
-         p_228801_6_[Direction.WEST.get3DDataValue()] = f;
-         p_228801_6_[Direction.EAST.get3DDataValue()] = f3;
-         p_228801_6_[Direction.DOWN.get3DDataValue()] = f1;
-         p_228801_6_[Direction.UP.get3DDataValue()] = f4;
-         p_228801_6_[Direction.NORTH.get3DDataValue()] = f2;
-         p_228801_6_[Direction.SOUTH.get3DDataValue()] = f5;
+      if (quadBounds != null) {
+         quadBounds[Direction.WEST.getIndex()] = f;
+         quadBounds[Direction.EAST.getIndex()] = f3;
+         quadBounds[Direction.DOWN.getIndex()] = f1;
+         quadBounds[Direction.UP.getIndex()] = f4;
+         quadBounds[Direction.NORTH.getIndex()] = f2;
+         quadBounds[Direction.SOUTH.getIndex()] = f5;
          int j = Direction.values().length;
-         p_228801_6_[Direction.WEST.get3DDataValue() + j] = 1.0F - f;
-         p_228801_6_[Direction.EAST.get3DDataValue() + j] = 1.0F - f3;
-         p_228801_6_[Direction.DOWN.get3DDataValue() + j] = 1.0F - f1;
-         p_228801_6_[Direction.UP.get3DDataValue() + j] = 1.0F - f4;
-         p_228801_6_[Direction.NORTH.get3DDataValue() + j] = 1.0F - f2;
-         p_228801_6_[Direction.SOUTH.get3DDataValue() + j] = 1.0F - f5;
+         quadBounds[Direction.WEST.getIndex() + j] = 1.0F - f;
+         quadBounds[Direction.EAST.getIndex() + j] = 1.0F - f3;
+         quadBounds[Direction.DOWN.getIndex() + j] = 1.0F - f1;
+         quadBounds[Direction.UP.getIndex() + j] = 1.0F - f4;
+         quadBounds[Direction.NORTH.getIndex() + j] = 1.0F - f2;
+         quadBounds[Direction.SOUTH.getIndex() + j] = 1.0F - f5;
       }
 
       float f9 = 1.0E-4F;
       float f10 = 0.9999F;
-      switch(p_228801_5_) {
+      switch(face) {
       case DOWN:
-         p_228801_7_.set(1, f >= 1.0E-4F || f2 >= 1.0E-4F || f3 <= 0.9999F || f5 <= 0.9999F);
-         p_228801_7_.set(0, f1 == f4 && (f1 < 1.0E-4F || p_228801_2_.isCollisionShapeFullBlock(p_228801_1_, p_228801_3_)));
+         boundsFlags.set(1, f >= 1.0E-4F || f2 >= 1.0E-4F || f3 <= 0.9999F || f5 <= 0.9999F);
+         boundsFlags.set(0, f1 == f4 && (f1 < 1.0E-4F || stateIn.hasOpaqueCollisionShape(blockReaderIn, posIn)));
          break;
       case UP:
-         p_228801_7_.set(1, f >= 1.0E-4F || f2 >= 1.0E-4F || f3 <= 0.9999F || f5 <= 0.9999F);
-         p_228801_7_.set(0, f1 == f4 && (f4 > 0.9999F || p_228801_2_.isCollisionShapeFullBlock(p_228801_1_, p_228801_3_)));
+         boundsFlags.set(1, f >= 1.0E-4F || f2 >= 1.0E-4F || f3 <= 0.9999F || f5 <= 0.9999F);
+         boundsFlags.set(0, f1 == f4 && (f4 > 0.9999F || stateIn.hasOpaqueCollisionShape(blockReaderIn, posIn)));
          break;
       case NORTH:
-         p_228801_7_.set(1, f >= 1.0E-4F || f1 >= 1.0E-4F || f3 <= 0.9999F || f4 <= 0.9999F);
-         p_228801_7_.set(0, f2 == f5 && (f2 < 1.0E-4F || p_228801_2_.isCollisionShapeFullBlock(p_228801_1_, p_228801_3_)));
+         boundsFlags.set(1, f >= 1.0E-4F || f1 >= 1.0E-4F || f3 <= 0.9999F || f4 <= 0.9999F);
+         boundsFlags.set(0, f2 == f5 && (f2 < 1.0E-4F || stateIn.hasOpaqueCollisionShape(blockReaderIn, posIn)));
          break;
       case SOUTH:
-         p_228801_7_.set(1, f >= 1.0E-4F || f1 >= 1.0E-4F || f3 <= 0.9999F || f4 <= 0.9999F);
-         p_228801_7_.set(0, f2 == f5 && (f5 > 0.9999F || p_228801_2_.isCollisionShapeFullBlock(p_228801_1_, p_228801_3_)));
+         boundsFlags.set(1, f >= 1.0E-4F || f1 >= 1.0E-4F || f3 <= 0.9999F || f4 <= 0.9999F);
+         boundsFlags.set(0, f2 == f5 && (f5 > 0.9999F || stateIn.hasOpaqueCollisionShape(blockReaderIn, posIn)));
          break;
       case WEST:
-         p_228801_7_.set(1, f1 >= 1.0E-4F || f2 >= 1.0E-4F || f4 <= 0.9999F || f5 <= 0.9999F);
-         p_228801_7_.set(0, f == f3 && (f < 1.0E-4F || p_228801_2_.isCollisionShapeFullBlock(p_228801_1_, p_228801_3_)));
+         boundsFlags.set(1, f1 >= 1.0E-4F || f2 >= 1.0E-4F || f4 <= 0.9999F || f5 <= 0.9999F);
+         boundsFlags.set(0, f == f3 && (f < 1.0E-4F || stateIn.hasOpaqueCollisionShape(blockReaderIn, posIn)));
          break;
       case EAST:
-         p_228801_7_.set(1, f1 >= 1.0E-4F || f2 >= 1.0E-4F || f4 <= 0.9999F || f5 <= 0.9999F);
-         p_228801_7_.set(0, f == f3 && (f3 > 0.9999F || p_228801_2_.isCollisionShapeFullBlock(p_228801_1_, p_228801_3_)));
+         boundsFlags.set(1, f1 >= 1.0E-4F || f2 >= 1.0E-4F || f4 <= 0.9999F || f5 <= 0.9999F);
+         boundsFlags.set(0, f == f3 && (f3 > 0.9999F || stateIn.hasOpaqueCollisionShape(blockReaderIn, posIn)));
       }
 
    }
 
-   private void renderModelFaceFlat(IBlockDisplayReader p_228798_1_, BlockState p_228798_2_, BlockPos p_228798_3_, int p_228798_4_, int p_228798_5_, boolean p_228798_6_, MatrixStack p_228798_7_, IVertexBuilder p_228798_8_, List<BakedQuad> p_228798_9_, BitSet p_228798_10_) {
-      for(BakedQuad bakedquad : p_228798_9_) {
-         if (p_228798_6_) {
-            this.calculateShape(p_228798_1_, p_228798_2_, p_228798_3_, bakedquad.getVertices(), bakedquad.getDirection(), (float[])null, p_228798_10_);
-            BlockPos blockpos = p_228798_10_.get(0) ? p_228798_3_.relative(bakedquad.getDirection()) : p_228798_3_;
-            p_228798_4_ = WorldRenderer.getLightColor(p_228798_1_, p_228798_2_, blockpos);
+   private void renderQuadsFlat(IBlockDisplayReader blockAccessIn, BlockState stateIn, BlockPos posIn, int brightnessIn, int combinedOverlayIn, boolean ownBrightness, MatrixStack matrixStackIn, IVertexBuilder buffer, List<BakedQuad> list, BitSet bitSet) {
+      for(BakedQuad bakedquad : list) {
+         if (ownBrightness) {
+            this.fillQuadBounds(blockAccessIn, stateIn, posIn, bakedquad.getVertexData(), bakedquad.getFace(), (float[])null, bitSet);
+            BlockPos blockpos = bitSet.get(0) ? posIn.offset(bakedquad.getFace()) : posIn;
+            brightnessIn = WorldRenderer.getPackedLightmapCoords(blockAccessIn, stateIn, blockpos);
          }
 
-         float f = p_228798_1_.getShade(bakedquad.getDirection(), bakedquad.isShade());
-         this.putQuadData(p_228798_1_, p_228798_2_, p_228798_3_, p_228798_8_, p_228798_7_.last(), bakedquad, f, f, f, f, p_228798_4_, p_228798_4_, p_228798_4_, p_228798_4_, p_228798_5_);
+         float f = blockAccessIn.func_230487_a_(bakedquad.getFace(), bakedquad.applyDiffuseLighting());
+         this.renderQuadSmooth(blockAccessIn, stateIn, posIn, buffer, matrixStackIn.getLast(), bakedquad, f, f, f, f, brightnessIn, brightnessIn, brightnessIn, brightnessIn, combinedOverlayIn);
       }
 
    }
 
-   public void renderModel(MatrixStack.Entry p_228804_1_, IVertexBuilder p_228804_2_, @Nullable BlockState p_228804_3_, IBakedModel p_228804_4_, float p_228804_5_, float p_228804_6_, float p_228804_7_, int p_228804_8_, int p_228804_9_) {
+   public void renderModelBrightnessColor(MatrixStack.Entry matrixEntry, IVertexBuilder buffer, @Nullable BlockState state, IBakedModel modelIn, float red, float green, float blue, int combinedLightIn, int combinedOverlayIn) {
       Random random = new Random();
       long i = 42L;
 
       for(Direction direction : Direction.values()) {
          random.setSeed(42L);
-         renderQuadList(p_228804_1_, p_228804_2_, p_228804_5_, p_228804_6_, p_228804_7_, p_228804_4_.getQuads(p_228804_3_, direction, random), p_228804_8_, p_228804_9_);
+         renderModelBrightnessColorQuads(matrixEntry, buffer, red, green, blue, modelIn.getQuads(state, direction, random), combinedLightIn, combinedOverlayIn);
       }
 
       random.setSeed(42L);
-      renderQuadList(p_228804_1_, p_228804_2_, p_228804_5_, p_228804_6_, p_228804_7_, p_228804_4_.getQuads(p_228804_3_, (Direction)null, random), p_228804_8_, p_228804_9_);
+      renderModelBrightnessColorQuads(matrixEntry, buffer, red, green, blue, modelIn.getQuads(state, (Direction)null, random), combinedLightIn, combinedOverlayIn);
    }
 
-   private static void renderQuadList(MatrixStack.Entry p_228803_0_, IVertexBuilder p_228803_1_, float p_228803_2_, float p_228803_3_, float p_228803_4_, List<BakedQuad> p_228803_5_, int p_228803_6_, int p_228803_7_) {
-      for(BakedQuad bakedquad : p_228803_5_) {
+   private static void renderModelBrightnessColorQuads(MatrixStack.Entry matrixEntry, IVertexBuilder buffer, float red, float green, float blue, List<BakedQuad> listQuads, int combinedLightIn, int combinedOverlayIn) {
+      for(BakedQuad bakedquad : listQuads) {
          float f;
          float f1;
          float f2;
-         if (bakedquad.isTinted()) {
-            f = MathHelper.clamp(p_228803_2_, 0.0F, 1.0F);
-            f1 = MathHelper.clamp(p_228803_3_, 0.0F, 1.0F);
-            f2 = MathHelper.clamp(p_228803_4_, 0.0F, 1.0F);
+         if (bakedquad.hasTintIndex()) {
+            f = MathHelper.clamp(red, 0.0F, 1.0F);
+            f1 = MathHelper.clamp(green, 0.0F, 1.0F);
+            f2 = MathHelper.clamp(blue, 0.0F, 1.0F);
          } else {
             f = 1.0F;
             f1 = 1.0F;
             f2 = 1.0F;
          }
 
-         p_228803_1_.putBulkData(p_228803_0_, bakedquad, f, f1, f2, p_228803_6_, p_228803_7_);
+         buffer.addQuad(matrixEntry, bakedquad, f, f1, f2, combinedLightIn, combinedOverlayIn);
       }
 
    }
 
-   public static void enableCaching() {
-      CACHE.get().enable();
+   public static void enableCache() {
+      CACHE_COMBINED_LIGHT.get().enable();
    }
 
-   public static void clearCache() {
-      CACHE.get().disable();
+   public static void disableCache() {
+      CACHE_COMBINED_LIGHT.get().disable();
    }
 
    @OnlyIn(Dist.CLIENT)
    class AmbientOcclusionFace {
-      private final float[] brightness = new float[4];
-      private final int[] lightmap = new int[4];
+      private final float[] vertexColorMultiplier = new float[4];
+      private final int[] vertexBrightness = new int[4];
 
       public AmbientOcclusionFace() {
       }
 
-      public void calculate(IBlockDisplayReader p_239285_1_, BlockState p_239285_2_, BlockPos p_239285_3_, Direction p_239285_4_, float[] p_239285_5_, BitSet p_239285_6_, boolean p_239285_7_) {
-         BlockPos blockpos = p_239285_6_.get(0) ? p_239285_3_.relative(p_239285_4_) : p_239285_3_;
-         BlockModelRenderer.NeighborInfo blockmodelrenderer$neighborinfo = BlockModelRenderer.NeighborInfo.fromFacing(p_239285_4_);
+      public void renderBlockModel(IBlockDisplayReader reader, BlockState state, BlockPos pos, Direction direction, float[] vertexes, BitSet bitSet, boolean applyDiffuseLighting) {
+         BlockPos blockpos = bitSet.get(0) ? pos.offset(direction) : pos;
+         BlockModelRenderer.NeighborInfo blockmodelrenderer$neighborinfo = BlockModelRenderer.NeighborInfo.getNeighbourInfo(direction);
          BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
-         BlockModelRenderer.Cache blockmodelrenderer$cache = BlockModelRenderer.CACHE.get();
-         blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[0]);
-         BlockState blockstate = p_239285_1_.getBlockState(blockpos$mutable);
-         int i = blockmodelrenderer$cache.getLightColor(blockstate, p_239285_1_, blockpos$mutable);
-         float f = blockmodelrenderer$cache.getShadeBrightness(blockstate, p_239285_1_, blockpos$mutable);
-         blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[1]);
-         BlockState blockstate1 = p_239285_1_.getBlockState(blockpos$mutable);
-         int j = blockmodelrenderer$cache.getLightColor(blockstate1, p_239285_1_, blockpos$mutable);
-         float f1 = blockmodelrenderer$cache.getShadeBrightness(blockstate1, p_239285_1_, blockpos$mutable);
-         blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[2]);
-         BlockState blockstate2 = p_239285_1_.getBlockState(blockpos$mutable);
-         int k = blockmodelrenderer$cache.getLightColor(blockstate2, p_239285_1_, blockpos$mutable);
-         float f2 = blockmodelrenderer$cache.getShadeBrightness(blockstate2, p_239285_1_, blockpos$mutable);
-         blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[3]);
-         BlockState blockstate3 = p_239285_1_.getBlockState(blockpos$mutable);
-         int l = blockmodelrenderer$cache.getLightColor(blockstate3, p_239285_1_, blockpos$mutable);
-         float f3 = blockmodelrenderer$cache.getShadeBrightness(blockstate3, p_239285_1_, blockpos$mutable);
-         blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[0]).move(p_239285_4_);
-         boolean flag = p_239285_1_.getBlockState(blockpos$mutable).getLightBlock(p_239285_1_, blockpos$mutable) == 0;
-         blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[1]).move(p_239285_4_);
-         boolean flag1 = p_239285_1_.getBlockState(blockpos$mutable).getLightBlock(p_239285_1_, blockpos$mutable) == 0;
-         blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[2]).move(p_239285_4_);
-         boolean flag2 = p_239285_1_.getBlockState(blockpos$mutable).getLightBlock(p_239285_1_, blockpos$mutable) == 0;
-         blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[3]).move(p_239285_4_);
-         boolean flag3 = p_239285_1_.getBlockState(blockpos$mutable).getLightBlock(p_239285_1_, blockpos$mutable) == 0;
+         BlockModelRenderer.Cache blockmodelrenderer$cache = BlockModelRenderer.CACHE_COMBINED_LIGHT.get();
+         blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[0]);
+         BlockState blockstate = reader.getBlockState(blockpos$mutable);
+         int i = blockmodelrenderer$cache.getPackedLight(blockstate, reader, blockpos$mutable);
+         float f = blockmodelrenderer$cache.getBrightness(blockstate, reader, blockpos$mutable);
+         blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[1]);
+         BlockState blockstate1 = reader.getBlockState(blockpos$mutable);
+         int j = blockmodelrenderer$cache.getPackedLight(blockstate1, reader, blockpos$mutable);
+         float f1 = blockmodelrenderer$cache.getBrightness(blockstate1, reader, blockpos$mutable);
+         blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[2]);
+         BlockState blockstate2 = reader.getBlockState(blockpos$mutable);
+         int k = blockmodelrenderer$cache.getPackedLight(blockstate2, reader, blockpos$mutable);
+         float f2 = blockmodelrenderer$cache.getBrightness(blockstate2, reader, blockpos$mutable);
+         blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[3]);
+         BlockState blockstate3 = reader.getBlockState(blockpos$mutable);
+         int l = blockmodelrenderer$cache.getPackedLight(blockstate3, reader, blockpos$mutable);
+         float f3 = blockmodelrenderer$cache.getBrightness(blockstate3, reader, blockpos$mutable);
+         blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[0]).move(direction);
+         boolean flag = reader.getBlockState(blockpos$mutable).getOpacity(reader, blockpos$mutable) == 0;
+         blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[1]).move(direction);
+         boolean flag1 = reader.getBlockState(blockpos$mutable).getOpacity(reader, blockpos$mutable) == 0;
+         blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[2]).move(direction);
+         boolean flag2 = reader.getBlockState(blockpos$mutable).getOpacity(reader, blockpos$mutable) == 0;
+         blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[3]).move(direction);
+         boolean flag3 = reader.getBlockState(blockpos$mutable).getOpacity(reader, blockpos$mutable) == 0;
          float f4;
          int i1;
          if (!flag2 && !flag) {
             f4 = f;
             i1 = i;
          } else {
-            blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[0]).move(blockmodelrenderer$neighborinfo.corners[2]);
-            BlockState blockstate4 = p_239285_1_.getBlockState(blockpos$mutable);
-            f4 = blockmodelrenderer$cache.getShadeBrightness(blockstate4, p_239285_1_, blockpos$mutable);
-            i1 = blockmodelrenderer$cache.getLightColor(blockstate4, p_239285_1_, blockpos$mutable);
+            blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[0]).move(blockmodelrenderer$neighborinfo.corners[2]);
+            BlockState blockstate4 = reader.getBlockState(blockpos$mutable);
+            f4 = blockmodelrenderer$cache.getBrightness(blockstate4, reader, blockpos$mutable);
+            i1 = blockmodelrenderer$cache.getPackedLight(blockstate4, reader, blockpos$mutable);
          }
 
          float f5;
@@ -305,10 +305,10 @@ public class BlockModelRenderer {
             f5 = f;
             j1 = i;
          } else {
-            blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[0]).move(blockmodelrenderer$neighborinfo.corners[3]);
-            BlockState blockstate6 = p_239285_1_.getBlockState(blockpos$mutable);
-            f5 = blockmodelrenderer$cache.getShadeBrightness(blockstate6, p_239285_1_, blockpos$mutable);
-            j1 = blockmodelrenderer$cache.getLightColor(blockstate6, p_239285_1_, blockpos$mutable);
+            blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[0]).move(blockmodelrenderer$neighborinfo.corners[3]);
+            BlockState blockstate6 = reader.getBlockState(blockpos$mutable);
+            f5 = blockmodelrenderer$cache.getBrightness(blockstate6, reader, blockpos$mutable);
+            j1 = blockmodelrenderer$cache.getPackedLight(blockstate6, reader, blockpos$mutable);
          }
 
          float f6;
@@ -317,10 +317,10 @@ public class BlockModelRenderer {
             f6 = f;
             k1 = i;
          } else {
-            blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[1]).move(blockmodelrenderer$neighborinfo.corners[2]);
-            BlockState blockstate7 = p_239285_1_.getBlockState(blockpos$mutable);
-            f6 = blockmodelrenderer$cache.getShadeBrightness(blockstate7, p_239285_1_, blockpos$mutable);
-            k1 = blockmodelrenderer$cache.getLightColor(blockstate7, p_239285_1_, blockpos$mutable);
+            blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[1]).move(blockmodelrenderer$neighborinfo.corners[2]);
+            BlockState blockstate7 = reader.getBlockState(blockpos$mutable);
+            f6 = blockmodelrenderer$cache.getBrightness(blockstate7, reader, blockpos$mutable);
+            k1 = blockmodelrenderer$cache.getPackedLight(blockstate7, reader, blockpos$mutable);
          }
 
          float f7;
@@ -329,96 +329,96 @@ public class BlockModelRenderer {
             f7 = f;
             l1 = i;
          } else {
-            blockpos$mutable.setWithOffset(blockpos, blockmodelrenderer$neighborinfo.corners[1]).move(blockmodelrenderer$neighborinfo.corners[3]);
-            BlockState blockstate8 = p_239285_1_.getBlockState(blockpos$mutable);
-            f7 = blockmodelrenderer$cache.getShadeBrightness(blockstate8, p_239285_1_, blockpos$mutable);
-            l1 = blockmodelrenderer$cache.getLightColor(blockstate8, p_239285_1_, blockpos$mutable);
+            blockpos$mutable.setAndMove(blockpos, blockmodelrenderer$neighborinfo.corners[1]).move(blockmodelrenderer$neighborinfo.corners[3]);
+            BlockState blockstate8 = reader.getBlockState(blockpos$mutable);
+            f7 = blockmodelrenderer$cache.getBrightness(blockstate8, reader, blockpos$mutable);
+            l1 = blockmodelrenderer$cache.getPackedLight(blockstate8, reader, blockpos$mutable);
          }
 
-         int i3 = blockmodelrenderer$cache.getLightColor(p_239285_2_, p_239285_1_, p_239285_3_);
-         blockpos$mutable.setWithOffset(p_239285_3_, p_239285_4_);
-         BlockState blockstate5 = p_239285_1_.getBlockState(blockpos$mutable);
-         if (p_239285_6_.get(0) || !blockstate5.isSolidRender(p_239285_1_, blockpos$mutable)) {
-            i3 = blockmodelrenderer$cache.getLightColor(blockstate5, p_239285_1_, blockpos$mutable);
+         int i3 = blockmodelrenderer$cache.getPackedLight(state, reader, pos);
+         blockpos$mutable.setAndMove(pos, direction);
+         BlockState blockstate5 = reader.getBlockState(blockpos$mutable);
+         if (bitSet.get(0) || !blockstate5.isOpaqueCube(reader, blockpos$mutable)) {
+            i3 = blockmodelrenderer$cache.getPackedLight(blockstate5, reader, blockpos$mutable);
          }
 
-         float f8 = p_239285_6_.get(0) ? blockmodelrenderer$cache.getShadeBrightness(p_239285_1_.getBlockState(blockpos), p_239285_1_, blockpos) : blockmodelrenderer$cache.getShadeBrightness(p_239285_1_.getBlockState(p_239285_3_), p_239285_1_, p_239285_3_);
-         BlockModelRenderer.VertexTranslations blockmodelrenderer$vertextranslations = BlockModelRenderer.VertexTranslations.fromFacing(p_239285_4_);
-         if (p_239285_6_.get(1) && blockmodelrenderer$neighborinfo.doNonCubicWeight) {
+         float f8 = bitSet.get(0) ? blockmodelrenderer$cache.getBrightness(reader.getBlockState(blockpos), reader, blockpos) : blockmodelrenderer$cache.getBrightness(reader.getBlockState(pos), reader, pos);
+         BlockModelRenderer.VertexTranslations blockmodelrenderer$vertextranslations = BlockModelRenderer.VertexTranslations.getVertexTranslations(direction);
+         if (bitSet.get(1) && blockmodelrenderer$neighborinfo.doNonCubicWeight) {
             float f29 = (f3 + f + f5 + f8) * 0.25F;
             float f31 = (f2 + f + f4 + f8) * 0.25F;
             float f32 = (f2 + f1 + f6 + f8) * 0.25F;
             float f33 = (f3 + f1 + f7 + f8) * 0.25F;
-            float f13 = p_239285_5_[blockmodelrenderer$neighborinfo.vert0Weights[0].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert0Weights[1].shape];
-            float f14 = p_239285_5_[blockmodelrenderer$neighborinfo.vert0Weights[2].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert0Weights[3].shape];
-            float f15 = p_239285_5_[blockmodelrenderer$neighborinfo.vert0Weights[4].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert0Weights[5].shape];
-            float f16 = p_239285_5_[blockmodelrenderer$neighborinfo.vert0Weights[6].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert0Weights[7].shape];
-            float f17 = p_239285_5_[blockmodelrenderer$neighborinfo.vert1Weights[0].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert1Weights[1].shape];
-            float f18 = p_239285_5_[blockmodelrenderer$neighborinfo.vert1Weights[2].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert1Weights[3].shape];
-            float f19 = p_239285_5_[blockmodelrenderer$neighborinfo.vert1Weights[4].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert1Weights[5].shape];
-            float f20 = p_239285_5_[blockmodelrenderer$neighborinfo.vert1Weights[6].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert1Weights[7].shape];
-            float f21 = p_239285_5_[blockmodelrenderer$neighborinfo.vert2Weights[0].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert2Weights[1].shape];
-            float f22 = p_239285_5_[blockmodelrenderer$neighborinfo.vert2Weights[2].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert2Weights[3].shape];
-            float f23 = p_239285_5_[blockmodelrenderer$neighborinfo.vert2Weights[4].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert2Weights[5].shape];
-            float f24 = p_239285_5_[blockmodelrenderer$neighborinfo.vert2Weights[6].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert2Weights[7].shape];
-            float f25 = p_239285_5_[blockmodelrenderer$neighborinfo.vert3Weights[0].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert3Weights[1].shape];
-            float f26 = p_239285_5_[blockmodelrenderer$neighborinfo.vert3Weights[2].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert3Weights[3].shape];
-            float f27 = p_239285_5_[blockmodelrenderer$neighborinfo.vert3Weights[4].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert3Weights[5].shape];
-            float f28 = p_239285_5_[blockmodelrenderer$neighborinfo.vert3Weights[6].shape] * p_239285_5_[blockmodelrenderer$neighborinfo.vert3Weights[7].shape];
-            this.brightness[blockmodelrenderer$vertextranslations.vert0] = f29 * f13 + f31 * f14 + f32 * f15 + f33 * f16;
-            this.brightness[blockmodelrenderer$vertextranslations.vert1] = f29 * f17 + f31 * f18 + f32 * f19 + f33 * f20;
-            this.brightness[blockmodelrenderer$vertextranslations.vert2] = f29 * f21 + f31 * f22 + f32 * f23 + f33 * f24;
-            this.brightness[blockmodelrenderer$vertextranslations.vert3] = f29 * f25 + f31 * f26 + f32 * f27 + f33 * f28;
-            int i2 = this.blend(l, i, j1, i3);
-            int j2 = this.blend(k, i, i1, i3);
-            int k2 = this.blend(k, j, k1, i3);
-            int l2 = this.blend(l, j, l1, i3);
-            this.lightmap[blockmodelrenderer$vertextranslations.vert0] = this.blend(i2, j2, k2, l2, f13, f14, f15, f16);
-            this.lightmap[blockmodelrenderer$vertextranslations.vert1] = this.blend(i2, j2, k2, l2, f17, f18, f19, f20);
-            this.lightmap[blockmodelrenderer$vertextranslations.vert2] = this.blend(i2, j2, k2, l2, f21, f22, f23, f24);
-            this.lightmap[blockmodelrenderer$vertextranslations.vert3] = this.blend(i2, j2, k2, l2, f25, f26, f27, f28);
+            float f13 = vertexes[blockmodelrenderer$neighborinfo.vert0Weights[0].shape] * vertexes[blockmodelrenderer$neighborinfo.vert0Weights[1].shape];
+            float f14 = vertexes[blockmodelrenderer$neighborinfo.vert0Weights[2].shape] * vertexes[blockmodelrenderer$neighborinfo.vert0Weights[3].shape];
+            float f15 = vertexes[blockmodelrenderer$neighborinfo.vert0Weights[4].shape] * vertexes[blockmodelrenderer$neighborinfo.vert0Weights[5].shape];
+            float f16 = vertexes[blockmodelrenderer$neighborinfo.vert0Weights[6].shape] * vertexes[blockmodelrenderer$neighborinfo.vert0Weights[7].shape];
+            float f17 = vertexes[blockmodelrenderer$neighborinfo.vert1Weights[0].shape] * vertexes[blockmodelrenderer$neighborinfo.vert1Weights[1].shape];
+            float f18 = vertexes[blockmodelrenderer$neighborinfo.vert1Weights[2].shape] * vertexes[blockmodelrenderer$neighborinfo.vert1Weights[3].shape];
+            float f19 = vertexes[blockmodelrenderer$neighborinfo.vert1Weights[4].shape] * vertexes[blockmodelrenderer$neighborinfo.vert1Weights[5].shape];
+            float f20 = vertexes[blockmodelrenderer$neighborinfo.vert1Weights[6].shape] * vertexes[blockmodelrenderer$neighborinfo.vert1Weights[7].shape];
+            float f21 = vertexes[blockmodelrenderer$neighborinfo.vert2Weights[0].shape] * vertexes[blockmodelrenderer$neighborinfo.vert2Weights[1].shape];
+            float f22 = vertexes[blockmodelrenderer$neighborinfo.vert2Weights[2].shape] * vertexes[blockmodelrenderer$neighborinfo.vert2Weights[3].shape];
+            float f23 = vertexes[blockmodelrenderer$neighborinfo.vert2Weights[4].shape] * vertexes[blockmodelrenderer$neighborinfo.vert2Weights[5].shape];
+            float f24 = vertexes[blockmodelrenderer$neighborinfo.vert2Weights[6].shape] * vertexes[blockmodelrenderer$neighborinfo.vert2Weights[7].shape];
+            float f25 = vertexes[blockmodelrenderer$neighborinfo.vert3Weights[0].shape] * vertexes[blockmodelrenderer$neighborinfo.vert3Weights[1].shape];
+            float f26 = vertexes[blockmodelrenderer$neighborinfo.vert3Weights[2].shape] * vertexes[blockmodelrenderer$neighborinfo.vert3Weights[3].shape];
+            float f27 = vertexes[blockmodelrenderer$neighborinfo.vert3Weights[4].shape] * vertexes[blockmodelrenderer$neighborinfo.vert3Weights[5].shape];
+            float f28 = vertexes[blockmodelrenderer$neighborinfo.vert3Weights[6].shape] * vertexes[blockmodelrenderer$neighborinfo.vert3Weights[7].shape];
+            this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.vert0] = f29 * f13 + f31 * f14 + f32 * f15 + f33 * f16;
+            this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.vert1] = f29 * f17 + f31 * f18 + f32 * f19 + f33 * f20;
+            this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.vert2] = f29 * f21 + f31 * f22 + f32 * f23 + f33 * f24;
+            this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.vert3] = f29 * f25 + f31 * f26 + f32 * f27 + f33 * f28;
+            int i2 = this.getAoBrightness(l, i, j1, i3);
+            int j2 = this.getAoBrightness(k, i, i1, i3);
+            int k2 = this.getAoBrightness(k, j, k1, i3);
+            int l2 = this.getAoBrightness(l, j, l1, i3);
+            this.vertexBrightness[blockmodelrenderer$vertextranslations.vert0] = this.getVertexBrightness(i2, j2, k2, l2, f13, f14, f15, f16);
+            this.vertexBrightness[blockmodelrenderer$vertextranslations.vert1] = this.getVertexBrightness(i2, j2, k2, l2, f17, f18, f19, f20);
+            this.vertexBrightness[blockmodelrenderer$vertextranslations.vert2] = this.getVertexBrightness(i2, j2, k2, l2, f21, f22, f23, f24);
+            this.vertexBrightness[blockmodelrenderer$vertextranslations.vert3] = this.getVertexBrightness(i2, j2, k2, l2, f25, f26, f27, f28);
          } else {
             float f9 = (f3 + f + f5 + f8) * 0.25F;
             float f10 = (f2 + f + f4 + f8) * 0.25F;
             float f11 = (f2 + f1 + f6 + f8) * 0.25F;
             float f12 = (f3 + f1 + f7 + f8) * 0.25F;
-            this.lightmap[blockmodelrenderer$vertextranslations.vert0] = this.blend(l, i, j1, i3);
-            this.lightmap[blockmodelrenderer$vertextranslations.vert1] = this.blend(k, i, i1, i3);
-            this.lightmap[blockmodelrenderer$vertextranslations.vert2] = this.blend(k, j, k1, i3);
-            this.lightmap[blockmodelrenderer$vertextranslations.vert3] = this.blend(l, j, l1, i3);
-            this.brightness[blockmodelrenderer$vertextranslations.vert0] = f9;
-            this.brightness[blockmodelrenderer$vertextranslations.vert1] = f10;
-            this.brightness[blockmodelrenderer$vertextranslations.vert2] = f11;
-            this.brightness[blockmodelrenderer$vertextranslations.vert3] = f12;
+            this.vertexBrightness[blockmodelrenderer$vertextranslations.vert0] = this.getAoBrightness(l, i, j1, i3);
+            this.vertexBrightness[blockmodelrenderer$vertextranslations.vert1] = this.getAoBrightness(k, i, i1, i3);
+            this.vertexBrightness[blockmodelrenderer$vertextranslations.vert2] = this.getAoBrightness(k, j, k1, i3);
+            this.vertexBrightness[blockmodelrenderer$vertextranslations.vert3] = this.getAoBrightness(l, j, l1, i3);
+            this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.vert0] = f9;
+            this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.vert1] = f10;
+            this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.vert2] = f11;
+            this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.vert3] = f12;
          }
 
-         float f30 = p_239285_1_.getShade(p_239285_4_, p_239285_7_);
+         float f30 = reader.func_230487_a_(direction, applyDiffuseLighting);
 
-         for(int j3 = 0; j3 < this.brightness.length; ++j3) {
-            this.brightness[j3] *= f30;
+         for(int j3 = 0; j3 < this.vertexColorMultiplier.length; ++j3) {
+            this.vertexColorMultiplier[j3] *= f30;
          }
 
       }
 
-      private int blend(int p_147778_1_, int p_147778_2_, int p_147778_3_, int p_147778_4_) {
-         if (p_147778_1_ == 0) {
-            p_147778_1_ = p_147778_4_;
+      private int getAoBrightness(int br1, int br2, int br3, int br4) {
+         if (br1 == 0) {
+            br1 = br4;
          }
 
-         if (p_147778_2_ == 0) {
-            p_147778_2_ = p_147778_4_;
+         if (br2 == 0) {
+            br2 = br4;
          }
 
-         if (p_147778_3_ == 0) {
-            p_147778_3_ = p_147778_4_;
+         if (br3 == 0) {
+            br3 = br4;
          }
 
-         return p_147778_1_ + p_147778_2_ + p_147778_3_ + p_147778_4_ >> 2 & 16711935;
+         return br1 + br2 + br3 + br4 >> 2 & 16711935;
       }
 
-      private int blend(int p_178203_1_, int p_178203_2_, int p_178203_3_, int p_178203_4_, float p_178203_5_, float p_178203_6_, float p_178203_7_, float p_178203_8_) {
-         int i = (int)((float)(p_178203_1_ >> 16 & 255) * p_178203_5_ + (float)(p_178203_2_ >> 16 & 255) * p_178203_6_ + (float)(p_178203_3_ >> 16 & 255) * p_178203_7_ + (float)(p_178203_4_ >> 16 & 255) * p_178203_8_) & 255;
-         int j = (int)((float)(p_178203_1_ & 255) * p_178203_5_ + (float)(p_178203_2_ & 255) * p_178203_6_ + (float)(p_178203_3_ & 255) * p_178203_7_ + (float)(p_178203_4_ & 255) * p_178203_8_) & 255;
+      private int getVertexBrightness(int b1, int b2, int b3, int b4, float w1, float w2, float w3, float w4) {
+         int i = (int)((float)(b1 >> 16 & 255) * w1 + (float)(b2 >> 16 & 255) * w2 + (float)(b3 >> 16 & 255) * w3 + (float)(b4 >> 16 & 255) * w4) & 255;
+         int j = (int)((float)(b1 & 255) * w1 + (float)(b2 & 255) * w2 + (float)(b3 & 255) * w3 + (float)(b4 & 255) * w4) & 255;
          return i << 16 | j;
       }
    }
@@ -426,7 +426,7 @@ public class BlockModelRenderer {
    @OnlyIn(Dist.CLIENT)
    static class Cache {
       private boolean enabled;
-      private final Long2IntLinkedOpenHashMap colorCache = Util.make(() -> {
+      private final Long2IntLinkedOpenHashMap packedLightCache = Util.make(() -> {
          Long2IntLinkedOpenHashMap long2intlinkedopenhashmap = new Long2IntLinkedOpenHashMap(100, 0.25F) {
             protected void rehash(int p_rehash_1_) {
             }
@@ -452,33 +452,33 @@ public class BlockModelRenderer {
 
       public void disable() {
          this.enabled = false;
-         this.colorCache.clear();
+         this.packedLightCache.clear();
          this.brightnessCache.clear();
       }
 
-      public int getLightColor(BlockState p_228810_1_, IBlockDisplayReader p_228810_2_, BlockPos p_228810_3_) {
-         long i = p_228810_3_.asLong();
+      public int getPackedLight(BlockState blockStateIn, IBlockDisplayReader lightReaderIn, BlockPos blockPosIn) {
+         long i = blockPosIn.toLong();
          if (this.enabled) {
-            int j = this.colorCache.get(i);
+            int j = this.packedLightCache.get(i);
             if (j != Integer.MAX_VALUE) {
                return j;
             }
          }
 
-         int k = WorldRenderer.getLightColor(p_228810_2_, p_228810_1_, p_228810_3_);
+         int k = WorldRenderer.getPackedLightmapCoords(lightReaderIn, blockStateIn, blockPosIn);
          if (this.enabled) {
-            if (this.colorCache.size() == 100) {
-               this.colorCache.removeFirstInt();
+            if (this.packedLightCache.size() == 100) {
+               this.packedLightCache.removeFirstInt();
             }
 
-            this.colorCache.put(i, k);
+            this.packedLightCache.put(i, k);
          }
 
          return k;
       }
 
-      public float getShadeBrightness(BlockState p_228811_1_, IBlockDisplayReader p_228811_2_, BlockPos p_228811_3_) {
-         long i = p_228811_3_.asLong();
+      public float getBrightness(BlockState blockStateIn, IBlockDisplayReader lightReaderIn, BlockPos blockPosIn) {
+         long i = blockPosIn.toLong();
          if (this.enabled) {
             float f = this.brightnessCache.get(i);
             if (!Float.isNaN(f)) {
@@ -486,7 +486,7 @@ public class BlockModelRenderer {
             }
          }
 
-         float f1 = p_228811_1_.getShadeBrightness(p_228811_2_, p_228811_3_);
+         float f1 = blockStateIn.getAmbientOcclusionLightValue(lightReaderIn, blockPosIn);
          if (this.enabled) {
             if (this.brightnessCache.size() == 100) {
                this.brightnessCache.removeFirstFloat();
@@ -514,26 +514,26 @@ public class BlockModelRenderer {
       private final BlockModelRenderer.Orientation[] vert1Weights;
       private final BlockModelRenderer.Orientation[] vert2Weights;
       private final BlockModelRenderer.Orientation[] vert3Weights;
-      private static final BlockModelRenderer.NeighborInfo[] BY_FACING = Util.make(new BlockModelRenderer.NeighborInfo[6], (p_209260_0_) -> {
-         p_209260_0_[Direction.DOWN.get3DDataValue()] = DOWN;
-         p_209260_0_[Direction.UP.get3DDataValue()] = UP;
-         p_209260_0_[Direction.NORTH.get3DDataValue()] = NORTH;
-         p_209260_0_[Direction.SOUTH.get3DDataValue()] = SOUTH;
-         p_209260_0_[Direction.WEST.get3DDataValue()] = WEST;
-         p_209260_0_[Direction.EAST.get3DDataValue()] = EAST;
+      private static final BlockModelRenderer.NeighborInfo[] VALUES = Util.make(new BlockModelRenderer.NeighborInfo[6], (p_209260_0_) -> {
+         p_209260_0_[Direction.DOWN.getIndex()] = DOWN;
+         p_209260_0_[Direction.UP.getIndex()] = UP;
+         p_209260_0_[Direction.NORTH.getIndex()] = NORTH;
+         p_209260_0_[Direction.SOUTH.getIndex()] = SOUTH;
+         p_209260_0_[Direction.WEST.getIndex()] = WEST;
+         p_209260_0_[Direction.EAST.getIndex()] = EAST;
       });
 
-      private NeighborInfo(Direction[] p_i46236_3_, float p_i46236_4_, boolean p_i46236_5_, BlockModelRenderer.Orientation[] p_i46236_6_, BlockModelRenderer.Orientation[] p_i46236_7_, BlockModelRenderer.Orientation[] p_i46236_8_, BlockModelRenderer.Orientation[] p_i46236_9_) {
-         this.corners = p_i46236_3_;
-         this.doNonCubicWeight = p_i46236_5_;
-         this.vert0Weights = p_i46236_6_;
-         this.vert1Weights = p_i46236_7_;
-         this.vert2Weights = p_i46236_8_;
-         this.vert3Weights = p_i46236_9_;
+      private NeighborInfo(Direction[] cornersIn, float brightness, boolean doNonCubicWeightIn, BlockModelRenderer.Orientation[] vert0WeightsIn, BlockModelRenderer.Orientation[] vert1WeightsIn, BlockModelRenderer.Orientation[] vert2WeightsIn, BlockModelRenderer.Orientation[] vert3WeightsIn) {
+         this.corners = cornersIn;
+         this.doNonCubicWeight = doNonCubicWeightIn;
+         this.vert0Weights = vert0WeightsIn;
+         this.vert1Weights = vert1WeightsIn;
+         this.vert2Weights = vert2WeightsIn;
+         this.vert3Weights = vert3WeightsIn;
       }
 
-      public static BlockModelRenderer.NeighborInfo fromFacing(Direction p_178273_0_) {
-         return BY_FACING[p_178273_0_.get3DDataValue()];
+      public static BlockModelRenderer.NeighborInfo getNeighbourInfo(Direction facing) {
+         return VALUES[facing.getIndex()];
       }
    }
 
@@ -554,8 +554,8 @@ public class BlockModelRenderer {
 
       private final int shape;
 
-      private Orientation(Direction p_i46233_3_, boolean p_i46233_4_) {
-         this.shape = p_i46233_3_.get3DDataValue() + (p_i46233_4_ ? Direction.values().length : 0);
+      private Orientation(Direction facingIn, boolean flip) {
+         this.shape = facingIn.getIndex() + (flip ? Direction.values().length : 0);
       }
    }
 
@@ -572,24 +572,24 @@ public class BlockModelRenderer {
       private final int vert1;
       private final int vert2;
       private final int vert3;
-      private static final BlockModelRenderer.VertexTranslations[] BY_FACING = Util.make(new BlockModelRenderer.VertexTranslations[6], (p_209261_0_) -> {
-         p_209261_0_[Direction.DOWN.get3DDataValue()] = DOWN;
-         p_209261_0_[Direction.UP.get3DDataValue()] = UP;
-         p_209261_0_[Direction.NORTH.get3DDataValue()] = NORTH;
-         p_209261_0_[Direction.SOUTH.get3DDataValue()] = SOUTH;
-         p_209261_0_[Direction.WEST.get3DDataValue()] = WEST;
-         p_209261_0_[Direction.EAST.get3DDataValue()] = EAST;
+      private static final BlockModelRenderer.VertexTranslations[] VALUES = Util.make(new BlockModelRenderer.VertexTranslations[6], (p_209261_0_) -> {
+         p_209261_0_[Direction.DOWN.getIndex()] = DOWN;
+         p_209261_0_[Direction.UP.getIndex()] = UP;
+         p_209261_0_[Direction.NORTH.getIndex()] = NORTH;
+         p_209261_0_[Direction.SOUTH.getIndex()] = SOUTH;
+         p_209261_0_[Direction.WEST.getIndex()] = WEST;
+         p_209261_0_[Direction.EAST.getIndex()] = EAST;
       });
 
-      private VertexTranslations(int p_i46234_3_, int p_i46234_4_, int p_i46234_5_, int p_i46234_6_) {
-         this.vert0 = p_i46234_3_;
-         this.vert1 = p_i46234_4_;
-         this.vert2 = p_i46234_5_;
-         this.vert3 = p_i46234_6_;
+      private VertexTranslations(int vert0In, int vert1In, int vert2In, int vert3In) {
+         this.vert0 = vert0In;
+         this.vert1 = vert1In;
+         this.vert2 = vert2In;
+         this.vert3 = vert3In;
       }
 
-      public static BlockModelRenderer.VertexTranslations fromFacing(Direction p_178184_0_) {
-         return BY_FACING[p_178184_0_.get3DDataValue()];
+      public static BlockModelRenderer.VertexTranslations getVertexTranslations(Direction facingIn) {
+         return VALUES[facingIn.getIndex()];
       }
    }
 }

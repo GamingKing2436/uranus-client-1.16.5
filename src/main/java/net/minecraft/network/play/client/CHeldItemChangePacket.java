@@ -8,29 +8,29 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class CHeldItemChangePacket implements IPacket<IServerPlayNetHandler> {
-   private int slot;
+   private int slotId;
 
    public CHeldItemChangePacket() {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public CHeldItemChangePacket(int p_i46864_1_) {
-      this.slot = p_i46864_1_;
+   public CHeldItemChangePacket(int slotIdIn) {
+      this.slotId = slotIdIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.slot = p_148837_1_.readShort();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.slotId = buf.readShort();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeShort(this.slot);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeShort(this.slotId);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleSetCarriedItem(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processHeldItemChange(this);
    }
 
-   public int getSlot() {
-      return this.slot;
+   public int getSlotId() {
+      return this.slotId;
    }
 }

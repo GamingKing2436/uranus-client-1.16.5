@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class LWJGL3KeyOptions extends DataFix {
-   private static final Int2ObjectMap<String> MAP = DataFixUtils.make(new Int2ObjectOpenHashMap<>(), (p_206279_0_) -> {
+   private static final Int2ObjectMap<String> field_199186_a = DataFixUtils.make(new Int2ObjectOpenHashMap<>(), (p_206279_0_) -> {
       p_206279_0_.put(0, "key.unknown");
       p_206279_0_.put(11, "key.0");
       p_206279_0_.put(2, "key.1");
@@ -127,8 +127,8 @@ public class LWJGL3KeyOptions extends DataFix {
       p_206279_0_.put(44, "key.z");
    });
 
-   public LWJGL3KeyOptions(Schema p_i49621_1_, boolean p_i49621_2_) {
-      super(p_i49621_1_, p_i49621_2_);
+   public LWJGL3KeyOptions(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
@@ -153,7 +153,7 @@ public class LWJGL3KeyOptions extends DataFix {
 
                         return Pair.of(p_209661_0_.getKey(), p_209661_0_.getValue().createString(s1));
                      } else {
-                        String s = MAP.getOrDefault(i, "key.unknown");
+                        String s = field_199186_a.getOrDefault(i, "key.unknown");
                         return Pair.of(p_209661_0_.getKey(), p_209661_0_.getValue().createString(s));
                      }
                   } else {

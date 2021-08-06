@@ -19,23 +19,23 @@ import net.minecraftforge.api.distmarker.OnlyIn;
    _interface = IRendersAsItem.class
 )
 public abstract class ProjectileItemEntity extends ThrowableEntity implements IRendersAsItem {
-   private static final DataParameter<ItemStack> DATA_ITEM_STACK = EntityDataManager.defineId(ProjectileItemEntity.class, DataSerializers.ITEM_STACK);
+   private static final DataParameter<ItemStack> ITEMSTACK_DATA = EntityDataManager.createKey(ProjectileItemEntity.class, DataSerializers.ITEMSTACK);
 
-   public ProjectileItemEntity(EntityType<? extends ProjectileItemEntity> p_i50155_1_, World p_i50155_2_) {
-      super(p_i50155_1_, p_i50155_2_);
+   public ProjectileItemEntity(EntityType<? extends ProjectileItemEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
-   public ProjectileItemEntity(EntityType<? extends ProjectileItemEntity> p_i50156_1_, double p_i50156_2_, double p_i50156_4_, double p_i50156_6_, World p_i50156_8_) {
-      super(p_i50156_1_, p_i50156_2_, p_i50156_4_, p_i50156_6_, p_i50156_8_);
+   public ProjectileItemEntity(EntityType<? extends ProjectileItemEntity> type, double x, double y, double z, World worldIn) {
+      super(type, x, y, z, worldIn);
    }
 
-   public ProjectileItemEntity(EntityType<? extends ProjectileItemEntity> p_i50157_1_, LivingEntity p_i50157_2_, World p_i50157_3_) {
-      super(p_i50157_1_, p_i50157_2_, p_i50157_3_);
+   public ProjectileItemEntity(EntityType<? extends ProjectileItemEntity> type, LivingEntity livingEntityIn, World worldIn) {
+      super(type, livingEntityIn, worldIn);
    }
 
-   public void setItem(ItemStack p_213884_1_) {
-      if (p_213884_1_.getItem() != this.getDefaultItem() || p_213884_1_.hasTag()) {
-         this.getEntityData().set(DATA_ITEM_STACK, Util.make(p_213884_1_.copy(), (p_213883_0_) -> {
+   public void setItem(ItemStack stack) {
+      if (stack.getItem() != this.getDefaultItem() || stack.hasTag()) {
+         this.getDataManager().set(ITEMSTACK_DATA, Util.make(stack.copy(), (p_213883_0_) -> {
             p_213883_0_.setCount(1);
          }));
       }
@@ -44,31 +44,31 @@ public abstract class ProjectileItemEntity extends ThrowableEntity implements IR
 
    protected abstract Item getDefaultItem();
 
-   protected ItemStack getItemRaw() {
-      return this.getEntityData().get(DATA_ITEM_STACK);
+   protected ItemStack func_213882_k() {
+      return this.getDataManager().get(ITEMSTACK_DATA);
    }
 
    public ItemStack getItem() {
-      ItemStack itemstack = this.getItemRaw();
+      ItemStack itemstack = this.func_213882_k();
       return itemstack.isEmpty() ? new ItemStack(this.getDefaultItem()) : itemstack;
    }
 
-   protected void defineSynchedData() {
-      this.getEntityData().define(DATA_ITEM_STACK, ItemStack.EMPTY);
+   protected void registerData() {
+      this.getDataManager().register(ITEMSTACK_DATA, ItemStack.EMPTY);
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      ItemStack itemstack = this.getItemRaw();
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      ItemStack itemstack = this.func_213882_k();
       if (!itemstack.isEmpty()) {
-         p_213281_1_.put("Item", itemstack.save(new CompoundNBT()));
+         compound.put("Item", itemstack.write(new CompoundNBT()));
       }
 
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      ItemStack itemstack = ItemStack.of(p_70037_1_.getCompound("Item"));
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      ItemStack itemstack = ItemStack.read(compound.getCompound("Item"));
       this.setItem(itemstack);
    }
 }

@@ -19,17 +19,17 @@ public class SensorType<U extends Sensor<?>> {
    public static final SensorType<PiglinBruteSpecificSensor> PIGLIN_BRUTE_SPECIFIC_SENSOR = register("piglin_brute_specific_sensor", PiglinBruteSpecificSensor::new);
    public static final SensorType<HoglinMobsSensor> HOGLIN_SPECIFIC_SENSOR = register("hoglin_specific_sensor", HoglinMobsSensor::new);
    public static final SensorType<MateSensor> NEAREST_ADULT = register("nearest_adult", MateSensor::new);
-   private final Supplier<U> factory;
+   private final Supplier<U> sensorSupplier;
 
-   private SensorType(Supplier<U> p_i51500_1_) {
-      this.factory = p_i51500_1_;
+   private SensorType(Supplier<U> sensorSupplier) {
+      this.sensorSupplier = sensorSupplier;
    }
 
-   public U create() {
-      return this.factory.get();
+   public U getSensor() {
+      return this.sensorSupplier.get();
    }
 
-   private static <U extends Sensor<?>> SensorType<U> register(String p_220996_0_, Supplier<U> p_220996_1_) {
-      return Registry.register(Registry.SENSOR_TYPE, new ResourceLocation(p_220996_0_), new SensorType<>(p_220996_1_));
+   private static <U extends Sensor<?>> SensorType<U> register(String key, Supplier<U> sensorSupplier) {
+      return Registry.register(Registry.SENSOR_TYPE, new ResourceLocation(key), new SensorType<>(sensorSupplier));
    }
 }

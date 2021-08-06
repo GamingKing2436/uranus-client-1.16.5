@@ -22,10 +22,10 @@ public class DesertPyramidStructure extends Structure<NoFeatureConfig> {
          super(p_i225801_1_, p_i225801_2_, p_i225801_3_, p_i225801_4_, p_i225801_5_, p_i225801_6_);
       }
 
-      public void generatePieces(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
-         DesertPyramidPiece desertpyramidpiece = new DesertPyramidPiece(this.random, p_230364_4_ * 16, p_230364_5_ * 16);
-         this.pieces.add(desertpyramidpiece);
-         this.calculateBoundingBox();
+      public void func_230364_a_(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, NoFeatureConfig p_230364_7_) {
+         DesertPyramidPiece desertpyramidpiece = new DesertPyramidPiece(this.rand, p_230364_4_ * 16, p_230364_5_ * 16);
+         this.components.add(desertpyramidpiece);
+         this.recalculateStructureSize();
       }
    }
 }

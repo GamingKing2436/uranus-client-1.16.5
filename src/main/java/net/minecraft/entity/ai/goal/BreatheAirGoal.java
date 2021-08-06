@@ -12,55 +12,55 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IWorldReader;
 
 public class BreatheAirGoal extends Goal {
-   private final CreatureEntity mob;
+   private final CreatureEntity field_205142_a;
 
    public BreatheAirGoal(CreatureEntity p_i48940_1_) {
-      this.mob = p_i48940_1_;
-      this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+      this.field_205142_a = p_i48940_1_;
+      this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
    }
 
-   public boolean canUse() {
-      return this.mob.getAirSupply() < 140;
+   public boolean shouldExecute() {
+      return this.field_205142_a.getAir() < 140;
    }
 
-   public boolean canContinueToUse() {
-      return this.canUse();
+   public boolean shouldContinueExecuting() {
+      return this.shouldExecute();
    }
 
-   public boolean isInterruptable() {
+   public boolean isPreemptible() {
       return false;
    }
 
-   public void start() {
-      this.findAirPosition();
+   public void startExecuting() {
+      this.navigate();
    }
 
-   private void findAirPosition() {
-      Iterable<BlockPos> iterable = BlockPos.betweenClosed(MathHelper.floor(this.mob.getX() - 1.0D), MathHelper.floor(this.mob.getY()), MathHelper.floor(this.mob.getZ() - 1.0D), MathHelper.floor(this.mob.getX() + 1.0D), MathHelper.floor(this.mob.getY() + 8.0D), MathHelper.floor(this.mob.getZ() + 1.0D));
+   private void navigate() {
+      Iterable<BlockPos> iterable = BlockPos.getAllInBoxMutable(MathHelper.floor(this.field_205142_a.getPosX() - 1.0D), MathHelper.floor(this.field_205142_a.getPosY()), MathHelper.floor(this.field_205142_a.getPosZ() - 1.0D), MathHelper.floor(this.field_205142_a.getPosX() + 1.0D), MathHelper.floor(this.field_205142_a.getPosY() + 8.0D), MathHelper.floor(this.field_205142_a.getPosZ() + 1.0D));
       BlockPos blockpos = null;
 
       for(BlockPos blockpos1 : iterable) {
-         if (this.givesAir(this.mob.level, blockpos1)) {
+         if (this.canBreatheAt(this.field_205142_a.world, blockpos1)) {
             blockpos = blockpos1;
             break;
          }
       }
 
       if (blockpos == null) {
-         blockpos = new BlockPos(this.mob.getX(), this.mob.getY() + 8.0D, this.mob.getZ());
+         blockpos = new BlockPos(this.field_205142_a.getPosX(), this.field_205142_a.getPosY() + 8.0D, this.field_205142_a.getPosZ());
       }
 
-      this.mob.getNavigation().moveTo((double)blockpos.getX(), (double)(blockpos.getY() + 1), (double)blockpos.getZ(), 1.0D);
+      this.field_205142_a.getNavigator().tryMoveToXYZ((double)blockpos.getX(), (double)(blockpos.getY() + 1), (double)blockpos.getZ(), 1.0D);
    }
 
    public void tick() {
-      this.findAirPosition();
-      this.mob.moveRelative(0.02F, new Vector3d((double)this.mob.xxa, (double)this.mob.yya, (double)this.mob.zza));
-      this.mob.move(MoverType.SELF, this.mob.getDeltaMovement());
+      this.navigate();
+      this.field_205142_a.moveRelative(0.02F, new Vector3d((double)this.field_205142_a.moveStrafing, (double)this.field_205142_a.moveVertical, (double)this.field_205142_a.moveForward));
+      this.field_205142_a.move(MoverType.SELF, this.field_205142_a.getMotion());
    }
 
-   private boolean givesAir(IWorldReader p_205140_1_, BlockPos p_205140_2_) {
-      BlockState blockstate = p_205140_1_.getBlockState(p_205140_2_);
-      return (p_205140_1_.getFluidState(p_205140_2_).isEmpty() || blockstate.is(Blocks.BUBBLE_COLUMN)) && blockstate.isPathfindable(p_205140_1_, p_205140_2_, PathType.LAND);
+   private boolean canBreatheAt(IWorldReader worldIn, BlockPos pos) {
+      BlockState blockstate = worldIn.getBlockState(pos);
+      return (worldIn.getFluidState(pos).isEmpty() || blockstate.isIn(Blocks.BUBBLE_COLUMN)) && blockstate.allowsMovement(worldIn, pos, PathType.LAND);
    }
 }

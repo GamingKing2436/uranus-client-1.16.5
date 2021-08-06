@@ -18,34 +18,34 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class ItemOverrideList {
    public static final ItemOverrideList EMPTY = new ItemOverrideList();
    private final List<ItemOverride> overrides = Lists.newArrayList();
-   private final List<IBakedModel> overrideModels;
+   private final List<IBakedModel> overrideBakedModels;
 
    private ItemOverrideList() {
-      this.overrideModels = Collections.emptyList();
+      this.overrideBakedModels = Collections.emptyList();
    }
 
-   public ItemOverrideList(ModelBakery p_i50984_1_, BlockModel p_i50984_2_, Function<ResourceLocation, IUnbakedModel> p_i50984_3_, List<ItemOverride> p_i50984_4_) {
-      this.overrideModels = p_i50984_4_.stream().map((p_217649_3_) -> {
-         IUnbakedModel iunbakedmodel = p_i50984_3_.apply(p_217649_3_.getModel());
-         return Objects.equals(iunbakedmodel, p_i50984_2_) ? null : p_i50984_1_.bake(p_217649_3_.getModel(), ModelRotation.X0_Y0);
+   public ItemOverrideList(ModelBakery modelBakeryIn, BlockModel blockModelIn, Function<ResourceLocation, IUnbakedModel> modelGetter, List<ItemOverride> itemOverridesIn) {
+      this.overrideBakedModels = itemOverridesIn.stream().map((p_217649_3_) -> {
+         IUnbakedModel iunbakedmodel = modelGetter.apply(p_217649_3_.getLocation());
+         return Objects.equals(iunbakedmodel, blockModelIn) ? null : modelBakeryIn.bake(p_217649_3_.getLocation(), ModelRotation.X0_Y0);
       }).collect(Collectors.toList());
-      Collections.reverse(this.overrideModels);
+      Collections.reverse(this.overrideBakedModels);
 
-      for(int i = p_i50984_4_.size() - 1; i >= 0; --i) {
-         this.overrides.add(p_i50984_4_.get(i));
+      for(int i = itemOverridesIn.size() - 1; i >= 0; --i) {
+         this.overrides.add(itemOverridesIn.get(i));
       }
 
    }
 
    @Nullable
-   public IBakedModel resolve(IBakedModel p_239290_1_, ItemStack p_239290_2_, @Nullable ClientWorld p_239290_3_, @Nullable LivingEntity p_239290_4_) {
+   public IBakedModel getOverrideModel(IBakedModel model, ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity livingEntity) {
       if (!this.overrides.isEmpty()) {
          for(int i = 0; i < this.overrides.size(); ++i) {
             ItemOverride itemoverride = this.overrides.get(i);
-            if (itemoverride.test(p_239290_2_, p_239290_3_, p_239290_4_)) {
-               IBakedModel ibakedmodel = this.overrideModels.get(i);
+            if (itemoverride.matchesOverride(stack, world, livingEntity)) {
+               IBakedModel ibakedmodel = this.overrideBakedModels.get(i);
                if (ibakedmodel == null) {
-                  return p_239290_1_;
+                  return model;
                }
 
                return ibakedmodel;
@@ -53,6 +53,6 @@ public class ItemOverrideList {
          }
       }
 
-      return p_239290_1_;
+      return model;
    }
 }

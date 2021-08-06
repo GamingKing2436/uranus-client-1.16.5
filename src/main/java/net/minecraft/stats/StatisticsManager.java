@@ -8,19 +8,19 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class StatisticsManager {
-   protected final Object2IntMap<Stat<?>> stats = Object2IntMaps.synchronize(new Object2IntOpenHashMap<>());
+   protected final Object2IntMap<Stat<?>> statsData = Object2IntMaps.synchronize(new Object2IntOpenHashMap<>());
 
    public StatisticsManager() {
-      this.stats.defaultReturnValue(0);
+      this.statsData.defaultReturnValue(0);
    }
 
-   public void increment(PlayerEntity p_150871_1_, Stat<?> p_150871_2_, int p_150871_3_) {
-      int i = (int)Math.min((long)this.getValue(p_150871_2_) + (long)p_150871_3_, 2147483647L);
-      this.setValue(p_150871_1_, p_150871_2_, i);
+   public void increment(PlayerEntity player, Stat<?> stat, int amount) {
+      int i = (int)Math.min((long)this.getValue(stat) + (long)amount, 2147483647L);
+      this.setValue(player, stat, i);
    }
 
-   public void setValue(PlayerEntity p_150873_1_, Stat<?> p_150873_2_, int p_150873_3_) {
-      this.stats.put(p_150873_2_, p_150873_3_);
+   public void setValue(PlayerEntity playerIn, Stat<?> statIn, int p_150873_3_) {
+      this.statsData.put(statIn, p_150873_3_);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -28,7 +28,7 @@ public class StatisticsManager {
       return p_199060_1_.contains(p_199060_2_) ? this.getValue(p_199060_1_.get(p_199060_2_)) : 0;
    }
 
-   public int getValue(Stat<?> p_77444_1_) {
-      return this.stats.getInt(p_77444_1_);
+   public int getValue(Stat<?> stat) {
+      return this.statsData.getInt(stat);
    }
 }

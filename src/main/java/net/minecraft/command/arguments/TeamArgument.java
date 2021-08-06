@@ -18,7 +18,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class TeamArgument implements ArgumentType<String> {
    private static final Collection<String> EXAMPLES = Arrays.asList("foo", "123");
-   private static final DynamicCommandExceptionType ERROR_TEAM_NOT_FOUND = new DynamicCommandExceptionType((p_208680_0_) -> {
+   private static final DynamicCommandExceptionType TEAM_NOT_FOUND = new DynamicCommandExceptionType((p_208680_0_) -> {
       return new TranslationTextComponent("team.notFound", p_208680_0_);
    });
 
@@ -26,12 +26,12 @@ public class TeamArgument implements ArgumentType<String> {
       return new TeamArgument();
    }
 
-   public static ScorePlayerTeam getTeam(CommandContext<CommandSource> p_197228_0_, String p_197228_1_) throws CommandSyntaxException {
-      String s = p_197228_0_.getArgument(p_197228_1_, String.class);
-      Scoreboard scoreboard = p_197228_0_.getSource().getServer().getScoreboard();
-      ScorePlayerTeam scoreplayerteam = scoreboard.getPlayerTeam(s);
+   public static ScorePlayerTeam getTeam(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      String s = context.getArgument(name, String.class);
+      Scoreboard scoreboard = context.getSource().getServer().getScoreboard();
+      ScorePlayerTeam scoreplayerteam = scoreboard.getTeam(s);
       if (scoreplayerteam == null) {
-         throw ERROR_TEAM_NOT_FOUND.create(s);
+         throw TEAM_NOT_FOUND.create(s);
       } else {
          return scoreplayerteam;
       }
@@ -42,7 +42,7 @@ public class TeamArgument implements ArgumentType<String> {
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
-      return p_listSuggestions_1_.getSource() instanceof ISuggestionProvider ? ISuggestionProvider.suggest(((ISuggestionProvider)p_listSuggestions_1_.getSource()).getAllTeams(), p_listSuggestions_2_) : Suggestions.empty();
+      return p_listSuggestions_1_.getSource() instanceof ISuggestionProvider ? ISuggestionProvider.suggest(((ISuggestionProvider)p_listSuggestions_1_.getSource()).getTeamNames(), p_listSuggestions_2_) : Suggestions.empty();
    }
 
    public Collection<String> getExamples() {

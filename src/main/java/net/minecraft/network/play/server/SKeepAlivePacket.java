@@ -13,20 +13,20 @@ public class SKeepAlivePacket implements IPacket<IClientPlayNetHandler> {
    public SKeepAlivePacket() {
    }
 
-   public SKeepAlivePacket(long p_i46942_1_) {
-      this.id = p_i46942_1_;
+   public SKeepAlivePacket(long idIn) {
+      this.id = idIn;
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleKeepAlive(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleKeepAlive(this);
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.id = p_148837_1_.readLong();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.id = buf.readLong();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeLong(this.id);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeLong(this.id);
    }
 
    @OnlyIn(Dist.CLIENT)

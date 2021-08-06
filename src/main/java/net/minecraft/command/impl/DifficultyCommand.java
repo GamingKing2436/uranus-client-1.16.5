@@ -11,35 +11,35 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.Difficulty;
 
 public class DifficultyCommand {
-   private static final DynamicCommandExceptionType ERROR_ALREADY_DIFFICULT = new DynamicCommandExceptionType((p_208823_0_) -> {
+   private static final DynamicCommandExceptionType FAILED_EXCEPTION = new DynamicCommandExceptionType((p_208823_0_) -> {
       return new TranslationTextComponent("commands.difficulty.failure", p_208823_0_);
    });
 
-   public static void register(CommandDispatcher<CommandSource> p_198344_0_) {
+   public static void register(CommandDispatcher<CommandSource> dispatcher) {
       LiteralArgumentBuilder<CommandSource> literalargumentbuilder = Commands.literal("difficulty");
 
       for(Difficulty difficulty : Difficulty.values()) {
-         literalargumentbuilder.then(Commands.literal(difficulty.getKey()).executes((p_198347_1_) -> {
+         literalargumentbuilder.then(Commands.literal(difficulty.getTranslationKey()).executes((p_198347_1_) -> {
             return setDifficulty(p_198347_1_.getSource(), difficulty);
          }));
       }
 
-      p_198344_0_.register(literalargumentbuilder.requires((p_198348_0_) -> {
-         return p_198348_0_.hasPermission(2);
+      dispatcher.register(literalargumentbuilder.requires((p_198348_0_) -> {
+         return p_198348_0_.hasPermissionLevel(2);
       }).executes((p_198346_0_) -> {
-         Difficulty difficulty1 = p_198346_0_.getSource().getLevel().getDifficulty();
-         p_198346_0_.getSource().sendSuccess(new TranslationTextComponent("commands.difficulty.query", difficulty1.getDisplayName()), false);
+         Difficulty difficulty1 = p_198346_0_.getSource().getWorld().getDifficulty();
+         p_198346_0_.getSource().sendFeedback(new TranslationTextComponent("commands.difficulty.query", difficulty1.getDisplayName()), false);
          return difficulty1.getId();
       }));
    }
 
-   public static int setDifficulty(CommandSource p_198345_0_, Difficulty p_198345_1_) throws CommandSyntaxException {
-      MinecraftServer minecraftserver = p_198345_0_.getServer();
-      if (minecraftserver.getWorldData().getDifficulty() == p_198345_1_) {
-         throw ERROR_ALREADY_DIFFICULT.create(p_198345_1_.getKey());
+   public static int setDifficulty(CommandSource source, Difficulty difficulty) throws CommandSyntaxException {
+      MinecraftServer minecraftserver = source.getServer();
+      if (minecraftserver.getServerConfiguration().getDifficulty() == difficulty) {
+         throw FAILED_EXCEPTION.create(difficulty.getTranslationKey());
       } else {
-         minecraftserver.setDifficulty(p_198345_1_, true);
-         p_198345_0_.sendSuccess(new TranslationTextComponent("commands.difficulty.success", p_198345_1_.getDisplayName()), true);
+         minecraftserver.setDifficultyForAllWorlds(difficulty, true);
+         source.sendFeedback(new TranslationTextComponent("commands.difficulty.success", difficulty.getDisplayName()), true);
          return 0;
       }
    }

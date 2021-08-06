@@ -13,23 +13,23 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class FireworkStarFadeRecipe extends SpecialRecipe {
-   private static final Ingredient STAR_INGREDIENT = Ingredient.of(Items.FIREWORK_STAR);
+   private static final Ingredient INGREDIENT_FIREWORK_STAR = Ingredient.fromItems(Items.FIREWORK_STAR);
 
-   public FireworkStarFadeRecipe(ResourceLocation p_i48167_1_) {
-      super(p_i48167_1_);
+   public FireworkStarFadeRecipe(ResourceLocation idIn) {
+      super(idIn);
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
       boolean flag = false;
       boolean flag1 = false;
 
-      for(int i = 0; i < p_77569_1_.getContainerSize(); ++i) {
-         ItemStack itemstack = p_77569_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack = inv.getStackInSlot(i);
          if (!itemstack.isEmpty()) {
             if (itemstack.getItem() instanceof DyeItem) {
                flag = true;
             } else {
-               if (!STAR_INGREDIENT.test(itemstack)) {
+               if (!INGREDIENT_FIREWORK_STAR.test(itemstack)) {
                   return false;
                }
 
@@ -45,23 +45,23 @@ public class FireworkStarFadeRecipe extends SpecialRecipe {
       return flag1 && flag;
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
+   public ItemStack getCraftingResult(CraftingInventory inv) {
       List<Integer> list = Lists.newArrayList();
       ItemStack itemstack = null;
 
-      for(int i = 0; i < p_77572_1_.getContainerSize(); ++i) {
-         ItemStack itemstack1 = p_77572_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack1 = inv.getStackInSlot(i);
          Item item = itemstack1.getItem();
          if (item instanceof DyeItem) {
             list.add(((DyeItem)item).getDyeColor().getFireworkColor());
-         } else if (STAR_INGREDIENT.test(itemstack1)) {
+         } else if (INGREDIENT_FIREWORK_STAR.test(itemstack1)) {
             itemstack = itemstack1.copy();
             itemstack.setCount(1);
          }
       }
 
       if (itemstack != null && !list.isEmpty()) {
-         itemstack.getOrCreateTagElement("Explosion").putIntArray("FadeColors", list);
+         itemstack.getOrCreateChildTag("Explosion").putIntArray("FadeColors", list);
          return itemstack;
       } else {
          return ItemStack.EMPTY;
@@ -69,11 +69,11 @@ public class FireworkStarFadeRecipe extends SpecialRecipe {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ * p_194133_2_ >= 2;
+   public boolean canFit(int width, int height) {
+      return width * height >= 2;
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.FIREWORK_STAR_FADE;
+      return IRecipeSerializer.CRAFTING_SPECIAL_FIREWORK_STAR_FADE;
    }
 }

@@ -11,8 +11,8 @@ import java.util.Optional;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class HeightmapRenamingFix extends DataFix {
-   public HeightmapRenamingFix(Schema p_i49646_1_, boolean p_i49646_2_) {
-      super(p_i49646_1_, p_i49646_2_);
+   public HeightmapRenamingFix(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    protected TypeRewriteRule makeRule() {

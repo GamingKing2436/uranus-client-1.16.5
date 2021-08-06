@@ -11,14 +11,14 @@ import net.minecraft.util.text.event.HoverEvent;
 public class BedExplosionDamageSource extends DamageSource {
    protected BedExplosionDamageSource() {
       super("badRespawnPoint");
-      this.setScalesWithDifficulty();
+      this.setDifficultyScaled();
       this.setExplosion();
    }
 
-   public ITextComponent getLocalizedDeathMessage(LivingEntity p_151519_1_) {
-      ITextComponent itextcomponent = TextComponentUtils.wrapInSquareBrackets(new TranslationTextComponent("death.attack.badRespawnPoint.link")).withStyle((p_233545_0_) -> {
-         return p_233545_0_.withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://bugs.mojang.com/browse/MCPE-28723")).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent("MCPE-28723")));
+   public ITextComponent getDeathMessage(LivingEntity entityLivingBaseIn) {
+      ITextComponent itextcomponent = TextComponentUtils.wrapWithSquareBrackets(new TranslationTextComponent("death.attack.badRespawnPoint.link")).modifyStyle((p_233545_0_) -> {
+         return p_233545_0_.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://bugs.mojang.com/browse/MCPE-28723")).setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent("MCPE-28723")));
       });
-      return new TranslationTextComponent("death.attack.badRespawnPoint.message", p_151519_1_.getDisplayName(), itextcomponent);
+      return new TranslationTextComponent("death.attack.badRespawnPoint.message", entityLivingBaseIn.getDisplayName(), itextcomponent);
    }
 }

@@ -4,9 +4,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 
 public interface IContainerListener {
-   void refreshContainer(Container p_71110_1_, NonNullList<ItemStack> p_71110_2_);
+   void sendAllContents(Container containerToSend, NonNullList<ItemStack> itemsList);
 
-   void slotChanged(Container p_71111_1_, int p_71111_2_, ItemStack p_71111_3_);
+   void sendSlotContents(Container containerToSend, int slotInd, ItemStack stack);
 
-   void setContainerData(Container p_71112_1_, int p_71112_2_, int p_71112_3_);
+   void sendWindowProperty(Container containerIn, int varToUpdate, int newValue);
 }

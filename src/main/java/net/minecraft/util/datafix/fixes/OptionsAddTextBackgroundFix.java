@@ -16,13 +16,13 @@ public class OptionsAddTextBackgroundFix extends DataFix {
       return this.fixTypeEverywhereTyped("OptionsAddTextBackgroundFix", this.getInputSchema().getType(TypeReferences.OPTIONS), (p_219858_1_) -> {
          return p_219858_1_.update(DSL.remainderFinder(), (p_219855_1_) -> {
             return DataFixUtils.orElse(p_219855_1_.get("chatOpacity").asString().map((p_219857_2_) -> {
-               return p_219855_1_.set("textBackgroundOpacity", p_219855_1_.createDouble(this.calculateBackground(p_219857_2_)));
+               return p_219855_1_.set("textBackgroundOpacity", p_219855_1_.createDouble(this.func_219856_a(p_219857_2_)));
             }).result(), p_219855_1_);
          });
       });
    }
 
-   private double calculateBackground(String p_219856_1_) {
+   private double func_219856_a(String p_219856_1_) {
       try {
          double d0 = 0.9D * Double.parseDouble(p_219856_1_) + 0.1D;
          return d0 / 2.0D;

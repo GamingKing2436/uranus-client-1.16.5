@@ -12,67 +12,67 @@ import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
 public class EatGrassGoal extends Goal {
-   private static final Predicate<BlockState> IS_TALL_GRASS = BlockStateMatcher.forBlock(Blocks.GRASS);
-   private final MobEntity mob;
-   private final World level;
-   private int eatAnimationTick;
+   private static final Predicate<BlockState> IS_GRASS = BlockStateMatcher.forBlock(Blocks.GRASS);
+   private final MobEntity grassEaterEntity;
+   private final World entityWorld;
+   private int eatingGrassTimer;
 
-   public EatGrassGoal(MobEntity p_i45314_1_) {
-      this.mob = p_i45314_1_;
-      this.level = p_i45314_1_.level;
-      this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK, Goal.Flag.JUMP));
+   public EatGrassGoal(MobEntity grassEaterEntityIn) {
+      this.grassEaterEntity = grassEaterEntityIn;
+      this.entityWorld = grassEaterEntityIn.world;
+      this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK, Goal.Flag.JUMP));
    }
 
-   public boolean canUse() {
-      if (this.mob.getRandom().nextInt(this.mob.isBaby() ? 50 : 1000) != 0) {
+   public boolean shouldExecute() {
+      if (this.grassEaterEntity.getRNG().nextInt(this.grassEaterEntity.isChild() ? 50 : 1000) != 0) {
          return false;
       } else {
-         BlockPos blockpos = this.mob.blockPosition();
-         if (IS_TALL_GRASS.test(this.level.getBlockState(blockpos))) {
+         BlockPos blockpos = this.grassEaterEntity.getPosition();
+         if (IS_GRASS.test(this.entityWorld.getBlockState(blockpos))) {
             return true;
          } else {
-            return this.level.getBlockState(blockpos.below()).is(Blocks.GRASS_BLOCK);
+            return this.entityWorld.getBlockState(blockpos.down()).isIn(Blocks.GRASS_BLOCK);
          }
       }
    }
 
-   public void start() {
-      this.eatAnimationTick = 40;
-      this.level.broadcastEntityEvent(this.mob, (byte)10);
-      this.mob.getNavigation().stop();
+   public void startExecuting() {
+      this.eatingGrassTimer = 40;
+      this.entityWorld.setEntityState(this.grassEaterEntity, (byte)10);
+      this.grassEaterEntity.getNavigator().clearPath();
    }
 
-   public void stop() {
-      this.eatAnimationTick = 0;
+   public void resetTask() {
+      this.eatingGrassTimer = 0;
    }
 
-   public boolean canContinueToUse() {
-      return this.eatAnimationTick > 0;
+   public boolean shouldContinueExecuting() {
+      return this.eatingGrassTimer > 0;
    }
 
-   public int getEatAnimationTick() {
-      return this.eatAnimationTick;
+   public int getEatingGrassTimer() {
+      return this.eatingGrassTimer;
    }
 
    public void tick() {
-      this.eatAnimationTick = Math.max(0, this.eatAnimationTick - 1);
-      if (this.eatAnimationTick == 4) {
-         BlockPos blockpos = this.mob.blockPosition();
-         if (IS_TALL_GRASS.test(this.level.getBlockState(blockpos))) {
-            if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-               this.level.destroyBlock(blockpos, false);
+      this.eatingGrassTimer = Math.max(0, this.eatingGrassTimer - 1);
+      if (this.eatingGrassTimer == 4) {
+         BlockPos blockpos = this.grassEaterEntity.getPosition();
+         if (IS_GRASS.test(this.entityWorld.getBlockState(blockpos))) {
+            if (this.entityWorld.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
+               this.entityWorld.destroyBlock(blockpos, false);
             }
 
-            this.mob.ate();
+            this.grassEaterEntity.eatGrassBonus();
          } else {
-            BlockPos blockpos1 = blockpos.below();
-            if (this.level.getBlockState(blockpos1).is(Blocks.GRASS_BLOCK)) {
-               if (this.level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-                  this.level.levelEvent(2001, blockpos1, Block.getId(Blocks.GRASS_BLOCK.defaultBlockState()));
-                  this.level.setBlock(blockpos1, Blocks.DIRT.defaultBlockState(), 2);
+            BlockPos blockpos1 = blockpos.down();
+            if (this.entityWorld.getBlockState(blockpos1).isIn(Blocks.GRASS_BLOCK)) {
+               if (this.entityWorld.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
+                  this.entityWorld.playEvent(2001, blockpos1, Block.getStateId(Blocks.GRASS_BLOCK.getDefaultState()));
+                  this.entityWorld.setBlockState(blockpos1, Blocks.DIRT.getDefaultState(), 2);
                }
 
-               this.mob.ate();
+               this.grassEaterEntity.eatGrassBonus();
             }
          }
 

@@ -29,89 +29,89 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
 public class BarrelBlock extends ContainerBlock {
-   public static final DirectionProperty FACING = BlockStateProperties.FACING;
-   public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
+   public static final DirectionProperty PROPERTY_FACING = BlockStateProperties.FACING;
+   public static final BooleanProperty PROPERTY_OPEN = BlockStateProperties.OPEN;
 
-   public BarrelBlock(AbstractBlock.Properties p_i49996_1_) {
-      super(p_i49996_1_);
-      this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(OPEN, Boolean.valueOf(false)));
+   public BarrelBlock(AbstractBlock.Properties properties) {
+      super(properties);
+      this.setDefaultState(this.stateContainer.getBaseState().with(PROPERTY_FACING, Direction.NORTH).with(PROPERTY_OPEN, Boolean.valueOf(false)));
    }
 
-   public ActionResultType use(BlockState p_225533_1_, World p_225533_2_, BlockPos p_225533_3_, PlayerEntity p_225533_4_, Hand p_225533_5_, BlockRayTraceResult p_225533_6_) {
-      if (p_225533_2_.isClientSide) {
+   public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+      if (worldIn.isRemote) {
          return ActionResultType.SUCCESS;
       } else {
-         TileEntity tileentity = p_225533_2_.getBlockEntity(p_225533_3_);
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof BarrelTileEntity) {
-            p_225533_4_.openMenu((BarrelTileEntity)tileentity);
-            p_225533_4_.awardStat(Stats.OPEN_BARREL);
-            PiglinTasks.angerNearbyPiglins(p_225533_4_, true);
+            player.openContainer((BarrelTileEntity)tileentity);
+            player.addStat(Stats.OPEN_BARREL);
+            PiglinTasks.func_234478_a_(player, true);
          }
 
          return ActionResultType.CONSUME;
       }
    }
 
-   public void onRemove(BlockState p_196243_1_, World p_196243_2_, BlockPos p_196243_3_, BlockState p_196243_4_, boolean p_196243_5_) {
-      if (!p_196243_1_.is(p_196243_4_.getBlock())) {
-         TileEntity tileentity = p_196243_2_.getBlockEntity(p_196243_3_);
+   public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
+      if (!state.isIn(newState.getBlock())) {
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof IInventory) {
-            InventoryHelper.dropContents(p_196243_2_, p_196243_3_, (IInventory)tileentity);
-            p_196243_2_.updateNeighbourForOutputSignal(p_196243_3_, this);
+            InventoryHelper.dropInventoryItems(worldIn, pos, (IInventory)tileentity);
+            worldIn.updateComparatorOutputLevel(pos, this);
          }
 
-         super.onRemove(p_196243_1_, p_196243_2_, p_196243_3_, p_196243_4_, p_196243_5_);
+         super.onReplaced(state, worldIn, pos, newState, isMoving);
       }
    }
 
-   public void tick(BlockState p_225534_1_, ServerWorld p_225534_2_, BlockPos p_225534_3_, Random p_225534_4_) {
-      TileEntity tileentity = p_225534_2_.getBlockEntity(p_225534_3_);
+   public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
+      TileEntity tileentity = worldIn.getTileEntity(pos);
       if (tileentity instanceof BarrelTileEntity) {
-         ((BarrelTileEntity)tileentity).recheckOpen();
+         ((BarrelTileEntity)tileentity).barrelTick();
       }
 
    }
 
    @Nullable
-   public TileEntity newBlockEntity(IBlockReader p_196283_1_) {
+   public TileEntity createNewTileEntity(IBlockReader worldIn) {
       return new BarrelTileEntity();
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.MODEL;
    }
 
-   public void setPlacedBy(World p_180633_1_, BlockPos p_180633_2_, BlockState p_180633_3_, @Nullable LivingEntity p_180633_4_, ItemStack p_180633_5_) {
-      if (p_180633_5_.hasCustomHoverName()) {
-         TileEntity tileentity = p_180633_1_.getBlockEntity(p_180633_2_);
+   public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+      if (stack.hasDisplayName()) {
+         TileEntity tileentity = worldIn.getTileEntity(pos);
          if (tileentity instanceof BarrelTileEntity) {
-            ((BarrelTileEntity)tileentity).setCustomName(p_180633_5_.getHoverName());
+            ((BarrelTileEntity)tileentity).setCustomName(stack.getDisplayName());
          }
       }
 
    }
 
-   public boolean hasAnalogOutputSignal(BlockState p_149740_1_) {
+   public boolean hasComparatorInputOverride(BlockState state) {
       return true;
    }
 
-   public int getAnalogOutputSignal(BlockState p_180641_1_, World p_180641_2_, BlockPos p_180641_3_) {
-      return Container.getRedstoneSignalFromBlockEntity(p_180641_2_.getBlockEntity(p_180641_3_));
+   public int getComparatorInputOverride(BlockState blockState, World worldIn, BlockPos pos) {
+      return Container.calcRedstone(worldIn.getTileEntity(pos));
    }
 
-   public BlockState rotate(BlockState p_185499_1_, Rotation p_185499_2_) {
-      return p_185499_1_.setValue(FACING, p_185499_2_.rotate(p_185499_1_.getValue(FACING)));
+   public BlockState rotate(BlockState state, Rotation rot) {
+      return state.with(PROPERTY_FACING, rot.rotate(state.get(PROPERTY_FACING)));
    }
 
-   public BlockState mirror(BlockState p_185471_1_, Mirror p_185471_2_) {
-      return p_185471_1_.rotate(p_185471_2_.getRotation(p_185471_1_.getValue(FACING)));
+   public BlockState mirror(BlockState state, Mirror mirrorIn) {
+      return state.rotate(mirrorIn.toRotation(state.get(PROPERTY_FACING)));
    }
 
-   protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> p_206840_1_) {
-      p_206840_1_.add(FACING, OPEN);
+   protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+      builder.add(PROPERTY_FACING, PROPERTY_OPEN);
    }
 
-   public BlockState getStateForPlacement(BlockItemUseContext p_196258_1_) {
-      return this.defaultBlockState().setValue(FACING, p_196258_1_.getNearestLookingDirection().getOpposite());
+   public BlockState getStateForPlacement(BlockItemUseContext context) {
+      return this.getDefaultState().with(PROPERTY_FACING, context.getNearestLookingDirection().getOpposite());
    }
 }

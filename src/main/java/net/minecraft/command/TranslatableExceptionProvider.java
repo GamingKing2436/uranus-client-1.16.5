@@ -7,28 +7,28 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class TranslatableExceptionProvider implements BuiltInExceptionProvider {
-   private static final Dynamic2CommandExceptionType DOUBLE_TOO_SMALL = new Dynamic2CommandExceptionType((p_208631_0_, p_208631_1_) -> {
+   private static final Dynamic2CommandExceptionType DOUBLE_TOO_LOW = new Dynamic2CommandExceptionType((p_208631_0_, p_208631_1_) -> {
       return new TranslationTextComponent("argument.double.low", p_208631_1_, p_208631_0_);
    });
-   private static final Dynamic2CommandExceptionType DOUBLE_TOO_BIG = new Dynamic2CommandExceptionType((p_208627_0_, p_208627_1_) -> {
+   private static final Dynamic2CommandExceptionType DOUBLE_TOO_HIGH = new Dynamic2CommandExceptionType((p_208627_0_, p_208627_1_) -> {
       return new TranslationTextComponent("argument.double.big", p_208627_1_, p_208627_0_);
    });
-   private static final Dynamic2CommandExceptionType FLOAT_TOO_SMALL = new Dynamic2CommandExceptionType((p_208624_0_, p_208624_1_) -> {
+   private static final Dynamic2CommandExceptionType FLOAT_TOO_LOW = new Dynamic2CommandExceptionType((p_208624_0_, p_208624_1_) -> {
       return new TranslationTextComponent("argument.float.low", p_208624_1_, p_208624_0_);
    });
-   private static final Dynamic2CommandExceptionType FLOAT_TOO_BIG = new Dynamic2CommandExceptionType((p_208622_0_, p_208622_1_) -> {
+   private static final Dynamic2CommandExceptionType FLOAT_TOO_HIGH = new Dynamic2CommandExceptionType((p_208622_0_, p_208622_1_) -> {
       return new TranslationTextComponent("argument.float.big", p_208622_1_, p_208622_0_);
    });
-   private static final Dynamic2CommandExceptionType INTEGER_TOO_SMALL = new Dynamic2CommandExceptionType((p_208634_0_, p_208634_1_) -> {
+   private static final Dynamic2CommandExceptionType INTEGER_TOO_LOW = new Dynamic2CommandExceptionType((p_208634_0_, p_208634_1_) -> {
       return new TranslationTextComponent("argument.integer.low", p_208634_1_, p_208634_0_);
    });
-   private static final Dynamic2CommandExceptionType INTEGER_TOO_BIG = new Dynamic2CommandExceptionType((p_208630_0_, p_208630_1_) -> {
+   private static final Dynamic2CommandExceptionType INTEGER_TOO_HIGH = new Dynamic2CommandExceptionType((p_208630_0_, p_208630_1_) -> {
       return new TranslationTextComponent("argument.integer.big", p_208630_1_, p_208630_0_);
    });
-   private static final Dynamic2CommandExceptionType LONG_TOO_SMALL = new Dynamic2CommandExceptionType((p_218034_0_, p_218034_1_) -> {
+   private static final Dynamic2CommandExceptionType field_218035_g = new Dynamic2CommandExceptionType((p_218034_0_, p_218034_1_) -> {
       return new TranslationTextComponent("argument.long.low", p_218034_1_, p_218034_0_);
    });
-   private static final Dynamic2CommandExceptionType LONG_TOO_BIG = new Dynamic2CommandExceptionType((p_218032_0_, p_218032_1_) -> {
+   private static final Dynamic2CommandExceptionType field_218036_h = new Dynamic2CommandExceptionType((p_218032_0_, p_218032_1_) -> {
       return new TranslationTextComponent("argument.long.big", p_218032_1_, p_218032_0_);
    });
    private static final DynamicCommandExceptionType LITERAL_INCORRECT = new DynamicCommandExceptionType((p_208633_0_) -> {
@@ -46,10 +46,10 @@ public class TranslatableExceptionProvider implements BuiltInExceptionProvider {
       return new TranslationTextComponent("parsing.int.invalid", p_208625_0_);
    });
    private static final SimpleCommandExceptionType READER_EXPECTED_INT = new SimpleCommandExceptionType(new TranslationTextComponent("parsing.int.expected"));
-   private static final DynamicCommandExceptionType READER_INVALID_LONG = new DynamicCommandExceptionType((p_218855_0_) -> {
+   private static final DynamicCommandExceptionType field_218037_p = new DynamicCommandExceptionType((p_218855_0_) -> {
       return new TranslationTextComponent("parsing.long.invalid", p_218855_0_);
    });
-   private static final SimpleCommandExceptionType READER_EXPECTED_LONG = new SimpleCommandExceptionType(new TranslationTextComponent("parsing.long.expected"));
+   private static final SimpleCommandExceptionType field_218038_q = new SimpleCommandExceptionType(new TranslationTextComponent("parsing.long.expected"));
    private static final DynamicCommandExceptionType READER_INVALID_DOUBLE = new DynamicCommandExceptionType((p_208626_0_) -> {
       return new TranslationTextComponent("parsing.double.invalid", p_208626_0_);
    });
@@ -70,35 +70,35 @@ public class TranslatableExceptionProvider implements BuiltInExceptionProvider {
    });
 
    public Dynamic2CommandExceptionType doubleTooLow() {
-      return DOUBLE_TOO_SMALL;
+      return DOUBLE_TOO_LOW;
    }
 
    public Dynamic2CommandExceptionType doubleTooHigh() {
-      return DOUBLE_TOO_BIG;
+      return DOUBLE_TOO_HIGH;
    }
 
    public Dynamic2CommandExceptionType floatTooLow() {
-      return FLOAT_TOO_SMALL;
+      return FLOAT_TOO_LOW;
    }
 
    public Dynamic2CommandExceptionType floatTooHigh() {
-      return FLOAT_TOO_BIG;
+      return FLOAT_TOO_HIGH;
    }
 
    public Dynamic2CommandExceptionType integerTooLow() {
-      return INTEGER_TOO_SMALL;
+      return INTEGER_TOO_LOW;
    }
 
    public Dynamic2CommandExceptionType integerTooHigh() {
-      return INTEGER_TOO_BIG;
+      return INTEGER_TOO_HIGH;
    }
 
    public Dynamic2CommandExceptionType longTooLow() {
-      return LONG_TOO_SMALL;
+      return field_218035_g;
    }
 
    public Dynamic2CommandExceptionType longTooHigh() {
-      return LONG_TOO_BIG;
+      return field_218036_h;
    }
 
    public DynamicCommandExceptionType literalIncorrect() {
@@ -130,11 +130,11 @@ public class TranslatableExceptionProvider implements BuiltInExceptionProvider {
    }
 
    public DynamicCommandExceptionType readerInvalidLong() {
-      return READER_INVALID_LONG;
+      return field_218037_p;
    }
 
    public SimpleCommandExceptionType readerExpectedLong() {
-      return READER_EXPECTED_LONG;
+      return field_218038_q;
    }
 
    public DynamicCommandExceptionType readerInvalidDouble() {

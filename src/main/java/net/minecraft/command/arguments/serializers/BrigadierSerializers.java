@@ -10,7 +10,7 @@ import net.minecraft.command.arguments.ArgumentSerializer;
 import net.minecraft.command.arguments.ArgumentTypes;
 
 public class BrigadierSerializers {
-   public static void bootstrap() {
+   public static void registerArgumentTypes() {
       ArgumentTypes.register("brigadier:bool", BoolArgumentType.class, new ArgumentSerializer<>(BoolArgumentType::bool));
       ArgumentTypes.register("brigadier:float", FloatArgumentType.class, new FloatArgumentSerializer());
       ArgumentTypes.register("brigadier:double", DoubleArgumentType.class, new DoubleArgumentSerializer());
@@ -19,24 +19,24 @@ public class BrigadierSerializers {
       ArgumentTypes.register("brigadier:string", StringArgumentType.class, new StringArgumentSerializer());
    }
 
-   public static byte createNumberFlags(boolean p_197508_0_, boolean p_197508_1_) {
+   public static byte minMaxFlags(boolean min, boolean max) {
       byte b0 = 0;
-      if (p_197508_0_) {
+      if (min) {
          b0 = (byte)(b0 | 1);
       }
 
-      if (p_197508_1_) {
+      if (max) {
          b0 = (byte)(b0 | 2);
       }
 
       return b0;
    }
 
-   public static boolean numberHasMin(byte p_197510_0_) {
-      return (p_197510_0_ & 1) != 0;
+   public static boolean hasMin(byte flags) {
+      return (flags & 1) != 0;
    }
 
-   public static boolean numberHasMax(byte p_197509_0_) {
-      return (p_197509_0_ & 2) != 0;
+   public static boolean hasMax(byte flags) {
+      return (flags & 2) != 0;
    }
 }

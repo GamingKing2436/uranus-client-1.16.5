@@ -20,10 +20,10 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class SlotArgument implements ArgumentType<Integer> {
    private static final Collection<String> EXAMPLES = Arrays.asList("container.5", "12", "weapon");
-   private static final DynamicCommandExceptionType ERROR_UNKNOWN_SLOT = new DynamicCommandExceptionType((p_208679_0_) -> {
+   private static final DynamicCommandExceptionType SLOT_UNKNOWN = new DynamicCommandExceptionType((p_208679_0_) -> {
       return new TranslationTextComponent("slot.unknown", p_208679_0_);
    });
-   private static final Map<String, Integer> SLOTS = Util.make(Maps.newHashMap(), (p_209386_0_) -> {
+   private static final Map<String, Integer> KNOWN_SLOTS = Util.make(Maps.newHashMap(), (p_209386_0_) -> {
       for(int i = 0; i < 54; ++i) {
          p_209386_0_.put("container." + i, i);
       }
@@ -64,21 +64,21 @@ public class SlotArgument implements ArgumentType<Integer> {
       return new SlotArgument();
    }
 
-   public static int getSlot(CommandContext<CommandSource> p_197221_0_, String p_197221_1_) {
-      return p_197221_0_.getArgument(p_197221_1_, Integer.class);
+   public static int getSlot(CommandContext<CommandSource> context, String name) {
+      return context.getArgument(name, Integer.class);
    }
 
    public Integer parse(StringReader p_parse_1_) throws CommandSyntaxException {
       String s = p_parse_1_.readUnquotedString();
-      if (!SLOTS.containsKey(s)) {
-         throw ERROR_UNKNOWN_SLOT.create(s);
+      if (!KNOWN_SLOTS.containsKey(s)) {
+         throw SLOT_UNKNOWN.create(s);
       } else {
-         return SLOTS.get(s);
+         return KNOWN_SLOTS.get(s);
       }
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
-      return ISuggestionProvider.suggest(SLOTS.keySet(), p_listSuggestions_2_);
+      return ISuggestionProvider.suggest(KNOWN_SLOTS.keySet(), p_listSuggestions_2_);
    }
 
    public Collection<String> getExamples() {

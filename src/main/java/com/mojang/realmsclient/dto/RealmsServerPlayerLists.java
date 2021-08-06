@@ -14,12 +14,12 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class RealmsServerPlayerLists extends ValueObject {
-   private static final Logger LOGGER = LogManager.getLogger();
-   public List<RealmsServerPlayerList> servers;
+   private static final Logger field_230613_b_ = LogManager.getLogger();
+   public List<RealmsServerPlayerList> field_230612_a_;
 
-   public static RealmsServerPlayerLists parse(String p_230786_0_) {
+   public static RealmsServerPlayerLists func_230786_a_(String p_230786_0_) {
       RealmsServerPlayerLists realmsserverplayerlists = new RealmsServerPlayerLists();
-      realmsserverplayerlists.servers = Lists.newArrayList();
+      realmsserverplayerlists.field_230612_a_ = Lists.newArrayList();
 
       try {
          JsonParser jsonparser = new JsonParser();
@@ -29,11 +29,11 @@ public class RealmsServerPlayerLists extends ValueObject {
             Iterator<JsonElement> iterator = jsonarray.iterator();
 
             while(iterator.hasNext()) {
-               realmsserverplayerlists.servers.add(RealmsServerPlayerList.parse(iterator.next().getAsJsonObject()));
+               realmsserverplayerlists.field_230612_a_.add(RealmsServerPlayerList.func_230785_a_(iterator.next().getAsJsonObject()));
             }
          }
       } catch (Exception exception) {
-         LOGGER.error("Could not parse RealmsServerPlayerLists: " + exception.getMessage());
+         field_230613_b_.error("Could not parse RealmsServerPlayerLists: " + exception.getMessage());
       }
 
       return realmsserverplayerlists;

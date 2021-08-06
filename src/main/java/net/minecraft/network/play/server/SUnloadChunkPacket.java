@@ -14,23 +14,23 @@ public class SUnloadChunkPacket implements IPacket<IClientPlayNetHandler> {
    public SUnloadChunkPacket() {
    }
 
-   public SUnloadChunkPacket(int p_i46944_1_, int p_i46944_2_) {
-      this.x = p_i46944_1_;
-      this.z = p_i46944_2_;
+   public SUnloadChunkPacket(int xIn, int zIn) {
+      this.x = xIn;
+      this.z = zIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.x = p_148837_1_.readInt();
-      this.z = p_148837_1_.readInt();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.x = buf.readInt();
+      this.z = buf.readInt();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeInt(this.x);
-      p_148840_1_.writeInt(this.z);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeInt(this.x);
+      buf.writeInt(this.z);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleForgetLevelChunk(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.processChunkUnload(this);
    }
 
    @OnlyIn(Dist.CLIENT)

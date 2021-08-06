@@ -9,9 +9,9 @@ public abstract class CollectionNBT<T extends INBT> extends AbstractList<T> impl
 
    public abstract T remove(int p_remove_1_);
 
-   public abstract boolean setTag(int p_218659_1_, INBT p_218659_2_);
+   public abstract boolean setNBTByIndex(int index, INBT nbt);
 
-   public abstract boolean addTag(int p_218660_1_, INBT p_218660_2_);
+   public abstract boolean addNBTByIndex(int index, INBT nbt);
 
-   public abstract byte getElementType();
+   public abstract byte getTagType();
 }

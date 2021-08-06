@@ -50,20 +50,20 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ShulkerEntity extends GolemEntity implements IMob {
-   private static final UUID COVERED_ARMOR_MODIFIER_UUID = UUID.fromString("7E0292F2-9434-48D5-A29F-9583AF7DF27F");
-   private static final AttributeModifier COVERED_ARMOR_MODIFIER = new AttributeModifier(COVERED_ARMOR_MODIFIER_UUID, "Covered armor bonus", 20.0D, AttributeModifier.Operation.ADDITION);
-   protected static final DataParameter<Direction> DATA_ATTACH_FACE_ID = EntityDataManager.defineId(ShulkerEntity.class, DataSerializers.DIRECTION);
-   protected static final DataParameter<Optional<BlockPos>> DATA_ATTACH_POS_ID = EntityDataManager.defineId(ShulkerEntity.class, DataSerializers.OPTIONAL_BLOCK_POS);
-   protected static final DataParameter<Byte> DATA_PEEK_ID = EntityDataManager.defineId(ShulkerEntity.class, DataSerializers.BYTE);
-   protected static final DataParameter<Byte> DATA_COLOR_ID = EntityDataManager.defineId(ShulkerEntity.class, DataSerializers.BYTE);
-   private float currentPeekAmountO;
-   private float currentPeekAmount;
-   private BlockPos oldAttachPosition = null;
+   private static final UUID COVERED_ARMOR_BONUS_ID = UUID.fromString("7E0292F2-9434-48D5-A29F-9583AF7DF27F");
+   private static final AttributeModifier COVERED_ARMOR_BONUS_MODIFIER = new AttributeModifier(COVERED_ARMOR_BONUS_ID, "Covered armor bonus", 20.0D, AttributeModifier.Operation.ADDITION);
+   protected static final DataParameter<Direction> ATTACHED_FACE = EntityDataManager.createKey(ShulkerEntity.class, DataSerializers.DIRECTION);
+   protected static final DataParameter<Optional<BlockPos>> ATTACHED_BLOCK_POS = EntityDataManager.createKey(ShulkerEntity.class, DataSerializers.OPTIONAL_BLOCK_POS);
+   protected static final DataParameter<Byte> PEEK_TICK = EntityDataManager.createKey(ShulkerEntity.class, DataSerializers.BYTE);
+   protected static final DataParameter<Byte> COLOR = EntityDataManager.createKey(ShulkerEntity.class, DataSerializers.BYTE);
+   private float prevPeekAmount;
+   private float peekAmount;
+   private BlockPos currentAttachmentPosition = null;
    private int clientSideTeleportInterpolation;
 
    public ShulkerEntity(EntityType<? extends ShulkerEntity> p_i50196_1_, World p_i50196_2_) {
       super(p_i50196_1_, p_i50196_2_);
-      this.xpReward = 5;
+      this.experienceValue = 5;
    }
 
    protected void registerGoals() {
@@ -71,21 +71,21 @@ public class ShulkerEntity extends GolemEntity implements IMob {
       this.goalSelector.addGoal(4, new ShulkerEntity.AttackGoal());
       this.goalSelector.addGoal(7, new ShulkerEntity.PeekGoal());
       this.goalSelector.addGoal(8, new LookRandomlyGoal(this));
-      this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)).setAlertOthers());
+      this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)).setCallsForHelp());
       this.targetSelector.addGoal(2, new ShulkerEntity.AttackNearestGoal(this));
       this.targetSelector.addGoal(3, new ShulkerEntity.DefenseAttackGoal(this));
    }
 
-   protected boolean isMovementNoisy() {
+   protected boolean canTriggerWalking() {
       return false;
    }
 
-   public SoundCategory getSoundSource() {
+   public SoundCategory getSoundCategory() {
       return SoundCategory.HOSTILE;
    }
 
    protected SoundEvent getAmbientSound() {
-      return SoundEvents.SHULKER_AMBIENT;
+      return SoundEvents.ENTITY_SHULKER_AMBIENT;
    }
 
    public void playAmbientSound() {
@@ -96,138 +96,138 @@ public class ShulkerEntity extends GolemEntity implements IMob {
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.SHULKER_DEATH;
+      return SoundEvents.ENTITY_SHULKER_DEATH;
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      return this.isClosed() ? SoundEvents.SHULKER_HURT_CLOSED : SoundEvents.SHULKER_HURT;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      return this.isClosed() ? SoundEvents.ENTITY_SHULKER_HURT_CLOSED : SoundEvents.ENTITY_SHULKER_HURT;
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_ATTACH_FACE_ID, Direction.DOWN);
-      this.entityData.define(DATA_ATTACH_POS_ID, Optional.empty());
-      this.entityData.define(DATA_PEEK_ID, (byte)0);
-      this.entityData.define(DATA_COLOR_ID, (byte)16);
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(ATTACHED_FACE, Direction.DOWN);
+      this.dataManager.register(ATTACHED_BLOCK_POS, Optional.empty());
+      this.dataManager.register(PEEK_TICK, (byte)0);
+      this.dataManager.register(COLOR, (byte)16);
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return MobEntity.createMobAttributes().add(Attributes.MAX_HEALTH, 30.0D);
+   public static AttributeModifierMap.MutableAttribute func_234300_m_() {
+      return MobEntity.func_233666_p_().createMutableAttribute(Attributes.MAX_HEALTH, 30.0D);
    }
 
-   protected BodyController createBodyControl() {
+   protected BodyController createBodyController() {
       return new ShulkerEntity.BodyHelperController(this);
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.entityData.set(DATA_ATTACH_FACE_ID, Direction.from3DDataValue(p_70037_1_.getByte("AttachFace")));
-      this.entityData.set(DATA_PEEK_ID, p_70037_1_.getByte("Peek"));
-      this.entityData.set(DATA_COLOR_ID, p_70037_1_.getByte("Color"));
-      if (p_70037_1_.contains("APX")) {
-         int i = p_70037_1_.getInt("APX");
-         int j = p_70037_1_.getInt("APY");
-         int k = p_70037_1_.getInt("APZ");
-         this.entityData.set(DATA_ATTACH_POS_ID, Optional.of(new BlockPos(i, j, k)));
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.dataManager.set(ATTACHED_FACE, Direction.byIndex(compound.getByte("AttachFace")));
+      this.dataManager.set(PEEK_TICK, compound.getByte("Peek"));
+      this.dataManager.set(COLOR, compound.getByte("Color"));
+      if (compound.contains("APX")) {
+         int i = compound.getInt("APX");
+         int j = compound.getInt("APY");
+         int k = compound.getInt("APZ");
+         this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(new BlockPos(i, j, k)));
       } else {
-         this.entityData.set(DATA_ATTACH_POS_ID, Optional.empty());
+         this.dataManager.set(ATTACHED_BLOCK_POS, Optional.empty());
       }
 
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      p_213281_1_.putByte("AttachFace", (byte)this.entityData.get(DATA_ATTACH_FACE_ID).get3DDataValue());
-      p_213281_1_.putByte("Peek", this.entityData.get(DATA_PEEK_ID));
-      p_213281_1_.putByte("Color", this.entityData.get(DATA_COLOR_ID));
-      BlockPos blockpos = this.getAttachPosition();
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      compound.putByte("AttachFace", (byte)this.dataManager.get(ATTACHED_FACE).getIndex());
+      compound.putByte("Peek", this.dataManager.get(PEEK_TICK));
+      compound.putByte("Color", this.dataManager.get(COLOR));
+      BlockPos blockpos = this.getAttachmentPos();
       if (blockpos != null) {
-         p_213281_1_.putInt("APX", blockpos.getX());
-         p_213281_1_.putInt("APY", blockpos.getY());
-         p_213281_1_.putInt("APZ", blockpos.getZ());
+         compound.putInt("APX", blockpos.getX());
+         compound.putInt("APY", blockpos.getY());
+         compound.putInt("APZ", blockpos.getZ());
       }
 
    }
 
    public void tick() {
       super.tick();
-      BlockPos blockpos = this.entityData.get(DATA_ATTACH_POS_ID).orElse((BlockPos)null);
-      if (blockpos == null && !this.level.isClientSide) {
-         blockpos = this.blockPosition();
-         this.entityData.set(DATA_ATTACH_POS_ID, Optional.of(blockpos));
+      BlockPos blockpos = this.dataManager.get(ATTACHED_BLOCK_POS).orElse((BlockPos)null);
+      if (blockpos == null && !this.world.isRemote) {
+         blockpos = this.getPosition();
+         this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(blockpos));
       }
 
       if (this.isPassenger()) {
          blockpos = null;
-         float f = this.getVehicle().yRot;
-         this.yRot = f;
-         this.yBodyRot = f;
-         this.yBodyRotO = f;
+         float f = this.getRidingEntity().rotationYaw;
+         this.rotationYaw = f;
+         this.renderYawOffset = f;
+         this.prevRenderYawOffset = f;
          this.clientSideTeleportInterpolation = 0;
-      } else if (!this.level.isClientSide) {
-         BlockState blockstate = this.level.getBlockState(blockpos);
+      } else if (!this.world.isRemote) {
+         BlockState blockstate = this.world.getBlockState(blockpos);
          if (!blockstate.isAir()) {
-            if (blockstate.is(Blocks.MOVING_PISTON)) {
-               Direction direction = blockstate.getValue(PistonBlock.FACING);
-               if (this.level.isEmptyBlock(blockpos.relative(direction))) {
-                  blockpos = blockpos.relative(direction);
-                  this.entityData.set(DATA_ATTACH_POS_ID, Optional.of(blockpos));
+            if (blockstate.isIn(Blocks.MOVING_PISTON)) {
+               Direction direction = blockstate.get(PistonBlock.FACING);
+               if (this.world.isAirBlock(blockpos.offset(direction))) {
+                  blockpos = blockpos.offset(direction);
+                  this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(blockpos));
                } else {
-                  this.teleportSomewhere();
+                  this.tryTeleportToNewPosition();
                }
-            } else if (blockstate.is(Blocks.PISTON_HEAD)) {
-               Direction direction3 = blockstate.getValue(PistonHeadBlock.FACING);
-               if (this.level.isEmptyBlock(blockpos.relative(direction3))) {
-                  blockpos = blockpos.relative(direction3);
-                  this.entityData.set(DATA_ATTACH_POS_ID, Optional.of(blockpos));
+            } else if (blockstate.isIn(Blocks.PISTON_HEAD)) {
+               Direction direction3 = blockstate.get(PistonHeadBlock.FACING);
+               if (this.world.isAirBlock(blockpos.offset(direction3))) {
+                  blockpos = blockpos.offset(direction3);
+                  this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(blockpos));
                } else {
-                  this.teleportSomewhere();
+                  this.tryTeleportToNewPosition();
                }
             } else {
-               this.teleportSomewhere();
+               this.tryTeleportToNewPosition();
             }
          }
 
-         Direction direction4 = this.getAttachFace();
-         if (!this.canAttachOnBlockFace(blockpos, direction4)) {
-            Direction direction1 = this.findAttachableFace(blockpos);
+         Direction direction4 = this.getAttachmentFacing();
+         if (!this.func_234298_a_(blockpos, direction4)) {
+            Direction direction1 = this.func_234299_g_(blockpos);
             if (direction1 != null) {
-               this.entityData.set(DATA_ATTACH_FACE_ID, direction1);
+               this.dataManager.set(ATTACHED_FACE, direction1);
             } else {
-               this.teleportSomewhere();
+               this.tryTeleportToNewPosition();
             }
          }
       }
 
-      float f1 = (float)this.getRawPeekAmount() * 0.01F;
-      this.currentPeekAmountO = this.currentPeekAmount;
-      if (this.currentPeekAmount > f1) {
-         this.currentPeekAmount = MathHelper.clamp(this.currentPeekAmount - 0.05F, f1, 1.0F);
-      } else if (this.currentPeekAmount < f1) {
-         this.currentPeekAmount = MathHelper.clamp(this.currentPeekAmount + 0.05F, 0.0F, f1);
+      float f1 = (float)this.getPeekTick() * 0.01F;
+      this.prevPeekAmount = this.peekAmount;
+      if (this.peekAmount > f1) {
+         this.peekAmount = MathHelper.clamp(this.peekAmount - 0.05F, f1, 1.0F);
+      } else if (this.peekAmount < f1) {
+         this.peekAmount = MathHelper.clamp(this.peekAmount + 0.05F, 0.0F, f1);
       }
 
       if (blockpos != null) {
-         if (this.level.isClientSide) {
-            if (this.clientSideTeleportInterpolation > 0 && this.oldAttachPosition != null) {
+         if (this.world.isRemote) {
+            if (this.clientSideTeleportInterpolation > 0 && this.currentAttachmentPosition != null) {
                --this.clientSideTeleportInterpolation;
             } else {
-               this.oldAttachPosition = blockpos;
+               this.currentAttachmentPosition = blockpos;
             }
          }
 
-         this.setPosAndOldPos((double)blockpos.getX() + 0.5D, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5D);
-         double d2 = 0.5D - (double)MathHelper.sin((0.5F + this.currentPeekAmount) * (float)Math.PI) * 0.5D;
-         double d0 = 0.5D - (double)MathHelper.sin((0.5F + this.currentPeekAmountO) * (float)Math.PI) * 0.5D;
-         Direction direction2 = this.getAttachFace().getOpposite();
-         this.setBoundingBox((new AxisAlignedBB(this.getX() - 0.5D, this.getY(), this.getZ() - 0.5D, this.getX() + 0.5D, this.getY() + 1.0D, this.getZ() + 0.5D)).expandTowards((double)direction2.getStepX() * d2, (double)direction2.getStepY() * d2, (double)direction2.getStepZ() * d2));
+         this.forceSetPosition((double)blockpos.getX() + 0.5D, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5D);
+         double d2 = 0.5D - (double)MathHelper.sin((0.5F + this.peekAmount) * (float)Math.PI) * 0.5D;
+         double d0 = 0.5D - (double)MathHelper.sin((0.5F + this.prevPeekAmount) * (float)Math.PI) * 0.5D;
+         Direction direction2 = this.getAttachmentFacing().getOpposite();
+         this.setBoundingBox((new AxisAlignedBB(this.getPosX() - 0.5D, this.getPosY(), this.getPosZ() - 0.5D, this.getPosX() + 0.5D, this.getPosY() + 1.0D, this.getPosZ() + 0.5D)).expand((double)direction2.getXOffset() * d2, (double)direction2.getYOffset() * d2, (double)direction2.getZOffset() * d2));
          double d1 = d2 - d0;
          if (d1 > 0.0D) {
-            List<Entity> list = this.level.getEntities(this, this.getBoundingBox());
+            List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(this, this.getBoundingBox());
             if (!list.isEmpty()) {
                for(Entity entity : list) {
-                  if (!(entity instanceof ShulkerEntity) && !entity.noPhysics) {
-                     entity.move(MoverType.SHULKER, new Vector3d(d1 * (double)direction2.getStepX(), d1 * (double)direction2.getStepY(), d1 * (double)direction2.getStepZ()));
+                  if (!(entity instanceof ShulkerEntity) && !entity.noClip) {
+                     entity.move(MoverType.SHULKER, new Vector3d(d1 * (double)direction2.getXOffset(), d1 * (double)direction2.getYOffset(), d1 * (double)direction2.getZOffset()));
                   }
                }
             }
@@ -236,33 +236,33 @@ public class ShulkerEntity extends GolemEntity implements IMob {
 
    }
 
-   public void move(MoverType p_213315_1_, Vector3d p_213315_2_) {
-      if (p_213315_1_ == MoverType.SHULKER_BOX) {
-         this.teleportSomewhere();
+   public void move(MoverType typeIn, Vector3d pos) {
+      if (typeIn == MoverType.SHULKER_BOX) {
+         this.tryTeleportToNewPosition();
       } else {
-         super.move(p_213315_1_, p_213315_2_);
+         super.move(typeIn, pos);
       }
 
    }
 
-   public void setPos(double p_70107_1_, double p_70107_3_, double p_70107_5_) {
-      super.setPos(p_70107_1_, p_70107_3_, p_70107_5_);
-      if (this.entityData != null && this.tickCount != 0) {
-         Optional<BlockPos> optional = this.entityData.get(DATA_ATTACH_POS_ID);
-         Optional<BlockPos> optional1 = Optional.of(new BlockPos(p_70107_1_, p_70107_3_, p_70107_5_));
+   public void setPosition(double x, double y, double z) {
+      super.setPosition(x, y, z);
+      if (this.dataManager != null && this.ticksExisted != 0) {
+         Optional<BlockPos> optional = this.dataManager.get(ATTACHED_BLOCK_POS);
+         Optional<BlockPos> optional1 = Optional.of(new BlockPos(x, y, z));
          if (!optional1.equals(optional)) {
-            this.entityData.set(DATA_ATTACH_POS_ID, optional1);
-            this.entityData.set(DATA_PEEK_ID, (byte)0);
-            this.hasImpulse = true;
+            this.dataManager.set(ATTACHED_BLOCK_POS, optional1);
+            this.dataManager.set(PEEK_TICK, (byte)0);
+            this.isAirBorne = true;
          }
 
       }
    }
 
    @Nullable
-   protected Direction findAttachableFace(BlockPos p_234299_1_) {
+   protected Direction func_234299_g_(BlockPos p_234299_1_) {
       for(Direction direction : Direction.values()) {
-         if (this.canAttachOnBlockFace(p_234299_1_, direction)) {
+         if (this.func_234298_a_(p_234299_1_, direction)) {
             return direction;
          }
       }
@@ -270,24 +270,24 @@ public class ShulkerEntity extends GolemEntity implements IMob {
       return null;
    }
 
-   private boolean canAttachOnBlockFace(BlockPos p_234298_1_, Direction p_234298_2_) {
-      return this.level.loadedAndEntityCanStandOnFace(p_234298_1_.relative(p_234298_2_), this, p_234298_2_.getOpposite()) && this.level.noCollision(this, ShulkerAABBHelper.openBoundingBox(p_234298_1_, p_234298_2_.getOpposite()));
+   private boolean func_234298_a_(BlockPos p_234298_1_, Direction p_234298_2_) {
+      return this.world.isDirectionSolid(p_234298_1_.offset(p_234298_2_), this, p_234298_2_.getOpposite()) && this.world.hasNoCollisions(this, ShulkerAABBHelper.getOpenedCollisionBox(p_234298_1_, p_234298_2_.getOpposite()));
    }
 
-   protected boolean teleportSomewhere() {
-      if (!this.isNoAi() && this.isAlive()) {
-         BlockPos blockpos = this.blockPosition();
+   protected boolean tryTeleportToNewPosition() {
+      if (!this.isAIDisabled() && this.isAlive()) {
+         BlockPos blockpos = this.getPosition();
 
          for(int i = 0; i < 5; ++i) {
-            BlockPos blockpos1 = blockpos.offset(8 - this.random.nextInt(17), 8 - this.random.nextInt(17), 8 - this.random.nextInt(17));
-            if (blockpos1.getY() > 0 && this.level.isEmptyBlock(blockpos1) && this.level.getWorldBorder().isWithinBounds(blockpos1) && this.level.noCollision(this, new AxisAlignedBB(blockpos1))) {
-               Direction direction = this.findAttachableFace(blockpos1);
+            BlockPos blockpos1 = blockpos.add(8 - this.rand.nextInt(17), 8 - this.rand.nextInt(17), 8 - this.rand.nextInt(17));
+            if (blockpos1.getY() > 0 && this.world.isAirBlock(blockpos1) && this.world.getWorldBorder().contains(blockpos1) && this.world.hasNoCollisions(this, new AxisAlignedBB(blockpos1))) {
+               Direction direction = this.func_234299_g_(blockpos1);
                if (direction != null) {
-                  this.entityData.set(DATA_ATTACH_FACE_ID, direction);
-                  this.playSound(SoundEvents.SHULKER_TELEPORT, 1.0F, 1.0F);
-                  this.entityData.set(DATA_ATTACH_POS_ID, Optional.of(blockpos1));
-                  this.entityData.set(DATA_PEEK_ID, (byte)0);
-                  this.setTarget((LivingEntity)null);
+                  this.dataManager.set(ATTACHED_FACE, direction);
+                  this.playSound(SoundEvents.ENTITY_SHULKER_TELEPORT, 1.0F, 1.0F);
+                  this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(blockpos1));
+                  this.dataManager.set(PEEK_TICK, (byte)0);
+                  this.setAttackTarget((LivingEntity)null);
                   return true;
                }
             }
@@ -299,49 +299,49 @@ public class ShulkerEntity extends GolemEntity implements IMob {
       }
    }
 
-   public void aiStep() {
-      super.aiStep();
-      this.setDeltaMovement(Vector3d.ZERO);
-      if (!this.isNoAi()) {
-         this.yBodyRotO = 0.0F;
-         this.yBodyRot = 0.0F;
+   public void livingTick() {
+      super.livingTick();
+      this.setMotion(Vector3d.ZERO);
+      if (!this.isAIDisabled()) {
+         this.prevRenderYawOffset = 0.0F;
+         this.renderYawOffset = 0.0F;
       }
 
    }
 
-   public void onSyncedDataUpdated(DataParameter<?> p_184206_1_) {
-      if (DATA_ATTACH_POS_ID.equals(p_184206_1_) && this.level.isClientSide && !this.isPassenger()) {
-         BlockPos blockpos = this.getAttachPosition();
+   public void notifyDataManagerChange(DataParameter<?> key) {
+      if (ATTACHED_BLOCK_POS.equals(key) && this.world.isRemote && !this.isPassenger()) {
+         BlockPos blockpos = this.getAttachmentPos();
          if (blockpos != null) {
-            if (this.oldAttachPosition == null) {
-               this.oldAttachPosition = blockpos;
+            if (this.currentAttachmentPosition == null) {
+               this.currentAttachmentPosition = blockpos;
             } else {
                this.clientSideTeleportInterpolation = 6;
             }
 
-            this.setPosAndOldPos((double)blockpos.getX() + 0.5D, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5D);
+            this.forceSetPosition((double)blockpos.getX() + 0.5D, (double)blockpos.getY(), (double)blockpos.getZ() + 0.5D);
          }
       }
 
-      super.onSyncedDataUpdated(p_184206_1_);
+      super.notifyDataManagerChange(key);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void lerpTo(double p_180426_1_, double p_180426_3_, double p_180426_5_, float p_180426_7_, float p_180426_8_, int p_180426_9_, boolean p_180426_10_) {
-      this.lerpSteps = 0;
+   public void setPositionAndRotationDirect(double x, double y, double z, float yaw, float pitch, int posRotationIncrements, boolean teleport) {
+      this.newPosRotationIncrements = 0;
    }
 
-   public boolean hurt(DamageSource p_70097_1_, float p_70097_2_) {
+   public boolean attackEntityFrom(DamageSource source, float amount) {
       if (this.isClosed()) {
-         Entity entity = p_70097_1_.getDirectEntity();
+         Entity entity = source.getImmediateSource();
          if (entity instanceof AbstractArrowEntity) {
             return false;
          }
       }
 
-      if (super.hurt(p_70097_1_, p_70097_2_)) {
-         if ((double)this.getHealth() < (double)this.getMaxHealth() * 0.5D && this.random.nextInt(4) == 0) {
-            this.teleportSomewhere();
+      if (super.attackEntityFrom(source, amount)) {
+         if ((double)this.getHealth() < (double)this.getMaxHealth() * 0.5D && this.rand.nextInt(4) == 0) {
+            this.tryTeleportToNewPosition();
          }
 
          return true;
@@ -351,87 +351,87 @@ public class ShulkerEntity extends GolemEntity implements IMob {
    }
 
    private boolean isClosed() {
-      return this.getRawPeekAmount() == 0;
+      return this.getPeekTick() == 0;
    }
 
-   public boolean canBeCollidedWith() {
+   public boolean func_241845_aY() {
       return this.isAlive();
    }
 
-   public Direction getAttachFace() {
-      return this.entityData.get(DATA_ATTACH_FACE_ID);
+   public Direction getAttachmentFacing() {
+      return this.dataManager.get(ATTACHED_FACE);
    }
 
    @Nullable
-   public BlockPos getAttachPosition() {
-      return this.entityData.get(DATA_ATTACH_POS_ID).orElse((BlockPos)null);
+   public BlockPos getAttachmentPos() {
+      return this.dataManager.get(ATTACHED_BLOCK_POS).orElse((BlockPos)null);
    }
 
-   public void setAttachPosition(@Nullable BlockPos p_184694_1_) {
-      this.entityData.set(DATA_ATTACH_POS_ID, Optional.ofNullable(p_184694_1_));
+   public void setAttachmentPos(@Nullable BlockPos pos) {
+      this.dataManager.set(ATTACHED_BLOCK_POS, Optional.ofNullable(pos));
    }
 
-   public int getRawPeekAmount() {
-      return this.entityData.get(DATA_PEEK_ID);
+   public int getPeekTick() {
+      return this.dataManager.get(PEEK_TICK);
    }
 
-   public void setRawPeekAmount(int p_184691_1_) {
-      if (!this.level.isClientSide) {
-         this.getAttribute(Attributes.ARMOR).removeModifier(COVERED_ARMOR_MODIFIER);
+   public void updateArmorModifier(int p_184691_1_) {
+      if (!this.world.isRemote) {
+         this.getAttribute(Attributes.ARMOR).removeModifier(COVERED_ARMOR_BONUS_MODIFIER);
          if (p_184691_1_ == 0) {
-            this.getAttribute(Attributes.ARMOR).addPermanentModifier(COVERED_ARMOR_MODIFIER);
-            this.playSound(SoundEvents.SHULKER_CLOSE, 1.0F, 1.0F);
+            this.getAttribute(Attributes.ARMOR).applyPersistentModifier(COVERED_ARMOR_BONUS_MODIFIER);
+            this.playSound(SoundEvents.ENTITY_SHULKER_CLOSE, 1.0F, 1.0F);
          } else {
-            this.playSound(SoundEvents.SHULKER_OPEN, 1.0F, 1.0F);
+            this.playSound(SoundEvents.ENTITY_SHULKER_OPEN, 1.0F, 1.0F);
          }
       }
 
-      this.entityData.set(DATA_PEEK_ID, (byte)p_184691_1_);
+      this.dataManager.set(PEEK_TICK, (byte)p_184691_1_);
    }
 
    @OnlyIn(Dist.CLIENT)
    public float getClientPeekAmount(float p_184688_1_) {
-      return MathHelper.lerp(p_184688_1_, this.currentPeekAmountO, this.currentPeekAmount);
+      return MathHelper.lerp(p_184688_1_, this.prevPeekAmount, this.peekAmount);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getClientSideTeleportInterpolation() {
+   public int getClientTeleportInterp() {
       return this.clientSideTeleportInterpolation;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public BlockPos getOldAttachPosition() {
-      return this.oldAttachPosition;
+   public BlockPos getOldAttachPos() {
+      return this.currentAttachmentPosition;
    }
 
-   protected float getStandingEyeHeight(Pose p_213348_1_, EntitySize p_213348_2_) {
+   protected float getStandingEyeHeight(Pose poseIn, EntitySize sizeIn) {
       return 0.5F;
    }
 
-   public int getMaxHeadXRot() {
+   public int getVerticalFaceSpeed() {
       return 180;
    }
 
-   public int getMaxHeadYRot() {
+   public int getHorizontalFaceSpeed() {
       return 180;
    }
 
-   public void push(Entity p_70108_1_) {
+   public void applyEntityCollision(Entity entityIn) {
    }
 
-   public float getPickRadius() {
+   public float getCollisionBorderSize() {
       return 0.0F;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean hasValidInterpolationPositions() {
-      return this.oldAttachPosition != null && this.getAttachPosition() != null;
+   public boolean isAttachedToBlock() {
+      return this.currentAttachmentPosition != null && this.getAttachmentPos() != null;
    }
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
    public DyeColor getColor() {
-      Byte obyte = this.entityData.get(DATA_COLOR_ID);
+      Byte obyte = this.dataManager.get(COLOR);
       return obyte != 16 && obyte <= 15 ? DyeColor.byId(obyte) : null;
    }
 
@@ -439,41 +439,41 @@ public class ShulkerEntity extends GolemEntity implements IMob {
       private int attackTime;
 
       public AttackGoal() {
-         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+         this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
       }
 
-      public boolean canUse() {
-         LivingEntity livingentity = ShulkerEntity.this.getTarget();
+      public boolean shouldExecute() {
+         LivingEntity livingentity = ShulkerEntity.this.getAttackTarget();
          if (livingentity != null && livingentity.isAlive()) {
-            return ShulkerEntity.this.level.getDifficulty() != Difficulty.PEACEFUL;
+            return ShulkerEntity.this.world.getDifficulty() != Difficulty.PEACEFUL;
          } else {
             return false;
          }
       }
 
-      public void start() {
+      public void startExecuting() {
          this.attackTime = 20;
-         ShulkerEntity.this.setRawPeekAmount(100);
+         ShulkerEntity.this.updateArmorModifier(100);
       }
 
-      public void stop() {
-         ShulkerEntity.this.setRawPeekAmount(0);
+      public void resetTask() {
+         ShulkerEntity.this.updateArmorModifier(0);
       }
 
       public void tick() {
-         if (ShulkerEntity.this.level.getDifficulty() != Difficulty.PEACEFUL) {
+         if (ShulkerEntity.this.world.getDifficulty() != Difficulty.PEACEFUL) {
             --this.attackTime;
-            LivingEntity livingentity = ShulkerEntity.this.getTarget();
-            ShulkerEntity.this.getLookControl().setLookAt(livingentity, 180.0F, 180.0F);
-            double d0 = ShulkerEntity.this.distanceToSqr(livingentity);
+            LivingEntity livingentity = ShulkerEntity.this.getAttackTarget();
+            ShulkerEntity.this.getLookController().setLookPositionWithEntity(livingentity, 180.0F, 180.0F);
+            double d0 = ShulkerEntity.this.getDistanceSq(livingentity);
             if (d0 < 400.0D) {
                if (this.attackTime <= 0) {
-                  this.attackTime = 20 + ShulkerEntity.this.random.nextInt(10) * 20 / 2;
-                  ShulkerEntity.this.level.addFreshEntity(new ShulkerBulletEntity(ShulkerEntity.this.level, ShulkerEntity.this, livingentity, ShulkerEntity.this.getAttachFace().getAxis()));
-                  ShulkerEntity.this.playSound(SoundEvents.SHULKER_SHOOT, 2.0F, (ShulkerEntity.this.random.nextFloat() - ShulkerEntity.this.random.nextFloat()) * 0.2F + 1.0F);
+                  this.attackTime = 20 + ShulkerEntity.this.rand.nextInt(10) * 20 / 2;
+                  ShulkerEntity.this.world.addEntity(new ShulkerBulletEntity(ShulkerEntity.this.world, ShulkerEntity.this, livingentity, ShulkerEntity.this.getAttachmentFacing().getAxis()));
+                  ShulkerEntity.this.playSound(SoundEvents.ENTITY_SHULKER_SHOOT, 2.0F, (ShulkerEntity.this.rand.nextFloat() - ShulkerEntity.this.rand.nextFloat()) * 0.2F + 1.0F);
                }
             } else {
-               ShulkerEntity.this.setTarget((LivingEntity)null);
+               ShulkerEntity.this.setAttackTarget((LivingEntity)null);
             }
 
             super.tick();
@@ -482,20 +482,20 @@ public class ShulkerEntity extends GolemEntity implements IMob {
    }
 
    class AttackNearestGoal extends NearestAttackableTargetGoal<PlayerEntity> {
-      public AttackNearestGoal(ShulkerEntity p_i47060_2_) {
-         super(p_i47060_2_, PlayerEntity.class, true);
+      public AttackNearestGoal(ShulkerEntity shulker) {
+         super(shulker, PlayerEntity.class, true);
       }
 
-      public boolean canUse() {
-         return ShulkerEntity.this.level.getDifficulty() == Difficulty.PEACEFUL ? false : super.canUse();
+      public boolean shouldExecute() {
+         return ShulkerEntity.this.world.getDifficulty() == Difficulty.PEACEFUL ? false : super.shouldExecute();
       }
 
-      protected AxisAlignedBB getTargetSearchArea(double p_188511_1_) {
-         Direction direction = ((ShulkerEntity)this.mob).getAttachFace();
+      protected AxisAlignedBB getTargetableArea(double targetDistance) {
+         Direction direction = ((ShulkerEntity)this.goalOwner).getAttachmentFacing();
          if (direction.getAxis() == Direction.Axis.X) {
-            return this.mob.getBoundingBox().inflate(4.0D, p_188511_1_, p_188511_1_);
+            return this.goalOwner.getBoundingBox().grow(4.0D, targetDistance, targetDistance);
          } else {
-            return direction.getAxis() == Direction.Axis.Z ? this.mob.getBoundingBox().inflate(p_188511_1_, p_188511_1_, 4.0D) : this.mob.getBoundingBox().inflate(p_188511_1_, 4.0D, p_188511_1_);
+            return direction.getAxis() == Direction.Axis.Z ? this.goalOwner.getBoundingBox().grow(targetDistance, targetDistance, 4.0D) : this.goalOwner.getBoundingBox().grow(targetDistance, 4.0D, targetDistance);
          }
       }
    }
@@ -505,27 +505,27 @@ public class ShulkerEntity extends GolemEntity implements IMob {
          super(p_i50612_2_);
       }
 
-      public void clientTick() {
+      public void updateRenderAngles() {
       }
    }
 
    static class DefenseAttackGoal extends NearestAttackableTargetGoal<LivingEntity> {
-      public DefenseAttackGoal(ShulkerEntity p_i47061_1_) {
-         super(p_i47061_1_, LivingEntity.class, 10, true, false, (p_200826_0_) -> {
+      public DefenseAttackGoal(ShulkerEntity shulker) {
+         super(shulker, LivingEntity.class, 10, true, false, (p_200826_0_) -> {
             return p_200826_0_ instanceof IMob;
          });
       }
 
-      public boolean canUse() {
-         return this.mob.getTeam() == null ? false : super.canUse();
+      public boolean shouldExecute() {
+         return this.goalOwner.getTeam() == null ? false : super.shouldExecute();
       }
 
-      protected AxisAlignedBB getTargetSearchArea(double p_188511_1_) {
-         Direction direction = ((ShulkerEntity)this.mob).getAttachFace();
+      protected AxisAlignedBB getTargetableArea(double targetDistance) {
+         Direction direction = ((ShulkerEntity)this.goalOwner).getAttachmentFacing();
          if (direction.getAxis() == Direction.Axis.X) {
-            return this.mob.getBoundingBox().inflate(4.0D, p_188511_1_, p_188511_1_);
+            return this.goalOwner.getBoundingBox().grow(4.0D, targetDistance, targetDistance);
          } else {
-            return direction.getAxis() == Direction.Axis.Z ? this.mob.getBoundingBox().inflate(p_188511_1_, p_188511_1_, 4.0D) : this.mob.getBoundingBox().inflate(p_188511_1_, 4.0D, p_188511_1_);
+            return direction.getAxis() == Direction.Axis.Z ? this.goalOwner.getBoundingBox().grow(targetDistance, targetDistance, 4.0D) : this.goalOwner.getBoundingBox().grow(targetDistance, 4.0D, targetDistance);
          }
       }
    }
@@ -536,22 +536,22 @@ public class ShulkerEntity extends GolemEntity implements IMob {
       private PeekGoal() {
       }
 
-      public boolean canUse() {
-         return ShulkerEntity.this.getTarget() == null && ShulkerEntity.this.random.nextInt(40) == 0;
+      public boolean shouldExecute() {
+         return ShulkerEntity.this.getAttackTarget() == null && ShulkerEntity.this.rand.nextInt(40) == 0;
       }
 
-      public boolean canContinueToUse() {
-         return ShulkerEntity.this.getTarget() == null && this.peekTime > 0;
+      public boolean shouldContinueExecuting() {
+         return ShulkerEntity.this.getAttackTarget() == null && this.peekTime > 0;
       }
 
-      public void start() {
-         this.peekTime = 20 * (1 + ShulkerEntity.this.random.nextInt(3));
-         ShulkerEntity.this.setRawPeekAmount(30);
+      public void startExecuting() {
+         this.peekTime = 20 * (1 + ShulkerEntity.this.rand.nextInt(3));
+         ShulkerEntity.this.updateArmorModifier(30);
       }
 
-      public void stop() {
-         if (ShulkerEntity.this.getTarget() == null) {
-            ShulkerEntity.this.setRawPeekAmount(0);
+      public void resetTask() {
+         if (ShulkerEntity.this.getAttackTarget() == null) {
+            ShulkerEntity.this.updateArmorModifier(0);
          }
 
       }

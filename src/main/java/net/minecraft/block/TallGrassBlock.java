@@ -9,28 +9,28 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
 public class TallGrassBlock extends BushBlock implements IGrowable {
-   protected static final VoxelShape SHAPE = Block.box(2.0D, 0.0D, 2.0D, 14.0D, 13.0D, 14.0D);
+   protected static final VoxelShape SHAPE = Block.makeCuboidShape(2.0D, 0.0D, 2.0D, 14.0D, 13.0D, 14.0D);
 
-   protected TallGrassBlock(AbstractBlock.Properties p_i48310_1_) {
-      super(p_i48310_1_);
+   protected TallGrassBlock(AbstractBlock.Properties properties) {
+      super(properties);
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
       return SHAPE;
    }
 
-   public boolean isValidBonemealTarget(IBlockReader p_176473_1_, BlockPos p_176473_2_, BlockState p_176473_3_, boolean p_176473_4_) {
+   public boolean canGrow(IBlockReader worldIn, BlockPos pos, BlockState state, boolean isClient) {
       return true;
    }
 
-   public boolean isBonemealSuccess(World p_180670_1_, Random p_180670_2_, BlockPos p_180670_3_, BlockState p_180670_4_) {
+   public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, BlockState state) {
       return true;
    }
 
-   public void performBonemeal(ServerWorld p_225535_1_, Random p_225535_2_, BlockPos p_225535_3_, BlockState p_225535_4_) {
+   public void grow(ServerWorld worldIn, Random rand, BlockPos pos, BlockState state) {
       DoublePlantBlock doubleplantblock = (DoublePlantBlock)(this == Blocks.FERN ? Blocks.LARGE_FERN : Blocks.TALL_GRASS);
-      if (doubleplantblock.defaultBlockState().canSurvive(p_225535_1_, p_225535_3_) && p_225535_1_.isEmptyBlock(p_225535_3_.above())) {
-         doubleplantblock.placeAt(p_225535_1_, p_225535_3_, 2);
+      if (doubleplantblock.getDefaultState().isValidPosition(worldIn, pos) && worldIn.isAirBlock(pos.up())) {
+         doubleplantblock.placeAt(worldIn, pos, 2);
       }
 
    }

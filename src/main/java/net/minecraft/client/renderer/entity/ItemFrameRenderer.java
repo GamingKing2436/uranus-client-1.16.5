@@ -26,86 +26,86 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ItemFrameRenderer extends EntityRenderer<ItemFrameEntity> {
-   private static final ModelResourceLocation FRAME_LOCATION = new ModelResourceLocation("item_frame", "map=false");
-   private static final ModelResourceLocation MAP_FRAME_LOCATION = new ModelResourceLocation("item_frame", "map=true");
-   private final Minecraft minecraft = Minecraft.getInstance();
+   private static final ModelResourceLocation LOCATION_MODEL = new ModelResourceLocation("item_frame", "map=false");
+   private static final ModelResourceLocation LOCATION_MODEL_MAP = new ModelResourceLocation("item_frame", "map=true");
+   private final Minecraft mc = Minecraft.getInstance();
    private final net.minecraft.client.renderer.ItemRenderer itemRenderer;
 
-   public ItemFrameRenderer(EntityRendererManager p_i46166_1_, net.minecraft.client.renderer.ItemRenderer p_i46166_2_) {
-      super(p_i46166_1_);
-      this.itemRenderer = p_i46166_2_;
+   public ItemFrameRenderer(EntityRendererManager renderManagerIn, net.minecraft.client.renderer.ItemRenderer itemRendererIn) {
+      super(renderManagerIn);
+      this.itemRenderer = itemRendererIn;
    }
 
-   public void render(ItemFrameEntity p_225623_1_, float p_225623_2_, float p_225623_3_, MatrixStack p_225623_4_, IRenderTypeBuffer p_225623_5_, int p_225623_6_) {
-      super.render(p_225623_1_, p_225623_2_, p_225623_3_, p_225623_4_, p_225623_5_, p_225623_6_);
-      p_225623_4_.pushPose();
-      Direction direction = p_225623_1_.getDirection();
-      Vector3d vector3d = this.getRenderOffset(p_225623_1_, p_225623_3_);
-      p_225623_4_.translate(-vector3d.x(), -vector3d.y(), -vector3d.z());
+   public void render(ItemFrameEntity entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
+      super.render(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
+      matrixStackIn.push();
+      Direction direction = entityIn.getHorizontalFacing();
+      Vector3d vector3d = this.getRenderOffset(entityIn, partialTicks);
+      matrixStackIn.translate(-vector3d.getX(), -vector3d.getY(), -vector3d.getZ());
       double d0 = 0.46875D;
-      p_225623_4_.translate((double)direction.getStepX() * 0.46875D, (double)direction.getStepY() * 0.46875D, (double)direction.getStepZ() * 0.46875D);
-      p_225623_4_.mulPose(Vector3f.XP.rotationDegrees(p_225623_1_.xRot));
-      p_225623_4_.mulPose(Vector3f.YP.rotationDegrees(180.0F - p_225623_1_.yRot));
-      boolean flag = p_225623_1_.isInvisible();
+      matrixStackIn.translate((double)direction.getXOffset() * 0.46875D, (double)direction.getYOffset() * 0.46875D, (double)direction.getZOffset() * 0.46875D);
+      matrixStackIn.rotate(Vector3f.XP.rotationDegrees(entityIn.rotationPitch));
+      matrixStackIn.rotate(Vector3f.YP.rotationDegrees(180.0F - entityIn.rotationYaw));
+      boolean flag = entityIn.isInvisible();
       if (!flag) {
-         BlockRendererDispatcher blockrendererdispatcher = this.minecraft.getBlockRenderer();
-         ModelManager modelmanager = blockrendererdispatcher.getBlockModelShaper().getModelManager();
-         ModelResourceLocation modelresourcelocation = p_225623_1_.getItem().getItem() == Items.FILLED_MAP ? MAP_FRAME_LOCATION : FRAME_LOCATION;
-         p_225623_4_.pushPose();
-         p_225623_4_.translate(-0.5D, -0.5D, -0.5D);
-         blockrendererdispatcher.getModelRenderer().renderModel(p_225623_4_.last(), p_225623_5_.getBuffer(Atlases.solidBlockSheet()), (BlockState)null, modelmanager.getModel(modelresourcelocation), 1.0F, 1.0F, 1.0F, p_225623_6_, OverlayTexture.NO_OVERLAY);
-         p_225623_4_.popPose();
+         BlockRendererDispatcher blockrendererdispatcher = this.mc.getBlockRendererDispatcher();
+         ModelManager modelmanager = blockrendererdispatcher.getBlockModelShapes().getModelManager();
+         ModelResourceLocation modelresourcelocation = entityIn.getDisplayedItem().getItem() == Items.FILLED_MAP ? LOCATION_MODEL_MAP : LOCATION_MODEL;
+         matrixStackIn.push();
+         matrixStackIn.translate(-0.5D, -0.5D, -0.5D);
+         blockrendererdispatcher.getBlockModelRenderer().renderModelBrightnessColor(matrixStackIn.getLast(), bufferIn.getBuffer(Atlases.getSolidBlockType()), (BlockState)null, modelmanager.getModel(modelresourcelocation), 1.0F, 1.0F, 1.0F, packedLightIn, OverlayTexture.NO_OVERLAY);
+         matrixStackIn.pop();
       }
 
-      ItemStack itemstack = p_225623_1_.getItem();
+      ItemStack itemstack = entityIn.getDisplayedItem();
       if (!itemstack.isEmpty()) {
          boolean flag1 = itemstack.getItem() == Items.FILLED_MAP;
          if (flag) {
-            p_225623_4_.translate(0.0D, 0.0D, 0.5D);
+            matrixStackIn.translate(0.0D, 0.0D, 0.5D);
          } else {
-            p_225623_4_.translate(0.0D, 0.0D, 0.4375D);
+            matrixStackIn.translate(0.0D, 0.0D, 0.4375D);
          }
 
-         int i = flag1 ? p_225623_1_.getRotation() % 4 * 2 : p_225623_1_.getRotation();
-         p_225623_4_.mulPose(Vector3f.ZP.rotationDegrees((float)i * 360.0F / 8.0F));
+         int i = flag1 ? entityIn.getRotation() % 4 * 2 : entityIn.getRotation();
+         matrixStackIn.rotate(Vector3f.ZP.rotationDegrees((float)i * 360.0F / 8.0F));
          if (flag1) {
-            p_225623_4_.mulPose(Vector3f.ZP.rotationDegrees(180.0F));
+            matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(180.0F));
             float f = 0.0078125F;
-            p_225623_4_.scale(0.0078125F, 0.0078125F, 0.0078125F);
-            p_225623_4_.translate(-64.0D, -64.0D, 0.0D);
-            MapData mapdata = FilledMapItem.getOrCreateSavedData(itemstack, p_225623_1_.level);
-            p_225623_4_.translate(0.0D, 0.0D, -1.0D);
+            matrixStackIn.scale(0.0078125F, 0.0078125F, 0.0078125F);
+            matrixStackIn.translate(-64.0D, -64.0D, 0.0D);
+            MapData mapdata = FilledMapItem.getMapData(itemstack, entityIn.world);
+            matrixStackIn.translate(0.0D, 0.0D, -1.0D);
             if (mapdata != null) {
-               this.minecraft.gameRenderer.getMapRenderer().render(p_225623_4_, p_225623_5_, mapdata, true, p_225623_6_);
+               this.mc.gameRenderer.getMapItemRenderer().renderMap(matrixStackIn, bufferIn, mapdata, true, packedLightIn);
             }
          } else {
-            p_225623_4_.scale(0.5F, 0.5F, 0.5F);
-            this.itemRenderer.renderStatic(itemstack, ItemCameraTransforms.TransformType.FIXED, p_225623_6_, OverlayTexture.NO_OVERLAY, p_225623_4_, p_225623_5_);
+            matrixStackIn.scale(0.5F, 0.5F, 0.5F);
+            this.itemRenderer.renderItem(itemstack, ItemCameraTransforms.TransformType.FIXED, packedLightIn, OverlayTexture.NO_OVERLAY, matrixStackIn, bufferIn);
          }
       }
 
-      p_225623_4_.popPose();
+      matrixStackIn.pop();
    }
 
-   public Vector3d getRenderOffset(ItemFrameEntity p_225627_1_, float p_225627_2_) {
-      return new Vector3d((double)((float)p_225627_1_.getDirection().getStepX() * 0.3F), -0.25D, (double)((float)p_225627_1_.getDirection().getStepZ() * 0.3F));
+   public Vector3d getRenderOffset(ItemFrameEntity entityIn, float partialTicks) {
+      return new Vector3d((double)((float)entityIn.getHorizontalFacing().getXOffset() * 0.3F), -0.25D, (double)((float)entityIn.getHorizontalFacing().getZOffset() * 0.3F));
    }
 
-   public ResourceLocation getTextureLocation(ItemFrameEntity p_110775_1_) {
-      return AtlasTexture.LOCATION_BLOCKS;
+   public ResourceLocation getEntityTexture(ItemFrameEntity entity) {
+      return AtlasTexture.LOCATION_BLOCKS_TEXTURE;
    }
 
-   protected boolean shouldShowName(ItemFrameEntity p_177070_1_) {
-      if (Minecraft.renderNames() && !p_177070_1_.getItem().isEmpty() && p_177070_1_.getItem().hasCustomHoverName() && this.entityRenderDispatcher.crosshairPickEntity == p_177070_1_) {
-         double d0 = this.entityRenderDispatcher.distanceToSqr(p_177070_1_);
-         float f = p_177070_1_.isDiscrete() ? 32.0F : 64.0F;
+   protected boolean canRenderName(ItemFrameEntity entity) {
+      if (Minecraft.isGuiEnabled() && !entity.getDisplayedItem().isEmpty() && entity.getDisplayedItem().hasDisplayName() && this.renderManager.pointedEntity == entity) {
+         double d0 = this.renderManager.squareDistanceTo(entity);
+         float f = entity.isDiscrete() ? 32.0F : 64.0F;
          return d0 < (double)(f * f);
       } else {
          return false;
       }
    }
 
-   protected void renderNameTag(ItemFrameEntity p_225629_1_, ITextComponent p_225629_2_, MatrixStack p_225629_3_, IRenderTypeBuffer p_225629_4_, int p_225629_5_) {
-      super.renderNameTag(p_225629_1_, p_225629_1_.getItem().getHoverName(), p_225629_3_, p_225629_4_, p_225629_5_);
+   protected void renderName(ItemFrameEntity entityIn, ITextComponent displayNameIn, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
+      super.renderName(entityIn, entityIn.getDisplayedItem().getDisplayName(), matrixStackIn, bufferIn, packedLightIn);
    }
 }

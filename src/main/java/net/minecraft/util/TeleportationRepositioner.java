@@ -8,27 +8,27 @@ import java.util.function.Predicate;
 import net.minecraft.util.math.BlockPos;
 
 public class TeleportationRepositioner {
-   public static TeleportationRepositioner.Result getLargestRectangleAround(BlockPos p_243676_0_, Direction.Axis p_243676_1_, int p_243676_2_, Direction.Axis p_243676_3_, int p_243676_4_, Predicate<BlockPos> p_243676_5_) {
-      BlockPos.Mutable blockpos$mutable = p_243676_0_.mutable();
-      Direction direction = Direction.get(Direction.AxisDirection.NEGATIVE, p_243676_1_);
+   public static TeleportationRepositioner.Result findLargestRectangle(BlockPos centerPos, Direction.Axis axis1, int max1, Direction.Axis axis2, int max2, Predicate<BlockPos> posPredicate) {
+      BlockPos.Mutable blockpos$mutable = centerPos.toMutable();
+      Direction direction = Direction.getFacingFromAxis(Direction.AxisDirection.NEGATIVE, axis1);
       Direction direction1 = direction.getOpposite();
-      Direction direction2 = Direction.get(Direction.AxisDirection.NEGATIVE, p_243676_3_);
+      Direction direction2 = Direction.getFacingFromAxis(Direction.AxisDirection.NEGATIVE, axis2);
       Direction direction3 = direction2.getOpposite();
-      int i = getLimit(p_243676_5_, blockpos$mutable.set(p_243676_0_), direction, p_243676_2_);
-      int j = getLimit(p_243676_5_, blockpos$mutable.set(p_243676_0_), direction1, p_243676_2_);
+      int i = distanceInDirection(posPredicate, blockpos$mutable.setPos(centerPos), direction, max1);
+      int j = distanceInDirection(posPredicate, blockpos$mutable.setPos(centerPos), direction1, max1);
       int k = i;
       TeleportationRepositioner.IntBounds[] ateleportationrepositioner$intbounds = new TeleportationRepositioner.IntBounds[i + 1 + j];
-      ateleportationrepositioner$intbounds[i] = new TeleportationRepositioner.IntBounds(getLimit(p_243676_5_, blockpos$mutable.set(p_243676_0_), direction2, p_243676_4_), getLimit(p_243676_5_, blockpos$mutable.set(p_243676_0_), direction3, p_243676_4_));
+      ateleportationrepositioner$intbounds[i] = new TeleportationRepositioner.IntBounds(distanceInDirection(posPredicate, blockpos$mutable.setPos(centerPos), direction2, max2), distanceInDirection(posPredicate, blockpos$mutable.setPos(centerPos), direction3, max2));
       int l = ateleportationrepositioner$intbounds[i].min;
 
       for(int i1 = 1; i1 <= i; ++i1) {
          TeleportationRepositioner.IntBounds teleportationrepositioner$intbounds = ateleportationrepositioner$intbounds[k - (i1 - 1)];
-         ateleportationrepositioner$intbounds[k - i1] = new TeleportationRepositioner.IntBounds(getLimit(p_243676_5_, blockpos$mutable.set(p_243676_0_).move(direction, i1), direction2, teleportationrepositioner$intbounds.min), getLimit(p_243676_5_, blockpos$mutable.set(p_243676_0_).move(direction, i1), direction3, teleportationrepositioner$intbounds.max));
+         ateleportationrepositioner$intbounds[k - i1] = new TeleportationRepositioner.IntBounds(distanceInDirection(posPredicate, blockpos$mutable.setPos(centerPos).move(direction, i1), direction2, teleportationrepositioner$intbounds.min), distanceInDirection(posPredicate, blockpos$mutable.setPos(centerPos).move(direction, i1), direction3, teleportationrepositioner$intbounds.max));
       }
 
       for(int l2 = 1; l2 <= j; ++l2) {
          TeleportationRepositioner.IntBounds teleportationrepositioner$intbounds2 = ateleportationrepositioner$intbounds[k + l2 - 1];
-         ateleportationrepositioner$intbounds[k + l2] = new TeleportationRepositioner.IntBounds(getLimit(p_243676_5_, blockpos$mutable.set(p_243676_0_).move(direction1, l2), direction2, teleportationrepositioner$intbounds2.min), getLimit(p_243676_5_, blockpos$mutable.set(p_243676_0_).move(direction1, l2), direction3, teleportationrepositioner$intbounds2.max));
+         ateleportationrepositioner$intbounds[k + l2] = new TeleportationRepositioner.IntBounds(distanceInDirection(posPredicate, blockpos$mutable.setPos(centerPos).move(direction1, l2), direction2, teleportationrepositioner$intbounds2.min), distanceInDirection(posPredicate, blockpos$mutable.setPos(centerPos).move(direction1, l2), direction3, teleportationrepositioner$intbounds2.max));
       }
 
       int i3 = 0;
@@ -45,7 +45,7 @@ public class TeleportationRepositioner {
             aint[i2] = l1 >= j2 && l1 <= k2 ? k2 + 1 - l1 : 0;
          }
 
-         Pair<TeleportationRepositioner.IntBounds, Integer> pair = getMaxRectangleLocation(aint);
+         Pair<TeleportationRepositioner.IntBounds, Integer> pair = largestRectInHeights(aint);
          TeleportationRepositioner.IntBounds teleportationrepositioner$intbounds3 = pair.getFirst();
          int k3 = 1 + teleportationrepositioner$intbounds3.max - teleportationrepositioner$intbounds3.min;
          int l3 = pair.getSecond();
@@ -57,30 +57,30 @@ public class TeleportationRepositioner {
          }
       }
 
-      return new TeleportationRepositioner.Result(p_243676_0_.relative(p_243676_1_, i3 - k).relative(p_243676_3_, j3 - l), j1, k1);
+      return new TeleportationRepositioner.Result(centerPos.func_241872_a(axis1, i3 - k).func_241872_a(axis2, j3 - l), j1, k1);
    }
 
-   private static int getLimit(Predicate<BlockPos> p_243677_0_, BlockPos.Mutable p_243677_1_, Direction p_243677_2_, int p_243677_3_) {
+   private static int distanceInDirection(Predicate<BlockPos> posPredicate, BlockPos.Mutable centerPos, Direction direction, int max) {
       int i;
-      for(i = 0; i < p_243677_3_ && p_243677_0_.test(p_243677_1_.move(p_243677_2_)); ++i) {
+      for(i = 0; i < max && posPredicate.test(centerPos.move(direction)); ++i) {
       }
 
       return i;
    }
 
    @VisibleForTesting
-   static Pair<TeleportationRepositioner.IntBounds, Integer> getMaxRectangleLocation(int[] p_243678_0_) {
+   static Pair<TeleportationRepositioner.IntBounds, Integer> largestRectInHeights(int[] heights) {
       int i = 0;
       int j = 0;
       int k = 0;
       IntStack intstack = new IntArrayList();
       intstack.push(0);
 
-      for(int l = 1; l <= p_243678_0_.length; ++l) {
-         int i1 = l == p_243678_0_.length ? 0 : p_243678_0_[l];
+      for(int l = 1; l <= heights.length; ++l) {
+         int i1 = l == heights.length ? 0 : heights[l];
 
          while(!intstack.isEmpty()) {
-            int j1 = p_243678_0_[intstack.topInt()];
+            int j1 = heights[intstack.topInt()];
             if (i1 >= j1) {
                intstack.push(l);
                break;
@@ -107,9 +107,9 @@ public class TeleportationRepositioner {
       public final int min;
       public final int max;
 
-      public IntBounds(int p_i242076_1_, int p_i242076_2_) {
-         this.min = p_i242076_1_;
-         this.max = p_i242076_2_;
+      public IntBounds(int min, int max) {
+         this.min = min;
+         this.max = max;
       }
 
       public String toString() {
@@ -118,14 +118,14 @@ public class TeleportationRepositioner {
    }
 
    public static class Result {
-      public final BlockPos minCorner;
-      public final int axis1Size;
-      public final int axis2Size;
+      public final BlockPos startPos;
+      public final int width;
+      public final int height;
 
-      public Result(BlockPos p_i242075_1_, int p_i242075_2_, int p_i242075_3_) {
-         this.minCorner = p_i242075_1_;
-         this.axis1Size = p_i242075_2_;
-         this.axis2Size = p_i242075_3_;
+      public Result(BlockPos startPos, int width, int height) {
+         this.startPos = startPos;
+         this.width = width;
+         this.height = height;
       }
    }
 }

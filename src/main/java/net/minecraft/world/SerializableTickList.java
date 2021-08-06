@@ -15,7 +15,7 @@ public class SerializableTickList<T> implements ITickList<T> {
 
    public SerializableTickList(Function<T, ResourceLocation> p_i231603_1_, List<NextTickListEntry<T>> p_i231603_2_, long p_i231603_3_) {
       this(p_i231603_1_, p_i231603_2_.stream().map((p_234854_2_) -> {
-         return new SerializableTickList.TickHolder<>(p_234854_2_.getType(), p_234854_2_.pos, (int)(p_234854_2_.triggerTick - p_i231603_3_), p_234854_2_.priority);
+         return new SerializableTickList.TickHolder<>(p_234854_2_.getTarget(), p_234854_2_.position, (int)(p_234854_2_.field_235017_b_ - p_i231603_3_), p_234854_2_.priority);
       }).collect(Collectors.toList()));
    }
 
@@ -24,29 +24,29 @@ public class SerializableTickList<T> implements ITickList<T> {
       this.toId = p_i50010_1_;
    }
 
-   public boolean hasScheduledTick(BlockPos p_205359_1_, T p_205359_2_) {
+   public boolean isTickScheduled(BlockPos pos, T itemIn) {
       return false;
    }
 
-   public void scheduleTick(BlockPos p_205362_1_, T p_205362_2_, int p_205362_3_, TickPriority p_205362_4_) {
-      this.ticks.add(new SerializableTickList.TickHolder<>(p_205362_2_, p_205362_1_, p_205362_3_, p_205362_4_));
+   public void scheduleTick(BlockPos pos, T itemIn, int scheduledTime, TickPriority priority) {
+      this.ticks.add(new SerializableTickList.TickHolder<>(itemIn, pos, scheduledTime, priority));
    }
 
-   public boolean willTickThisTick(BlockPos p_205361_1_, T p_205361_2_) {
+   public boolean isTickPending(BlockPos pos, T obj) {
       return false;
    }
 
-   public ListNBT save() {
+   public ListNBT func_234857_b_() {
       ListNBT listnbt = new ListNBT();
 
       for(SerializableTickList.TickHolder<T> tickholder : this.ticks) {
          CompoundNBT compoundnbt = new CompoundNBT();
-         compoundnbt.putString("i", this.toId.apply(tickholder.type).toString());
-         compoundnbt.putInt("x", tickholder.pos.getX());
-         compoundnbt.putInt("y", tickholder.pos.getY());
-         compoundnbt.putInt("z", tickholder.pos.getZ());
-         compoundnbt.putInt("t", tickholder.delay);
-         compoundnbt.putInt("p", tickholder.priority.getValue());
+         compoundnbt.putString("i", this.toId.apply(tickholder.field_234861_d_).toString());
+         compoundnbt.putInt("x", tickholder.field_234858_a_.getX());
+         compoundnbt.putInt("y", tickholder.field_234858_a_.getY());
+         compoundnbt.putInt("z", tickholder.field_234858_a_.getZ());
+         compoundnbt.putInt("t", tickholder.field_234859_b_);
+         compoundnbt.putInt("p", tickholder.field_234860_c_.getPriority());
          listnbt.add(compoundnbt);
       }
 
@@ -61,34 +61,34 @@ public class SerializableTickList<T> implements ITickList<T> {
          T t = p_222984_2_.apply(new ResourceLocation(compoundnbt.getString("i")));
          if (t != null) {
             BlockPos blockpos = new BlockPos(compoundnbt.getInt("x"), compoundnbt.getInt("y"), compoundnbt.getInt("z"));
-            list.add(new SerializableTickList.TickHolder<>(t, blockpos, compoundnbt.getInt("t"), TickPriority.byValue(compoundnbt.getInt("p"))));
+            list.add(new SerializableTickList.TickHolder<>(t, blockpos, compoundnbt.getInt("t"), TickPriority.getPriority(compoundnbt.getInt("p"))));
          }
       }
 
       return new SerializableTickList<>(p_222984_1_, list);
    }
 
-   public void copyOut(ITickList<T> p_234855_1_) {
+   public void func_234855_a_(ITickList<T> p_234855_1_) {
       this.ticks.forEach((p_234856_1_) -> {
-         p_234855_1_.scheduleTick(p_234856_1_.pos, p_234856_1_.type, p_234856_1_.delay, p_234856_1_.priority);
+         p_234855_1_.scheduleTick(p_234856_1_.field_234858_a_, p_234856_1_.field_234861_d_, p_234856_1_.field_234859_b_, p_234856_1_.field_234860_c_);
       });
    }
 
    static class TickHolder<T> {
-      private final T type;
-      public final BlockPos pos;
-      public final int delay;
-      public final TickPriority priority;
+      private final T field_234861_d_;
+      public final BlockPos field_234858_a_;
+      public final int field_234859_b_;
+      public final TickPriority field_234860_c_;
 
       private TickHolder(T p_i231604_1_, BlockPos p_i231604_2_, int p_i231604_3_, TickPriority p_i231604_4_) {
-         this.type = p_i231604_1_;
-         this.pos = p_i231604_2_;
-         this.delay = p_i231604_3_;
-         this.priority = p_i231604_4_;
+         this.field_234861_d_ = p_i231604_1_;
+         this.field_234858_a_ = p_i231604_2_;
+         this.field_234859_b_ = p_i231604_3_;
+         this.field_234860_c_ = p_i231604_4_;
       }
 
       public String toString() {
-         return this.type + ": " + this.pos + ", " + this.delay + ", " + this.priority;
+         return this.field_234861_d_ + ": " + this.field_234858_a_ + ", " + this.field_234859_b_ + ", " + this.field_234860_c_;
       }
    }
 }

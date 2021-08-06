@@ -12,76 +12,76 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IRenderTypeBuffer {
-   static IRenderTypeBuffer.Impl immediate(BufferBuilder p_228455_0_) {
-      return immediateWithBuffers(ImmutableMap.of(), p_228455_0_);
+   static IRenderTypeBuffer.Impl getImpl(BufferBuilder builderIn) {
+      return getImpl(ImmutableMap.of(), builderIn);
    }
 
-   static IRenderTypeBuffer.Impl immediateWithBuffers(Map<RenderType, BufferBuilder> p_228456_0_, BufferBuilder p_228456_1_) {
-      return new IRenderTypeBuffer.Impl(p_228456_1_, p_228456_0_);
+   static IRenderTypeBuffer.Impl getImpl(Map<RenderType, BufferBuilder> mapBuildersIn, BufferBuilder builderIn) {
+      return new IRenderTypeBuffer.Impl(builderIn, mapBuildersIn);
    }
 
    IVertexBuilder getBuffer(RenderType p_getBuffer_1_);
 
    @OnlyIn(Dist.CLIENT)
    public static class Impl implements IRenderTypeBuffer {
-      protected final BufferBuilder builder;
+      protected final BufferBuilder buffer;
       protected final Map<RenderType, BufferBuilder> fixedBuffers;
-      protected Optional<RenderType> lastState = Optional.empty();
+      protected Optional<RenderType> lastRenderType = Optional.empty();
       protected final Set<BufferBuilder> startedBuffers = Sets.newHashSet();
 
-      protected Impl(BufferBuilder p_i225969_1_, Map<RenderType, BufferBuilder> p_i225969_2_) {
-         this.builder = p_i225969_1_;
-         this.fixedBuffers = p_i225969_2_;
+      protected Impl(BufferBuilder bufferIn, Map<RenderType, BufferBuilder> fixedBuffersIn) {
+         this.buffer = bufferIn;
+         this.fixedBuffers = fixedBuffersIn;
       }
 
       public IVertexBuilder getBuffer(RenderType p_getBuffer_1_) {
-         Optional<RenderType> optional = p_getBuffer_1_.asOptional();
-         BufferBuilder bufferbuilder = this.getBuilderRaw(p_getBuffer_1_);
-         if (!Objects.equals(this.lastState, optional)) {
-            if (this.lastState.isPresent()) {
-               RenderType rendertype = this.lastState.get();
+         Optional<RenderType> optional = p_getBuffer_1_.getRenderType();
+         BufferBuilder bufferbuilder = this.getBufferRaw(p_getBuffer_1_);
+         if (!Objects.equals(this.lastRenderType, optional)) {
+            if (this.lastRenderType.isPresent()) {
+               RenderType rendertype = this.lastRenderType.get();
                if (!this.fixedBuffers.containsKey(rendertype)) {
-                  this.endBatch(rendertype);
+                  this.finish(rendertype);
                }
             }
 
             if (this.startedBuffers.add(bufferbuilder)) {
-               bufferbuilder.begin(p_getBuffer_1_.mode(), p_getBuffer_1_.format());
+               bufferbuilder.begin(p_getBuffer_1_.getDrawMode(), p_getBuffer_1_.getVertexFormat());
             }
 
-            this.lastState = optional;
+            this.lastRenderType = optional;
          }
 
          return bufferbuilder;
       }
 
-      private BufferBuilder getBuilderRaw(RenderType p_228463_1_) {
-         return this.fixedBuffers.getOrDefault(p_228463_1_, this.builder);
+      private BufferBuilder getBufferRaw(RenderType renderTypeIn) {
+         return this.fixedBuffers.getOrDefault(renderTypeIn, this.buffer);
       }
 
-      public void endBatch() {
-         this.lastState.ifPresent((p_228464_1_) -> {
+      public void finish() {
+         this.lastRenderType.ifPresent((p_228464_1_) -> {
             IVertexBuilder ivertexbuilder = this.getBuffer(p_228464_1_);
-            if (ivertexbuilder == this.builder) {
-               this.endBatch(p_228464_1_);
+            if (ivertexbuilder == this.buffer) {
+               this.finish(p_228464_1_);
             }
 
          });
 
          for(RenderType rendertype : this.fixedBuffers.keySet()) {
-            this.endBatch(rendertype);
+            this.finish(rendertype);
          }
 
       }
 
-      public void endBatch(RenderType p_228462_1_) {
-         BufferBuilder bufferbuilder = this.getBuilderRaw(p_228462_1_);
-         boolean flag = Objects.equals(this.lastState, p_228462_1_.asOptional());
-         if (flag || bufferbuilder != this.builder) {
+      public void finish(RenderType renderTypeIn) {
+         BufferBuilder bufferbuilder = this.getBufferRaw(renderTypeIn);
+         boolean flag = Objects.equals(this.lastRenderType, renderTypeIn.getRenderType());
+         if (flag || bufferbuilder != this.buffer) {
             if (this.startedBuffers.remove(bufferbuilder)) {
-               p_228462_1_.end(bufferbuilder, 0, 0, 0);
+               renderTypeIn.finish(bufferbuilder, 0, 0, 0);
                if (flag) {
-                  this.lastState = Optional.empty();
+                  this.lastRenderType = Optional.empty();
                }
 
             }

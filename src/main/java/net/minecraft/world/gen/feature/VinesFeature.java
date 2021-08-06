@@ -16,17 +16,17 @@ public class VinesFeature extends Feature<NoFeatureConfig> {
       super(p_i232002_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, NoFeatureConfig p_241855_5_) {
-      BlockPos.Mutable blockpos$mutable = p_241855_4_.mutable();
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, NoFeatureConfig config) {
+      BlockPos.Mutable blockpos$mutable = pos.toMutable();
 
       for(int i = 64; i < 256; ++i) {
-         blockpos$mutable.set(p_241855_4_);
-         blockpos$mutable.move(p_241855_3_.nextInt(4) - p_241855_3_.nextInt(4), 0, p_241855_3_.nextInt(4) - p_241855_3_.nextInt(4));
+         blockpos$mutable.setPos(pos);
+         blockpos$mutable.move(rand.nextInt(4) - rand.nextInt(4), 0, rand.nextInt(4) - rand.nextInt(4));
          blockpos$mutable.setY(i);
-         if (p_241855_1_.isEmptyBlock(blockpos$mutable)) {
+         if (reader.isAirBlock(blockpos$mutable)) {
             for(Direction direction : DIRECTIONS) {
-               if (direction != Direction.DOWN && VineBlock.isAcceptableNeighbour(p_241855_1_, blockpos$mutable, direction)) {
-                  p_241855_1_.setBlock(blockpos$mutable, Blocks.VINE.defaultBlockState().setValue(VineBlock.getPropertyForFace(direction), Boolean.valueOf(true)), 2);
+               if (direction != Direction.DOWN && VineBlock.canAttachTo(reader, blockpos$mutable, direction)) {
+                  reader.setBlockState(blockpos$mutable, Blocks.VINE.getDefaultState().with(VineBlock.getPropertyFor(direction), Boolean.valueOf(true)), 2);
                   break;
                }
             }

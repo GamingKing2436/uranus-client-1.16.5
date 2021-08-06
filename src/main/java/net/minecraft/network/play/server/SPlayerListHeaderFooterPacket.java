@@ -12,18 +12,18 @@ public class SPlayerListHeaderFooterPacket implements IPacket<IClientPlayNetHand
    private ITextComponent header;
    private ITextComponent footer;
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.header = p_148837_1_.readComponent();
-      this.footer = p_148837_1_.readComponent();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.header = buf.readTextComponent();
+      this.footer = buf.readTextComponent();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeComponent(this.header);
-      p_148840_1_.writeComponent(this.footer);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeTextComponent(this.header);
+      buf.writeTextComponent(this.footer);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleTabListCustomisation(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handlePlayerListHeaderFooter(this);
    }
 
    @OnlyIn(Dist.CLIENT)

@@ -15,13 +15,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class PropertyValueCondition implements ICondition {
-   private static final Splitter PIPE_SPLITTER = Splitter.on('|').omitEmptyStrings();
+   private static final Splitter SPLITTER = Splitter.on('|').omitEmptyStrings();
    private final String key;
    private final String value;
 
-   public PropertyValueCondition(String p_i46565_1_, String p_i46565_2_) {
-      this.key = p_i46565_1_;
-      this.value = p_i46565_2_;
+   public PropertyValueCondition(String keyIn, String valueIn) {
+      this.key = keyIn;
+      this.value = valueIn;
    }
 
    public Predicate<BlockState> getPredicate(StateContainer<Block, BlockState> p_getPredicate_1_) {
@@ -35,16 +35,16 @@ public class PropertyValueCondition implements ICondition {
             s = s.substring(1);
          }
 
-         List<String> list = PIPE_SPLITTER.splitToList(s);
+         List<String> list = SPLITTER.splitToList(s);
          if (list.isEmpty()) {
             throw new RuntimeException(String.format("Empty value '%s' for property '%s' on '%s'", this.value, this.key, p_getPredicate_1_.getOwner().toString()));
          } else {
             Predicate<BlockState> predicate;
             if (list.size() == 1) {
-               predicate = this.getBlockStatePredicate(p_getPredicate_1_, property, s);
+               predicate = this.makePropertyPredicate(p_getPredicate_1_, property, s);
             } else {
                List<Predicate<BlockState>> list1 = list.stream().map((p_212482_3_) -> {
-                  return this.getBlockStatePredicate(p_getPredicate_1_, property, p_212482_3_);
+                  return this.makePropertyPredicate(p_getPredicate_1_, property, p_212482_3_);
                }).collect(Collectors.toList());
                predicate = (p_200687_1_) -> {
                   return list1.stream().anyMatch((p_200685_1_) -> {
@@ -58,13 +58,13 @@ public class PropertyValueCondition implements ICondition {
       }
    }
 
-   private Predicate<BlockState> getBlockStatePredicate(StateContainer<Block, BlockState> p_212485_1_, Property<?> p_212485_2_, String p_212485_3_) {
-      Optional<?> optional = p_212485_2_.getValue(p_212485_3_);
+   private Predicate<BlockState> makePropertyPredicate(StateContainer<Block, BlockState> container, Property<?> property, String value) {
+      Optional<?> optional = property.parseValue(value);
       if (!optional.isPresent()) {
-         throw new RuntimeException(String.format("Unknown value '%s' for property '%s' on '%s' in '%s'", p_212485_3_, this.key, p_212485_1_.getOwner().toString(), this.value));
+         throw new RuntimeException(String.format("Unknown value '%s' for property '%s' on '%s' in '%s'", value, this.key, container.getOwner().toString(), this.value));
       } else {
          return (p_212483_2_) -> {
-            return p_212483_2_.getValue(p_212485_2_).equals(optional.get());
+            return p_212483_2_.get(property).equals(optional.get());
          };
       }
    }

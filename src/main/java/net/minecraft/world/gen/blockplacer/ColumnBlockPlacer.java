@@ -19,21 +19,21 @@ public class ColumnBlockPlacer extends BlockPlacer {
    private final int minSize;
    private final int extraSize;
 
-   public ColumnBlockPlacer(int p_i225826_1_, int p_i225826_2_) {
-      this.minSize = p_i225826_1_;
-      this.extraSize = p_i225826_2_;
+   public ColumnBlockPlacer(int minSize, int extraSize) {
+      this.minSize = minSize;
+      this.extraSize = extraSize;
    }
 
-   protected BlockPlacerType<?> type() {
-      return BlockPlacerType.COLUMN_PLACER;
+   protected BlockPlacerType<?> getBlockPlacerType() {
+      return BlockPlacerType.COLUMN;
    }
 
-   public void place(IWorld p_225567_1_, BlockPos p_225567_2_, BlockState p_225567_3_, Random p_225567_4_) {
-      BlockPos.Mutable blockpos$mutable = p_225567_2_.mutable();
-      int i = this.minSize + p_225567_4_.nextInt(p_225567_4_.nextInt(this.extraSize + 1) + 1);
+   public void place(IWorld world, BlockPos pos, BlockState state, Random random) {
+      BlockPos.Mutable blockpos$mutable = pos.toMutable();
+      int i = this.minSize + random.nextInt(random.nextInt(this.extraSize + 1) + 1);
 
       for(int j = 0; j < i; ++j) {
-         p_225567_1_.setBlock(blockpos$mutable, p_225567_3_, 2);
+         world.setBlockState(blockpos$mutable, state, 2);
          blockpos$mutable.move(Direction.UP);
       }
 

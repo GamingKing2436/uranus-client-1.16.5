@@ -8,5 +8,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IChatListener {
-   void handle(ChatType p_192576_1_, ITextComponent p_192576_2_, UUID p_192576_3_);
+   void say(ChatType chatTypeIn, ITextComponent message, UUID sender);
 }

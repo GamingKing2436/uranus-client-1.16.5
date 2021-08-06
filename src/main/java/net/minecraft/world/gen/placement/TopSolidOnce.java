@@ -4,11 +4,11 @@ import com.mojang.serialization.Codec;
 import net.minecraft.world.gen.Heightmap;
 
 public class TopSolidOnce extends SimpleHeightmapBasedPlacement<NoPlacementConfig> {
-   public TopSolidOnce(Codec<NoPlacementConfig> p_i232096_1_) {
-      super(p_i232096_1_);
+   public TopSolidOnce(Codec<NoPlacementConfig> codec) {
+      super(codec);
    }
 
-   protected Heightmap.Type type(NoPlacementConfig p_241858_1_) {
+   protected Heightmap.Type func_241858_a(NoPlacementConfig config) {
       return Heightmap.Type.OCEAN_FLOOR_WG;
    }
 }

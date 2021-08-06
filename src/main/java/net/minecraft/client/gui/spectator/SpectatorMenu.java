@@ -20,18 +20,18 @@ public class SpectatorMenu {
    private static final ISpectatorMenuObject SCROLL_LEFT = new SpectatorMenu.MoveMenuObject(-1, true);
    private static final ISpectatorMenuObject SCROLL_RIGHT_ENABLED = new SpectatorMenu.MoveMenuObject(1, true);
    private static final ISpectatorMenuObject SCROLL_RIGHT_DISABLED = new SpectatorMenu.MoveMenuObject(1, false);
-   private static final ITextComponent CLOSE_MENU_TEXT = new TranslationTextComponent("spectatorMenu.close");
-   private static final ITextComponent PREVIOUS_PAGE_TEXT = new TranslationTextComponent("spectatorMenu.previous_page");
-   private static final ITextComponent NEXT_PAGE_TEXT = new TranslationTextComponent("spectatorMenu.next_page");
+   private static final ITextComponent field_243477_f = new TranslationTextComponent("spectatorMenu.close");
+   private static final ITextComponent field_243478_g = new TranslationTextComponent("spectatorMenu.previous_page");
+   private static final ITextComponent field_243479_h = new TranslationTextComponent("spectatorMenu.next_page");
    public static final ISpectatorMenuObject EMPTY_SLOT = new ISpectatorMenuObject() {
-      public void selectItem(SpectatorMenu p_178661_1_) {
+      public void selectItem(SpectatorMenu menu) {
       }
 
-      public ITextComponent getName() {
+      public ITextComponent getSpectatorName() {
          return StringTextComponent.EMPTY;
       }
 
-      public void renderIcon(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
+      public void func_230485_a_(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
       }
 
       public boolean isEnabled() {
@@ -43,18 +43,18 @@ public class SpectatorMenu {
    private int selectedSlot = -1;
    private int page;
 
-   public SpectatorMenu(ISpectatorMenuRecipient p_i45497_1_) {
+   public SpectatorMenu(ISpectatorMenuRecipient menu) {
       this.category = new BaseSpectatorGroup();
-      this.listener = p_i45497_1_;
+      this.listener = menu;
    }
 
-   public ISpectatorMenuObject getItem(int p_178643_1_) {
-      int i = p_178643_1_ + this.page * 6;
-      if (this.page > 0 && p_178643_1_ == 0) {
+   public ISpectatorMenuObject getItem(int index) {
+      int i = index + this.page * 6;
+      if (this.page > 0 && index == 0) {
          return SCROLL_LEFT;
-      } else if (p_178643_1_ == 7) {
+      } else if (index == 7) {
          return i < this.category.getItems().size() ? SCROLL_RIGHT_ENABLED : SCROLL_RIGHT_DISABLED;
-      } else if (p_178643_1_ == 8) {
+      } else if (index == 8) {
          return CLOSE_ITEM;
       } else {
          return i >= 0 && i < this.category.getItems().size() ? MoreObjects.firstNonNull(this.category.getItems().get(i), EMPTY_SLOT) : EMPTY_SLOT;
@@ -79,13 +79,13 @@ public class SpectatorMenu {
       return this.category;
    }
 
-   public void selectSlot(int p_178644_1_) {
-      ISpectatorMenuObject ispectatormenuobject = this.getItem(p_178644_1_);
+   public void selectSlot(int slotIn) {
+      ISpectatorMenuObject ispectatormenuobject = this.getItem(slotIn);
       if (ispectatormenuobject != EMPTY_SLOT) {
-         if (this.selectedSlot == p_178644_1_ && ispectatormenuobject.isEnabled()) {
+         if (this.selectedSlot == slotIn && ispectatormenuobject.isEnabled()) {
             ispectatormenuobject.selectItem(this);
          } else {
-            this.selectedSlot = p_178644_1_;
+            this.selectedSlot = slotIn;
          }
       }
 
@@ -99,8 +99,8 @@ public class SpectatorMenu {
       return this.selectedSlot;
    }
 
-   public void selectCategory(ISpectatorMenuView p_178647_1_) {
-      this.category = p_178647_1_;
+   public void selectCategory(ISpectatorMenuView menuView) {
+      this.category = menuView;
       this.selectedSlot = -1;
       this.page = 0;
    }
@@ -114,16 +114,16 @@ public class SpectatorMenu {
       private EndSpectatorObject() {
       }
 
-      public void selectItem(SpectatorMenu p_178661_1_) {
-         p_178661_1_.exit();
+      public void selectItem(SpectatorMenu menu) {
+         menu.exit();
       }
 
-      public ITextComponent getName() {
-         return SpectatorMenu.CLOSE_MENU_TEXT;
+      public ITextComponent getSpectatorName() {
+         return SpectatorMenu.field_243477_f;
       }
 
-      public void renderIcon(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
-         Minecraft.getInstance().getTextureManager().bind(SpectatorGui.SPECTATOR_LOCATION);
+      public void func_230485_a_(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
+         Minecraft.getInstance().getTextureManager().bindTexture(SpectatorGui.SPECTATOR_WIDGETS);
          AbstractGui.blit(p_230485_1_, 0, 0, 128.0F, 0.0F, 16, 16, 256, 256);
       }
 
@@ -142,16 +142,16 @@ public class SpectatorMenu {
          this.enabled = p_i45495_2_;
       }
 
-      public void selectItem(SpectatorMenu p_178661_1_) {
-         p_178661_1_.page = p_178661_1_.page + this.direction;
+      public void selectItem(SpectatorMenu menu) {
+         menu.page = menu.page + this.direction;
       }
 
-      public ITextComponent getName() {
-         return this.direction < 0 ? SpectatorMenu.PREVIOUS_PAGE_TEXT : SpectatorMenu.NEXT_PAGE_TEXT;
+      public ITextComponent getSpectatorName() {
+         return this.direction < 0 ? SpectatorMenu.field_243478_g : SpectatorMenu.field_243479_h;
       }
 
-      public void renderIcon(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
-         Minecraft.getInstance().getTextureManager().bind(SpectatorGui.SPECTATOR_LOCATION);
+      public void func_230485_a_(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
+         Minecraft.getInstance().getTextureManager().bindTexture(SpectatorGui.SPECTATOR_WIDGETS);
          if (this.direction < 0) {
             AbstractGui.blit(p_230485_1_, 0, 0, 144.0F, 0.0F, 16, 16, 256, 256);
          } else {

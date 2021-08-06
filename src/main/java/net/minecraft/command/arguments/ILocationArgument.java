@@ -6,12 +6,12 @@ import net.minecraft.util.math.vector.Vector2f;
 import net.minecraft.util.math.vector.Vector3d;
 
 public interface ILocationArgument {
-   Vector3d getPosition(CommandSource p_197281_1_);
+   Vector3d getPosition(CommandSource source);
 
-   Vector2f getRotation(CommandSource p_197282_1_);
+   Vector2f getRotation(CommandSource source);
 
-   default BlockPos getBlockPos(CommandSource p_197280_1_) {
-      return new BlockPos(this.getPosition(p_197280_1_));
+   default BlockPos getBlockPos(CommandSource source) {
+      return new BlockPos(this.getPosition(source));
    }
 
    boolean isXRelative();

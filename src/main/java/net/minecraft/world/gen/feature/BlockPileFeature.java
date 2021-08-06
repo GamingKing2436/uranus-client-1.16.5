@@ -15,20 +15,20 @@ public class BlockPileFeature extends Feature<BlockStateProvidingFeatureConfig> 
       super(p_i231932_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, BlockStateProvidingFeatureConfig p_241855_5_) {
-      if (p_241855_4_.getY() < 5) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, BlockStateProvidingFeatureConfig config) {
+      if (pos.getY() < 5) {
          return false;
       } else {
-         int i = 2 + p_241855_3_.nextInt(2);
-         int j = 2 + p_241855_3_.nextInt(2);
+         int i = 2 + rand.nextInt(2);
+         int j = 2 + rand.nextInt(2);
 
-         for(BlockPos blockpos : BlockPos.betweenClosed(p_241855_4_.offset(-i, 0, -j), p_241855_4_.offset(i, 1, j))) {
-            int k = p_241855_4_.getX() - blockpos.getX();
-            int l = p_241855_4_.getZ() - blockpos.getZ();
-            if ((float)(k * k + l * l) <= p_241855_3_.nextFloat() * 10.0F - p_241855_3_.nextFloat() * 6.0F) {
-               this.tryPlaceBlock(p_241855_1_, blockpos, p_241855_3_, p_241855_5_);
-            } else if ((double)p_241855_3_.nextFloat() < 0.031D) {
-               this.tryPlaceBlock(p_241855_1_, blockpos, p_241855_3_, p_241855_5_);
+         for(BlockPos blockpos : BlockPos.getAllInBoxMutable(pos.add(-i, 0, -j), pos.add(i, 1, j))) {
+            int k = pos.getX() - blockpos.getX();
+            int l = pos.getZ() - blockpos.getZ();
+            if ((float)(k * k + l * l) <= rand.nextFloat() * 10.0F - rand.nextFloat() * 6.0F) {
+               this.func_227225_a_(reader, blockpos, rand, config);
+            } else if ((double)rand.nextFloat() < 0.031D) {
+               this.func_227225_a_(reader, blockpos, rand, config);
             }
          }
 
@@ -36,15 +36,15 @@ public class BlockPileFeature extends Feature<BlockStateProvidingFeatureConfig> 
       }
    }
 
-   private boolean mayPlaceOn(IWorld p_214621_1_, BlockPos p_214621_2_, Random p_214621_3_) {
-      BlockPos blockpos = p_214621_2_.below();
-      BlockState blockstate = p_214621_1_.getBlockState(blockpos);
-      return blockstate.is(Blocks.GRASS_PATH) ? p_214621_3_.nextBoolean() : blockstate.isFaceSturdy(p_214621_1_, blockpos, Direction.UP);
+   private boolean canPlaceOn(IWorld worldIn, BlockPos pos, Random random) {
+      BlockPos blockpos = pos.down();
+      BlockState blockstate = worldIn.getBlockState(blockpos);
+      return blockstate.isIn(Blocks.GRASS_PATH) ? random.nextBoolean() : blockstate.isSolidSide(worldIn, blockpos, Direction.UP);
    }
 
-   private void tryPlaceBlock(IWorld p_227225_1_, BlockPos p_227225_2_, Random p_227225_3_, BlockStateProvidingFeatureConfig p_227225_4_) {
-      if (p_227225_1_.isEmptyBlock(p_227225_2_) && this.mayPlaceOn(p_227225_1_, p_227225_2_, p_227225_3_)) {
-         p_227225_1_.setBlock(p_227225_2_, p_227225_4_.stateProvider.getState(p_227225_3_, p_227225_2_), 4);
+   private void func_227225_a_(IWorld p_227225_1_, BlockPos p_227225_2_, Random p_227225_3_, BlockStateProvidingFeatureConfig p_227225_4_) {
+      if (p_227225_1_.isAirBlock(p_227225_2_) && this.canPlaceOn(p_227225_1_, p_227225_2_, p_227225_3_)) {
+         p_227225_1_.setBlockState(p_227225_2_, p_227225_4_.field_227268_a_.getBlockState(p_227225_3_, p_227225_2_), 4);
       }
 
    }

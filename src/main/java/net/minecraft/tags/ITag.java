@@ -19,105 +19,105 @@ import net.minecraft.util.JSONUtils;
 import net.minecraft.util.ResourceLocation;
 
 public interface ITag<T> {
-   static <T> Codec<ITag<T>> codec(Supplier<ITagCollection<T>> p_232947_0_) {
+   static <T> Codec<ITag<T>> getTagCodec(Supplier<ITagCollection<T>> collectionSupplier) {
       return ResourceLocation.CODEC.flatXmap((p_232949_1_) -> {
-         return Optional.ofNullable(p_232947_0_.get().getTag(p_232949_1_)).map(DataResult::success).orElseGet(() -> {
+         return Optional.ofNullable(collectionSupplier.get().get(p_232949_1_)).map(DataResult::success).orElseGet(() -> {
             return DataResult.error("Unknown tag: " + p_232949_1_);
          });
       }, (p_232948_1_) -> {
-         return Optional.ofNullable(p_232947_0_.get().getId(p_232948_1_)).map(DataResult::success).orElseGet(() -> {
+         return Optional.ofNullable(collectionSupplier.get().getDirectIdFromTag(p_232948_1_)).map(DataResult::success).orElseGet(() -> {
             return DataResult.error("Unknown tag: " + p_232948_1_);
          });
       });
    }
 
-   boolean contains(T p_230235_1_);
+   boolean contains(T element);
 
-   List<T> getValues();
+   List<T> getAllElements();
 
-   default T getRandomElement(Random p_205596_1_) {
-      List<T> list = this.getValues();
-      return list.get(p_205596_1_.nextInt(list.size()));
+   default T getRandomElement(Random random) {
+      List<T> list = this.getAllElements();
+      return list.get(random.nextInt(list.size()));
    }
 
-   static <T> ITag<T> fromSet(Set<T> p_232946_0_) {
-      return Tag.create(p_232946_0_);
+   static <T> ITag<T> getTagOf(Set<T> elements) {
+      return Tag.getTagFromContents(elements);
    }
 
    public static class Builder {
-      private final List<ITag.Proxy> entries = Lists.newArrayList();
+      private final List<ITag.Proxy> proxyTags = Lists.newArrayList();
 
-      public static ITag.Builder tag() {
+      public static ITag.Builder create() {
          return new ITag.Builder();
       }
 
-      public ITag.Builder add(ITag.Proxy p_232954_1_) {
-         this.entries.add(p_232954_1_);
+      public ITag.Builder addProxyTag(ITag.Proxy proxyTag) {
+         this.proxyTags.add(proxyTag);
          return this;
       }
 
-      public ITag.Builder add(ITag.ITagEntry p_232955_1_, String p_232955_2_) {
-         return this.add(new ITag.Proxy(p_232955_1_, p_232955_2_));
+      public ITag.Builder addTag(ITag.ITagEntry tagEntry, String identifier) {
+         return this.addProxyTag(new ITag.Proxy(tagEntry, identifier));
       }
 
-      public ITag.Builder addElement(ResourceLocation p_232961_1_, String p_232961_2_) {
-         return this.add(new ITag.ItemEntry(p_232961_1_), p_232961_2_);
+      public ITag.Builder addItemEntry(ResourceLocation registryName, String identifier) {
+         return this.addTag(new ITag.ItemEntry(registryName), identifier);
       }
 
-      public ITag.Builder addTag(ResourceLocation p_232964_1_, String p_232964_2_) {
-         return this.add(new ITag.TagEntry(p_232964_1_), p_232964_2_);
+      public ITag.Builder addTagEntry(ResourceLocation tag, String identifier) {
+         return this.addTag(new ITag.TagEntry(tag), identifier);
       }
 
-      public <T> Optional<ITag<T>> build(Function<ResourceLocation, ITag<T>> p_232959_1_, Function<ResourceLocation, T> p_232959_2_) {
+      public <T> Optional<ITag<T>> build(Function<ResourceLocation, ITag<T>> resourceTagFunction, Function<ResourceLocation, T> resourceElementFunction) {
          ImmutableSet.Builder<T> builder = ImmutableSet.builder();
 
-         for(ITag.Proxy itag$proxy : this.entries) {
-            if (!itag$proxy.getEntry().build(p_232959_1_, p_232959_2_, builder::add)) {
+         for(ITag.Proxy itag$proxy : this.proxyTags) {
+            if (!itag$proxy.getEntry().matches(resourceTagFunction, resourceElementFunction, builder::add)) {
                return Optional.empty();
             }
          }
 
-         return Optional.of(ITag.fromSet(builder.build()));
+         return Optional.of(ITag.getTagOf(builder.build()));
       }
 
-      public Stream<ITag.Proxy> getEntries() {
-         return this.entries.stream();
+      public Stream<ITag.Proxy> getProxyStream() {
+         return this.proxyTags.stream();
       }
 
-      public <T> Stream<ITag.Proxy> getUnresolvedEntries(Function<ResourceLocation, ITag<T>> p_232963_1_, Function<ResourceLocation, T> p_232963_2_) {
-         return this.getEntries().filter((p_232960_2_) -> {
-            return !p_232960_2_.getEntry().build(p_232963_1_, p_232963_2_, (p_232957_0_) -> {
+      public <T> Stream<ITag.Proxy> getProxyTags(Function<ResourceLocation, ITag<T>> resourceTagFunction, Function<ResourceLocation, T> resourceElementFunction) {
+         return this.getProxyStream().filter((p_232960_2_) -> {
+            return !p_232960_2_.getEntry().matches(resourceTagFunction, resourceElementFunction, (p_232957_0_) -> {
             });
          });
       }
 
-      public ITag.Builder addFromJson(JsonObject p_232956_1_, String p_232956_2_) {
-         JsonArray jsonarray = JSONUtils.getAsJsonArray(p_232956_1_, "values");
+      public ITag.Builder deserialize(JsonObject json, String identifier) {
+         JsonArray jsonarray = JSONUtils.getJsonArray(json, "values");
          List<ITag.ITagEntry> list = Lists.newArrayList();
 
          for(JsonElement jsonelement : jsonarray) {
-            list.add(parseEntry(jsonelement));
+            list.add(deserializeTagEntry(jsonelement));
          }
 
-         if (JSONUtils.getAsBoolean(p_232956_1_, "replace", false)) {
-            this.entries.clear();
+         if (JSONUtils.getBoolean(json, "replace", false)) {
+            this.proxyTags.clear();
          }
 
          list.forEach((p_232958_2_) -> {
-            this.entries.add(new ITag.Proxy(p_232958_2_, p_232956_2_));
+            this.proxyTags.add(new ITag.Proxy(p_232958_2_, identifier));
          });
          return this;
       }
 
-      private static ITag.ITagEntry parseEntry(JsonElement p_242199_0_) {
+      private static ITag.ITagEntry deserializeTagEntry(JsonElement json) {
          String s;
          boolean flag;
-         if (p_242199_0_.isJsonObject()) {
-            JsonObject jsonobject = p_242199_0_.getAsJsonObject();
-            s = JSONUtils.getAsString(jsonobject, "id");
-            flag = JSONUtils.getAsBoolean(jsonobject, "required", true);
+         if (json.isJsonObject()) {
+            JsonObject jsonobject = json.getAsJsonObject();
+            s = JSONUtils.getString(jsonobject, "id");
+            flag = JSONUtils.getBoolean(jsonobject, "required", true);
          } else {
-            s = JSONUtils.convertToString(p_242199_0_, "id");
+            s = JSONUtils.getString(json, "id");
             flag = true;
          }
 
@@ -130,12 +130,12 @@ public interface ITag<T> {
          }
       }
 
-      public JsonObject serializeToJson() {
+      public JsonObject serialize() {
          JsonObject jsonobject = new JsonObject();
          JsonArray jsonarray = new JsonArray();
 
-         for(ITag.Proxy itag$proxy : this.entries) {
-            itag$proxy.getEntry().serializeTo(jsonarray);
+         for(ITag.Proxy itag$proxy : this.proxyTags) {
+            itag$proxy.getEntry().addAdditionalData(jsonarray);
          }
 
          jsonobject.addProperty("replace", false);
@@ -149,58 +149,58 @@ public interface ITag<T> {
    }
 
    public interface ITagEntry {
-      <T> boolean build(Function<ResourceLocation, ITag<T>> p_230238_1_, Function<ResourceLocation, T> p_230238_2_, Consumer<T> p_230238_3_);
+      <T> boolean matches(Function<ResourceLocation, ITag<T>> resourceTagFunction, Function<ResourceLocation, T> resourceElementFunction, Consumer<T> elementConsumer);
 
-      void serializeTo(JsonArray p_230237_1_);
+      void addAdditionalData(JsonArray jsonArray);
    }
 
    public static class ItemEntry implements ITag.ITagEntry {
-      private final ResourceLocation id;
+      private final ResourceLocation identifier;
 
-      public ItemEntry(ResourceLocation p_i231435_1_) {
-         this.id = p_i231435_1_;
+      public ItemEntry(ResourceLocation identifier) {
+         this.identifier = identifier;
       }
 
-      public <T> boolean build(Function<ResourceLocation, ITag<T>> p_230238_1_, Function<ResourceLocation, T> p_230238_2_, Consumer<T> p_230238_3_) {
-         T t = p_230238_2_.apply(this.id);
+      public <T> boolean matches(Function<ResourceLocation, ITag<T>> resourceTagFunction, Function<ResourceLocation, T> resourceElementFunction, Consumer<T> elementConsumer) {
+         T t = resourceElementFunction.apply(this.identifier);
          if (t == null) {
             return false;
          } else {
-            p_230238_3_.accept(t);
+            elementConsumer.accept(t);
             return true;
          }
       }
 
-      public void serializeTo(JsonArray p_230237_1_) {
-         p_230237_1_.add(this.id.toString());
+      public void addAdditionalData(JsonArray jsonArray) {
+         jsonArray.add(this.identifier.toString());
       }
 
       public String toString() {
-         return this.id.toString();
+         return this.identifier.toString();
       }
    }
 
    public static class OptionalItemEntry implements ITag.ITagEntry {
       private final ResourceLocation id;
 
-      public OptionalItemEntry(ResourceLocation p_i241895_1_) {
-         this.id = p_i241895_1_;
+      public OptionalItemEntry(ResourceLocation id) {
+         this.id = id;
       }
 
-      public <T> boolean build(Function<ResourceLocation, ITag<T>> p_230238_1_, Function<ResourceLocation, T> p_230238_2_, Consumer<T> p_230238_3_) {
-         T t = p_230238_2_.apply(this.id);
+      public <T> boolean matches(Function<ResourceLocation, ITag<T>> resourceTagFunction, Function<ResourceLocation, T> resourceElementFunction, Consumer<T> elementConsumer) {
+         T t = resourceElementFunction.apply(this.id);
          if (t != null) {
-            p_230238_3_.accept(t);
+            elementConsumer.accept(t);
          }
 
          return true;
       }
 
-      public void serializeTo(JsonArray p_230237_1_) {
+      public void addAdditionalData(JsonArray jsonArray) {
          JsonObject jsonobject = new JsonObject();
          jsonobject.addProperty("id", this.id.toString());
          jsonobject.addProperty("required", false);
-         p_230237_1_.add(jsonobject);
+         jsonArray.add(jsonobject);
       }
 
       public String toString() {
@@ -211,24 +211,24 @@ public interface ITag<T> {
    public static class OptionalTagEntry implements ITag.ITagEntry {
       private final ResourceLocation id;
 
-      public OptionalTagEntry(ResourceLocation p_i241896_1_) {
-         this.id = p_i241896_1_;
+      public OptionalTagEntry(ResourceLocation id) {
+         this.id = id;
       }
 
-      public <T> boolean build(Function<ResourceLocation, ITag<T>> p_230238_1_, Function<ResourceLocation, T> p_230238_2_, Consumer<T> p_230238_3_) {
-         ITag<T> itag = p_230238_1_.apply(this.id);
+      public <T> boolean matches(Function<ResourceLocation, ITag<T>> resourceTagFunction, Function<ResourceLocation, T> resourceElementFunction, Consumer<T> elementConsumer) {
+         ITag<T> itag = resourceTagFunction.apply(this.id);
          if (itag != null) {
-            itag.getValues().forEach(p_230238_3_);
+            itag.getAllElements().forEach(elementConsumer);
          }
 
          return true;
       }
 
-      public void serializeTo(JsonArray p_230237_1_) {
+      public void addAdditionalData(JsonArray jsonArray) {
          JsonObject jsonobject = new JsonObject();
          jsonobject.addProperty("id", "#" + this.id);
          jsonobject.addProperty("required", false);
-         p_230237_1_.add(jsonobject);
+         jsonArray.add(jsonobject);
       }
 
       public String toString() {
@@ -238,11 +238,11 @@ public interface ITag<T> {
 
    public static class Proxy {
       private final ITag.ITagEntry entry;
-      private final String source;
+      private final String identifier;
 
-      private Proxy(ITag.ITagEntry p_i231433_1_, String p_i231433_2_) {
-         this.entry = p_i231433_1_;
-         this.source = p_i231433_2_;
+      private Proxy(ITag.ITagEntry entry, String identifier) {
+         this.entry = entry;
+         this.identifier = identifier;
       }
 
       public ITag.ITagEntry getEntry() {
@@ -250,29 +250,29 @@ public interface ITag<T> {
       }
 
       public String toString() {
-         return this.entry.toString() + " (from " + this.source + ")";
+         return this.entry.toString() + " (from " + this.identifier + ")";
       }
    }
 
    public static class TagEntry implements ITag.ITagEntry {
       private final ResourceLocation id;
 
-      public TagEntry(ResourceLocation p_i48228_1_) {
-         this.id = p_i48228_1_;
+      public TagEntry(ResourceLocation resourceLocationIn) {
+         this.id = resourceLocationIn;
       }
 
-      public <T> boolean build(Function<ResourceLocation, ITag<T>> p_230238_1_, Function<ResourceLocation, T> p_230238_2_, Consumer<T> p_230238_3_) {
-         ITag<T> itag = p_230238_1_.apply(this.id);
+      public <T> boolean matches(Function<ResourceLocation, ITag<T>> resourceTagFunction, Function<ResourceLocation, T> resourceElementFunction, Consumer<T> elementConsumer) {
+         ITag<T> itag = resourceTagFunction.apply(this.id);
          if (itag == null) {
             return false;
          } else {
-            itag.getValues().forEach(p_230238_3_);
+            itag.getAllElements().forEach(elementConsumer);
             return true;
          }
       }
 
-      public void serializeTo(JsonArray p_230237_1_) {
-         p_230237_1_.add("#" + this.id);
+      public void addAdditionalData(JsonArray jsonArray) {
+         jsonArray.add("#" + this.id);
       }
 
       public String toString() {

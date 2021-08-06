@@ -12,8 +12,8 @@ public class NibbleArrayRepeater extends NibbleArray {
       System.arraycopy(p_i51297_1_.getData(), p_i51297_2_ * 128, this.data, 0, 128);
    }
 
-   protected int getIndex(int p_177483_1_, int p_177483_2_, int p_177483_3_) {
-      return p_177483_3_ << 4 | p_177483_1_;
+   protected int getCoordinateIndex(int x, int y, int z) {
+      return z << 4 | x;
    }
 
    public byte[] getData() {

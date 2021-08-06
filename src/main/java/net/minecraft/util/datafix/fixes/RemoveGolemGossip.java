@@ -12,10 +12,10 @@ public class RemoveGolemGossip extends NamedEntityFix {
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
-      return p_207419_1_.update(DSL.remainderFinder(), RemoveGolemGossip::fixValue);
+      return p_207419_1_.update(DSL.remainderFinder(), RemoveGolemGossip::func_242266_a);
    }
 
-   private static Dynamic<?> fixValue(Dynamic<?> p_242266_0_) {
+   private static Dynamic<?> func_242266_a(Dynamic<?> p_242266_0_) {
       return p_242266_0_.update("Gossips", (p_242267_1_) -> {
          return p_242266_0_.createList(p_242267_1_.asStream().filter((p_242268_0_) -> {
             return !p_242268_0_.get("Type").asString("").equals("golem");

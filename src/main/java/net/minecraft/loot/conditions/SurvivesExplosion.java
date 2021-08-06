@@ -18,16 +18,16 @@ public class SurvivesExplosion implements ILootCondition {
    private SurvivesExplosion() {
    }
 
-   public LootConditionType getType() {
+   public LootConditionType func_230419_b_() {
       return LootConditionManager.SURVIVES_EXPLOSION;
    }
 
-   public Set<LootParameter<?>> getReferencedContextParams() {
+   public Set<LootParameter<?>> getRequiredParameters() {
       return ImmutableSet.of(LootParameters.EXPLOSION_RADIUS);
    }
 
    public boolean test(LootContext p_test_1_) {
-      Float f = p_test_1_.getParamOrNull(LootParameters.EXPLOSION_RADIUS);
+      Float f = p_test_1_.get(LootParameters.EXPLOSION_RADIUS);
       if (f != null) {
          Random random = p_test_1_.getRandom();
          float f1 = 1.0F / f;
@@ -37,7 +37,7 @@ public class SurvivesExplosion implements ILootCondition {
       }
    }
 
-   public static ILootCondition.IBuilder survivesExplosion() {
+   public static ILootCondition.IBuilder builder() {
       return () -> {
          return INSTANCE;
       };

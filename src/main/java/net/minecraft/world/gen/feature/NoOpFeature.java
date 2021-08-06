@@ -11,7 +11,7 @@ public class NoOpFeature extends Feature<NoFeatureConfig> {
       super(p_i231973_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, NoFeatureConfig p_241855_5_) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, NoFeatureConfig config) {
       return true;
    }
 }

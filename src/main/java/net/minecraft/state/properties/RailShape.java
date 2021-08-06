@@ -28,7 +28,7 @@ public enum RailShape implements IStringSerializable {
       return this == ASCENDING_NORTH || this == ASCENDING_EAST || this == ASCENDING_SOUTH || this == ASCENDING_WEST;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 }

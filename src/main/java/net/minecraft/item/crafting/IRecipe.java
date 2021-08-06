@@ -11,22 +11,22 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IRecipe<C extends IInventory> {
-   boolean matches(C p_77569_1_, World p_77569_2_);
+   boolean matches(C inv, World worldIn);
 
-   ItemStack assemble(C p_77572_1_);
+   ItemStack getCraftingResult(C inv);
 
    @OnlyIn(Dist.CLIENT)
-   boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_);
+   boolean canFit(int width, int height);
 
-   ItemStack getResultItem();
+   ItemStack getRecipeOutput();
 
-   default NonNullList<ItemStack> getRemainingItems(C p_179532_1_) {
-      NonNullList<ItemStack> nonnulllist = NonNullList.withSize(p_179532_1_.getContainerSize(), ItemStack.EMPTY);
+   default NonNullList<ItemStack> getRemainingItems(C inv) {
+      NonNullList<ItemStack> nonnulllist = NonNullList.withSize(inv.getSizeInventory(), ItemStack.EMPTY);
 
       for(int i = 0; i < nonnulllist.size(); ++i) {
-         Item item = p_179532_1_.getItem(i).getItem();
-         if (item.hasCraftingRemainingItem()) {
-            nonnulllist.set(i, new ItemStack(item.getCraftingRemainingItem()));
+         Item item = inv.getStackInSlot(i).getItem();
+         if (item.hasContainerItem()) {
+            nonnulllist.set(i, new ItemStack(item.getContainerItem()));
          }
       }
 
@@ -37,7 +37,7 @@ public interface IRecipe<C extends IInventory> {
       return NonNullList.create();
    }
 
-   default boolean isSpecial() {
+   default boolean isDynamic() {
       return false;
    }
 
@@ -47,7 +47,7 @@ public interface IRecipe<C extends IInventory> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   default ItemStack getToastSymbol() {
+   default ItemStack getIcon() {
       return new ItemStack(Blocks.CRAFTING_TABLE);
    }
 

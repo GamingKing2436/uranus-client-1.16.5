@@ -8,31 +8,31 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class EditMinecartCommandBlockScreen extends AbstractCommandBlockScreen {
-   private final CommandBlockLogic commandBlock;
+   private final CommandBlockLogic commandBlockLogic;
 
    public EditMinecartCommandBlockScreen(CommandBlockLogic p_i46595_1_) {
-      this.commandBlock = p_i46595_1_;
+      this.commandBlockLogic = p_i46595_1_;
    }
 
-   public CommandBlockLogic getCommandBlock() {
-      return this.commandBlock;
+   public CommandBlockLogic getLogic() {
+      return this.commandBlockLogic;
    }
 
-   int getPreviousY() {
+   int func_195236_i() {
       return 150;
    }
 
    protected void init() {
       super.init();
-      this.trackOutput = this.getCommandBlock().isTrackOutput();
-      this.updateCommandOutput();
-      this.commandEdit.setValue(this.getCommandBlock().getCommand());
+      this.trackOutput = this.getLogic().shouldTrackOutput();
+      this.updateTrackOutput();
+      this.commandTextField.setText(this.getLogic().getCommand());
    }
 
-   protected void populateAndSendPacket(CommandBlockLogic p_195235_1_) {
-      if (p_195235_1_ instanceof CommandBlockMinecartEntity.MinecartCommandLogic) {
-         CommandBlockMinecartEntity.MinecartCommandLogic commandblockminecartentity$minecartcommandlogic = (CommandBlockMinecartEntity.MinecartCommandLogic)p_195235_1_;
-         this.minecraft.getConnection().send(new CUpdateMinecartCommandBlockPacket(commandblockminecartentity$minecartcommandlogic.getMinecart().getId(), this.commandEdit.getValue(), p_195235_1_.isTrackOutput()));
+   protected void func_195235_a(CommandBlockLogic commandBlockLogicIn) {
+      if (commandBlockLogicIn instanceof CommandBlockMinecartEntity.MinecartCommandLogic) {
+         CommandBlockMinecartEntity.MinecartCommandLogic commandblockminecartentity$minecartcommandlogic = (CommandBlockMinecartEntity.MinecartCommandLogic)commandBlockLogicIn;
+         this.minecraft.getConnection().sendPacket(new CUpdateMinecartCommandBlockPacket(commandblockminecartentity$minecartcommandlogic.getMinecart().getEntityId(), this.commandTextField.getText(), commandBlockLogicIn.shouldTrackOutput()));
       }
 
    }

@@ -17,9 +17,9 @@ public class TopSolidRangeConfig implements IPlacementConfig {
    public final int topOffset;
    public final int maximum;
 
-   public TopSolidRangeConfig(int p_i241992_1_, int p_i241992_2_, int p_i241992_3_) {
-      this.bottomOffset = p_i241992_1_;
-      this.topOffset = p_i241992_2_;
-      this.maximum = p_i241992_3_;
+   public TopSolidRangeConfig(int bottomOffset, int topOffset, int maximum) {
+      this.bottomOffset = bottomOffset;
+      this.topOffset = topOffset;
+      this.maximum = maximum;
    }
 }

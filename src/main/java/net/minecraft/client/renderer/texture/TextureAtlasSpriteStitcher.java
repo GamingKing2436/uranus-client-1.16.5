@@ -9,11 +9,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class TextureAtlasSpriteStitcher implements IMetadataSectionSerializer<VillagerMetadataSection> {
-   public VillagerMetadataSection fromJson(JsonObject p_195812_1_) {
-      return new VillagerMetadataSection(VillagerMetadataSection.HatType.getByName(JSONUtils.getAsString(p_195812_1_, "hat", "none")));
+   public VillagerMetadataSection deserialize(JsonObject json) {
+      return new VillagerMetadataSection(VillagerMetadataSection.HatType.func_217821_a(JSONUtils.getString(json, "hat", "none")));
    }
 
-   public String getMetadataSectionName() {
+   public String getSectionName() {
       return "villager";
    }
 }

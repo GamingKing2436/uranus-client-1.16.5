@@ -4,59 +4,59 @@ import java.util.EnumSet;
 import javax.annotation.Nullable;
 
 public class PrioritizedGoal extends Goal {
-   private final Goal goal;
+   private final Goal inner;
    private final int priority;
-   private boolean isRunning;
+   private boolean running;
 
-   public PrioritizedGoal(int p_i50318_1_, Goal p_i50318_2_) {
-      this.priority = p_i50318_1_;
-      this.goal = p_i50318_2_;
+   public PrioritizedGoal(int priorityIn, Goal goalIn) {
+      this.priority = priorityIn;
+      this.inner = goalIn;
    }
 
-   public boolean canBeReplacedBy(PrioritizedGoal p_220771_1_) {
-      return this.isInterruptable() && p_220771_1_.getPriority() < this.getPriority();
+   public boolean isPreemptedBy(PrioritizedGoal other) {
+      return this.isPreemptible() && other.getPriority() < this.getPriority();
    }
 
-   public boolean canUse() {
-      return this.goal.canUse();
+   public boolean shouldExecute() {
+      return this.inner.shouldExecute();
    }
 
-   public boolean canContinueToUse() {
-      return this.goal.canContinueToUse();
+   public boolean shouldContinueExecuting() {
+      return this.inner.shouldContinueExecuting();
    }
 
-   public boolean isInterruptable() {
-      return this.goal.isInterruptable();
+   public boolean isPreemptible() {
+      return this.inner.isPreemptible();
    }
 
-   public void start() {
-      if (!this.isRunning) {
-         this.isRunning = true;
-         this.goal.start();
+   public void startExecuting() {
+      if (!this.running) {
+         this.running = true;
+         this.inner.startExecuting();
       }
    }
 
-   public void stop() {
-      if (this.isRunning) {
-         this.isRunning = false;
-         this.goal.stop();
+   public void resetTask() {
+      if (this.running) {
+         this.running = false;
+         this.inner.resetTask();
       }
    }
 
    public void tick() {
-      this.goal.tick();
+      this.inner.tick();
    }
 
-   public void setFlags(EnumSet<Goal.Flag> p_220684_1_) {
-      this.goal.setFlags(p_220684_1_);
+   public void setMutexFlags(EnumSet<Goal.Flag> flagSet) {
+      this.inner.setMutexFlags(flagSet);
    }
 
-   public EnumSet<Goal.Flag> getFlags() {
-      return this.goal.getFlags();
+   public EnumSet<Goal.Flag> getMutexFlags() {
+      return this.inner.getMutexFlags();
    }
 
    public boolean isRunning() {
-      return this.isRunning;
+      return this.running;
    }
 
    public int getPriority() {
@@ -64,18 +64,18 @@ public class PrioritizedGoal extends Goal {
    }
 
    public Goal getGoal() {
-      return this.goal;
+      return this.inner;
    }
 
    public boolean equals(@Nullable Object p_equals_1_) {
       if (this == p_equals_1_) {
          return true;
       } else {
-         return p_equals_1_ != null && this.getClass() == p_equals_1_.getClass() ? this.goal.equals(((PrioritizedGoal)p_equals_1_).goal) : false;
+         return p_equals_1_ != null && this.getClass() == p_equals_1_.getClass() ? this.inner.equals(((PrioritizedGoal)p_equals_1_).inner) : false;
       }
    }
 
    public int hashCode() {
-      return this.goal.hashCode();
+      return this.inner.hashCode();
    }
 }

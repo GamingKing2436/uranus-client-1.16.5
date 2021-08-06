@@ -20,25 +20,25 @@ public class BiomeContainer implements BiomeManager.IBiomeReader {
    private final IObjectIntIterable<Biome> biomeRegistry;
    private final Biome[] biomes;
 
-   public BiomeContainer(IObjectIntIterable<Biome> p_i241971_1_, Biome[] p_i241971_2_) {
-      this.biomeRegistry = p_i241971_1_;
-      this.biomes = p_i241971_2_;
+   public BiomeContainer(IObjectIntIterable<Biome> biomeRegistry, Biome[] biomes) {
+      this.biomeRegistry = biomeRegistry;
+      this.biomes = biomes;
    }
 
-   private BiomeContainer(IObjectIntIterable<Biome> p_i241967_1_) {
-      this(p_i241967_1_, new Biome[BIOMES_SIZE]);
+   private BiomeContainer(IObjectIntIterable<Biome> biomeRegistry) {
+      this(biomeRegistry, new Biome[BIOMES_SIZE]);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public BiomeContainer(IObjectIntIterable<Biome> p_i241970_1_, int[] p_i241970_2_) {
-      this(p_i241970_1_);
+   public BiomeContainer(IObjectIntIterable<Biome> biomeRegistry, int[] biomes) {
+      this(biomeRegistry);
 
       for(int i = 0; i < this.biomes.length; ++i) {
-         int j = p_i241970_2_[i];
-         Biome biome = p_i241970_1_.byId(j);
+         int j = biomes[i];
+         Biome biome = biomeRegistry.getByValue(j);
          if (biome == null) {
             LOGGER.warn("Received invalid biome id: " + j);
-            this.biomes[i] = p_i241970_1_.byId(0);
+            this.biomes[i] = biomeRegistry.getByValue(0);
          } else {
             this.biomes[i] = biome;
          }
@@ -46,32 +46,32 @@ public class BiomeContainer implements BiomeManager.IBiomeReader {
 
    }
 
-   public BiomeContainer(IObjectIntIterable<Biome> p_i241968_1_, ChunkPos p_i241968_2_, BiomeProvider p_i241968_3_) {
-      this(p_i241968_1_);
-      int i = p_i241968_2_.getMinBlockX() >> 2;
-      int j = p_i241968_2_.getMinBlockZ() >> 2;
+   public BiomeContainer(IObjectIntIterable<Biome> biomeRegistry, ChunkPos chunkPos, BiomeProvider provider) {
+      this(biomeRegistry);
+      int i = chunkPos.getXStart() >> 2;
+      int j = chunkPos.getZStart() >> 2;
 
       for(int k = 0; k < this.biomes.length; ++k) {
          int l = k & HORIZONTAL_MASK;
          int i1 = k >> WIDTH_BITS + WIDTH_BITS & VERTICAL_MASK;
          int j1 = k >> WIDTH_BITS & HORIZONTAL_MASK;
-         this.biomes[k] = p_i241968_3_.getNoiseBiome(i + l, i1, j + j1);
+         this.biomes[k] = provider.getNoiseBiome(i + l, i1, j + j1);
       }
 
    }
 
-   public BiomeContainer(IObjectIntIterable<Biome> p_i241969_1_, ChunkPos p_i241969_2_, BiomeProvider p_i241969_3_, @Nullable int[] p_i241969_4_) {
-      this(p_i241969_1_);
-      int i = p_i241969_2_.getMinBlockX() >> 2;
-      int j = p_i241969_2_.getMinBlockZ() >> 2;
-      if (p_i241969_4_ != null) {
-         for(int k = 0; k < p_i241969_4_.length; ++k) {
-            this.biomes[k] = p_i241969_1_.byId(p_i241969_4_[k]);
+   public BiomeContainer(IObjectIntIterable<Biome> biomeRegistry, ChunkPos chunkPos, BiomeProvider provider, @Nullable int[] biomes) {
+      this(biomeRegistry);
+      int i = chunkPos.getXStart() >> 2;
+      int j = chunkPos.getZStart() >> 2;
+      if (biomes != null) {
+         for(int k = 0; k < biomes.length; ++k) {
+            this.biomes[k] = biomeRegistry.getByValue(biomes[k]);
             if (this.biomes[k] == null) {
                int l = k & HORIZONTAL_MASK;
                int i1 = k >> WIDTH_BITS + WIDTH_BITS & VERTICAL_MASK;
                int j1 = k >> WIDTH_BITS & HORIZONTAL_MASK;
-               this.biomes[k] = p_i241969_3_.getNoiseBiome(i + l, i1, j + j1);
+               this.biomes[k] = provider.getNoiseBiome(i + l, i1, j + j1);
             }
          }
       } else {
@@ -79,13 +79,13 @@ public class BiomeContainer implements BiomeManager.IBiomeReader {
             int l1 = k1 & HORIZONTAL_MASK;
             int i2 = k1 >> WIDTH_BITS + WIDTH_BITS & VERTICAL_MASK;
             int j2 = k1 >> WIDTH_BITS & HORIZONTAL_MASK;
-            this.biomes[k1] = p_i241969_3_.getNoiseBiome(i + l1, i2, j + j2);
+            this.biomes[k1] = provider.getNoiseBiome(i + l1, i2, j + j2);
          }
       }
 
    }
 
-   public int[] writeBiomes() {
+   public int[] getBiomeIds() {
       int[] aint = new int[this.biomes.length];
 
       for(int i = 0; i < this.biomes.length; ++i) {
@@ -95,10 +95,10 @@ public class BiomeContainer implements BiomeManager.IBiomeReader {
       return aint;
    }
 
-   public Biome getNoiseBiome(int p_225526_1_, int p_225526_2_, int p_225526_3_) {
-      int i = p_225526_1_ & HORIZONTAL_MASK;
-      int j = MathHelper.clamp(p_225526_2_, 0, VERTICAL_MASK);
-      int k = p_225526_3_ & HORIZONTAL_MASK;
+   public Biome getNoiseBiome(int x, int y, int z) {
+      int i = x & HORIZONTAL_MASK;
+      int j = MathHelper.clamp(y, 0, VERTICAL_MASK);
+      int k = z & HORIZONTAL_MASK;
       return this.biomes[j << WIDTH_BITS + WIDTH_BITS | k << WIDTH_BITS | i];
    }
 }

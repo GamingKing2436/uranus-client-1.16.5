@@ -14,13 +14,13 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class PotionWater extends DataFix {
-   public PotionWater(Schema p_i49631_1_, boolean p_i49631_2_) {
-      super(p_i49631_1_, p_i49631_2_);
+   public PotionWater(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
       Type<?> type = this.getInputSchema().getType(TypeReferences.ITEM_STACK);
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
       OpticFinder<?> opticfinder1 = type.findField("tag");
       return this.fixTypeEverywhereTyped("ItemWaterPotionFix", type, (p_206363_2_) -> {
          Optional<Pair<String, String>> optional = p_206363_2_.getOptional(opticfinder);

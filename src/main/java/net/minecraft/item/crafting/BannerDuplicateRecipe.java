@@ -13,17 +13,17 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class BannerDuplicateRecipe extends SpecialRecipe {
-   public BannerDuplicateRecipe(ResourceLocation p_i48171_1_) {
-      super(p_i48171_1_);
+   public BannerDuplicateRecipe(ResourceLocation idIn) {
+      super(idIn);
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
       DyeColor dyecolor = null;
       ItemStack itemstack = null;
       ItemStack itemstack1 = null;
 
-      for(int i = 0; i < p_77569_1_.getContainerSize(); ++i) {
-         ItemStack itemstack2 = p_77569_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack2 = inv.getStackInSlot(i);
          Item item = itemstack2.getItem();
          if (item instanceof BannerItem) {
             BannerItem banneritem = (BannerItem)item;
@@ -33,7 +33,7 @@ public class BannerDuplicateRecipe extends SpecialRecipe {
                return false;
             }
 
-            int j = BannerTileEntity.getPatternCount(itemstack2);
+            int j = BannerTileEntity.getPatterns(itemstack2);
             if (j > 6) {
                return false;
             }
@@ -57,11 +57,11 @@ public class BannerDuplicateRecipe extends SpecialRecipe {
       return itemstack != null && itemstack1 != null;
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
-      for(int i = 0; i < p_77572_1_.getContainerSize(); ++i) {
-         ItemStack itemstack = p_77572_1_.getItem(i);
+   public ItemStack getCraftingResult(CraftingInventory inv) {
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack = inv.getStackInSlot(i);
          if (!itemstack.isEmpty()) {
-            int j = BannerTileEntity.getPatternCount(itemstack);
+            int j = BannerTileEntity.getPatterns(itemstack);
             if (j > 0 && j <= 6) {
                ItemStack itemstack1 = itemstack.copy();
                itemstack1.setCount(1);
@@ -73,15 +73,15 @@ public class BannerDuplicateRecipe extends SpecialRecipe {
       return ItemStack.EMPTY;
    }
 
-   public NonNullList<ItemStack> getRemainingItems(CraftingInventory p_179532_1_) {
-      NonNullList<ItemStack> nonnulllist = NonNullList.withSize(p_179532_1_.getContainerSize(), ItemStack.EMPTY);
+   public NonNullList<ItemStack> getRemainingItems(CraftingInventory inv) {
+      NonNullList<ItemStack> nonnulllist = NonNullList.withSize(inv.getSizeInventory(), ItemStack.EMPTY);
 
       for(int i = 0; i < nonnulllist.size(); ++i) {
-         ItemStack itemstack = p_179532_1_.getItem(i);
+         ItemStack itemstack = inv.getStackInSlot(i);
          if (!itemstack.isEmpty()) {
-            if (itemstack.getItem().hasCraftingRemainingItem()) {
-               nonnulllist.set(i, new ItemStack(itemstack.getItem().getCraftingRemainingItem()));
-            } else if (itemstack.hasTag() && BannerTileEntity.getPatternCount(itemstack) > 0) {
+            if (itemstack.getItem().hasContainerItem()) {
+               nonnulllist.set(i, new ItemStack(itemstack.getItem().getContainerItem()));
+            } else if (itemstack.hasTag() && BannerTileEntity.getPatterns(itemstack) > 0) {
                ItemStack itemstack1 = itemstack.copy();
                itemstack1.setCount(1);
                nonnulllist.set(i, itemstack1);
@@ -93,11 +93,11 @@ public class BannerDuplicateRecipe extends SpecialRecipe {
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.BANNER_DUPLICATE;
+      return IRecipeSerializer.CRAFTING_SPECIAL_BANNERDUPLICATE;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ * p_194133_2_ >= 2;
+   public boolean canFit(int width, int height) {
+      return width * height >= 2;
    }
 }

@@ -14,8 +14,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class DispenserTileEntity extends LockableLootTileEntity {
-   private static final Random RANDOM = new Random();
-   private NonNullList<ItemStack> items = NonNullList.withSize(9, ItemStack.EMPTY);
+   private static final Random RNG = new Random();
+   private NonNullList<ItemStack> stacks = NonNullList.withSize(9, ItemStack.EMPTY);
 
    protected DispenserTileEntity(TileEntityType<?> p_i48286_1_) {
       super(p_i48286_1_);
@@ -25,17 +25,17 @@ public class DispenserTileEntity extends LockableLootTileEntity {
       this(TileEntityType.DISPENSER);
    }
 
-   public int getContainerSize() {
+   public int getSizeInventory() {
       return 9;
    }
 
-   public int getRandomSlot() {
-      this.unpackLootTable((PlayerEntity)null);
+   public int getDispenseSlot() {
+      this.fillWithLoot((PlayerEntity)null);
       int i = -1;
       int j = 1;
 
-      for(int k = 0; k < this.items.size(); ++k) {
-         if (!this.items.get(k).isEmpty() && RANDOM.nextInt(j++) == 0) {
+      for(int k = 0; k < this.stacks.size(); ++k) {
+         if (!this.stacks.get(k).isEmpty() && RNG.nextInt(j++) == 0) {
             i = k;
          }
       }
@@ -43,10 +43,10 @@ public class DispenserTileEntity extends LockableLootTileEntity {
       return i;
    }
 
-   public int addItem(ItemStack p_146019_1_) {
-      for(int i = 0; i < this.items.size(); ++i) {
-         if (this.items.get(i).isEmpty()) {
-            this.setItem(i, p_146019_1_);
+   public int addItemStack(ItemStack stack) {
+      for(int i = 0; i < this.stacks.size(); ++i) {
+         if (this.stacks.get(i).isEmpty()) {
+            this.setInventorySlotContents(i, stack);
             return i;
          }
       }
@@ -58,33 +58,33 @@ public class DispenserTileEntity extends LockableLootTileEntity {
       return new TranslationTextComponent("container.dispenser");
    }
 
-   public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
-      super.load(p_230337_1_, p_230337_2_);
-      this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-      if (!this.tryLoadLootTable(p_230337_2_)) {
-         ItemStackHelper.loadAllItems(p_230337_2_, this.items);
+   public void read(BlockState state, CompoundNBT nbt) {
+      super.read(state, nbt);
+      this.stacks = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
+      if (!this.checkLootAndRead(nbt)) {
+         ItemStackHelper.loadAllItems(nbt, this.stacks);
       }
 
    }
 
-   public CompoundNBT save(CompoundNBT p_189515_1_) {
-      super.save(p_189515_1_);
-      if (!this.trySaveLootTable(p_189515_1_)) {
-         ItemStackHelper.saveAllItems(p_189515_1_, this.items);
+   public CompoundNBT write(CompoundNBT compound) {
+      super.write(compound);
+      if (!this.checkLootAndWrite(compound)) {
+         ItemStackHelper.saveAllItems(compound, this.stacks);
       }
 
-      return p_189515_1_;
+      return compound;
    }
 
    protected NonNullList<ItemStack> getItems() {
-      return this.items;
+      return this.stacks;
    }
 
-   protected void setItems(NonNullList<ItemStack> p_199721_1_) {
-      this.items = p_199721_1_;
+   protected void setItems(NonNullList<ItemStack> itemsIn) {
+      this.stacks = itemsIn;
    }
 
-   protected Container createMenu(int p_213906_1_, PlayerInventory p_213906_2_) {
-      return new DispenserContainer(p_213906_1_, p_213906_2_, this);
+   protected Container createMenu(int id, PlayerInventory player) {
+      return new DispenserContainer(id, player, this);
    }
 }

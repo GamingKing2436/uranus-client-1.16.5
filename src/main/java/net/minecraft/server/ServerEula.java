@@ -10,39 +10,39 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ServerEula {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final Path file;
-   private final boolean agreed;
+   private static final Logger LOG = LogManager.getLogger();
+   private final Path eulaFile;
+   private final boolean acceptedEULA;
 
-   public ServerEula(Path p_i50746_1_) {
-      this.file = p_i50746_1_;
-      this.agreed = SharedConstants.IS_RUNNING_IN_IDE || this.readFile();
+   public ServerEula(Path file) {
+      this.eulaFile = file;
+      this.acceptedEULA = SharedConstants.developmentMode || this.loadEulaStatus();
    }
 
-   private boolean readFile() {
-      try (InputStream inputstream = Files.newInputStream(this.file)) {
+   private boolean loadEulaStatus() {
+      try (InputStream inputstream = Files.newInputStream(this.eulaFile)) {
          Properties properties = new Properties();
          properties.load(inputstream);
          return Boolean.parseBoolean(properties.getProperty("eula", "false"));
       } catch (Exception exception) {
-         LOGGER.warn("Failed to load {}", (Object)this.file);
-         this.saveDefaults();
+         LOG.warn("Failed to load {}", (Object)this.eulaFile);
+         this.createEULAFile();
          return false;
       }
    }
 
-   public boolean hasAgreedToEULA() {
-      return this.agreed;
+   public boolean hasAcceptedEULA() {
+      return this.acceptedEULA;
    }
 
-   private void saveDefaults() {
-      if (!SharedConstants.IS_RUNNING_IN_IDE) {
-         try (OutputStream outputstream = Files.newOutputStream(this.file)) {
+   private void createEULAFile() {
+      if (!SharedConstants.developmentMode) {
+         try (OutputStream outputstream = Files.newOutputStream(this.eulaFile)) {
             Properties properties = new Properties();
             properties.setProperty("eula", "false");
             properties.store(outputstream, "By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).");
          } catch (Exception exception) {
-            LOGGER.warn("Failed to save {}", this.file, exception);
+            LOG.warn("Failed to save {}", this.eulaFile, exception);
          }
 
       }

@@ -35,47 +35,47 @@ import org.apache.logging.log4j.Logger;
 @OnlyIn(Dist.CLIENT)
 public class IntegratedServer extends MinecraftServer {
    private static final Logger LOGGER = LogManager.getLogger();
-   private final Minecraft minecraft;
-   private boolean paused;
-   private int publishedPort = -1;
-   private LanServerPingThread lanPinger;
-   private UUID uuid;
+   private final Minecraft mc;
+   private boolean isGamePaused;
+   private int serverPort = -1;
+   private LanServerPingThread lanServerPing;
+   private UUID playerUuid;
 
    public IntegratedServer(Thread p_i232494_1_, Minecraft p_i232494_2_, DynamicRegistries.Impl p_i232494_3_, SaveFormat.LevelSave p_i232494_4_, ResourcePackList p_i232494_5_, DataPackRegistries p_i232494_6_, IServerConfiguration p_i232494_7_, MinecraftSessionService p_i232494_8_, GameProfileRepository p_i232494_9_, PlayerProfileCache p_i232494_10_, IChunkStatusListenerFactory p_i232494_11_) {
-      super(p_i232494_1_, p_i232494_3_, p_i232494_4_, p_i232494_7_, p_i232494_5_, p_i232494_2_.getProxy(), p_i232494_2_.getFixerUpper(), p_i232494_6_, p_i232494_8_, p_i232494_9_, p_i232494_10_, p_i232494_11_);
-      this.setSingleplayerName(p_i232494_2_.getUser().getName());
+      super(p_i232494_1_, p_i232494_3_, p_i232494_4_, p_i232494_7_, p_i232494_5_, p_i232494_2_.getProxy(), p_i232494_2_.getDataFixer(), p_i232494_6_, p_i232494_8_, p_i232494_9_, p_i232494_10_, p_i232494_11_);
+      this.setServerOwner(p_i232494_2_.getSession().getUsername());
       this.setDemo(p_i232494_2_.isDemo());
-      this.setMaxBuildHeight(256);
-      this.setPlayerList(new IntegratedPlayerList(this, this.registryHolder, this.playerDataStorage));
-      this.minecraft = p_i232494_2_;
+      this.setBuildLimit(256);
+      this.setPlayerList(new IntegratedPlayerList(this, this.field_240767_f_, this.playerDataManager));
+      this.mc = p_i232494_2_;
    }
 
-   public boolean initServer() {
-      LOGGER.info("Starting integrated minecraft server version " + SharedConstants.getCurrentVersion().getName());
-      this.setUsesAuthentication(true);
-      this.setPvpAllowed(true);
-      this.setFlightAllowed(true);
-      this.initializeKeyPair();
-      this.loadLevel();
-      this.setMotd(this.getSingleplayerName() + " - " + this.getWorldData().getLevelName());
+   public boolean init() {
+      LOGGER.info("Starting integrated minecraft server version " + SharedConstants.getVersion().getName());
+      this.setOnlineMode(true);
+      this.setAllowPvp(true);
+      this.setAllowFlight(true);
+      this.func_244801_P();
+      this.func_240800_l__();
+      this.setMOTD(this.getServerOwner() + " - " + this.getServerConfiguration().getWorldName());
       return true;
    }
 
-   public void tickServer(BooleanSupplier p_71217_1_) {
-      boolean flag = this.paused;
-      this.paused = Minecraft.getInstance().getConnection() != null && Minecraft.getInstance().isPaused();
+   public void tick(BooleanSupplier hasTimeLeft) {
+      boolean flag = this.isGamePaused;
+      this.isGamePaused = Minecraft.getInstance().getConnection() != null && Minecraft.getInstance().isGamePaused();
       IProfiler iprofiler = this.getProfiler();
-      if (!flag && this.paused) {
-         iprofiler.push("autoSave");
+      if (!flag && this.isGamePaused) {
+         iprofiler.startSection("autoSave");
          LOGGER.info("Saving and pausing game...");
-         this.getPlayerList().saveAll();
-         this.saveAllChunks(false, false, false);
-         iprofiler.pop();
+         this.getPlayerList().saveAllPlayerData();
+         this.save(false, false, false);
+         iprofiler.endSection();
       }
 
-      if (!this.paused) {
-         super.tickServer(p_71217_1_);
-         int i = Math.max(2, this.minecraft.options.renderDistance + -1);
+      if (!this.isGamePaused) {
+         super.tick(hasTimeLeft);
+         int i = Math.max(2, this.mc.gameSettings.renderDistanceChunks + -1);
          if (i != this.getPlayerList().getViewDistance()) {
             LOGGER.info("Changing view distance to {}, from {}", i, this.getPlayerList().getViewDistance());
             this.getPlayerList().setViewDistance(i);
@@ -84,44 +84,44 @@ public class IntegratedServer extends MinecraftServer {
       }
    }
 
-   public boolean shouldRconBroadcast() {
+   public boolean allowLoggingRcon() {
       return true;
    }
 
-   public boolean shouldInformAdmins() {
+   public boolean allowLogging() {
       return true;
    }
 
-   public File getServerDirectory() {
-      return this.minecraft.gameDirectory;
+   public File getDataDirectory() {
+      return this.mc.gameDir;
    }
 
    public boolean isDedicatedServer() {
       return false;
    }
 
-   public int getRateLimitPacketsPerSecond() {
+   public int func_241871_k() {
       return 0;
    }
 
-   public boolean isEpollEnabled() {
+   public boolean shouldUseNativeTransport() {
       return false;
    }
 
-   public void onServerCrash(CrashReport p_71228_1_) {
-      this.minecraft.delayCrash(p_71228_1_);
+   public void finalTick(CrashReport report) {
+      this.mc.crashed(report);
    }
 
-   public CrashReport fillReport(CrashReport p_71230_1_) {
-      p_71230_1_ = super.fillReport(p_71230_1_);
-      p_71230_1_.getSystemDetails().setDetail("Type", "Integrated Server (map_client.txt)");
-      p_71230_1_.getSystemDetails().setDetail("Is Modded", () -> {
-         return this.getModdedStatus().orElse("Probably not. Jar signature remains and both client + server brands are untouched.");
+   public CrashReport addServerInfoToCrashReport(CrashReport report) {
+      report = super.addServerInfoToCrashReport(report);
+      report.getCategory().addDetail("Type", "Integrated Server (map_client.txt)");
+      report.getCategory().addDetail("Is Modded", () -> {
+         return this.func_230045_q_().orElse("Probably not. Jar signature remains and both client + server brands are untouched.");
       });
-      return p_71230_1_;
+      return report;
    }
 
-   public Optional<String> getModdedStatus() {
+   public Optional<String> func_230045_q_() {
       String s = ClientBrandRetriever.getClientModName();
       if (!s.equals("vanilla")) {
          return Optional.of("Definitely; Client brand changed to '" + s + "'");
@@ -135,25 +135,25 @@ public class IntegratedServer extends MinecraftServer {
       }
    }
 
-   public void populateSnooper(Snooper p_70000_1_) {
-      super.populateSnooper(p_70000_1_);
-      p_70000_1_.setDynamicData("snooper_partner", this.minecraft.getSnooper().getToken());
+   public void fillSnooper(Snooper snooper) {
+      super.fillSnooper(snooper);
+      snooper.addClientStat("snooper_partner", this.mc.getSnooper().getUniqueID());
    }
 
-   public boolean publishServer(GameType p_195565_1_, boolean p_195565_2_, int p_195565_3_) {
+   public boolean shareToLAN(GameType gameMode, boolean cheats, int port) {
       try {
-         this.getConnection().startTcpServerListener((InetAddress)null, p_195565_3_);
-         LOGGER.info("Started serving on {}", (int)p_195565_3_);
-         this.publishedPort = p_195565_3_;
-         this.lanPinger = new LanServerPingThread(this.getMotd(), p_195565_3_ + "");
-         this.lanPinger.start();
-         this.getPlayerList().setOverrideGameMode(p_195565_1_);
-         this.getPlayerList().setAllowCheatsForAllPlayers(p_195565_2_);
-         int i = this.getProfilePermissions(this.minecraft.player.getGameProfile());
-         this.minecraft.player.setPermissionLevel(i);
+         this.getNetworkSystem().addEndpoint((InetAddress)null, port);
+         LOGGER.info("Started serving on {}", (int)port);
+         this.serverPort = port;
+         this.lanServerPing = new LanServerPingThread(this.getMOTD(), port + "");
+         this.lanServerPing.start();
+         this.getPlayerList().setGameType(gameMode);
+         this.getPlayerList().setCommandsAllowedForAll(cheats);
+         int i = this.getPermissionLevel(this.mc.player.getGameProfile());
+         this.mc.player.setPermissionLevel(i);
 
          for(ServerPlayerEntity serverplayerentity : this.getPlayerList().getPlayers()) {
-            this.getCommands().sendCommands(serverplayerentity);
+            this.getCommandManager().send(serverplayerentity);
          }
 
          return true;
@@ -164,68 +164,68 @@ public class IntegratedServer extends MinecraftServer {
 
    public void stopServer() {
       super.stopServer();
-      if (this.lanPinger != null) {
-         this.lanPinger.interrupt();
-         this.lanPinger = null;
+      if (this.lanServerPing != null) {
+         this.lanServerPing.interrupt();
+         this.lanServerPing = null;
       }
 
    }
 
-   public void halt(boolean p_71263_1_) {
-      this.executeBlocking(() -> {
+   public void initiateShutdown(boolean waitForServer) {
+      this.runImmediately(() -> {
          for(ServerPlayerEntity serverplayerentity : Lists.newArrayList(this.getPlayerList().getPlayers())) {
-            if (!serverplayerentity.getUUID().equals(this.uuid)) {
-               this.getPlayerList().remove(serverplayerentity);
+            if (!serverplayerentity.getUniqueID().equals(this.playerUuid)) {
+               this.getPlayerList().playerLoggedOut(serverplayerentity);
             }
          }
 
       });
-      super.halt(p_71263_1_);
-      if (this.lanPinger != null) {
-         this.lanPinger.interrupt();
-         this.lanPinger = null;
+      super.initiateShutdown(waitForServer);
+      if (this.lanServerPing != null) {
+         this.lanServerPing.interrupt();
+         this.lanServerPing = null;
       }
 
    }
 
-   public boolean isPublished() {
-      return this.publishedPort > -1;
+   public boolean getPublic() {
+      return this.serverPort > -1;
    }
 
-   public int getPort() {
-      return this.publishedPort;
+   public int getServerPort() {
+      return this.serverPort;
    }
 
-   public void setDefaultGameType(GameType p_71235_1_) {
-      super.setDefaultGameType(p_71235_1_);
-      this.getPlayerList().setOverrideGameMode(p_71235_1_);
+   public void setGameType(GameType gameMode) {
+      super.setGameType(gameMode);
+      this.getPlayerList().setGameType(gameMode);
    }
 
    public boolean isCommandBlockEnabled() {
       return true;
    }
 
-   public int getOperatorUserPermissionLevel() {
+   public int getOpPermissionLevel() {
       return 2;
    }
 
-   public int getFunctionCompilationLevel() {
+   public int getFunctionLevel() {
       return 2;
    }
 
-   public void setUUID(UUID p_211527_1_) {
-      this.uuid = p_211527_1_;
+   public void setPlayerUuid(UUID uuid) {
+      this.playerUuid = uuid;
    }
 
-   public boolean isSingleplayerOwner(GameProfile p_213199_1_) {
-      return p_213199_1_.getName().equalsIgnoreCase(this.getSingleplayerName());
+   public boolean isServerOwner(GameProfile profileIn) {
+      return profileIn.getName().equalsIgnoreCase(this.getServerOwner());
    }
 
-   public int getScaledTrackingDistance(int p_230512_1_) {
-      return (int)(this.minecraft.options.entityDistanceScaling * (float)p_230512_1_);
+   public int func_230512_b_(int p_230512_1_) {
+      return (int)(this.mc.gameSettings.entityDistanceScaling * (float)p_230512_1_);
    }
 
-   public boolean forceSynchronousWrites() {
-      return this.minecraft.options.syncWrites;
+   public boolean func_230540_aS_() {
+      return this.mc.gameSettings.syncChunkWrites;
    }
 }

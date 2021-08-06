@@ -23,8 +23,8 @@ public class ItemArgument implements ArgumentType<ItemInput> {
       return new ItemInput(itemparser.getItem(), itemparser.getNbt());
    }
 
-   public static <S> ItemInput getItem(CommandContext<S> p_197316_0_, String p_197316_1_) {
-      return p_197316_0_.getArgument(p_197316_1_, ItemInput.class);
+   public static <S> ItemInput getItem(CommandContext<S> context, String name) {
+      return context.getArgument(name, ItemInput.class);
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
@@ -37,7 +37,7 @@ public class ItemArgument implements ArgumentType<ItemInput> {
       } catch (CommandSyntaxException commandsyntaxexception) {
       }
 
-      return itemparser.fillSuggestions(p_listSuggestions_2_, ItemTags.getAllTags());
+      return itemparser.fillSuggestions(p_listSuggestions_2_, ItemTags.getCollection());
    }
 
    public Collection<String> getExamples() {

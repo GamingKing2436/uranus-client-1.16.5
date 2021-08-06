@@ -20,7 +20,7 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class ParticleArgument implements ArgumentType<IParticleData> {
    private static final Collection<String> EXAMPLES = Arrays.asList("foo", "foo:bar", "particle with options");
-   public static final DynamicCommandExceptionType ERROR_UNKNOWN_PARTICLE = new DynamicCommandExceptionType((p_208673_0_) -> {
+   public static final DynamicCommandExceptionType PARTICLE_NOT_FOUND = new DynamicCommandExceptionType((p_208673_0_) -> {
       return new TranslationTextComponent("particle.notFound", p_208673_0_);
    });
 
@@ -28,31 +28,31 @@ public class ParticleArgument implements ArgumentType<IParticleData> {
       return new ParticleArgument();
    }
 
-   public static IParticleData getParticle(CommandContext<CommandSource> p_197187_0_, String p_197187_1_) {
-      return p_197187_0_.getArgument(p_197187_1_, IParticleData.class);
+   public static IParticleData getParticle(CommandContext<CommandSource> context, String name) {
+      return context.getArgument(name, IParticleData.class);
    }
 
    public IParticleData parse(StringReader p_parse_1_) throws CommandSyntaxException {
-      return readParticle(p_parse_1_);
+      return parseParticle(p_parse_1_);
    }
 
    public Collection<String> getExamples() {
       return EXAMPLES;
    }
 
-   public static IParticleData readParticle(StringReader p_197189_0_) throws CommandSyntaxException {
-      ResourceLocation resourcelocation = ResourceLocation.read(p_197189_0_);
+   public static IParticleData parseParticle(StringReader reader) throws CommandSyntaxException {
+      ResourceLocation resourcelocation = ResourceLocation.read(reader);
       ParticleType<?> particletype = Registry.PARTICLE_TYPE.getOptional(resourcelocation).orElseThrow(() -> {
-         return ERROR_UNKNOWN_PARTICLE.create(resourcelocation);
+         return PARTICLE_NOT_FOUND.create(resourcelocation);
       });
-      return readParticle(p_197189_0_, particletype);
+      return deserializeParticle(reader, particletype);
    }
 
-   private static <T extends IParticleData> T readParticle(StringReader p_199816_0_, ParticleType<T> p_199816_1_) throws CommandSyntaxException {
-      return p_199816_1_.getDeserializer().fromCommand(p_199816_1_, p_199816_0_);
+   private static <T extends IParticleData> T deserializeParticle(StringReader reader, ParticleType<T> type) throws CommandSyntaxException {
+      return type.getDeserializer().deserialize(type, reader);
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
-      return ISuggestionProvider.suggestResource(Registry.PARTICLE_TYPE.keySet(), p_listSuggestions_2_);
+      return ISuggestionProvider.suggestIterable(Registry.PARTICLE_TYPE.keySet(), p_listSuggestions_2_);
    }
 }

@@ -26,7 +26,7 @@ import net.minecraft.util.Util;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class LevelDataGeneratorOptionsFix extends DataFix {
-   static final Map<String, String> MAP = Util.make(Maps.newHashMap(), (p_210550_0_) -> {
+   static final Map<String, String> field_210553_a = Util.make(Maps.newHashMap(), (p_210550_0_) -> {
       p_210550_0_.put("0", "minecraft:ocean");
       p_210550_0_.put("1", "minecraft:plains");
       p_210550_0_.put("2", "minecraft:desert");
@@ -102,8 +102,8 @@ public class LevelDataGeneratorOptionsFix extends DataFix {
       p_210550_0_.put("167", "minecraft:modified_badlands_plateau");
    });
 
-   public LevelDataGeneratorOptionsFix(Schema p_i49628_1_, boolean p_i49628_2_) {
-      super(p_i49628_1_, p_i49628_2_);
+   public LevelDataGeneratorOptionsFix(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    protected TypeRewriteRule makeRule() {
@@ -116,7 +116,7 @@ public class LevelDataGeneratorOptionsFix extends DataFix {
                String s = optional.orElse("");
                dynamic = p_233301_1_.set("generatorOptions", convert(s, p_233301_1_.getOps()));
             } else if ("buffet".equalsIgnoreCase(p_233301_1_.get("generatorName").asString("")) && optional.isPresent()) {
-               Dynamic<JsonElement> dynamic1 = new Dynamic<>(JsonOps.INSTANCE, JSONUtils.parse(optional.get(), true));
+               Dynamic<JsonElement> dynamic1 = new Dynamic<>(JsonOps.INSTANCE, JSONUtils.fromJson(optional.get(), true));
                dynamic = p_233301_1_.set("generatorOptions", dynamic1.convert(p_233301_1_.getOps()));
             } else {
                dynamic = p_233301_1_;
@@ -138,7 +138,7 @@ public class LevelDataGeneratorOptionsFix extends DataFix {
          list = getLayersInfoFromString(iterator.next());
          if (!list.isEmpty()) {
             if (iterator.hasNext()) {
-               s = MAP.getOrDefault(iterator.next(), "minecraft:plains");
+               s = field_210553_a.getOrDefault(iterator.next(), "minecraft:plains");
             }
 
             if (iterator.hasNext()) {

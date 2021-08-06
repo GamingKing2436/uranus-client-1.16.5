@@ -21,148 +21,148 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class WorkbenchContainer extends RecipeBookContainer<CraftingInventory> {
-   private final CraftingInventory craftSlots = new CraftingInventory(this, 3, 3);
-   private final CraftResultInventory resultSlots = new CraftResultInventory();
-   private final IWorldPosCallable access;
+   private final CraftingInventory craftMatrix = new CraftingInventory(this, 3, 3);
+   private final CraftResultInventory craftResult = new CraftResultInventory();
+   private final IWorldPosCallable worldPosCallable;
    private final PlayerEntity player;
 
-   public WorkbenchContainer(int p_i50089_1_, PlayerInventory p_i50089_2_) {
-      this(p_i50089_1_, p_i50089_2_, IWorldPosCallable.NULL);
+   public WorkbenchContainer(int id, PlayerInventory playerInventory) {
+      this(id, playerInventory, IWorldPosCallable.DUMMY);
    }
 
-   public WorkbenchContainer(int p_i50090_1_, PlayerInventory p_i50090_2_, IWorldPosCallable p_i50090_3_) {
-      super(ContainerType.CRAFTING, p_i50090_1_);
-      this.access = p_i50090_3_;
-      this.player = p_i50090_2_.player;
-      this.addSlot(new CraftingResultSlot(p_i50090_2_.player, this.craftSlots, this.resultSlots, 0, 124, 35));
+   public WorkbenchContainer(int id, PlayerInventory playerInventory, IWorldPosCallable p_i50090_3_) {
+      super(ContainerType.CRAFTING, id);
+      this.worldPosCallable = p_i50090_3_;
+      this.player = playerInventory.player;
+      this.addSlot(new CraftingResultSlot(playerInventory.player, this.craftMatrix, this.craftResult, 0, 124, 35));
 
       for(int i = 0; i < 3; ++i) {
          for(int j = 0; j < 3; ++j) {
-            this.addSlot(new Slot(this.craftSlots, j + i * 3, 30 + j * 18, 17 + i * 18));
+            this.addSlot(new Slot(this.craftMatrix, j + i * 3, 30 + j * 18, 17 + i * 18));
          }
       }
 
       for(int k = 0; k < 3; ++k) {
          for(int i1 = 0; i1 < 9; ++i1) {
-            this.addSlot(new Slot(p_i50090_2_, i1 + k * 9 + 9, 8 + i1 * 18, 84 + k * 18));
+            this.addSlot(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 84 + k * 18));
          }
       }
 
       for(int l = 0; l < 9; ++l) {
-         this.addSlot(new Slot(p_i50090_2_, l, 8 + l * 18, 142));
+         this.addSlot(new Slot(playerInventory, l, 8 + l * 18, 142));
       }
 
    }
 
-   protected static void slotChangedCraftingGrid(int p_217066_0_, World p_217066_1_, PlayerEntity p_217066_2_, CraftingInventory p_217066_3_, CraftResultInventory p_217066_4_) {
-      if (!p_217066_1_.isClientSide) {
-         ServerPlayerEntity serverplayerentity = (ServerPlayerEntity)p_217066_2_;
+   protected static void updateCraftingResult(int id, World world, PlayerEntity player, CraftingInventory inventory, CraftResultInventory inventoryResult) {
+      if (!world.isRemote) {
+         ServerPlayerEntity serverplayerentity = (ServerPlayerEntity)player;
          ItemStack itemstack = ItemStack.EMPTY;
-         Optional<ICraftingRecipe> optional = p_217066_1_.getServer().getRecipeManager().getRecipeFor(IRecipeType.CRAFTING, p_217066_3_, p_217066_1_);
+         Optional<ICraftingRecipe> optional = world.getServer().getRecipeManager().getRecipe(IRecipeType.CRAFTING, inventory, world);
          if (optional.isPresent()) {
             ICraftingRecipe icraftingrecipe = optional.get();
-            if (p_217066_4_.setRecipeUsed(p_217066_1_, serverplayerentity, icraftingrecipe)) {
-               itemstack = icraftingrecipe.assemble(p_217066_3_);
+            if (inventoryResult.canUseRecipe(world, serverplayerentity, icraftingrecipe)) {
+               itemstack = icraftingrecipe.getCraftingResult(inventory);
             }
          }
 
-         p_217066_4_.setItem(0, itemstack);
-         serverplayerentity.connection.send(new SSetSlotPacket(p_217066_0_, 0, itemstack));
+         inventoryResult.setInventorySlotContents(0, itemstack);
+         serverplayerentity.connection.sendPacket(new SSetSlotPacket(id, 0, itemstack));
       }
    }
 
-   public void slotsChanged(IInventory p_75130_1_) {
-      this.access.execute((p_217069_1_, p_217069_2_) -> {
-         slotChangedCraftingGrid(this.containerId, p_217069_1_, this.player, this.craftSlots, this.resultSlots);
+   public void onCraftMatrixChanged(IInventory inventoryIn) {
+      this.worldPosCallable.consume((p_217069_1_, p_217069_2_) -> {
+         updateCraftingResult(this.windowId, p_217069_1_, this.player, this.craftMatrix, this.craftResult);
       });
    }
 
-   public void fillCraftSlotsStackedContents(RecipeItemHelper p_201771_1_) {
-      this.craftSlots.fillStackedContents(p_201771_1_);
+   public void fillStackedContents(RecipeItemHelper itemHelperIn) {
+      this.craftMatrix.fillStackedContents(itemHelperIn);
    }
 
-   public void clearCraftingContent() {
-      this.craftSlots.clearContent();
-      this.resultSlots.clearContent();
+   public void clear() {
+      this.craftMatrix.clear();
+      this.craftResult.clear();
    }
 
-   public boolean recipeMatches(IRecipe<? super CraftingInventory> p_201769_1_) {
-      return p_201769_1_.matches(this.craftSlots, this.player.level);
+   public boolean matches(IRecipe<? super CraftingInventory> recipeIn) {
+      return recipeIn.matches(this.craftMatrix, this.player.world);
    }
 
-   public void removed(PlayerEntity p_75134_1_) {
-      super.removed(p_75134_1_);
-      this.access.execute((p_217068_2_, p_217068_3_) -> {
-         this.clearContainer(p_75134_1_, p_217068_2_, this.craftSlots);
+   public void onContainerClosed(PlayerEntity playerIn) {
+      super.onContainerClosed(playerIn);
+      this.worldPosCallable.consume((p_217068_2_, p_217068_3_) -> {
+         this.clearContainer(playerIn, p_217068_2_, this.craftMatrix);
       });
    }
 
-   public boolean stillValid(PlayerEntity p_75145_1_) {
-      return stillValid(this.access, p_75145_1_, Blocks.CRAFTING_TABLE);
+   public boolean canInteractWith(PlayerEntity playerIn) {
+      return isWithinUsableDistance(this.worldPosCallable, playerIn, Blocks.CRAFTING_TABLE);
    }
 
-   public ItemStack quickMoveStack(PlayerEntity p_82846_1_, int p_82846_2_) {
+   public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
       ItemStack itemstack = ItemStack.EMPTY;
-      Slot slot = this.slots.get(p_82846_2_);
-      if (slot != null && slot.hasItem()) {
-         ItemStack itemstack1 = slot.getItem();
+      Slot slot = this.inventorySlots.get(index);
+      if (slot != null && slot.getHasStack()) {
+         ItemStack itemstack1 = slot.getStack();
          itemstack = itemstack1.copy();
-         if (p_82846_2_ == 0) {
-            this.access.execute((p_217067_2_, p_217067_3_) -> {
-               itemstack1.getItem().onCraftedBy(itemstack1, p_217067_2_, p_82846_1_);
+         if (index == 0) {
+            this.worldPosCallable.consume((p_217067_2_, p_217067_3_) -> {
+               itemstack1.getItem().onCreated(itemstack1, p_217067_2_, playerIn);
             });
-            if (!this.moveItemStackTo(itemstack1, 10, 46, true)) {
+            if (!this.mergeItemStack(itemstack1, 10, 46, true)) {
                return ItemStack.EMPTY;
             }
 
-            slot.onQuickCraft(itemstack1, itemstack);
-         } else if (p_82846_2_ >= 10 && p_82846_2_ < 46) {
-            if (!this.moveItemStackTo(itemstack1, 1, 10, false)) {
-               if (p_82846_2_ < 37) {
-                  if (!this.moveItemStackTo(itemstack1, 37, 46, false)) {
+            slot.onSlotChange(itemstack1, itemstack);
+         } else if (index >= 10 && index < 46) {
+            if (!this.mergeItemStack(itemstack1, 1, 10, false)) {
+               if (index < 37) {
+                  if (!this.mergeItemStack(itemstack1, 37, 46, false)) {
                      return ItemStack.EMPTY;
                   }
-               } else if (!this.moveItemStackTo(itemstack1, 10, 37, false)) {
+               } else if (!this.mergeItemStack(itemstack1, 10, 37, false)) {
                   return ItemStack.EMPTY;
                }
             }
-         } else if (!this.moveItemStackTo(itemstack1, 10, 46, false)) {
+         } else if (!this.mergeItemStack(itemstack1, 10, 46, false)) {
             return ItemStack.EMPTY;
          }
 
          if (itemstack1.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
+            slot.putStack(ItemStack.EMPTY);
          } else {
-            slot.setChanged();
+            slot.onSlotChanged();
          }
 
          if (itemstack1.getCount() == itemstack.getCount()) {
             return ItemStack.EMPTY;
          }
 
-         ItemStack itemstack2 = slot.onTake(p_82846_1_, itemstack1);
-         if (p_82846_2_ == 0) {
-            p_82846_1_.drop(itemstack2, false);
+         ItemStack itemstack2 = slot.onTake(playerIn, itemstack1);
+         if (index == 0) {
+            playerIn.dropItem(itemstack2, false);
          }
       }
 
       return itemstack;
    }
 
-   public boolean canTakeItemForPickAll(ItemStack p_94530_1_, Slot p_94530_2_) {
-      return p_94530_2_.container != this.resultSlots && super.canTakeItemForPickAll(p_94530_1_, p_94530_2_);
+   public boolean canMergeSlot(ItemStack stack, Slot slotIn) {
+      return slotIn.inventory != this.craftResult && super.canMergeSlot(stack, slotIn);
    }
 
-   public int getResultSlotIndex() {
+   public int getOutputSlot() {
       return 0;
    }
 
-   public int getGridWidth() {
-      return this.craftSlots.getWidth();
+   public int getWidth() {
+      return this.craftMatrix.getWidth();
    }
 
-   public int getGridHeight() {
-      return this.craftSlots.getHeight();
+   public int getHeight() {
+      return this.craftMatrix.getHeight();
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -171,7 +171,7 @@ public class WorkbenchContainer extends RecipeBookContainer<CraftingInventory> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public RecipeBookCategory getRecipeBookType() {
+   public RecipeBookCategory func_241850_m() {
       return RecipeBookCategory.CRAFTING;
    }
 }

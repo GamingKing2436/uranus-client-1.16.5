@@ -16,22 +16,22 @@ public class SmithingRecipe implements IRecipe<IInventory> {
    private final Ingredient base;
    private final Ingredient addition;
    private final ItemStack result;
-   private final ResourceLocation id;
+   private final ResourceLocation recipeId;
 
-   public SmithingRecipe(ResourceLocation p_i231600_1_, Ingredient p_i231600_2_, Ingredient p_i231600_3_, ItemStack p_i231600_4_) {
-      this.id = p_i231600_1_;
-      this.base = p_i231600_2_;
-      this.addition = p_i231600_3_;
-      this.result = p_i231600_4_;
+   public SmithingRecipe(ResourceLocation recipeId, Ingredient base, Ingredient addition, ItemStack result) {
+      this.recipeId = recipeId;
+      this.base = base;
+      this.addition = addition;
+      this.result = result;
    }
 
-   public boolean matches(IInventory p_77569_1_, World p_77569_2_) {
-      return this.base.test(p_77569_1_.getItem(0)) && this.addition.test(p_77569_1_.getItem(1));
+   public boolean matches(IInventory inv, World worldIn) {
+      return this.base.test(inv.getStackInSlot(0)) && this.addition.test(inv.getStackInSlot(1));
    }
 
-   public ItemStack assemble(IInventory p_77572_1_) {
+   public ItemStack getCraftingResult(IInventory inv) {
       ItemStack itemstack = this.result.copy();
-      CompoundNBT compoundnbt = p_77572_1_.getItem(0).getTag();
+      CompoundNBT compoundnbt = inv.getStackInSlot(0).getTag();
       if (compoundnbt != null) {
          itemstack.setTag(compoundnbt.copy());
       }
@@ -40,25 +40,25 @@ public class SmithingRecipe implements IRecipe<IInventory> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ * p_194133_2_ >= 2;
+   public boolean canFit(int width, int height) {
+      return width * height >= 2;
    }
 
-   public ItemStack getResultItem() {
+   public ItemStack getRecipeOutput() {
       return this.result;
    }
 
-   public boolean isAdditionIngredient(ItemStack p_241456_1_) {
-      return this.addition.test(p_241456_1_);
+   public boolean isValidAdditionItem(ItemStack addition) {
+      return this.addition.test(addition);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack getToastSymbol() {
+   public ItemStack getIcon() {
       return new ItemStack(Blocks.SMITHING_TABLE);
    }
 
    public ResourceLocation getId() {
-      return this.id;
+      return this.recipeId;
    }
 
    public IRecipeSerializer<?> getSerializer() {
@@ -70,24 +70,24 @@ public class SmithingRecipe implements IRecipe<IInventory> {
    }
 
    public static class Serializer implements IRecipeSerializer<SmithingRecipe> {
-      public SmithingRecipe fromJson(ResourceLocation p_199425_1_, JsonObject p_199425_2_) {
-         Ingredient ingredient = Ingredient.fromJson(JSONUtils.getAsJsonObject(p_199425_2_, "base"));
-         Ingredient ingredient1 = Ingredient.fromJson(JSONUtils.getAsJsonObject(p_199425_2_, "addition"));
-         ItemStack itemstack = ShapedRecipe.itemFromJson(JSONUtils.getAsJsonObject(p_199425_2_, "result"));
-         return new SmithingRecipe(p_199425_1_, ingredient, ingredient1, itemstack);
+      public SmithingRecipe read(ResourceLocation recipeId, JsonObject json) {
+         Ingredient ingredient = Ingredient.deserialize(JSONUtils.getJsonObject(json, "base"));
+         Ingredient ingredient1 = Ingredient.deserialize(JSONUtils.getJsonObject(json, "addition"));
+         ItemStack itemstack = ShapedRecipe.deserializeItem(JSONUtils.getJsonObject(json, "result"));
+         return new SmithingRecipe(recipeId, ingredient, ingredient1, itemstack);
       }
 
-      public SmithingRecipe fromNetwork(ResourceLocation p_199426_1_, PacketBuffer p_199426_2_) {
-         Ingredient ingredient = Ingredient.fromNetwork(p_199426_2_);
-         Ingredient ingredient1 = Ingredient.fromNetwork(p_199426_2_);
-         ItemStack itemstack = p_199426_2_.readItem();
-         return new SmithingRecipe(p_199426_1_, ingredient, ingredient1, itemstack);
+      public SmithingRecipe read(ResourceLocation recipeId, PacketBuffer buffer) {
+         Ingredient ingredient = Ingredient.read(buffer);
+         Ingredient ingredient1 = Ingredient.read(buffer);
+         ItemStack itemstack = buffer.readItemStack();
+         return new SmithingRecipe(recipeId, ingredient, ingredient1, itemstack);
       }
 
-      public void toNetwork(PacketBuffer p_199427_1_, SmithingRecipe p_199427_2_) {
-         p_199427_2_.base.toNetwork(p_199427_1_);
-         p_199427_2_.addition.toNetwork(p_199427_1_);
-         p_199427_1_.writeItem(p_199427_2_.result);
+      public void write(PacketBuffer buffer, SmithingRecipe recipe) {
+         recipe.base.write(buffer);
+         recipe.addition.write(buffer);
+         buffer.writeItemStack(recipe.result);
       }
    }
 }

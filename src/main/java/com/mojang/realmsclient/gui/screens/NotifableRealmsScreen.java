@@ -8,5 +8,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class NotifableRealmsScreen extends RealmsScreen {
-   protected abstract void callback(@Nullable WorldTemplate p_223627_1_);
+   protected abstract void func_223627_a_(@Nullable WorldTemplate p_223627_1_);
 }

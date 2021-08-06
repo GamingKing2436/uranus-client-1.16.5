@@ -7,23 +7,23 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public abstract class ContainerBlock extends Block implements ITileEntityProvider {
-   protected ContainerBlock(AbstractBlock.Properties p_i48446_1_) {
-      super(p_i48446_1_);
+   protected ContainerBlock(AbstractBlock.Properties builder) {
+      super(builder);
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.INVISIBLE;
    }
 
-   public boolean triggerEvent(BlockState p_189539_1_, World p_189539_2_, BlockPos p_189539_3_, int p_189539_4_, int p_189539_5_) {
-      super.triggerEvent(p_189539_1_, p_189539_2_, p_189539_3_, p_189539_4_, p_189539_5_);
-      TileEntity tileentity = p_189539_2_.getBlockEntity(p_189539_3_);
-      return tileentity == null ? false : tileentity.triggerEvent(p_189539_4_, p_189539_5_);
+   public boolean eventReceived(BlockState state, World worldIn, BlockPos pos, int id, int param) {
+      super.eventReceived(state, worldIn, pos, id, param);
+      TileEntity tileentity = worldIn.getTileEntity(pos);
+      return tileentity == null ? false : tileentity.receiveClientEvent(id, param);
    }
 
    @Nullable
-   public INamedContainerProvider getMenuProvider(BlockState p_220052_1_, World p_220052_2_, BlockPos p_220052_3_) {
-      TileEntity tileentity = p_220052_2_.getBlockEntity(p_220052_3_);
+   public INamedContainerProvider getContainer(BlockState state, World worldIn, BlockPos pos) {
+      TileEntity tileentity = worldIn.getTileEntity(pos);
       return tileentity instanceof INamedContainerProvider ? (INamedContainerProvider)tileentity : null;
    }
 }

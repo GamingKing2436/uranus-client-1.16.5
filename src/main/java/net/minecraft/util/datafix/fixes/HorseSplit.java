@@ -10,8 +10,8 @@ import java.util.Objects;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class HorseSplit extends EntityRename {
-   public HorseSplit(Schema p_i49664_1_, boolean p_i49664_2_) {
-      super("EntityHorseSplitFix", p_i49664_1_, p_i49664_2_);
+   public HorseSplit(Schema outputSchema, boolean changesType) {
+      super("EntityHorseSplitFix", outputSchema, changesType);
    }
 
    protected Pair<String, Typed<?>> fix(String p_209149_1_, Typed<?> p_209149_2_) {

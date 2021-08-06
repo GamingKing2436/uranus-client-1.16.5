@@ -107,7 +107,7 @@ public class Commands {
    private static final Logger LOGGER = LogManager.getLogger();
    private final CommandDispatcher<CommandSource> dispatcher = new CommandDispatcher<>();
 
-   public Commands(Commands.EnvironmentType p_i232148_1_) {
+   public Commands(Commands.EnvironmentType envType) {
       AdvancementCommand.register(this.dispatcher);
       AttributeCommand.register(this.dispatcher);
       ExecuteCommand.register(this.dispatcher);
@@ -145,7 +145,7 @@ public class Commands {
       SayCommand.register(this.dispatcher);
       ScheduleCommand.register(this.dispatcher);
       ScoreboardCommand.register(this.dispatcher);
-      SeedCommand.register(this.dispatcher, p_i232148_1_ != Commands.EnvironmentType.INTEGRATED);
+      SeedCommand.register(this.dispatcher, envType != Commands.EnvironmentType.INTEGRATED);
       SetBlockCommand.register(this.dispatcher);
       SpawnPointCommand.register(this.dispatcher);
       SetWorldSpawnCommand.register(this.dispatcher);
@@ -163,11 +163,11 @@ public class Commands {
       TriggerCommand.register(this.dispatcher);
       WeatherCommand.register(this.dispatcher);
       WorldBorderCommand.register(this.dispatcher);
-      if (SharedConstants.IS_RUNNING_IN_IDE) {
+      if (SharedConstants.developmentMode) {
          TestCommand.register(this.dispatcher);
       }
 
-      if (p_i232148_1_.includeDedicated) {
+      if (envType.field_237220_e_) {
          BanIpCommand.register(this.dispatcher);
          BanListCommand.register(this.dispatcher);
          BanCommand.register(this.dispatcher);
@@ -183,7 +183,7 @@ public class Commands {
          WhitelistCommand.register(this.dispatcher);
       }
 
-      if (p_i232148_1_.includeIntegrated) {
+      if (envType.field_237219_d_) {
          PublishCommand.register(this.dispatcher);
       }
 
@@ -195,57 +195,57 @@ public class Commands {
       });
    }
 
-   public int performCommand(CommandSource p_197059_1_, String p_197059_2_) {
-      StringReader stringreader = new StringReader(p_197059_2_);
+   public int handleCommand(CommandSource source, String command) {
+      StringReader stringreader = new StringReader(command);
       if (stringreader.canRead() && stringreader.peek() == '/') {
          stringreader.skip();
       }
 
-      p_197059_1_.getServer().getProfiler().push(p_197059_2_);
+      source.getServer().getProfiler().startSection(command);
 
       try {
          try {
-            return this.dispatcher.execute(stringreader, p_197059_1_);
+            return this.dispatcher.execute(stringreader, source);
          } catch (CommandException commandexception) {
-            p_197059_1_.sendFailure(commandexception.getComponent());
+            source.sendErrorMessage(commandexception.getComponent());
             return 0;
          } catch (CommandSyntaxException commandsyntaxexception) {
-            p_197059_1_.sendFailure(TextComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
+            source.sendErrorMessage(TextComponentUtils.toTextComponent(commandsyntaxexception.getRawMessage()));
             if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
                int j = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
-               IFormattableTextComponent iformattabletextcomponent1 = (new StringTextComponent("")).withStyle(TextFormatting.GRAY).withStyle((p_211705_1_) -> {
-                  return p_211705_1_.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, p_197059_2_));
+               IFormattableTextComponent iformattabletextcomponent1 = (new StringTextComponent("")).mergeStyle(TextFormatting.GRAY).modifyStyle((p_211705_1_) -> {
+                  return p_211705_1_.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, command));
                });
                if (j > 10) {
-                  iformattabletextcomponent1.append("...");
+                  iformattabletextcomponent1.appendString("...");
                }
 
-               iformattabletextcomponent1.append(commandsyntaxexception.getInput().substring(Math.max(0, j - 10), j));
+               iformattabletextcomponent1.appendString(commandsyntaxexception.getInput().substring(Math.max(0, j - 10), j));
                if (j < commandsyntaxexception.getInput().length()) {
-                  ITextComponent itextcomponent = (new StringTextComponent(commandsyntaxexception.getInput().substring(j))).withStyle(new TextFormatting[]{TextFormatting.RED, TextFormatting.UNDERLINE});
+                  ITextComponent itextcomponent = (new StringTextComponent(commandsyntaxexception.getInput().substring(j))).mergeStyle(new TextFormatting[]{TextFormatting.RED, TextFormatting.UNDERLINE});
                   iformattabletextcomponent1.append(itextcomponent);
                }
 
-               iformattabletextcomponent1.append((new TranslationTextComponent("command.context.here")).withStyle(new TextFormatting[]{TextFormatting.RED, TextFormatting.ITALIC}));
-               p_197059_1_.sendFailure(iformattabletextcomponent1);
+               iformattabletextcomponent1.append((new TranslationTextComponent("command.context.here")).mergeStyle(new TextFormatting[]{TextFormatting.RED, TextFormatting.ITALIC}));
+               source.sendErrorMessage(iformattabletextcomponent1);
             }
          } catch (Exception exception) {
             IFormattableTextComponent iformattabletextcomponent = new StringTextComponent(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
             if (LOGGER.isDebugEnabled()) {
-               LOGGER.error("Command exception: {}", p_197059_2_, exception);
+               LOGGER.error("Command exception: {}", command, exception);
                StackTraceElement[] astacktraceelement = exception.getStackTrace();
 
                for(int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
-                  iformattabletextcomponent.append("\n\n").append(astacktraceelement[i].getMethodName()).append("\n ").append(astacktraceelement[i].getFileName()).append(":").append(String.valueOf(astacktraceelement[i].getLineNumber()));
+                  iformattabletextcomponent.appendString("\n\n").appendString(astacktraceelement[i].getMethodName()).appendString("\n ").appendString(astacktraceelement[i].getFileName()).appendString(":").appendString(String.valueOf(astacktraceelement[i].getLineNumber()));
                }
             }
 
-            p_197059_1_.sendFailure((new TranslationTextComponent("command.failed")).withStyle((p_211704_1_) -> {
-               return p_211704_1_.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, iformattabletextcomponent));
+            source.sendErrorMessage((new TranslationTextComponent("command.failed")).modifyStyle((p_211704_1_) -> {
+               return p_211704_1_.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, iformattabletextcomponent));
             }));
-            if (SharedConstants.IS_RUNNING_IN_IDE) {
-               p_197059_1_.sendFailure(new StringTextComponent(Util.describeError(exception)));
-               LOGGER.error("'" + p_197059_2_ + "' threw an exception", (Throwable)exception);
+            if (SharedConstants.developmentMode) {
+               source.sendErrorMessage(new StringTextComponent(Util.getMessage(exception)));
+               LOGGER.error("'" + command + "' threw an exception", (Throwable)exception);
             }
 
             return 0;
@@ -253,21 +253,21 @@ public class Commands {
 
          return 0;
       } finally {
-         p_197059_1_.getServer().getProfiler().pop();
+         source.getServer().getProfiler().endSection();
       }
    }
 
-   public void sendCommands(ServerPlayerEntity p_197051_1_) {
+   public void send(ServerPlayerEntity player) {
       Map<CommandNode<CommandSource>, CommandNode<ISuggestionProvider>> map = Maps.newHashMap();
       RootCommandNode<ISuggestionProvider> rootcommandnode = new RootCommandNode<>();
       map.put(this.dispatcher.getRoot(), rootcommandnode);
-      this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, p_197051_1_.createCommandSourceStack(), map);
-      p_197051_1_.connection.send(new SCommandListPacket(rootcommandnode));
+      this.commandSourceNodesToSuggestionNodes(this.dispatcher.getRoot(), rootcommandnode, player.getCommandSource(), map);
+      player.connection.sendPacket(new SCommandListPacket(rootcommandnode));
    }
 
-   private void fillUsableCommands(CommandNode<CommandSource> p_197052_1_, CommandNode<ISuggestionProvider> p_197052_2_, CommandSource p_197052_3_, Map<CommandNode<CommandSource>, CommandNode<ISuggestionProvider>> p_197052_4_) {
-      for(CommandNode<CommandSource> commandnode : p_197052_1_.getChildren()) {
-         if (commandnode.canUse(p_197052_3_)) {
+   private void commandSourceNodesToSuggestionNodes(CommandNode<CommandSource> rootCommandSource, CommandNode<ISuggestionProvider> rootSuggestion, CommandSource source, Map<CommandNode<CommandSource>, CommandNode<ISuggestionProvider>> commandNodeToSuggestionNode) {
+      for(CommandNode<CommandSource> commandnode : rootCommandSource.getChildren()) {
+         if (commandnode.canUse(source)) {
             ArgumentBuilder<ISuggestionProvider, ?> argumentbuilder = (ArgumentBuilder) commandnode.createBuilder();
             argumentbuilder.requires((p_197060_0_) -> {
                return true;
@@ -281,37 +281,37 @@ public class Commands {
             if (argumentbuilder instanceof RequiredArgumentBuilder) {
                RequiredArgumentBuilder<ISuggestionProvider, ?> requiredargumentbuilder = (RequiredArgumentBuilder)argumentbuilder;
                if (requiredargumentbuilder.getSuggestionsProvider() != null) {
-                  requiredargumentbuilder.suggests(SuggestionProviders.safelySwap(requiredargumentbuilder.getSuggestionsProvider()));
+                  requiredargumentbuilder.suggests(SuggestionProviders.ensureKnown(requiredargumentbuilder.getSuggestionsProvider()));
                }
             }
 
             if (argumentbuilder.getRedirect() != null) {
-               argumentbuilder.redirect(p_197052_4_.get(argumentbuilder.getRedirect()));
+               argumentbuilder.redirect(commandNodeToSuggestionNode.get(argumentbuilder.getRedirect()));
             }
 
             CommandNode<ISuggestionProvider> commandnode1 = argumentbuilder.build();
-            p_197052_4_.put(commandnode, commandnode1);
-            p_197052_2_.addChild(commandnode1);
+            commandNodeToSuggestionNode.put(commandnode, commandnode1);
+            rootSuggestion.addChild(commandnode1);
             if (!commandnode.getChildren().isEmpty()) {
-               this.fillUsableCommands(commandnode, commandnode1, p_197052_3_, p_197052_4_);
+               this.commandSourceNodesToSuggestionNodes(commandnode, commandnode1, source, commandNodeToSuggestionNode);
             }
          }
       }
 
    }
 
-   public static LiteralArgumentBuilder<CommandSource> literal(String p_197057_0_) {
-      return LiteralArgumentBuilder.literal(p_197057_0_);
+   public static LiteralArgumentBuilder<CommandSource> literal(String name) {
+      return LiteralArgumentBuilder.literal(name);
    }
 
-   public static <T> RequiredArgumentBuilder<CommandSource, T> argument(String p_197056_0_, ArgumentType<T> p_197056_1_) {
-      return RequiredArgumentBuilder.argument(p_197056_0_, p_197056_1_);
+   public static <T> RequiredArgumentBuilder<CommandSource, T> argument(String name, ArgumentType<T> type) {
+      return RequiredArgumentBuilder.argument(name, type);
    }
 
-   public static Predicate<String> createValidator(Commands.IParser p_212590_0_) {
+   public static Predicate<String> predicate(Commands.IParser parser) {
       return (p_212591_1_) -> {
          try {
-            p_212590_0_.parse(new StringReader(p_212591_1_));
+            parser.parse(new StringReader(p_212591_1_));
             return true;
          } catch (CommandSyntaxException commandsyntaxexception) {
             return false;
@@ -324,7 +324,7 @@ public class Commands {
    }
 
    @Nullable
-   public static <S> CommandSyntaxException getParseException(ParseResults<S> p_227481_0_) {
+   public static <S> CommandSyntaxException func_227481_a_(ParseResults<S> p_227481_0_) {
       if (!p_227481_0_.getReader().canRead()) {
          return null;
       } else if (p_227481_0_.getExceptions().size() == 1) {
@@ -334,11 +334,11 @@ public class Commands {
       }
    }
 
-   public static void validate() {
+   public static void func_242986_b() {
       RootCommandNode<CommandSource> rootcommandnode = (new Commands(Commands.EnvironmentType.ALL)).getDispatcher().getRoot();
-      Set<ArgumentType<?>> set = ArgumentTypes.findUsedArgumentTypes(rootcommandnode);
+      Set<ArgumentType<?>> set = ArgumentTypes.func_243511_a(rootcommandnode);
       Set<ArgumentType<?>> set1 = set.stream().filter((p_242987_0_) -> {
-         return !ArgumentTypes.isTypeRegistered(p_242987_0_);
+         return !ArgumentTypes.func_243510_a(p_242987_0_);
       }).collect(Collectors.toSet());
       if (!set1.isEmpty()) {
          LOGGER.warn("Missing type registration for following arguments:\n {}", set1.stream().map((p_242985_0_) -> {
@@ -353,12 +353,12 @@ public class Commands {
       DEDICATED(false, true),
       INTEGRATED(true, false);
 
-      private final boolean includeIntegrated;
-      private final boolean includeDedicated;
+      private final boolean field_237219_d_;
+      private final boolean field_237220_e_;
 
       private EnvironmentType(boolean p_i232149_3_, boolean p_i232149_4_) {
-         this.includeIntegrated = p_i232149_3_;
-         this.includeDedicated = p_i232149_4_;
+         this.field_237219_d_ = p_i232149_3_;
+         this.field_237220_e_ = p_i232149_4_;
       }
    }
 

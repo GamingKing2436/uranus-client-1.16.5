@@ -17,33 +17,33 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class ScoreboardSlotArgument implements ArgumentType<Integer> {
    private static final Collection<String> EXAMPLES = Arrays.asList("sidebar", "foo.bar");
-   public static final DynamicCommandExceptionType ERROR_INVALID_VALUE = new DynamicCommandExceptionType((p_208678_0_) -> {
+   public static final DynamicCommandExceptionType SCOREBOARD_UNKNOWN_DISPLAY_SLOT = new DynamicCommandExceptionType((p_208678_0_) -> {
       return new TranslationTextComponent("argument.scoreboardDisplaySlot.invalid", p_208678_0_);
    });
 
    private ScoreboardSlotArgument() {
    }
 
-   public static ScoreboardSlotArgument displaySlot() {
+   public static ScoreboardSlotArgument scoreboardSlot() {
       return new ScoreboardSlotArgument();
    }
 
-   public static int getDisplaySlot(CommandContext<CommandSource> p_197217_0_, String p_197217_1_) {
-      return p_197217_0_.getArgument(p_197217_1_, Integer.class);
+   public static int getScoreboardSlot(CommandContext<CommandSource> context, String name) {
+      return context.getArgument(name, Integer.class);
    }
 
    public Integer parse(StringReader p_parse_1_) throws CommandSyntaxException {
       String s = p_parse_1_.readUnquotedString();
-      int i = Scoreboard.getDisplaySlotByName(s);
+      int i = Scoreboard.getObjectiveDisplaySlotNumber(s);
       if (i == -1) {
-         throw ERROR_INVALID_VALUE.create(s);
+         throw SCOREBOARD_UNKNOWN_DISPLAY_SLOT.create(s);
       } else {
          return i;
       }
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
-      return ISuggestionProvider.suggest(Scoreboard.getDisplaySlotNames(), p_listSuggestions_2_);
+      return ISuggestionProvider.suggest(Scoreboard.getDisplaySlotStrings(), p_listSuggestions_2_);
    }
 
    public Collection<String> getExamples() {

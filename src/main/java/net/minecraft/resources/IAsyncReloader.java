@@ -6,17 +6,17 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IAsyncReloader {
-   CompletableFuture<Unit> done();
+   CompletableFuture<Unit> onceDone();
 
    @OnlyIn(Dist.CLIENT)
-   float getActualProgress();
+   float estimateExecutionSpeed();
 
    @OnlyIn(Dist.CLIENT)
-   boolean isApplying();
+   boolean asyncPartDone();
 
    @OnlyIn(Dist.CLIENT)
-   boolean isDone();
+   boolean fullyDone();
 
    @OnlyIn(Dist.CLIENT)
-   void checkExceptions();
+   void join();
 }

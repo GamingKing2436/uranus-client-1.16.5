@@ -17,23 +17,23 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class ScorePlayerTeam extends Team {
    private final Scoreboard scoreboard;
    private final String name;
-   private final Set<String> players = Sets.newHashSet();
+   private final Set<String> membershipSet = Sets.newHashSet();
    private ITextComponent displayName;
-   private ITextComponent playerPrefix = StringTextComponent.EMPTY;
-   private ITextComponent playerSuffix = StringTextComponent.EMPTY;
+   private ITextComponent prefix = StringTextComponent.EMPTY;
+   private ITextComponent suffix = StringTextComponent.EMPTY;
    private boolean allowFriendlyFire = true;
-   private boolean seeFriendlyInvisibles = true;
+   private boolean canSeeFriendlyInvisibles = true;
    private Team.Visible nameTagVisibility = Team.Visible.ALWAYS;
    private Team.Visible deathMessageVisibility = Team.Visible.ALWAYS;
    private TextFormatting color = TextFormatting.RESET;
    private Team.CollisionRule collisionRule = Team.CollisionRule.ALWAYS;
-   private final Style displayNameStyle;
+   private final Style field_237499_m_;
 
-   public ScorePlayerTeam(Scoreboard p_i2308_1_, String p_i2308_2_) {
-      this.scoreboard = p_i2308_1_;
-      this.name = p_i2308_2_;
-      this.displayName = new StringTextComponent(p_i2308_2_);
-      this.displayNameStyle = Style.EMPTY.withInsertion(p_i2308_2_).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(p_i2308_2_)));
+   public ScorePlayerTeam(Scoreboard scoreboardIn, String name) {
+      this.scoreboard = scoreboardIn;
+      this.name = name;
+      this.displayName = new StringTextComponent(name);
+      this.field_237499_m_ = Style.EMPTY.setInsertion(name).setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(name)));
    }
 
    public String getName() {
@@ -44,76 +44,76 @@ public class ScorePlayerTeam extends Team {
       return this.displayName;
    }
 
-   public IFormattableTextComponent getFormattedDisplayName() {
-      IFormattableTextComponent iformattabletextcomponent = TextComponentUtils.wrapInSquareBrackets(this.displayName.copy().withStyle(this.displayNameStyle));
+   public IFormattableTextComponent func_237501_d_() {
+      IFormattableTextComponent iformattabletextcomponent = TextComponentUtils.wrapWithSquareBrackets(this.displayName.deepCopy().mergeStyle(this.field_237499_m_));
       TextFormatting textformatting = this.getColor();
       if (textformatting != TextFormatting.RESET) {
-         iformattabletextcomponent.withStyle(textformatting);
+         iformattabletextcomponent.mergeStyle(textformatting);
       }
 
       return iformattabletextcomponent;
    }
 
-   public void setDisplayName(ITextComponent p_96664_1_) {
-      if (p_96664_1_ == null) {
+   public void setDisplayName(ITextComponent name) {
+      if (name == null) {
          throw new IllegalArgumentException("Name cannot be null");
       } else {
-         this.displayName = p_96664_1_;
+         this.displayName = name;
          this.scoreboard.onTeamChanged(this);
       }
    }
 
-   public void setPlayerPrefix(@Nullable ITextComponent p_207408_1_) {
-      this.playerPrefix = p_207408_1_ == null ? StringTextComponent.EMPTY : p_207408_1_;
+   public void setPrefix(@Nullable ITextComponent p_207408_1_) {
+      this.prefix = p_207408_1_ == null ? StringTextComponent.EMPTY : p_207408_1_;
       this.scoreboard.onTeamChanged(this);
    }
 
-   public ITextComponent getPlayerPrefix() {
-      return this.playerPrefix;
+   public ITextComponent getPrefix() {
+      return this.prefix;
    }
 
-   public void setPlayerSuffix(@Nullable ITextComponent p_207409_1_) {
-      this.playerSuffix = p_207409_1_ == null ? StringTextComponent.EMPTY : p_207409_1_;
+   public void setSuffix(@Nullable ITextComponent p_207409_1_) {
+      this.suffix = p_207409_1_ == null ? StringTextComponent.EMPTY : p_207409_1_;
       this.scoreboard.onTeamChanged(this);
    }
 
-   public ITextComponent getPlayerSuffix() {
-      return this.playerSuffix;
+   public ITextComponent getSuffix() {
+      return this.suffix;
    }
 
-   public Collection<String> getPlayers() {
-      return this.players;
+   public Collection<String> getMembershipCollection() {
+      return this.membershipSet;
    }
 
-   public IFormattableTextComponent getFormattedName(ITextComponent p_230427_1_) {
-      IFormattableTextComponent iformattabletextcomponent = (new StringTextComponent("")).append(this.playerPrefix).append(p_230427_1_).append(this.playerSuffix);
+   public IFormattableTextComponent func_230427_d_(ITextComponent p_230427_1_) {
+      IFormattableTextComponent iformattabletextcomponent = (new StringTextComponent("")).append(this.prefix).append(p_230427_1_).append(this.suffix);
       TextFormatting textformatting = this.getColor();
       if (textformatting != TextFormatting.RESET) {
-         iformattabletextcomponent.withStyle(textformatting);
+         iformattabletextcomponent.mergeStyle(textformatting);
       }
 
       return iformattabletextcomponent;
    }
 
-   public static IFormattableTextComponent formatNameForTeam(@Nullable Team p_237500_0_, ITextComponent p_237500_1_) {
-      return p_237500_0_ == null ? p_237500_1_.copy() : p_237500_0_.getFormattedName(p_237500_1_);
+   public static IFormattableTextComponent func_237500_a_(@Nullable Team p_237500_0_, ITextComponent p_237500_1_) {
+      return p_237500_0_ == null ? p_237500_1_.deepCopy() : p_237500_0_.func_230427_d_(p_237500_1_);
    }
 
-   public boolean isAllowFriendlyFire() {
+   public boolean getAllowFriendlyFire() {
       return this.allowFriendlyFire;
    }
 
-   public void setAllowFriendlyFire(boolean p_96660_1_) {
-      this.allowFriendlyFire = p_96660_1_;
+   public void setAllowFriendlyFire(boolean friendlyFire) {
+      this.allowFriendlyFire = friendlyFire;
       this.scoreboard.onTeamChanged(this);
    }
 
-   public boolean canSeeFriendlyInvisibles() {
-      return this.seeFriendlyInvisibles;
+   public boolean getSeeFriendlyInvisiblesEnabled() {
+      return this.canSeeFriendlyInvisibles;
    }
 
-   public void setSeeFriendlyInvisibles(boolean p_98300_1_) {
-      this.seeFriendlyInvisibles = p_98300_1_;
+   public void setSeeFriendlyInvisiblesEnabled(boolean friendlyInvisibles) {
+      this.canSeeFriendlyInvisibles = friendlyInvisibles;
       this.scoreboard.onTeamChanged(this);
    }
 
@@ -125,13 +125,13 @@ public class ScorePlayerTeam extends Team {
       return this.deathMessageVisibility;
    }
 
-   public void setNameTagVisibility(Team.Visible p_178772_1_) {
-      this.nameTagVisibility = p_178772_1_;
+   public void setNameTagVisibility(Team.Visible visibility) {
+      this.nameTagVisibility = visibility;
       this.scoreboard.onTeamChanged(this);
    }
 
-   public void setDeathMessageVisibility(Team.Visible p_178773_1_) {
-      this.deathMessageVisibility = p_178773_1_;
+   public void setDeathMessageVisibility(Team.Visible visibility) {
+      this.deathMessageVisibility = visibility;
       this.scoreboard.onTeamChanged(this);
    }
 
@@ -139,18 +139,18 @@ public class ScorePlayerTeam extends Team {
       return this.collisionRule;
    }
 
-   public void setCollisionRule(Team.CollisionRule p_186682_1_) {
-      this.collisionRule = p_186682_1_;
+   public void setCollisionRule(Team.CollisionRule rule) {
+      this.collisionRule = rule;
       this.scoreboard.onTeamChanged(this);
    }
 
-   public int packOptions() {
+   public int getFriendlyFlags() {
       int i = 0;
-      if (this.isAllowFriendlyFire()) {
+      if (this.getAllowFriendlyFire()) {
          i |= 1;
       }
 
-      if (this.canSeeFriendlyInvisibles()) {
+      if (this.getSeeFriendlyInvisiblesEnabled()) {
          i |= 2;
       }
 
@@ -158,13 +158,13 @@ public class ScorePlayerTeam extends Team {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void unpackOptions(int p_98298_1_) {
-      this.setAllowFriendlyFire((p_98298_1_ & 1) > 0);
-      this.setSeeFriendlyInvisibles((p_98298_1_ & 2) > 0);
+   public void setFriendlyFlags(int flags) {
+      this.setAllowFriendlyFire((flags & 1) > 0);
+      this.setSeeFriendlyInvisiblesEnabled((flags & 2) > 0);
    }
 
-   public void setColor(TextFormatting p_178774_1_) {
-      this.color = p_178774_1_;
+   public void setColor(TextFormatting color) {
+      this.color = color;
       this.scoreboard.onTeamChanged(this);
    }
 

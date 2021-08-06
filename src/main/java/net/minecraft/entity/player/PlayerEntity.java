@@ -110,248 +110,248 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class PlayerEntity extends LivingEntity {
-   public static final EntitySize STANDING_DIMENSIONS = EntitySize.scalable(0.6F, 1.8F);
-   private static final Map<Pose, EntitySize> POSES = ImmutableMap.<Pose, EntitySize>builder().put(Pose.STANDING, STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntitySize.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntitySize.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, EntitySize.scalable(0.6F, 0.6F)).put(Pose.CROUCHING, EntitySize.scalable(0.6F, 1.5F)).put(Pose.DYING, EntitySize.fixed(0.2F, 0.2F)).build();
-   private static final DataParameter<Float> DATA_PLAYER_ABSORPTION_ID = EntityDataManager.defineId(PlayerEntity.class, DataSerializers.FLOAT);
-   private static final DataParameter<Integer> DATA_SCORE_ID = EntityDataManager.defineId(PlayerEntity.class, DataSerializers.INT);
-   protected static final DataParameter<Byte> DATA_PLAYER_MODE_CUSTOMISATION = EntityDataManager.defineId(PlayerEntity.class, DataSerializers.BYTE);
-   protected static final DataParameter<Byte> DATA_PLAYER_MAIN_HAND = EntityDataManager.defineId(PlayerEntity.class, DataSerializers.BYTE);
-   protected static final DataParameter<CompoundNBT> DATA_SHOULDER_LEFT = EntityDataManager.defineId(PlayerEntity.class, DataSerializers.COMPOUND_TAG);
-   protected static final DataParameter<CompoundNBT> DATA_SHOULDER_RIGHT = EntityDataManager.defineId(PlayerEntity.class, DataSerializers.COMPOUND_TAG);
+   public static final EntitySize STANDING_SIZE = EntitySize.flexible(0.6F, 1.8F);
+   private static final Map<Pose, EntitySize> SIZE_BY_POSE = ImmutableMap.<Pose, EntitySize>builder().put(Pose.STANDING, STANDING_SIZE).put(Pose.SLEEPING, SLEEPING_SIZE).put(Pose.FALL_FLYING, EntitySize.flexible(0.6F, 0.6F)).put(Pose.SWIMMING, EntitySize.flexible(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, EntitySize.flexible(0.6F, 0.6F)).put(Pose.CROUCHING, EntitySize.flexible(0.6F, 1.5F)).put(Pose.DYING, EntitySize.fixed(0.2F, 0.2F)).build();
+   private static final DataParameter<Float> ABSORPTION = EntityDataManager.createKey(PlayerEntity.class, DataSerializers.FLOAT);
+   private static final DataParameter<Integer> PLAYER_SCORE = EntityDataManager.createKey(PlayerEntity.class, DataSerializers.VARINT);
+   protected static final DataParameter<Byte> PLAYER_MODEL_FLAG = EntityDataManager.createKey(PlayerEntity.class, DataSerializers.BYTE);
+   protected static final DataParameter<Byte> MAIN_HAND = EntityDataManager.createKey(PlayerEntity.class, DataSerializers.BYTE);
+   protected static final DataParameter<CompoundNBT> LEFT_SHOULDER_ENTITY = EntityDataManager.createKey(PlayerEntity.class, DataSerializers.COMPOUND_NBT);
+   protected static final DataParameter<CompoundNBT> RIGHT_SHOULDER_ENTITY = EntityDataManager.createKey(PlayerEntity.class, DataSerializers.COMPOUND_NBT);
    private long timeEntitySatOnShoulder;
    public final PlayerInventory inventory = new PlayerInventory(this);
-   protected EnderChestInventory enderChestInventory = new EnderChestInventory();
-   public final PlayerContainer inventoryMenu;
-   public Container containerMenu;
-   protected FoodStats foodData = new FoodStats();
-   protected int jumpTriggerTime;
-   public float oBob;
-   public float bob;
-   public int takeXpDelay;
-   public double xCloakO;
-   public double yCloakO;
-   public double zCloakO;
-   public double xCloak;
-   public double yCloak;
-   public double zCloak;
-   private int sleepCounter;
-   protected boolean wasUnderwater;
+   protected EnderChestInventory enterChestInventory = new EnderChestInventory();
+   public final PlayerContainer container;
+   public Container openContainer;
+   protected FoodStats foodStats = new FoodStats();
+   protected int flyToggleTimer;
+   public float prevCameraYaw;
+   public float cameraYaw;
+   public int xpCooldown;
+   public double prevChasingPosX;
+   public double prevChasingPosY;
+   public double prevChasingPosZ;
+   public double chasingPosX;
+   public double chasingPosY;
+   public double chasingPosZ;
+   private int sleepTimer;
+   protected boolean eyesInWaterPlayer;
    public final PlayerAbilities abilities = new PlayerAbilities();
    public int experienceLevel;
-   public int totalExperience;
-   public float experienceProgress;
-   protected int enchantmentSeed;
-   protected final float defaultFlySpeed = 0.02F;
-   private int lastLevelUpTime;
+   public int experienceTotal;
+   public float experience;
+   protected int xpSeed;
+   protected final float speedInAir = 0.02F;
+   private int lastXPSound;
    private final GameProfile gameProfile;
    @OnlyIn(Dist.CLIENT)
-   private boolean reducedDebugInfo;
-   private ItemStack lastItemInMainHand = ItemStack.EMPTY;
-   private final CooldownTracker cooldowns = this.createItemCooldowns();
+   private boolean hasReducedDebug;
+   private ItemStack itemStackMainHand = ItemStack.EMPTY;
+   private final CooldownTracker cooldownTracker = this.createCooldownTracker();
    @Nullable
-   public FishingBobberEntity fishing;
+   public FishingBobberEntity fishingBobber;
 
    public PlayerEntity(World p_i241920_1_, BlockPos p_i241920_2_, float p_i241920_3_, GameProfile p_i241920_4_) {
       super(EntityType.PLAYER, p_i241920_1_);
-      this.setUUID(createPlayerUUID(p_i241920_4_));
+      this.setUniqueId(getUUID(p_i241920_4_));
       this.gameProfile = p_i241920_4_;
-      this.inventoryMenu = new PlayerContainer(this.inventory, !p_i241920_1_.isClientSide, this);
-      this.containerMenu = this.inventoryMenu;
-      this.moveTo((double)p_i241920_2_.getX() + 0.5D, (double)(p_i241920_2_.getY() + 1), (double)p_i241920_2_.getZ() + 0.5D, p_i241920_3_, 0.0F);
-      this.rotOffs = 180.0F;
+      this.container = new PlayerContainer(this.inventory, !p_i241920_1_.isRemote, this);
+      this.openContainer = this.container;
+      this.setLocationAndAngles((double)p_i241920_2_.getX() + 0.5D, (double)(p_i241920_2_.getY() + 1), (double)p_i241920_2_.getZ() + 0.5D, p_i241920_3_, 0.0F);
+      this.unused180 = 180.0F;
    }
 
-   public boolean blockActionRestricted(World p_223729_1_, BlockPos p_223729_2_, GameType p_223729_3_) {
-      if (!p_223729_3_.isBlockPlacingRestricted()) {
+   public boolean blockActionRestricted(World worldIn, BlockPos pos, GameType gameMode) {
+      if (!gameMode.hasLimitedInteractions()) {
          return false;
-      } else if (p_223729_3_ == GameType.SPECTATOR) {
+      } else if (gameMode == GameType.SPECTATOR) {
          return true;
-      } else if (this.mayBuild()) {
+      } else if (this.isAllowEdit()) {
          return false;
       } else {
-         ItemStack itemstack = this.getMainHandItem();
-         return itemstack.isEmpty() || !itemstack.hasAdventureModeBreakTagForBlock(p_223729_1_.getTagManager(), new CachedBlockInfo(p_223729_1_, p_223729_2_, false));
+         ItemStack itemstack = this.getHeldItemMainhand();
+         return itemstack.isEmpty() || !itemstack.canDestroy(worldIn.getTags(), new CachedBlockInfo(worldIn, pos, false));
       }
    }
 
-   public static AttributeModifierMap.MutableAttribute createAttributes() {
-      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_DAMAGE, 1.0D).add(Attributes.MOVEMENT_SPEED, (double)0.1F).add(Attributes.ATTACK_SPEED).add(Attributes.LUCK);
+   public static AttributeModifierMap.MutableAttribute func_234570_el_() {
+      return LivingEntity.registerAttributes().createMutableAttribute(Attributes.ATTACK_DAMAGE, 1.0D).createMutableAttribute(Attributes.MOVEMENT_SPEED, (double)0.1F).createMutableAttribute(Attributes.ATTACK_SPEED).createMutableAttribute(Attributes.LUCK);
    }
 
-   protected void defineSynchedData() {
-      super.defineSynchedData();
-      this.entityData.define(DATA_PLAYER_ABSORPTION_ID, 0.0F);
-      this.entityData.define(DATA_SCORE_ID, 0);
-      this.entityData.define(DATA_PLAYER_MODE_CUSTOMISATION, (byte)0);
-      this.entityData.define(DATA_PLAYER_MAIN_HAND, (byte)1);
-      this.entityData.define(DATA_SHOULDER_LEFT, new CompoundNBT());
-      this.entityData.define(DATA_SHOULDER_RIGHT, new CompoundNBT());
+   protected void registerData() {
+      super.registerData();
+      this.dataManager.register(ABSORPTION, 0.0F);
+      this.dataManager.register(PLAYER_SCORE, 0);
+      this.dataManager.register(PLAYER_MODEL_FLAG, (byte)0);
+      this.dataManager.register(MAIN_HAND, (byte)1);
+      this.dataManager.register(LEFT_SHOULDER_ENTITY, new CompoundNBT());
+      this.dataManager.register(RIGHT_SHOULDER_ENTITY, new CompoundNBT());
    }
 
    public void tick() {
-      this.noPhysics = this.isSpectator();
+      this.noClip = this.isSpectator();
       if (this.isSpectator()) {
          this.onGround = false;
       }
 
-      if (this.takeXpDelay > 0) {
-         --this.takeXpDelay;
+      if (this.xpCooldown > 0) {
+         --this.xpCooldown;
       }
 
       if (this.isSleeping()) {
-         ++this.sleepCounter;
-         if (this.sleepCounter > 100) {
-            this.sleepCounter = 100;
+         ++this.sleepTimer;
+         if (this.sleepTimer > 100) {
+            this.sleepTimer = 100;
          }
 
-         if (!this.level.isClientSide && this.level.isDay()) {
+         if (!this.world.isRemote && this.world.isDaytime()) {
             this.stopSleepInBed(false, true);
          }
-      } else if (this.sleepCounter > 0) {
-         ++this.sleepCounter;
-         if (this.sleepCounter >= 110) {
-            this.sleepCounter = 0;
+      } else if (this.sleepTimer > 0) {
+         ++this.sleepTimer;
+         if (this.sleepTimer >= 110) {
+            this.sleepTimer = 0;
          }
       }
 
-      this.updateIsUnderwater();
+      this.updateEyesInWaterPlayer();
       super.tick();
-      if (!this.level.isClientSide && this.containerMenu != null && !this.containerMenu.stillValid(this)) {
-         this.closeContainer();
-         this.containerMenu = this.inventoryMenu;
+      if (!this.world.isRemote && this.openContainer != null && !this.openContainer.canInteractWith(this)) {
+         this.closeScreen();
+         this.openContainer = this.container;
       }
 
-      this.moveCloak();
-      if (!this.level.isClientSide) {
-         this.foodData.tick(this);
-         this.awardStat(Stats.PLAY_ONE_MINUTE);
+      this.updateCape();
+      if (!this.world.isRemote) {
+         this.foodStats.tick(this);
+         this.addStat(Stats.PLAY_ONE_MINUTE);
          if (this.isAlive()) {
-            this.awardStat(Stats.TIME_SINCE_DEATH);
+            this.addStat(Stats.TIME_SINCE_DEATH);
          }
 
          if (this.isDiscrete()) {
-            this.awardStat(Stats.CROUCH_TIME);
+            this.addStat(Stats.SNEAK_TIME);
          }
 
          if (!this.isSleeping()) {
-            this.awardStat(Stats.TIME_SINCE_REST);
+            this.addStat(Stats.TIME_SINCE_REST);
          }
       }
 
       int i = 29999999;
-      double d0 = MathHelper.clamp(this.getX(), -2.9999999E7D, 2.9999999E7D);
-      double d1 = MathHelper.clamp(this.getZ(), -2.9999999E7D, 2.9999999E7D);
-      if (d0 != this.getX() || d1 != this.getZ()) {
-         this.setPos(d0, this.getY(), d1);
+      double d0 = MathHelper.clamp(this.getPosX(), -2.9999999E7D, 2.9999999E7D);
+      double d1 = MathHelper.clamp(this.getPosZ(), -2.9999999E7D, 2.9999999E7D);
+      if (d0 != this.getPosX() || d1 != this.getPosZ()) {
+         this.setPosition(d0, this.getPosY(), d1);
       }
 
-      ++this.attackStrengthTicker;
-      ItemStack itemstack = this.getMainHandItem();
-      if (!ItemStack.matches(this.lastItemInMainHand, itemstack)) {
-         if (!ItemStack.isSameIgnoreDurability(this.lastItemInMainHand, itemstack)) {
-            this.resetAttackStrengthTicker();
+      ++this.ticksSinceLastSwing;
+      ItemStack itemstack = this.getHeldItemMainhand();
+      if (!ItemStack.areItemStacksEqual(this.itemStackMainHand, itemstack)) {
+         if (!ItemStack.areItemsEqualIgnoreDurability(this.itemStackMainHand, itemstack)) {
+            this.resetCooldown();
          }
 
-         this.lastItemInMainHand = itemstack.copy();
+         this.itemStackMainHand = itemstack.copy();
       }
 
-      this.turtleHelmetTick();
-      this.cooldowns.tick();
-      this.updatePlayerPose();
+      this.updateTurtleHelmet();
+      this.cooldownTracker.tick();
+      this.updatePose();
    }
 
    public boolean isSecondaryUseActive() {
-      return this.isShiftKeyDown();
+      return this.isSneaking();
    }
 
    protected boolean wantsToStopRiding() {
-      return this.isShiftKeyDown();
+      return this.isSneaking();
    }
 
    protected boolean isStayingOnGroundSurface() {
-      return this.isShiftKeyDown();
+      return this.isSneaking();
    }
 
-   protected boolean updateIsUnderwater() {
-      this.wasUnderwater = this.isEyeInFluid(FluidTags.WATER);
-      return this.wasUnderwater;
+   protected boolean updateEyesInWaterPlayer() {
+      this.eyesInWaterPlayer = this.areEyesInFluid(FluidTags.WATER);
+      return this.eyesInWaterPlayer;
    }
 
-   private void turtleHelmetTick() {
-      ItemStack itemstack = this.getItemBySlot(EquipmentSlotType.HEAD);
-      if (itemstack.getItem() == Items.TURTLE_HELMET && !this.isEyeInFluid(FluidTags.WATER)) {
-         this.addEffect(new EffectInstance(Effects.WATER_BREATHING, 200, 0, false, false, true));
+   private void updateTurtleHelmet() {
+      ItemStack itemstack = this.getItemStackFromSlot(EquipmentSlotType.HEAD);
+      if (itemstack.getItem() == Items.TURTLE_HELMET && !this.areEyesInFluid(FluidTags.WATER)) {
+         this.addPotionEffect(new EffectInstance(Effects.WATER_BREATHING, 200, 0, false, false, true));
       }
 
    }
 
-   protected CooldownTracker createItemCooldowns() {
+   protected CooldownTracker createCooldownTracker() {
       return new CooldownTracker();
    }
 
-   private void moveCloak() {
-      this.xCloakO = this.xCloak;
-      this.yCloakO = this.yCloak;
-      this.zCloakO = this.zCloak;
-      double d0 = this.getX() - this.xCloak;
-      double d1 = this.getY() - this.yCloak;
-      double d2 = this.getZ() - this.zCloak;
+   private void updateCape() {
+      this.prevChasingPosX = this.chasingPosX;
+      this.prevChasingPosY = this.chasingPosY;
+      this.prevChasingPosZ = this.chasingPosZ;
+      double d0 = this.getPosX() - this.chasingPosX;
+      double d1 = this.getPosY() - this.chasingPosY;
+      double d2 = this.getPosZ() - this.chasingPosZ;
       double d3 = 10.0D;
       if (d0 > 10.0D) {
-         this.xCloak = this.getX();
-         this.xCloakO = this.xCloak;
+         this.chasingPosX = this.getPosX();
+         this.prevChasingPosX = this.chasingPosX;
       }
 
       if (d2 > 10.0D) {
-         this.zCloak = this.getZ();
-         this.zCloakO = this.zCloak;
+         this.chasingPosZ = this.getPosZ();
+         this.prevChasingPosZ = this.chasingPosZ;
       }
 
       if (d1 > 10.0D) {
-         this.yCloak = this.getY();
-         this.yCloakO = this.yCloak;
+         this.chasingPosY = this.getPosY();
+         this.prevChasingPosY = this.chasingPosY;
       }
 
       if (d0 < -10.0D) {
-         this.xCloak = this.getX();
-         this.xCloakO = this.xCloak;
+         this.chasingPosX = this.getPosX();
+         this.prevChasingPosX = this.chasingPosX;
       }
 
       if (d2 < -10.0D) {
-         this.zCloak = this.getZ();
-         this.zCloakO = this.zCloak;
+         this.chasingPosZ = this.getPosZ();
+         this.prevChasingPosZ = this.chasingPosZ;
       }
 
       if (d1 < -10.0D) {
-         this.yCloak = this.getY();
-         this.yCloakO = this.yCloak;
+         this.chasingPosY = this.getPosY();
+         this.prevChasingPosY = this.chasingPosY;
       }
 
-      this.xCloak += d0 * 0.25D;
-      this.zCloak += d2 * 0.25D;
-      this.yCloak += d1 * 0.25D;
+      this.chasingPosX += d0 * 0.25D;
+      this.chasingPosZ += d2 * 0.25D;
+      this.chasingPosY += d1 * 0.25D;
    }
 
-   protected void updatePlayerPose() {
-      if (this.canEnterPose(Pose.SWIMMING)) {
+   protected void updatePose() {
+      if (this.isPoseClear(Pose.SWIMMING)) {
          Pose pose;
-         if (this.isFallFlying()) {
+         if (this.isElytraFlying()) {
             pose = Pose.FALL_FLYING;
          } else if (this.isSleeping()) {
             pose = Pose.SLEEPING;
          } else if (this.isSwimming()) {
             pose = Pose.SWIMMING;
-         } else if (this.isAutoSpinAttack()) {
+         } else if (this.isSpinAttacking()) {
             pose = Pose.SPIN_ATTACK;
-         } else if (this.isShiftKeyDown() && !this.abilities.flying) {
+         } else if (this.isSneaking() && !this.abilities.isFlying) {
             pose = Pose.CROUCHING;
          } else {
             pose = Pose.STANDING;
          }
 
          Pose pose1;
-         if (!this.isSpectator() && !this.isPassenger() && !this.canEnterPose(pose)) {
-            if (this.canEnterPose(Pose.CROUCHING)) {
+         if (!this.isSpectator() && !this.isPassenger() && !this.isPoseClear(pose)) {
+            if (this.isPoseClear(Pose.CROUCHING)) {
                pose1 = Pose.CROUCHING;
             } else {
                pose1 = Pose.SWIMMING;
@@ -364,34 +364,34 @@ public abstract class PlayerEntity extends LivingEntity {
       }
    }
 
-   public int getPortalWaitTime() {
-      return this.abilities.invulnerable ? 1 : 80;
+   public int getMaxInPortalTime() {
+      return this.abilities.disableDamage ? 1 : 80;
    }
 
    protected SoundEvent getSwimSound() {
-      return SoundEvents.PLAYER_SWIM;
+      return SoundEvents.ENTITY_PLAYER_SWIM;
    }
 
-   protected SoundEvent getSwimSplashSound() {
-      return SoundEvents.PLAYER_SPLASH;
+   protected SoundEvent getSplashSound() {
+      return SoundEvents.ENTITY_PLAYER_SPLASH;
    }
 
-   protected SoundEvent getSwimHighSpeedSplashSound() {
-      return SoundEvents.PLAYER_SPLASH_HIGH_SPEED;
+   protected SoundEvent getHighspeedSplashSound() {
+      return SoundEvents.ENTITY_PLAYER_SPLASH_HIGH_SPEED;
    }
 
-   public int getDimensionChangingDelay() {
+   public int getPortalCooldown() {
       return 10;
    }
 
-   public void playSound(SoundEvent p_184185_1_, float p_184185_2_, float p_184185_3_) {
-      this.level.playSound(this, this.getX(), this.getY(), this.getZ(), p_184185_1_, this.getSoundSource(), p_184185_2_, p_184185_3_);
+   public void playSound(SoundEvent soundIn, float volume, float pitch) {
+      this.world.playSound(this, this.getPosX(), this.getPosY(), this.getPosZ(), soundIn, this.getSoundCategory(), volume, pitch);
    }
 
-   public void playNotifySound(SoundEvent p_213823_1_, SoundCategory p_213823_2_, float p_213823_3_, float p_213823_4_) {
+   public void playSound(SoundEvent p_213823_1_, SoundCategory p_213823_2_, float p_213823_3_, float p_213823_4_) {
    }
 
-   public SoundCategory getSoundSource() {
+   public SoundCategory getSoundCategory() {
       return SoundCategory.PLAYERS;
    }
 
@@ -400,17 +400,17 @@ public abstract class PlayerEntity extends LivingEntity {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void handleEntityEvent(byte p_70103_1_) {
-      if (p_70103_1_ == 9) {
-         this.completeUsingItem();
-      } else if (p_70103_1_ == 23) {
-         this.reducedDebugInfo = false;
-      } else if (p_70103_1_ == 22) {
-         this.reducedDebugInfo = true;
-      } else if (p_70103_1_ == 43) {
+   public void handleStatusUpdate(byte id) {
+      if (id == 9) {
+         this.onItemUseFinish();
+      } else if (id == 23) {
+         this.hasReducedDebug = false;
+      } else if (id == 22) {
+         this.hasReducedDebug = true;
+      } else if (id == 43) {
          this.addParticlesAroundSelf(ParticleTypes.CLOUD);
       } else {
-         super.handleEntityEvent(p_70103_1_);
+         super.handleStatusUpdate(id);
       }
 
    }
@@ -418,113 +418,113 @@ public abstract class PlayerEntity extends LivingEntity {
    @OnlyIn(Dist.CLIENT)
    private void addParticlesAroundSelf(IParticleData p_213824_1_) {
       for(int i = 0; i < 5; ++i) {
-         double d0 = this.random.nextGaussian() * 0.02D;
-         double d1 = this.random.nextGaussian() * 0.02D;
-         double d2 = this.random.nextGaussian() * 0.02D;
-         this.level.addParticle(p_213824_1_, this.getRandomX(1.0D), this.getRandomY() + 1.0D, this.getRandomZ(1.0D), d0, d1, d2);
+         double d0 = this.rand.nextGaussian() * 0.02D;
+         double d1 = this.rand.nextGaussian() * 0.02D;
+         double d2 = this.rand.nextGaussian() * 0.02D;
+         this.world.addParticle(p_213824_1_, this.getPosXRandom(1.0D), this.getPosYRandom() + 1.0D, this.getPosZRandom(1.0D), d0, d1, d2);
       }
 
    }
 
-   protected void closeContainer() {
-      this.containerMenu = this.inventoryMenu;
+   protected void closeScreen() {
+      this.openContainer = this.container;
    }
 
-   public void rideTick() {
+   public void updateRidden() {
       if (this.wantsToStopRiding() && this.isPassenger()) {
          this.stopRiding();
-         this.setShiftKeyDown(false);
+         this.setSneaking(false);
       } else {
-         double d0 = this.getX();
-         double d1 = this.getY();
-         double d2 = this.getZ();
-         super.rideTick();
-         this.oBob = this.bob;
-         this.bob = 0.0F;
-         this.checkRidingStatistics(this.getX() - d0, this.getY() - d1, this.getZ() - d2);
+         double d0 = this.getPosX();
+         double d1 = this.getPosY();
+         double d2 = this.getPosZ();
+         super.updateRidden();
+         this.prevCameraYaw = this.cameraYaw;
+         this.cameraYaw = 0.0F;
+         this.addMountedMovementStat(this.getPosX() - d0, this.getPosY() - d1, this.getPosZ() - d2);
       }
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void resetPos() {
+   public void preparePlayerToSpawn() {
       this.setPose(Pose.STANDING);
-      super.resetPos();
+      super.preparePlayerToSpawn();
       this.setHealth(this.getMaxHealth());
       this.deathTime = 0;
    }
 
-   protected void serverAiStep() {
-      super.serverAiStep();
-      this.updateSwingTime();
-      this.yHeadRot = this.yRot;
+   protected void updateEntityActionState() {
+      super.updateEntityActionState();
+      this.updateArmSwingProgress();
+      this.rotationYawHead = this.rotationYaw;
    }
 
-   public void aiStep() {
-      if (this.jumpTriggerTime > 0) {
-         --this.jumpTriggerTime;
+   public void livingTick() {
+      if (this.flyToggleTimer > 0) {
+         --this.flyToggleTimer;
       }
 
-      if (this.level.getDifficulty() == Difficulty.PEACEFUL && this.level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
-         if (this.getHealth() < this.getMaxHealth() && this.tickCount % 20 == 0) {
+      if (this.world.getDifficulty() == Difficulty.PEACEFUL && this.world.getGameRules().getBoolean(GameRules.NATURAL_REGENERATION)) {
+         if (this.getHealth() < this.getMaxHealth() && this.ticksExisted % 20 == 0) {
             this.heal(1.0F);
          }
 
-         if (this.foodData.needsFood() && this.tickCount % 10 == 0) {
-            this.foodData.setFoodLevel(this.foodData.getFoodLevel() + 1);
+         if (this.foodStats.needFood() && this.ticksExisted % 10 == 0) {
+            this.foodStats.setFoodLevel(this.foodStats.getFoodLevel() + 1);
          }
       }
 
       this.inventory.tick();
-      this.oBob = this.bob;
-      super.aiStep();
-      this.flyingSpeed = 0.02F;
+      this.prevCameraYaw = this.cameraYaw;
+      super.livingTick();
+      this.jumpMovementFactor = 0.02F;
       if (this.isSprinting()) {
-         this.flyingSpeed = (float)((double)this.flyingSpeed + 0.005999999865889549D);
+         this.jumpMovementFactor = (float)((double)this.jumpMovementFactor + 0.005999999865889549D);
       }
 
-      this.setSpeed((float)this.getAttributeValue(Attributes.MOVEMENT_SPEED));
+      this.setAIMoveSpeed((float)this.getAttributeValue(Attributes.MOVEMENT_SPEED));
       float f;
-      if (this.onGround && !this.isDeadOrDying() && !this.isSwimming()) {
-         f = Math.min(0.1F, MathHelper.sqrt(getHorizontalDistanceSqr(this.getDeltaMovement())));
+      if (this.onGround && !this.getShouldBeDead() && !this.isSwimming()) {
+         f = Math.min(0.1F, MathHelper.sqrt(horizontalMag(this.getMotion())));
       } else {
          f = 0.0F;
       }
 
-      this.bob += (f - this.bob) * 0.4F;
+      this.cameraYaw += (f - this.cameraYaw) * 0.4F;
       if (this.getHealth() > 0.0F && !this.isSpectator()) {
          AxisAlignedBB axisalignedbb;
-         if (this.isPassenger() && !this.getVehicle().removed) {
-            axisalignedbb = this.getBoundingBox().minmax(this.getVehicle().getBoundingBox()).inflate(1.0D, 0.0D, 1.0D);
+         if (this.isPassenger() && !this.getRidingEntity().removed) {
+            axisalignedbb = this.getBoundingBox().union(this.getRidingEntity().getBoundingBox()).grow(1.0D, 0.0D, 1.0D);
          } else {
-            axisalignedbb = this.getBoundingBox().inflate(1.0D, 0.5D, 1.0D);
+            axisalignedbb = this.getBoundingBox().grow(1.0D, 0.5D, 1.0D);
          }
 
-         List<Entity> list = this.level.getEntities(this, axisalignedbb);
+         List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(this, axisalignedbb);
 
          for(int i = 0; i < list.size(); ++i) {
             Entity entity = list.get(i);
             if (!entity.removed) {
-               this.touch(entity);
+               this.collideWithPlayer(entity);
             }
          }
       }
 
-      this.playShoulderEntityAmbientSound(this.getShoulderEntityLeft());
-      this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
-      if (!this.level.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping()) {
-         this.removeEntitiesOnShoulder();
+      this.playShoulderEntityAmbientSound(this.getLeftShoulderEntity());
+      this.playShoulderEntityAmbientSound(this.getRightShoulderEntity());
+      if (!this.world.isRemote && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.isFlying || this.isSleeping()) {
+         this.spawnShoulderEntities();
       }
 
    }
 
    private void playShoulderEntityAmbientSound(@Nullable CompoundNBT p_192028_1_) {
-      if (p_192028_1_ != null && (!p_192028_1_.contains("Silent") || !p_192028_1_.getBoolean("Silent")) && this.level.random.nextInt(200) == 0) {
+      if (p_192028_1_ != null && (!p_192028_1_.contains("Silent") || !p_192028_1_.getBoolean("Silent")) && this.world.rand.nextInt(200) == 0) {
          String s = p_192028_1_.getString("id");
-         EntityType.byString(s).filter((p_213830_0_) -> {
+         EntityType.byKey(s).filter((p_213830_0_) -> {
             return p_213830_0_ == EntityType.PARROT;
          }).ifPresent((p_213834_1_) -> {
-            if (!ParrotEntity.imitateNearbyMobs(this.level, this)) {
-               this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), ParrotEntity.getAmbient(this.level, this.level.random), this.getSoundSource(), 1.0F, ParrotEntity.getPitch(this.level.random));
+            if (!ParrotEntity.playMimicSound(this.world, this)) {
+               this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), ParrotEntity.func_234212_a_(this.world, this.world.rand), this.getSoundCategory(), 1.0F, ParrotEntity.getPitch(this.world.rand));
             }
 
          });
@@ -532,137 +532,137 @@ public abstract class PlayerEntity extends LivingEntity {
 
    }
 
-   private void touch(Entity p_71044_1_) {
-      p_71044_1_.playerTouch(this);
+   private void collideWithPlayer(Entity entityIn) {
+      entityIn.onCollideWithPlayer(this);
    }
 
    public int getScore() {
-      return this.entityData.get(DATA_SCORE_ID);
+      return this.dataManager.get(PLAYER_SCORE);
    }
 
-   public void setScore(int p_85040_1_) {
-      this.entityData.set(DATA_SCORE_ID, p_85040_1_);
+   public void setScore(int scoreIn) {
+      this.dataManager.set(PLAYER_SCORE, scoreIn);
    }
 
-   public void increaseScore(int p_85039_1_) {
+   public void addScore(int scoreIn) {
       int i = this.getScore();
-      this.entityData.set(DATA_SCORE_ID, i + p_85039_1_);
+      this.dataManager.set(PLAYER_SCORE, i + scoreIn);
    }
 
-   public void die(DamageSource p_70645_1_) {
-      super.die(p_70645_1_);
-      this.reapplyPosition();
+   public void onDeath(DamageSource cause) {
+      super.onDeath(cause);
+      this.recenterBoundingBox();
       if (!this.isSpectator()) {
-         this.dropAllDeathLoot(p_70645_1_);
+         this.spawnDrops(cause);
       }
 
-      if (p_70645_1_ != null) {
-         this.setDeltaMovement((double)(-MathHelper.cos((this.hurtDir + this.yRot) * ((float)Math.PI / 180F)) * 0.1F), (double)0.1F, (double)(-MathHelper.sin((this.hurtDir + this.yRot) * ((float)Math.PI / 180F)) * 0.1F));
+      if (cause != null) {
+         this.setMotion((double)(-MathHelper.cos((this.attackedAtYaw + this.rotationYaw) * ((float)Math.PI / 180F)) * 0.1F), (double)0.1F, (double)(-MathHelper.sin((this.attackedAtYaw + this.rotationYaw) * ((float)Math.PI / 180F)) * 0.1F));
       } else {
-         this.setDeltaMovement(0.0D, 0.1D, 0.0D);
+         this.setMotion(0.0D, 0.1D, 0.0D);
       }
 
-      this.awardStat(Stats.DEATHS);
-      this.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH));
-      this.resetStat(Stats.CUSTOM.get(Stats.TIME_SINCE_REST));
-      this.clearFire();
-      this.setSharedFlag(0, false);
+      this.addStat(Stats.DEATHS);
+      this.takeStat(Stats.CUSTOM.get(Stats.TIME_SINCE_DEATH));
+      this.takeStat(Stats.CUSTOM.get(Stats.TIME_SINCE_REST));
+      this.extinguish();
+      this.setFlag(0, false);
    }
 
-   protected void dropEquipment() {
-      super.dropEquipment();
-      if (!this.level.getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY)) {
+   protected void dropInventory() {
+      super.dropInventory();
+      if (!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY)) {
          this.destroyVanishingCursedItems();
-         this.inventory.dropAll();
+         this.inventory.dropAllItems();
       }
 
    }
 
    protected void destroyVanishingCursedItems() {
-      for(int i = 0; i < this.inventory.getContainerSize(); ++i) {
-         ItemStack itemstack = this.inventory.getItem(i);
+      for(int i = 0; i < this.inventory.getSizeInventory(); ++i) {
+         ItemStack itemstack = this.inventory.getStackInSlot(i);
          if (!itemstack.isEmpty() && EnchantmentHelper.hasVanishingCurse(itemstack)) {
-            this.inventory.removeItemNoUpdate(i);
+            this.inventory.removeStackFromSlot(i);
          }
       }
 
    }
 
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
-      if (p_184601_1_ == DamageSource.ON_FIRE) {
-         return SoundEvents.PLAYER_HURT_ON_FIRE;
-      } else if (p_184601_1_ == DamageSource.DROWN) {
-         return SoundEvents.PLAYER_HURT_DROWN;
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+      if (damageSourceIn == DamageSource.ON_FIRE) {
+         return SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE;
+      } else if (damageSourceIn == DamageSource.DROWN) {
+         return SoundEvents.ENTITY_PLAYER_HURT_DROWN;
       } else {
-         return p_184601_1_ == DamageSource.SWEET_BERRY_BUSH ? SoundEvents.PLAYER_HURT_SWEET_BERRY_BUSH : SoundEvents.PLAYER_HURT;
+         return damageSourceIn == DamageSource.SWEET_BERRY_BUSH ? SoundEvents.ENTITY_PLAYER_HURT_SWEET_BERRY_BUSH : SoundEvents.ENTITY_PLAYER_HURT;
       }
    }
 
    protected SoundEvent getDeathSound() {
-      return SoundEvents.PLAYER_DEATH;
+      return SoundEvents.ENTITY_PLAYER_DEATH;
    }
 
    public boolean drop(boolean p_225609_1_) {
-      return this.drop(this.inventory.removeItem(this.inventory.selected, p_225609_1_ && !this.inventory.getSelected().isEmpty() ? this.inventory.getSelected().getCount() : 1), false, true) != null;
+      return this.dropItem(this.inventory.decrStackSize(this.inventory.currentItem, p_225609_1_ && !this.inventory.getCurrentItem().isEmpty() ? this.inventory.getCurrentItem().getCount() : 1), false, true) != null;
    }
 
    @Nullable
-   public ItemEntity drop(ItemStack p_71019_1_, boolean p_71019_2_) {
-      return this.drop(p_71019_1_, false, p_71019_2_);
+   public ItemEntity dropItem(ItemStack itemStackIn, boolean unused) {
+      return this.dropItem(itemStackIn, false, unused);
    }
 
    @Nullable
-   public ItemEntity drop(ItemStack p_146097_1_, boolean p_146097_2_, boolean p_146097_3_) {
-      if (p_146097_1_.isEmpty()) {
+   public ItemEntity dropItem(ItemStack droppedItem, boolean dropAround, boolean traceItem) {
+      if (droppedItem.isEmpty()) {
          return null;
       } else {
-         if (this.level.isClientSide) {
-            this.swing(Hand.MAIN_HAND);
+         if (this.world.isRemote) {
+            this.swingArm(Hand.MAIN_HAND);
          }
 
-         double d0 = this.getEyeY() - (double)0.3F;
-         ItemEntity itementity = new ItemEntity(this.level, this.getX(), d0, this.getZ(), p_146097_1_);
-         itementity.setPickUpDelay(40);
-         if (p_146097_3_) {
-            itementity.setThrower(this.getUUID());
+         double d0 = this.getPosYEye() - (double)0.3F;
+         ItemEntity itementity = new ItemEntity(this.world, this.getPosX(), d0, this.getPosZ(), droppedItem);
+         itementity.setPickupDelay(40);
+         if (traceItem) {
+            itementity.setThrowerId(this.getUniqueID());
          }
 
-         if (p_146097_2_) {
-            float f = this.random.nextFloat() * 0.5F;
-            float f1 = this.random.nextFloat() * ((float)Math.PI * 2F);
-            itementity.setDeltaMovement((double)(-MathHelper.sin(f1) * f), (double)0.2F, (double)(MathHelper.cos(f1) * f));
+         if (dropAround) {
+            float f = this.rand.nextFloat() * 0.5F;
+            float f1 = this.rand.nextFloat() * ((float)Math.PI * 2F);
+            itementity.setMotion((double)(-MathHelper.sin(f1) * f), (double)0.2F, (double)(MathHelper.cos(f1) * f));
          } else {
             float f7 = 0.3F;
-            float f8 = MathHelper.sin(this.xRot * ((float)Math.PI / 180F));
-            float f2 = MathHelper.cos(this.xRot * ((float)Math.PI / 180F));
-            float f3 = MathHelper.sin(this.yRot * ((float)Math.PI / 180F));
-            float f4 = MathHelper.cos(this.yRot * ((float)Math.PI / 180F));
-            float f5 = this.random.nextFloat() * ((float)Math.PI * 2F);
-            float f6 = 0.02F * this.random.nextFloat();
-            itementity.setDeltaMovement((double)(-f3 * f2 * 0.3F) + Math.cos((double)f5) * (double)f6, (double)(-f8 * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double)(f4 * f2 * 0.3F) + Math.sin((double)f5) * (double)f6);
+            float f8 = MathHelper.sin(this.rotationPitch * ((float)Math.PI / 180F));
+            float f2 = MathHelper.cos(this.rotationPitch * ((float)Math.PI / 180F));
+            float f3 = MathHelper.sin(this.rotationYaw * ((float)Math.PI / 180F));
+            float f4 = MathHelper.cos(this.rotationYaw * ((float)Math.PI / 180F));
+            float f5 = this.rand.nextFloat() * ((float)Math.PI * 2F);
+            float f6 = 0.02F * this.rand.nextFloat();
+            itementity.setMotion((double)(-f3 * f2 * 0.3F) + Math.cos((double)f5) * (double)f6, (double)(-f8 * 0.3F + 0.1F + (this.rand.nextFloat() - this.rand.nextFloat()) * 0.1F), (double)(f4 * f2 * 0.3F) + Math.sin((double)f5) * (double)f6);
          }
 
          return itementity;
       }
    }
 
-   public float getDestroySpeed(BlockState p_184813_1_) {
-      float f = this.inventory.getDestroySpeed(p_184813_1_);
+   public float getDigSpeed(BlockState state) {
+      float f = this.inventory.getDestroySpeed(state);
       if (f > 1.0F) {
-         int i = EnchantmentHelper.getBlockEfficiency(this);
-         ItemStack itemstack = this.getMainHandItem();
+         int i = EnchantmentHelper.getEfficiencyModifier(this);
+         ItemStack itemstack = this.getHeldItemMainhand();
          if (i > 0 && !itemstack.isEmpty()) {
             f += (float)(i * i + 1);
          }
       }
 
-      if (EffectUtils.hasDigSpeed(this)) {
-         f *= 1.0F + (float)(EffectUtils.getDigSpeedAmplification(this) + 1) * 0.2F;
+      if (EffectUtils.hasMiningSpeedup(this)) {
+         f *= 1.0F + (float)(EffectUtils.getMiningSpeedup(this) + 1) * 0.2F;
       }
 
-      if (this.hasEffect(Effects.DIG_SLOWDOWN)) {
+      if (this.isPotionActive(Effects.MINING_FATIGUE)) {
          float f1;
-         switch(this.getEffect(Effects.DIG_SLOWDOWN).getAmplifier()) {
+         switch(this.getActivePotionEffect(Effects.MINING_FATIGUE).getAmplifier()) {
          case 0:
             f1 = 0.3F;
             break;
@@ -680,7 +680,7 @@ public abstract class PlayerEntity extends LivingEntity {
          f *= f1;
       }
 
-      if (this.isEyeInFluid(FluidTags.WATER) && !EnchantmentHelper.hasAquaAffinity(this)) {
+      if (this.areEyesInFluid(FluidTags.WATER) && !EnchantmentHelper.hasAquaAffinity(this)) {
          f /= 5.0F;
       }
 
@@ -691,243 +691,243 @@ public abstract class PlayerEntity extends LivingEntity {
       return f;
    }
 
-   public boolean hasCorrectToolForDrops(BlockState p_234569_1_) {
-      return !p_234569_1_.requiresCorrectToolForDrops() || this.inventory.getSelected().isCorrectToolForDrops(p_234569_1_);
+   public boolean func_234569_d_(BlockState p_234569_1_) {
+      return !p_234569_1_.getRequiresTool() || this.inventory.getCurrentItem().canHarvestBlock(p_234569_1_);
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.setUUID(createPlayerUUID(this.gameProfile));
-      ListNBT listnbt = p_70037_1_.getList("Inventory", 10);
-      this.inventory.load(listnbt);
-      this.inventory.selected = p_70037_1_.getInt("SelectedItemSlot");
-      this.sleepCounter = p_70037_1_.getShort("SleepTimer");
-      this.experienceProgress = p_70037_1_.getFloat("XpP");
-      this.experienceLevel = p_70037_1_.getInt("XpLevel");
-      this.totalExperience = p_70037_1_.getInt("XpTotal");
-      this.enchantmentSeed = p_70037_1_.getInt("XpSeed");
-      if (this.enchantmentSeed == 0) {
-         this.enchantmentSeed = this.random.nextInt();
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.setUniqueId(getUUID(this.gameProfile));
+      ListNBT listnbt = compound.getList("Inventory", 10);
+      this.inventory.read(listnbt);
+      this.inventory.currentItem = compound.getInt("SelectedItemSlot");
+      this.sleepTimer = compound.getShort("SleepTimer");
+      this.experience = compound.getFloat("XpP");
+      this.experienceLevel = compound.getInt("XpLevel");
+      this.experienceTotal = compound.getInt("XpTotal");
+      this.xpSeed = compound.getInt("XpSeed");
+      if (this.xpSeed == 0) {
+         this.xpSeed = this.rand.nextInt();
       }
 
-      this.setScore(p_70037_1_.getInt("Score"));
-      this.foodData.readAdditionalSaveData(p_70037_1_);
-      this.abilities.loadSaveData(p_70037_1_);
-      this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue((double)this.abilities.getWalkingSpeed());
-      if (p_70037_1_.contains("EnderItems", 9)) {
-         this.enderChestInventory.fromTag(p_70037_1_.getList("EnderItems", 10));
+      this.setScore(compound.getInt("Score"));
+      this.foodStats.read(compound);
+      this.abilities.read(compound);
+      this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue((double)this.abilities.getWalkSpeed());
+      if (compound.contains("EnderItems", 9)) {
+         this.enterChestInventory.read(compound.getList("EnderItems", 10));
       }
 
-      if (p_70037_1_.contains("ShoulderEntityLeft", 10)) {
-         this.setShoulderEntityLeft(p_70037_1_.getCompound("ShoulderEntityLeft"));
+      if (compound.contains("ShoulderEntityLeft", 10)) {
+         this.setLeftShoulderEntity(compound.getCompound("ShoulderEntityLeft"));
       }
 
-      if (p_70037_1_.contains("ShoulderEntityRight", 10)) {
-         this.setShoulderEntityRight(p_70037_1_.getCompound("ShoulderEntityRight"));
-      }
-
-   }
-
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      p_213281_1_.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
-      p_213281_1_.put("Inventory", this.inventory.save(new ListNBT()));
-      p_213281_1_.putInt("SelectedItemSlot", this.inventory.selected);
-      p_213281_1_.putShort("SleepTimer", (short)this.sleepCounter);
-      p_213281_1_.putFloat("XpP", this.experienceProgress);
-      p_213281_1_.putInt("XpLevel", this.experienceLevel);
-      p_213281_1_.putInt("XpTotal", this.totalExperience);
-      p_213281_1_.putInt("XpSeed", this.enchantmentSeed);
-      p_213281_1_.putInt("Score", this.getScore());
-      this.foodData.addAdditionalSaveData(p_213281_1_);
-      this.abilities.addSaveData(p_213281_1_);
-      p_213281_1_.put("EnderItems", this.enderChestInventory.createTag());
-      if (!this.getShoulderEntityLeft().isEmpty()) {
-         p_213281_1_.put("ShoulderEntityLeft", this.getShoulderEntityLeft());
-      }
-
-      if (!this.getShoulderEntityRight().isEmpty()) {
-         p_213281_1_.put("ShoulderEntityRight", this.getShoulderEntityRight());
+      if (compound.contains("ShoulderEntityRight", 10)) {
+         this.setRightShoulderEntity(compound.getCompound("ShoulderEntityRight"));
       }
 
    }
 
-   public boolean isInvulnerableTo(DamageSource p_180431_1_) {
-      if (super.isInvulnerableTo(p_180431_1_)) {
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      compound.putInt("DataVersion", SharedConstants.getVersion().getWorldVersion());
+      compound.put("Inventory", this.inventory.write(new ListNBT()));
+      compound.putInt("SelectedItemSlot", this.inventory.currentItem);
+      compound.putShort("SleepTimer", (short)this.sleepTimer);
+      compound.putFloat("XpP", this.experience);
+      compound.putInt("XpLevel", this.experienceLevel);
+      compound.putInt("XpTotal", this.experienceTotal);
+      compound.putInt("XpSeed", this.xpSeed);
+      compound.putInt("Score", this.getScore());
+      this.foodStats.write(compound);
+      this.abilities.write(compound);
+      compound.put("EnderItems", this.enterChestInventory.write());
+      if (!this.getLeftShoulderEntity().isEmpty()) {
+         compound.put("ShoulderEntityLeft", this.getLeftShoulderEntity());
+      }
+
+      if (!this.getRightShoulderEntity().isEmpty()) {
+         compound.put("ShoulderEntityRight", this.getRightShoulderEntity());
+      }
+
+   }
+
+   public boolean isInvulnerableTo(DamageSource source) {
+      if (super.isInvulnerableTo(source)) {
          return true;
-      } else if (p_180431_1_ == DamageSource.DROWN) {
-         return !this.level.getGameRules().getBoolean(GameRules.RULE_DROWNING_DAMAGE);
-      } else if (p_180431_1_ == DamageSource.FALL) {
-         return !this.level.getGameRules().getBoolean(GameRules.RULE_FALL_DAMAGE);
-      } else if (p_180431_1_.isFire()) {
-         return !this.level.getGameRules().getBoolean(GameRules.RULE_FIRE_DAMAGE);
+      } else if (source == DamageSource.DROWN) {
+         return !this.world.getGameRules().getBoolean(GameRules.DROWNING_DAMAGE);
+      } else if (source == DamageSource.FALL) {
+         return !this.world.getGameRules().getBoolean(GameRules.FALL_DAMAGE);
+      } else if (source.isFireDamage()) {
+         return !this.world.getGameRules().getBoolean(GameRules.FIRE_DAMAGE);
       } else {
          return false;
       }
    }
 
-   public boolean hurt(DamageSource p_70097_1_, float p_70097_2_) {
-      if (this.isInvulnerableTo(p_70097_1_)) {
+   public boolean attackEntityFrom(DamageSource source, float amount) {
+      if (this.isInvulnerableTo(source)) {
          return false;
-      } else if (this.abilities.invulnerable && !p_70097_1_.isBypassInvul()) {
+      } else if (this.abilities.disableDamage && !source.canHarmInCreative()) {
          return false;
       } else {
-         this.noActionTime = 0;
-         if (this.isDeadOrDying()) {
+         this.idleTime = 0;
+         if (this.getShouldBeDead()) {
             return false;
          } else {
-            this.removeEntitiesOnShoulder();
-            if (p_70097_1_.scalesWithDifficulty()) {
-               if (this.level.getDifficulty() == Difficulty.PEACEFUL) {
-                  p_70097_2_ = 0.0F;
+            this.spawnShoulderEntities();
+            if (source.isDifficultyScaled()) {
+               if (this.world.getDifficulty() == Difficulty.PEACEFUL) {
+                  amount = 0.0F;
                }
 
-               if (this.level.getDifficulty() == Difficulty.EASY) {
-                  p_70097_2_ = Math.min(p_70097_2_ / 2.0F + 1.0F, p_70097_2_);
+               if (this.world.getDifficulty() == Difficulty.EASY) {
+                  amount = Math.min(amount / 2.0F + 1.0F, amount);
                }
 
-               if (this.level.getDifficulty() == Difficulty.HARD) {
-                  p_70097_2_ = p_70097_2_ * 3.0F / 2.0F;
+               if (this.world.getDifficulty() == Difficulty.HARD) {
+                  amount = amount * 3.0F / 2.0F;
                }
             }
 
-            return p_70097_2_ == 0.0F ? false : super.hurt(p_70097_1_, p_70097_2_);
+            return amount == 0.0F ? false : super.attackEntityFrom(source, amount);
          }
       }
    }
 
-   protected void blockUsingShield(LivingEntity p_190629_1_) {
-      super.blockUsingShield(p_190629_1_);
-      if (p_190629_1_.getMainHandItem().getItem() instanceof AxeItem) {
+   protected void blockUsingShield(LivingEntity entityIn) {
+      super.blockUsingShield(entityIn);
+      if (entityIn.getHeldItemMainhand().getItem() instanceof AxeItem) {
          this.disableShield(true);
       }
 
    }
 
-   public boolean canHarmPlayer(PlayerEntity p_96122_1_) {
+   public boolean canAttackPlayer(PlayerEntity other) {
       Team team = this.getTeam();
-      Team team1 = p_96122_1_.getTeam();
+      Team team1 = other.getTeam();
       if (team == null) {
          return true;
       } else {
-         return !team.isAlliedTo(team1) ? true : team.isAllowFriendlyFire();
+         return !team.isSameTeam(team1) ? true : team.getAllowFriendlyFire();
       }
    }
 
-   protected void hurtArmor(DamageSource p_230294_1_, float p_230294_2_) {
-      this.inventory.hurtArmor(p_230294_1_, p_230294_2_);
+   protected void damageArmor(DamageSource damageSource, float damage) {
+      this.inventory.func_234563_a_(damageSource, damage);
    }
 
-   protected void hurtCurrentlyUsedShield(float p_184590_1_) {
-      if (this.useItem.getItem() == Items.SHIELD) {
-         if (!this.level.isClientSide) {
-            this.awardStat(Stats.ITEM_USED.get(this.useItem.getItem()));
+   protected void damageShield(float damage) {
+      if (this.activeItemStack.getItem() == Items.SHIELD) {
+         if (!this.world.isRemote) {
+            this.addStat(Stats.ITEM_USED.get(this.activeItemStack.getItem()));
          }
 
-         if (p_184590_1_ >= 3.0F) {
-            int i = 1 + MathHelper.floor(p_184590_1_);
-            Hand hand = this.getUsedItemHand();
-            this.useItem.hurtAndBreak(i, this, (p_213833_1_) -> {
-               p_213833_1_.broadcastBreakEvent(hand);
+         if (damage >= 3.0F) {
+            int i = 1 + MathHelper.floor(damage);
+            Hand hand = this.getActiveHand();
+            this.activeItemStack.damageItem(i, this, (p_213833_1_) -> {
+               p_213833_1_.sendBreakAnimation(hand);
             });
-            if (this.useItem.isEmpty()) {
+            if (this.activeItemStack.isEmpty()) {
                if (hand == Hand.MAIN_HAND) {
-                  this.setItemSlot(EquipmentSlotType.MAINHAND, ItemStack.EMPTY);
+                  this.setItemStackToSlot(EquipmentSlotType.MAINHAND, ItemStack.EMPTY);
                } else {
-                  this.setItemSlot(EquipmentSlotType.OFFHAND, ItemStack.EMPTY);
+                  this.setItemStackToSlot(EquipmentSlotType.OFFHAND, ItemStack.EMPTY);
                }
 
-               this.useItem = ItemStack.EMPTY;
-               this.playSound(SoundEvents.SHIELD_BREAK, 0.8F, 0.8F + this.level.random.nextFloat() * 0.4F);
+               this.activeItemStack = ItemStack.EMPTY;
+               this.playSound(SoundEvents.ITEM_SHIELD_BREAK, 0.8F, 0.8F + this.world.rand.nextFloat() * 0.4F);
             }
          }
 
       }
    }
 
-   protected void actuallyHurt(DamageSource p_70665_1_, float p_70665_2_) {
-      if (!this.isInvulnerableTo(p_70665_1_)) {
-         p_70665_2_ = this.getDamageAfterArmorAbsorb(p_70665_1_, p_70665_2_);
-         p_70665_2_ = this.getDamageAfterMagicAbsorb(p_70665_1_, p_70665_2_);
-         float f2 = Math.max(p_70665_2_ - this.getAbsorptionAmount(), 0.0F);
-         this.setAbsorptionAmount(this.getAbsorptionAmount() - (p_70665_2_ - f2));
-         float f = p_70665_2_ - f2;
+   protected void damageEntity(DamageSource damageSrc, float damageAmount) {
+      if (!this.isInvulnerableTo(damageSrc)) {
+         damageAmount = this.applyArmorCalculations(damageSrc, damageAmount);
+         damageAmount = this.applyPotionDamageCalculations(damageSrc, damageAmount);
+         float f2 = Math.max(damageAmount - this.getAbsorptionAmount(), 0.0F);
+         this.setAbsorptionAmount(this.getAbsorptionAmount() - (damageAmount - f2));
+         float f = damageAmount - f2;
          if (f > 0.0F && f < 3.4028235E37F) {
-            this.awardStat(Stats.DAMAGE_ABSORBED, Math.round(f * 10.0F));
+            this.addStat(Stats.DAMAGE_ABSORBED, Math.round(f * 10.0F));
          }
 
          if (f2 != 0.0F) {
-            this.causeFoodExhaustion(p_70665_1_.getFoodExhaustion());
+            this.addExhaustion(damageSrc.getHungerDamage());
             float f1 = this.getHealth();
             this.setHealth(this.getHealth() - f2);
-            this.getCombatTracker().recordDamage(p_70665_1_, f1, f2);
+            this.getCombatTracker().trackDamage(damageSrc, f1, f2);
             if (f2 < 3.4028235E37F) {
-               this.awardStat(Stats.DAMAGE_TAKEN, Math.round(f2 * 10.0F));
+               this.addStat(Stats.DAMAGE_TAKEN, Math.round(f2 * 10.0F));
             }
 
          }
       }
    }
 
-   protected boolean onSoulSpeedBlock() {
-      return !this.abilities.flying && super.onSoulSpeedBlock();
+   protected boolean func_230296_cM_() {
+      return !this.abilities.isFlying && super.func_230296_cM_();
    }
 
-   public void openTextEdit(SignTileEntity p_175141_1_) {
+   public void openSignEditor(SignTileEntity signTile) {
    }
 
-   public void openMinecartCommandBlock(CommandBlockLogic p_184809_1_) {
+   public void openMinecartCommandBlock(CommandBlockLogic commandBlock) {
    }
 
-   public void openCommandBlock(CommandBlockTileEntity p_184824_1_) {
+   public void openCommandBlock(CommandBlockTileEntity commandBlock) {
    }
 
-   public void openStructureBlock(StructureBlockTileEntity p_189807_1_) {
+   public void openStructureBlock(StructureBlockTileEntity structure) {
    }
 
-   public void openJigsawBlock(JigsawTileEntity p_213826_1_) {
+   public void openJigsaw(JigsawTileEntity p_213826_1_) {
    }
 
-   public void openHorseInventory(AbstractHorseEntity p_184826_1_, IInventory p_184826_2_) {
+   public void openHorseInventory(AbstractHorseEntity horse, IInventory inventoryIn) {
    }
 
-   public OptionalInt openMenu(@Nullable INamedContainerProvider p_213829_1_) {
+   public OptionalInt openContainer(@Nullable INamedContainerProvider p_213829_1_) {
       return OptionalInt.empty();
    }
 
-   public void sendMerchantOffers(int p_213818_1_, MerchantOffers p_213818_2_, int p_213818_3_, int p_213818_4_, boolean p_213818_5_, boolean p_213818_6_) {
+   public void openMerchantContainer(int containerId, MerchantOffers offers, int level, int xp, boolean p_213818_5_, boolean p_213818_6_) {
    }
 
-   public void openItemGui(ItemStack p_184814_1_, Hand p_184814_2_) {
+   public void openBook(ItemStack stack, Hand hand) {
    }
 
-   public ActionResultType interactOn(Entity p_190775_1_, Hand p_190775_2_) {
+   public ActionResultType interactOn(Entity entityToInteractOn, Hand hand) {
       if (this.isSpectator()) {
-         if (p_190775_1_ instanceof INamedContainerProvider) {
-            this.openMenu((INamedContainerProvider)p_190775_1_);
+         if (entityToInteractOn instanceof INamedContainerProvider) {
+            this.openContainer((INamedContainerProvider)entityToInteractOn);
          }
 
          return ActionResultType.PASS;
       } else {
-         ItemStack itemstack = this.getItemInHand(p_190775_2_);
+         ItemStack itemstack = this.getHeldItem(hand);
          ItemStack itemstack1 = itemstack.copy();
-         ActionResultType actionresulttype = p_190775_1_.interact(this, p_190775_2_);
-         if (actionresulttype.consumesAction()) {
-            if (this.abilities.instabuild && itemstack == this.getItemInHand(p_190775_2_) && itemstack.getCount() < itemstack1.getCount()) {
+         ActionResultType actionresulttype = entityToInteractOn.processInitialInteract(this, hand);
+         if (actionresulttype.isSuccessOrConsume()) {
+            if (this.abilities.isCreativeMode && itemstack == this.getHeldItem(hand) && itemstack.getCount() < itemstack1.getCount()) {
                itemstack.setCount(itemstack1.getCount());
             }
 
             return actionresulttype;
          } else {
-            if (!itemstack.isEmpty() && p_190775_1_ instanceof LivingEntity) {
-               if (this.abilities.instabuild) {
+            if (!itemstack.isEmpty() && entityToInteractOn instanceof LivingEntity) {
+               if (this.abilities.isCreativeMode) {
                   itemstack = itemstack1;
                }
 
-               ActionResultType actionresulttype1 = itemstack.interactLivingEntity(this, (LivingEntity)p_190775_1_, p_190775_2_);
-               if (actionresulttype1.consumesAction()) {
-                  if (itemstack.isEmpty() && !this.abilities.instabuild) {
-                     this.setItemInHand(p_190775_2_, ItemStack.EMPTY);
+               ActionResultType actionresulttype1 = itemstack.interactWithEntity(this, (LivingEntity)entityToInteractOn, hand);
+               if (actionresulttype1.isSuccessOrConsume()) {
+                  if (itemstack.isEmpty() && !this.abilities.isCreativeMode) {
+                     this.setHeldItem(hand, ItemStack.EMPTY);
                   }
 
                   return actionresulttype1;
@@ -939,30 +939,30 @@ public abstract class PlayerEntity extends LivingEntity {
       }
    }
 
-   public double getMyRidingOffset() {
+   public double getYOffset() {
       return -0.35D;
    }
 
-   public void removeVehicle() {
-      super.removeVehicle();
-      this.boardingCooldown = 0;
+   public void dismount() {
+      super.dismount();
+      this.rideCooldown = 0;
    }
 
-   protected boolean isImmobile() {
-      return super.isImmobile() || this.isSleeping();
+   protected boolean isMovementBlocked() {
+      return super.isMovementBlocked() || this.isSleeping();
    }
 
-   public boolean isAffectedByFluids() {
-      return !this.abilities.flying;
+   public boolean func_241208_cS_() {
+      return !this.abilities.isFlying;
    }
 
-   protected Vector3d maybeBackOffFromEdge(Vector3d p_225514_1_, MoverType p_225514_2_) {
-      if (!this.abilities.flying && (p_225514_2_ == MoverType.SELF || p_225514_2_ == MoverType.PLAYER) && this.isStayingOnGroundSurface() && this.isAboveGround()) {
-         double d0 = p_225514_1_.x;
-         double d1 = p_225514_1_.z;
+   protected Vector3d maybeBackOffFromEdge(Vector3d vec, MoverType mover) {
+      if (!this.abilities.isFlying && (mover == MoverType.SELF || mover == MoverType.PLAYER) && this.isStayingOnGroundSurface() && this.func_242375_q()) {
+         double d0 = vec.x;
+         double d1 = vec.z;
          double d2 = 0.05D;
 
-         while(d0 != 0.0D && this.level.noCollision(this, this.getBoundingBox().move(d0, (double)(-this.maxUpStep), 0.0D))) {
+         while(d0 != 0.0D && this.world.hasNoCollisions(this, this.getBoundingBox().offset(d0, (double)(-this.stepHeight), 0.0D))) {
             if (d0 < 0.05D && d0 >= -0.05D) {
                d0 = 0.0D;
             } else if (d0 > 0.0D) {
@@ -972,7 +972,7 @@ public abstract class PlayerEntity extends LivingEntity {
             }
          }
 
-         while(d1 != 0.0D && this.level.noCollision(this, this.getBoundingBox().move(0.0D, (double)(-this.maxUpStep), d1))) {
+         while(d1 != 0.0D && this.world.hasNoCollisions(this, this.getBoundingBox().offset(0.0D, (double)(-this.stepHeight), d1))) {
             if (d1 < 0.05D && d1 >= -0.05D) {
                d1 = 0.0D;
             } else if (d1 > 0.0D) {
@@ -982,7 +982,7 @@ public abstract class PlayerEntity extends LivingEntity {
             }
          }
 
-         while(d0 != 0.0D && d1 != 0.0D && this.level.noCollision(this, this.getBoundingBox().move(d0, (double)(-this.maxUpStep), d1))) {
+         while(d0 != 0.0D && d1 != 0.0D && this.world.hasNoCollisions(this, this.getBoundingBox().offset(d0, (double)(-this.stepHeight), d1))) {
             if (d0 < 0.05D && d0 >= -0.05D) {
                d0 = 0.0D;
             } else if (d0 > 0.0D) {
@@ -1000,43 +1000,43 @@ public abstract class PlayerEntity extends LivingEntity {
             }
          }
 
-         p_225514_1_ = new Vector3d(d0, p_225514_1_.y, d1);
+         vec = new Vector3d(d0, vec.y, d1);
       }
 
-      return p_225514_1_;
+      return vec;
    }
 
-   private boolean isAboveGround() {
-      return this.onGround || this.fallDistance < this.maxUpStep && !this.level.noCollision(this, this.getBoundingBox().move(0.0D, (double)(this.fallDistance - this.maxUpStep), 0.0D));
+   private boolean func_242375_q() {
+      return this.onGround || this.fallDistance < this.stepHeight && !this.world.hasNoCollisions(this, this.getBoundingBox().offset(0.0D, (double)(this.fallDistance - this.stepHeight), 0.0D));
    }
 
-   public void attack(Entity p_71059_1_) {
-      if (p_71059_1_.isAttackable()) {
-         if (!p_71059_1_.skipAttackInteraction(this)) {
+   public void attackTargetEntityWithCurrentItem(Entity targetEntity) {
+      if (targetEntity.canBeAttackedWithItem()) {
+         if (!targetEntity.hitByEntity(this)) {
             float f = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
             float f1;
-            if (p_71059_1_ instanceof LivingEntity) {
-               f1 = EnchantmentHelper.getDamageBonus(this.getMainHandItem(), ((LivingEntity)p_71059_1_).getMobType());
+            if (targetEntity instanceof LivingEntity) {
+               f1 = EnchantmentHelper.getModifierForCreature(this.getHeldItemMainhand(), ((LivingEntity)targetEntity).getCreatureAttribute());
             } else {
-               f1 = EnchantmentHelper.getDamageBonus(this.getMainHandItem(), CreatureAttribute.UNDEFINED);
+               f1 = EnchantmentHelper.getModifierForCreature(this.getHeldItemMainhand(), CreatureAttribute.UNDEFINED);
             }
 
-            float f2 = this.getAttackStrengthScale(0.5F);
+            float f2 = this.getCooledAttackStrength(0.5F);
             f = f * (0.2F + f2 * f2 * 0.8F);
             f1 = f1 * f2;
-            this.resetAttackStrengthTicker();
+            this.resetCooldown();
             if (f > 0.0F || f1 > 0.0F) {
                boolean flag = f2 > 0.9F;
                boolean flag1 = false;
                int i = 0;
-               i = i + EnchantmentHelper.getKnockbackBonus(this);
+               i = i + EnchantmentHelper.getKnockbackModifier(this);
                if (this.isSprinting() && flag) {
-                  this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F);
+                  this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_PLAYER_ATTACK_KNOCKBACK, this.getSoundCategory(), 1.0F, 1.0F);
                   ++i;
                   flag1 = true;
                }
 
-               boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround && !this.onClimbable() && !this.isInWater() && !this.hasEffect(Effects.BLINDNESS) && !this.isPassenger() && p_71059_1_ instanceof LivingEntity;
+               boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround && !this.isOnLadder() && !this.isInWater() && !this.isPotionActive(Effects.BLINDNESS) && !this.isPassenger() && targetEntity instanceof LivingEntity;
                flag2 = flag2 && !this.isSprinting();
                if (flag2) {
                   f *= 1.5F;
@@ -1044,9 +1044,9 @@ public abstract class PlayerEntity extends LivingEntity {
 
                f = f + f1;
                boolean flag3 = false;
-               double d0 = (double)(this.walkDist - this.walkDistO);
-               if (flag && !flag2 && !flag1 && this.onGround && d0 < (double)this.getSpeed()) {
-                  ItemStack itemstack = this.getItemInHand(Hand.MAIN_HAND);
+               double d0 = (double)(this.distanceWalkedModified - this.prevDistanceWalkedModified);
+               if (flag && !flag2 && !flag1 && this.onGround && d0 < (double)this.getAIMoveSpeed()) {
+                  ItemStack itemstack = this.getHeldItem(Hand.MAIN_HAND);
                   if (itemstack.getItem() instanceof SwordItem) {
                      flag3 = true;
                   }
@@ -1054,103 +1054,103 @@ public abstract class PlayerEntity extends LivingEntity {
 
                float f4 = 0.0F;
                boolean flag4 = false;
-               int j = EnchantmentHelper.getFireAspect(this);
-               if (p_71059_1_ instanceof LivingEntity) {
-                  f4 = ((LivingEntity)p_71059_1_).getHealth();
-                  if (j > 0 && !p_71059_1_.isOnFire()) {
+               int j = EnchantmentHelper.getFireAspectModifier(this);
+               if (targetEntity instanceof LivingEntity) {
+                  f4 = ((LivingEntity)targetEntity).getHealth();
+                  if (j > 0 && !targetEntity.isBurning()) {
                      flag4 = true;
-                     p_71059_1_.setSecondsOnFire(1);
+                     targetEntity.setFire(1);
                   }
                }
 
-               Vector3d vector3d = p_71059_1_.getDeltaMovement();
-               boolean flag5 = p_71059_1_.hurt(DamageSource.playerAttack(this), f);
+               Vector3d vector3d = targetEntity.getMotion();
+               boolean flag5 = targetEntity.attackEntityFrom(DamageSource.causePlayerDamage(this), f);
                if (flag5) {
                   if (i > 0) {
-                     if (p_71059_1_ instanceof LivingEntity) {
-                        ((LivingEntity)p_71059_1_).knockback((float)i * 0.5F, (double)MathHelper.sin(this.yRot * ((float)Math.PI / 180F)), (double)(-MathHelper.cos(this.yRot * ((float)Math.PI / 180F))));
+                     if (targetEntity instanceof LivingEntity) {
+                        ((LivingEntity)targetEntity).applyKnockback((float)i * 0.5F, (double)MathHelper.sin(this.rotationYaw * ((float)Math.PI / 180F)), (double)(-MathHelper.cos(this.rotationYaw * ((float)Math.PI / 180F))));
                      } else {
-                        p_71059_1_.push((double)(-MathHelper.sin(this.yRot * ((float)Math.PI / 180F)) * (float)i * 0.5F), 0.1D, (double)(MathHelper.cos(this.yRot * ((float)Math.PI / 180F)) * (float)i * 0.5F));
+                        targetEntity.addVelocity((double)(-MathHelper.sin(this.rotationYaw * ((float)Math.PI / 180F)) * (float)i * 0.5F), 0.1D, (double)(MathHelper.cos(this.rotationYaw * ((float)Math.PI / 180F)) * (float)i * 0.5F));
                      }
 
-                     this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
+                     this.setMotion(this.getMotion().mul(0.6D, 1.0D, 0.6D));
                      this.setSprinting(false);
                   }
 
                   if (flag3) {
                      float f3 = 1.0F + EnchantmentHelper.getSweepingDamageRatio(this) * f;
 
-                     for(LivingEntity livingentity : this.level.getEntitiesOfClass(LivingEntity.class, p_71059_1_.getBoundingBox().inflate(1.0D, 0.25D, 1.0D))) {
-                        if (livingentity != this && livingentity != p_71059_1_ && !this.isAlliedTo(livingentity) && (!(livingentity instanceof ArmorStandEntity) || !((ArmorStandEntity)livingentity).isMarker()) && this.distanceToSqr(livingentity) < 9.0D) {
-                           livingentity.knockback(0.4F, (double)MathHelper.sin(this.yRot * ((float)Math.PI / 180F)), (double)(-MathHelper.cos(this.yRot * ((float)Math.PI / 180F))));
-                           livingentity.hurt(DamageSource.playerAttack(this), f3);
+                     for(LivingEntity livingentity : this.world.getEntitiesWithinAABB(LivingEntity.class, targetEntity.getBoundingBox().grow(1.0D, 0.25D, 1.0D))) {
+                        if (livingentity != this && livingentity != targetEntity && !this.isOnSameTeam(livingentity) && (!(livingentity instanceof ArmorStandEntity) || !((ArmorStandEntity)livingentity).hasMarker()) && this.getDistanceSq(livingentity) < 9.0D) {
+                           livingentity.applyKnockback(0.4F, (double)MathHelper.sin(this.rotationYaw * ((float)Math.PI / 180F)), (double)(-MathHelper.cos(this.rotationYaw * ((float)Math.PI / 180F))));
+                           livingentity.attackEntityFrom(DamageSource.causePlayerDamage(this), f3);
                         }
                      }
 
-                     this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, this.getSoundSource(), 1.0F, 1.0F);
-                     this.sweepAttack();
+                     this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, this.getSoundCategory(), 1.0F, 1.0F);
+                     this.spawnSweepParticles();
                   }
 
-                  if (p_71059_1_ instanceof ServerPlayerEntity && p_71059_1_.hurtMarked) {
-                     ((ServerPlayerEntity)p_71059_1_).connection.send(new SEntityVelocityPacket(p_71059_1_));
-                     p_71059_1_.hurtMarked = false;
-                     p_71059_1_.setDeltaMovement(vector3d);
+                  if (targetEntity instanceof ServerPlayerEntity && targetEntity.velocityChanged) {
+                     ((ServerPlayerEntity)targetEntity).connection.sendPacket(new SEntityVelocityPacket(targetEntity));
+                     targetEntity.velocityChanged = false;
+                     targetEntity.setMotion(vector3d);
                   }
 
                   if (flag2) {
-                     this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F);
-                     this.crit(p_71059_1_);
+                     this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, this.getSoundCategory(), 1.0F, 1.0F);
+                     this.onCriticalHit(targetEntity);
                   }
 
                   if (!flag2 && !flag3) {
                      if (flag) {
-                        this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_STRONG, this.getSoundSource(), 1.0F, 1.0F);
+                        this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_PLAYER_ATTACK_STRONG, this.getSoundCategory(), 1.0F, 1.0F);
                      } else {
-                        this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_WEAK, this.getSoundSource(), 1.0F, 1.0F);
+                        this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_PLAYER_ATTACK_WEAK, this.getSoundCategory(), 1.0F, 1.0F);
                      }
                   }
 
                   if (f1 > 0.0F) {
-                     this.magicCrit(p_71059_1_);
+                     this.onEnchantmentCritical(targetEntity);
                   }
 
-                  this.setLastHurtMob(p_71059_1_);
-                  if (p_71059_1_ instanceof LivingEntity) {
-                     EnchantmentHelper.doPostHurtEffects((LivingEntity)p_71059_1_, this);
+                  this.setLastAttackedEntity(targetEntity);
+                  if (targetEntity instanceof LivingEntity) {
+                     EnchantmentHelper.applyThornEnchantments((LivingEntity)targetEntity, this);
                   }
 
-                  EnchantmentHelper.doPostDamageEffects(this, p_71059_1_);
-                  ItemStack itemstack1 = this.getMainHandItem();
-                  Entity entity = p_71059_1_;
-                  if (p_71059_1_ instanceof EnderDragonPartEntity) {
-                     entity = ((EnderDragonPartEntity)p_71059_1_).parentMob;
+                  EnchantmentHelper.applyArthropodEnchantments(this, targetEntity);
+                  ItemStack itemstack1 = this.getHeldItemMainhand();
+                  Entity entity = targetEntity;
+                  if (targetEntity instanceof EnderDragonPartEntity) {
+                     entity = ((EnderDragonPartEntity)targetEntity).dragon;
                   }
 
-                  if (!this.level.isClientSide && !itemstack1.isEmpty() && entity instanceof LivingEntity) {
-                     itemstack1.hurtEnemy((LivingEntity)entity, this);
+                  if (!this.world.isRemote && !itemstack1.isEmpty() && entity instanceof LivingEntity) {
+                     itemstack1.hitEntity((LivingEntity)entity, this);
                      if (itemstack1.isEmpty()) {
-                        this.setItemInHand(Hand.MAIN_HAND, ItemStack.EMPTY);
+                        this.setHeldItem(Hand.MAIN_HAND, ItemStack.EMPTY);
                      }
                   }
 
-                  if (p_71059_1_ instanceof LivingEntity) {
-                     float f5 = f4 - ((LivingEntity)p_71059_1_).getHealth();
-                     this.awardStat(Stats.DAMAGE_DEALT, Math.round(f5 * 10.0F));
+                  if (targetEntity instanceof LivingEntity) {
+                     float f5 = f4 - ((LivingEntity)targetEntity).getHealth();
+                     this.addStat(Stats.DAMAGE_DEALT, Math.round(f5 * 10.0F));
                      if (j > 0) {
-                        p_71059_1_.setSecondsOnFire(j * 4);
+                        targetEntity.setFire(j * 4);
                      }
 
-                     if (this.level instanceof ServerWorld && f5 > 2.0F) {
+                     if (this.world instanceof ServerWorld && f5 > 2.0F) {
                         int k = (int)((double)f5 * 0.5D);
-                        ((ServerWorld)this.level).sendParticles(ParticleTypes.DAMAGE_INDICATOR, p_71059_1_.getX(), p_71059_1_.getY(0.5D), p_71059_1_.getZ(), k, 0.1D, 0.0D, 0.1D, 0.2D);
+                        ((ServerWorld)this.world).spawnParticle(ParticleTypes.DAMAGE_INDICATOR, targetEntity.getPosX(), targetEntity.getPosYHeight(0.5D), targetEntity.getPosZ(), k, 0.1D, 0.0D, 0.1D, 0.2D);
                      }
                   }
 
-                  this.causeFoodExhaustion(0.1F);
+                  this.addExhaustion(0.1F);
                } else {
-                  this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_NODAMAGE, this.getSoundSource(), 1.0F, 1.0F);
+                  this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE, this.getSoundCategory(), 1.0F, 1.0F);
                   if (flag4) {
-                     p_71059_1_.clearFire();
+                     targetEntity.extinguish();
                   }
                }
             }
@@ -1159,53 +1159,53 @@ public abstract class PlayerEntity extends LivingEntity {
       }
    }
 
-   protected void doAutoAttackOnTouch(LivingEntity p_204804_1_) {
-      this.attack(p_204804_1_);
+   protected void spinAttack(LivingEntity p_204804_1_) {
+      this.attackTargetEntityWithCurrentItem(p_204804_1_);
    }
 
    public void disableShield(boolean p_190777_1_) {
-      float f = 0.25F + (float)EnchantmentHelper.getBlockEfficiency(this) * 0.05F;
+      float f = 0.25F + (float)EnchantmentHelper.getEfficiencyModifier(this) * 0.05F;
       if (p_190777_1_) {
          f += 0.75F;
       }
 
-      if (this.random.nextFloat() < f) {
-         this.getCooldowns().addCooldown(Items.SHIELD, 100);
-         this.stopUsingItem();
-         this.level.broadcastEntityEvent(this, (byte)30);
+      if (this.rand.nextFloat() < f) {
+         this.getCooldownTracker().setCooldown(Items.SHIELD, 100);
+         this.resetActiveHand();
+         this.world.setEntityState(this, (byte)30);
       }
 
    }
 
-   public void crit(Entity p_71009_1_) {
+   public void onCriticalHit(Entity entityHit) {
    }
 
-   public void magicCrit(Entity p_71047_1_) {
+   public void onEnchantmentCritical(Entity entityHit) {
    }
 
-   public void sweepAttack() {
-      double d0 = (double)(-MathHelper.sin(this.yRot * ((float)Math.PI / 180F)));
-      double d1 = (double)MathHelper.cos(this.yRot * ((float)Math.PI / 180F));
-      if (this.level instanceof ServerWorld) {
-         ((ServerWorld)this.level).sendParticles(ParticleTypes.SWEEP_ATTACK, this.getX() + d0, this.getY(0.5D), this.getZ() + d1, 0, d0, 0.0D, d1, 0.0D);
+   public void spawnSweepParticles() {
+      double d0 = (double)(-MathHelper.sin(this.rotationYaw * ((float)Math.PI / 180F)));
+      double d1 = (double)MathHelper.cos(this.rotationYaw * ((float)Math.PI / 180F));
+      if (this.world instanceof ServerWorld) {
+         ((ServerWorld)this.world).spawnParticle(ParticleTypes.SWEEP_ATTACK, this.getPosX() + d0, this.getPosYHeight(0.5D), this.getPosZ() + d1, 0, d0, 0.0D, d1, 0.0D);
       }
 
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void respawn() {
+   public void respawnPlayer() {
    }
 
    public void remove() {
       super.remove();
-      this.inventoryMenu.removed(this);
-      if (this.containerMenu != null) {
-         this.containerMenu.removed(this);
+      this.container.onContainerClosed(this);
+      if (this.openContainer != null) {
+         this.openContainer.onContainerClosed(this);
       }
 
    }
 
-   public boolean isLocalPlayer() {
+   public boolean isUser() {
       return false;
    }
 
@@ -1213,129 +1213,129 @@ public abstract class PlayerEntity extends LivingEntity {
       return this.gameProfile;
    }
 
-   public Either<PlayerEntity.SleepResult, Unit> startSleepInBed(BlockPos p_213819_1_) {
-      this.startSleeping(p_213819_1_);
-      this.sleepCounter = 0;
+   public Either<PlayerEntity.SleepResult, Unit> trySleep(BlockPos at) {
+      this.startSleeping(at);
+      this.sleepTimer = 0;
       return Either.right(Unit.INSTANCE);
    }
 
    public void stopSleepInBed(boolean p_225652_1_, boolean p_225652_2_) {
-      super.stopSleeping();
-      if (this.level instanceof ServerWorld && p_225652_2_) {
-         ((ServerWorld)this.level).updateSleepingPlayerList();
+      super.wakeUp();
+      if (this.world instanceof ServerWorld && p_225652_2_) {
+         ((ServerWorld)this.world).updateAllPlayersSleepingFlag();
       }
 
-      this.sleepCounter = p_225652_1_ ? 0 : 100;
+      this.sleepTimer = p_225652_1_ ? 0 : 100;
    }
 
-   public void stopSleeping() {
+   public void wakeUp() {
       this.stopSleepInBed(true, true);
    }
 
-   public static Optional<Vector3d> findRespawnPositionAndUseSpawnBlock(ServerWorld p_242374_0_, BlockPos p_242374_1_, float p_242374_2_, boolean p_242374_3_, boolean p_242374_4_) {
+   public static Optional<Vector3d> func_242374_a(ServerWorld p_242374_0_, BlockPos p_242374_1_, float p_242374_2_, boolean p_242374_3_, boolean p_242374_4_) {
       BlockState blockstate = p_242374_0_.getBlockState(p_242374_1_);
       Block block = blockstate.getBlock();
-      if (block instanceof RespawnAnchorBlock && blockstate.getValue(RespawnAnchorBlock.CHARGE) > 0 && RespawnAnchorBlock.canSetSpawn(p_242374_0_)) {
-         Optional<Vector3d> optional = RespawnAnchorBlock.findStandUpPosition(EntityType.PLAYER, p_242374_0_, p_242374_1_);
+      if (block instanceof RespawnAnchorBlock && blockstate.get(RespawnAnchorBlock.CHARGES) > 0 && RespawnAnchorBlock.doesRespawnAnchorWork(p_242374_0_)) {
+         Optional<Vector3d> optional = RespawnAnchorBlock.findRespawnPoint(EntityType.PLAYER, p_242374_0_, p_242374_1_);
          if (!p_242374_4_ && optional.isPresent()) {
-            p_242374_0_.setBlock(p_242374_1_, blockstate.setValue(RespawnAnchorBlock.CHARGE, Integer.valueOf(blockstate.getValue(RespawnAnchorBlock.CHARGE) - 1)), 3);
+            p_242374_0_.setBlockState(p_242374_1_, blockstate.with(RespawnAnchorBlock.CHARGES, Integer.valueOf(blockstate.get(RespawnAnchorBlock.CHARGES) - 1)), 3);
          }
 
          return optional;
-      } else if (block instanceof BedBlock && BedBlock.canSetSpawn(p_242374_0_)) {
-         return BedBlock.findStandUpPosition(EntityType.PLAYER, p_242374_0_, p_242374_1_, p_242374_2_);
+      } else if (block instanceof BedBlock && BedBlock.doesBedWork(p_242374_0_)) {
+         return BedBlock.func_242652_a(EntityType.PLAYER, p_242374_0_, p_242374_1_, p_242374_2_);
       } else if (!p_242374_3_) {
          return Optional.empty();
       } else {
-         boolean flag = block.isPossibleToRespawnInThis();
-         boolean flag1 = p_242374_0_.getBlockState(p_242374_1_.above()).getBlock().isPossibleToRespawnInThis();
+         boolean flag = block.canSpawnInBlock();
+         boolean flag1 = p_242374_0_.getBlockState(p_242374_1_.up()).getBlock().canSpawnInBlock();
          return flag && flag1 ? Optional.of(new Vector3d((double)p_242374_1_.getX() + 0.5D, (double)p_242374_1_.getY() + 0.1D, (double)p_242374_1_.getZ() + 0.5D)) : Optional.empty();
       }
    }
 
-   public boolean isSleepingLongEnough() {
-      return this.isSleeping() && this.sleepCounter >= 100;
+   public boolean isPlayerFullyAsleep() {
+      return this.isSleeping() && this.sleepTimer >= 100;
    }
 
    public int getSleepTimer() {
-      return this.sleepCounter;
+      return this.sleepTimer;
    }
 
-   public void displayClientMessage(ITextComponent p_146105_1_, boolean p_146105_2_) {
+   public void sendStatusMessage(ITextComponent chatComponent, boolean actionBar) {
    }
 
-   public void awardStat(ResourceLocation p_195066_1_) {
-      this.awardStat(Stats.CUSTOM.get(p_195066_1_));
+   public void addStat(ResourceLocation stat) {
+      this.addStat(Stats.CUSTOM.get(stat));
    }
 
-   public void awardStat(ResourceLocation p_195067_1_, int p_195067_2_) {
-      this.awardStat(Stats.CUSTOM.get(p_195067_1_), p_195067_2_);
+   public void addStat(ResourceLocation p_195067_1_, int p_195067_2_) {
+      this.addStat(Stats.CUSTOM.get(p_195067_1_), p_195067_2_);
    }
 
-   public void awardStat(Stat<?> p_71029_1_) {
-      this.awardStat(p_71029_1_, 1);
+   public void addStat(Stat<?> stat) {
+      this.addStat(stat, 1);
    }
 
-   public void awardStat(Stat<?> p_71064_1_, int p_71064_2_) {
+   public void addStat(Stat<?> stat, int amount) {
    }
 
-   public void resetStat(Stat<?> p_175145_1_) {
+   public void takeStat(Stat<?> stat) {
    }
 
-   public int awardRecipes(Collection<IRecipe<?>> p_195065_1_) {
+   public int unlockRecipes(Collection<IRecipe<?>> p_195065_1_) {
       return 0;
    }
 
-   public void awardRecipesByKey(ResourceLocation[] p_193102_1_) {
+   public void unlockRecipes(ResourceLocation[] p_193102_1_) {
    }
 
    public int resetRecipes(Collection<IRecipe<?>> p_195069_1_) {
       return 0;
    }
 
-   public void jumpFromGround() {
-      super.jumpFromGround();
-      this.awardStat(Stats.JUMP);
+   public void jump() {
+      super.jump();
+      this.addStat(Stats.JUMP);
       if (this.isSprinting()) {
-         this.causeFoodExhaustion(0.2F);
+         this.addExhaustion(0.2F);
       } else {
-         this.causeFoodExhaustion(0.05F);
+         this.addExhaustion(0.05F);
       }
 
    }
 
-   public void travel(Vector3d p_213352_1_) {
-      double d0 = this.getX();
-      double d1 = this.getY();
-      double d2 = this.getZ();
+   public void travel(Vector3d travelVector) {
+      double d0 = this.getPosX();
+      double d1 = this.getPosY();
+      double d2 = this.getPosZ();
       if (this.isSwimming() && !this.isPassenger()) {
-         double d3 = this.getLookAngle().y;
+         double d3 = this.getLookVec().y;
          double d4 = d3 < -0.2D ? 0.085D : 0.06D;
-         if (d3 <= 0.0D || this.jumping || !this.level.getBlockState(new BlockPos(this.getX(), this.getY() + 1.0D - 0.1D, this.getZ())).getFluidState().isEmpty()) {
-            Vector3d vector3d1 = this.getDeltaMovement();
-            this.setDeltaMovement(vector3d1.add(0.0D, (d3 - vector3d1.y) * d4, 0.0D));
+         if (d3 <= 0.0D || this.isJumping || !this.world.getBlockState(new BlockPos(this.getPosX(), this.getPosY() + 1.0D - 0.1D, this.getPosZ())).getFluidState().isEmpty()) {
+            Vector3d vector3d1 = this.getMotion();
+            this.setMotion(vector3d1.add(0.0D, (d3 - vector3d1.y) * d4, 0.0D));
          }
       }
 
-      if (this.abilities.flying && !this.isPassenger()) {
-         double d5 = this.getDeltaMovement().y;
-         float f = this.flyingSpeed;
-         this.flyingSpeed = this.abilities.getFlyingSpeed() * (float)(this.isSprinting() ? 2 : 1);
-         super.travel(p_213352_1_);
-         Vector3d vector3d = this.getDeltaMovement();
-         this.setDeltaMovement(vector3d.x, d5 * 0.6D, vector3d.z);
-         this.flyingSpeed = f;
+      if (this.abilities.isFlying && !this.isPassenger()) {
+         double d5 = this.getMotion().y;
+         float f = this.jumpMovementFactor;
+         this.jumpMovementFactor = this.abilities.getFlySpeed() * (float)(this.isSprinting() ? 2 : 1);
+         super.travel(travelVector);
+         Vector3d vector3d = this.getMotion();
+         this.setMotion(vector3d.x, d5 * 0.6D, vector3d.z);
+         this.jumpMovementFactor = f;
          this.fallDistance = 0.0F;
-         this.setSharedFlag(7, false);
+         this.setFlag(7, false);
       } else {
-         super.travel(p_213352_1_);
+         super.travel(travelVector);
       }
 
-      this.checkMovementStatistics(this.getX() - d0, this.getY() - d1, this.getZ() - d2);
+      this.addMovementStat(this.getPosX() - d0, this.getPosY() - d1, this.getPosZ() - d2);
    }
 
    public void updateSwimming() {
-      if (this.abilities.flying) {
+      if (this.abilities.isFlying) {
          this.setSwimming(false);
       } else {
          super.updateSwimming();
@@ -1343,102 +1343,102 @@ public abstract class PlayerEntity extends LivingEntity {
 
    }
 
-   protected boolean freeAt(BlockPos p_207401_1_) {
-      return !this.level.getBlockState(p_207401_1_).isSuffocating(this.level, p_207401_1_);
+   protected boolean isNormalCube(BlockPos pos) {
+      return !this.world.getBlockState(pos).isSuffocating(this.world, pos);
    }
 
-   public float getSpeed() {
+   public float getAIMoveSpeed() {
       return (float)this.getAttributeValue(Attributes.MOVEMENT_SPEED);
    }
 
-   public void checkMovementStatistics(double p_71000_1_, double p_71000_3_, double p_71000_5_) {
+   public void addMovementStat(double p_71000_1_, double p_71000_3_, double p_71000_5_) {
       if (!this.isPassenger()) {
          if (this.isSwimming()) {
             int i = Math.round(MathHelper.sqrt(p_71000_1_ * p_71000_1_ + p_71000_3_ * p_71000_3_ + p_71000_5_ * p_71000_5_) * 100.0F);
             if (i > 0) {
-               this.awardStat(Stats.SWIM_ONE_CM, i);
-               this.causeFoodExhaustion(0.01F * (float)i * 0.01F);
+               this.addStat(Stats.SWIM_ONE_CM, i);
+               this.addExhaustion(0.01F * (float)i * 0.01F);
             }
-         } else if (this.isEyeInFluid(FluidTags.WATER)) {
+         } else if (this.areEyesInFluid(FluidTags.WATER)) {
             int j = Math.round(MathHelper.sqrt(p_71000_1_ * p_71000_1_ + p_71000_3_ * p_71000_3_ + p_71000_5_ * p_71000_5_) * 100.0F);
             if (j > 0) {
-               this.awardStat(Stats.WALK_UNDER_WATER_ONE_CM, j);
-               this.causeFoodExhaustion(0.01F * (float)j * 0.01F);
+               this.addStat(Stats.WALK_UNDER_WATER_ONE_CM, j);
+               this.addExhaustion(0.01F * (float)j * 0.01F);
             }
          } else if (this.isInWater()) {
             int k = Math.round(MathHelper.sqrt(p_71000_1_ * p_71000_1_ + p_71000_5_ * p_71000_5_) * 100.0F);
             if (k > 0) {
-               this.awardStat(Stats.WALK_ON_WATER_ONE_CM, k);
-               this.causeFoodExhaustion(0.01F * (float)k * 0.01F);
+               this.addStat(Stats.WALK_ON_WATER_ONE_CM, k);
+               this.addExhaustion(0.01F * (float)k * 0.01F);
             }
-         } else if (this.onClimbable()) {
+         } else if (this.isOnLadder()) {
             if (p_71000_3_ > 0.0D) {
-               this.awardStat(Stats.CLIMB_ONE_CM, (int)Math.round(p_71000_3_ * 100.0D));
+               this.addStat(Stats.CLIMB_ONE_CM, (int)Math.round(p_71000_3_ * 100.0D));
             }
          } else if (this.onGround) {
             int l = Math.round(MathHelper.sqrt(p_71000_1_ * p_71000_1_ + p_71000_5_ * p_71000_5_) * 100.0F);
             if (l > 0) {
                if (this.isSprinting()) {
-                  this.awardStat(Stats.SPRINT_ONE_CM, l);
-                  this.causeFoodExhaustion(0.1F * (float)l * 0.01F);
+                  this.addStat(Stats.SPRINT_ONE_CM, l);
+                  this.addExhaustion(0.1F * (float)l * 0.01F);
                } else if (this.isCrouching()) {
-                  this.awardStat(Stats.CROUCH_ONE_CM, l);
-                  this.causeFoodExhaustion(0.0F * (float)l * 0.01F);
+                  this.addStat(Stats.CROUCH_ONE_CM, l);
+                  this.addExhaustion(0.0F * (float)l * 0.01F);
                } else {
-                  this.awardStat(Stats.WALK_ONE_CM, l);
-                  this.causeFoodExhaustion(0.0F * (float)l * 0.01F);
+                  this.addStat(Stats.WALK_ONE_CM, l);
+                  this.addExhaustion(0.0F * (float)l * 0.01F);
                }
             }
-         } else if (this.isFallFlying()) {
+         } else if (this.isElytraFlying()) {
             int i1 = Math.round(MathHelper.sqrt(p_71000_1_ * p_71000_1_ + p_71000_3_ * p_71000_3_ + p_71000_5_ * p_71000_5_) * 100.0F);
-            this.awardStat(Stats.AVIATE_ONE_CM, i1);
+            this.addStat(Stats.AVIATE_ONE_CM, i1);
          } else {
             int j1 = Math.round(MathHelper.sqrt(p_71000_1_ * p_71000_1_ + p_71000_5_ * p_71000_5_) * 100.0F);
             if (j1 > 25) {
-               this.awardStat(Stats.FLY_ONE_CM, j1);
+               this.addStat(Stats.FLY_ONE_CM, j1);
             }
          }
 
       }
    }
 
-   private void checkRidingStatistics(double p_71015_1_, double p_71015_3_, double p_71015_5_) {
+   private void addMountedMovementStat(double p_71015_1_, double p_71015_3_, double p_71015_5_) {
       if (this.isPassenger()) {
          int i = Math.round(MathHelper.sqrt(p_71015_1_ * p_71015_1_ + p_71015_3_ * p_71015_3_ + p_71015_5_ * p_71015_5_) * 100.0F);
          if (i > 0) {
-            Entity entity = this.getVehicle();
+            Entity entity = this.getRidingEntity();
             if (entity instanceof AbstractMinecartEntity) {
-               this.awardStat(Stats.MINECART_ONE_CM, i);
+               this.addStat(Stats.MINECART_ONE_CM, i);
             } else if (entity instanceof BoatEntity) {
-               this.awardStat(Stats.BOAT_ONE_CM, i);
+               this.addStat(Stats.BOAT_ONE_CM, i);
             } else if (entity instanceof PigEntity) {
-               this.awardStat(Stats.PIG_ONE_CM, i);
+               this.addStat(Stats.PIG_ONE_CM, i);
             } else if (entity instanceof AbstractHorseEntity) {
-               this.awardStat(Stats.HORSE_ONE_CM, i);
+               this.addStat(Stats.HORSE_ONE_CM, i);
             } else if (entity instanceof StriderEntity) {
-               this.awardStat(Stats.STRIDER_ONE_CM, i);
+               this.addStat(Stats.field_232862_C_, i);
             }
          }
       }
 
    }
 
-   public boolean causeFallDamage(float p_225503_1_, float p_225503_2_) {
-      if (this.abilities.mayfly) {
+   public boolean onLivingFall(float distance, float damageMultiplier) {
+      if (this.abilities.allowFlying) {
          return false;
       } else {
-         if (p_225503_1_ >= 2.0F) {
-            this.awardStat(Stats.FALL_ONE_CM, (int)Math.round((double)p_225503_1_ * 100.0D));
+         if (distance >= 2.0F) {
+            this.addStat(Stats.FALL_ONE_CM, (int)Math.round((double)distance * 100.0D));
          }
 
-         return super.causeFallDamage(p_225503_1_, p_225503_2_);
+         return super.onLivingFall(distance, damageMultiplier);
       }
    }
 
    public boolean tryToStartFallFlying() {
-      if (!this.onGround && !this.isFallFlying() && !this.isInWater() && !this.hasEffect(Effects.LEVITATION)) {
-         ItemStack itemstack = this.getItemBySlot(EquipmentSlotType.CHEST);
-         if (itemstack.getItem() == Items.ELYTRA && ElytraItem.isFlyEnabled(itemstack)) {
+      if (!this.onGround && !this.isElytraFlying() && !this.isInWater() && !this.isPotionActive(Effects.LEVITATION)) {
+         ItemStack itemstack = this.getItemStackFromSlot(EquipmentSlotType.CHEST);
+         if (itemstack.getItem() == Items.ELYTRA && ElytraItem.isUsable(itemstack)) {
             this.startFallFlying();
             return true;
          }
@@ -1448,12 +1448,12 @@ public abstract class PlayerEntity extends LivingEntity {
    }
 
    public void startFallFlying() {
-      this.setSharedFlag(7, true);
+      this.setFlag(7, true);
    }
 
    public void stopFallFlying() {
-      this.setSharedFlag(7, true);
-      this.setSharedFlag(7, false);
+      this.setFlag(7, true);
+      this.setFlag(7, false);
    }
 
    protected void doWaterSplashEffect() {
@@ -1463,77 +1463,77 @@ public abstract class PlayerEntity extends LivingEntity {
 
    }
 
-   protected SoundEvent getFallDamageSound(int p_184588_1_) {
-      return p_184588_1_ > 4 ? SoundEvents.PLAYER_BIG_FALL : SoundEvents.PLAYER_SMALL_FALL;
+   protected SoundEvent getFallSound(int heightIn) {
+      return heightIn > 4 ? SoundEvents.ENTITY_PLAYER_BIG_FALL : SoundEvents.ENTITY_PLAYER_SMALL_FALL;
    }
 
-   public void killed(ServerWorld p_241847_1_, LivingEntity p_241847_2_) {
-      this.awardStat(Stats.ENTITY_KILLED.get(p_241847_2_.getType()));
+   public void func_241847_a(ServerWorld p_241847_1_, LivingEntity p_241847_2_) {
+      this.addStat(Stats.ENTITY_KILLED.get(p_241847_2_.getType()));
    }
 
-   public void makeStuckInBlock(BlockState p_213295_1_, Vector3d p_213295_2_) {
-      if (!this.abilities.flying) {
-         super.makeStuckInBlock(p_213295_1_, p_213295_2_);
+   public void setMotionMultiplier(BlockState state, Vector3d motionMultiplierIn) {
+      if (!this.abilities.isFlying) {
+         super.setMotionMultiplier(state, motionMultiplierIn);
       }
 
    }
 
    public void giveExperiencePoints(int p_195068_1_) {
-      this.increaseScore(p_195068_1_);
-      this.experienceProgress += (float)p_195068_1_ / (float)this.getXpNeededForNextLevel();
-      this.totalExperience = MathHelper.clamp(this.totalExperience + p_195068_1_, 0, Integer.MAX_VALUE);
+      this.addScore(p_195068_1_);
+      this.experience += (float)p_195068_1_ / (float)this.xpBarCap();
+      this.experienceTotal = MathHelper.clamp(this.experienceTotal + p_195068_1_, 0, Integer.MAX_VALUE);
 
-      while(this.experienceProgress < 0.0F) {
-         float f = this.experienceProgress * (float)this.getXpNeededForNextLevel();
+      while(this.experience < 0.0F) {
+         float f = this.experience * (float)this.xpBarCap();
          if (this.experienceLevel > 0) {
-            this.giveExperienceLevels(-1);
-            this.experienceProgress = 1.0F + f / (float)this.getXpNeededForNextLevel();
+            this.addExperienceLevel(-1);
+            this.experience = 1.0F + f / (float)this.xpBarCap();
          } else {
-            this.giveExperienceLevels(-1);
-            this.experienceProgress = 0.0F;
+            this.addExperienceLevel(-1);
+            this.experience = 0.0F;
          }
       }
 
-      while(this.experienceProgress >= 1.0F) {
-         this.experienceProgress = (this.experienceProgress - 1.0F) * (float)this.getXpNeededForNextLevel();
-         this.giveExperienceLevels(1);
-         this.experienceProgress /= (float)this.getXpNeededForNextLevel();
+      while(this.experience >= 1.0F) {
+         this.experience = (this.experience - 1.0F) * (float)this.xpBarCap();
+         this.addExperienceLevel(1);
+         this.experience /= (float)this.xpBarCap();
       }
 
    }
 
-   public int getEnchantmentSeed() {
-      return this.enchantmentSeed;
+   public int getXPSeed() {
+      return this.xpSeed;
    }
 
-   public void onEnchantmentPerformed(ItemStack p_192024_1_, int p_192024_2_) {
-      this.experienceLevel -= p_192024_2_;
+   public void onEnchant(ItemStack enchantedItem, int cost) {
+      this.experienceLevel -= cost;
       if (this.experienceLevel < 0) {
          this.experienceLevel = 0;
-         this.experienceProgress = 0.0F;
-         this.totalExperience = 0;
+         this.experience = 0.0F;
+         this.experienceTotal = 0;
       }
 
-      this.enchantmentSeed = this.random.nextInt();
+      this.xpSeed = this.rand.nextInt();
    }
 
-   public void giveExperienceLevels(int p_82242_1_) {
-      this.experienceLevel += p_82242_1_;
+   public void addExperienceLevel(int levels) {
+      this.experienceLevel += levels;
       if (this.experienceLevel < 0) {
          this.experienceLevel = 0;
-         this.experienceProgress = 0.0F;
-         this.totalExperience = 0;
+         this.experience = 0.0F;
+         this.experienceTotal = 0;
       }
 
-      if (p_82242_1_ > 0 && this.experienceLevel % 5 == 0 && (float)this.lastLevelUpTime < (float)this.tickCount - 100.0F) {
+      if (levels > 0 && this.experienceLevel % 5 == 0 && (float)this.lastXPSound < (float)this.ticksExisted - 100.0F) {
          float f = this.experienceLevel > 30 ? 1.0F : (float)this.experienceLevel / 30.0F;
-         this.level.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_LEVELUP, this.getSoundSource(), f * 0.75F, 1.0F);
-         this.lastLevelUpTime = this.tickCount;
+         this.world.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_PLAYER_LEVELUP, this.getSoundCategory(), f * 0.75F, 1.0F);
+         this.lastXPSound = this.ticksExisted;
       }
 
    }
 
-   public int getXpNeededForNextLevel() {
+   public int xpBarCap() {
       if (this.experienceLevel >= 30) {
          return 112 + (this.experienceLevel - 30) * 9;
       } else {
@@ -1541,43 +1541,43 @@ public abstract class PlayerEntity extends LivingEntity {
       }
    }
 
-   public void causeFoodExhaustion(float p_71020_1_) {
-      if (!this.abilities.invulnerable) {
-         if (!this.level.isClientSide) {
-            this.foodData.addExhaustion(p_71020_1_);
+   public void addExhaustion(float exhaustion) {
+      if (!this.abilities.disableDamage) {
+         if (!this.world.isRemote) {
+            this.foodStats.addExhaustion(exhaustion);
          }
 
       }
    }
 
-   public FoodStats getFoodData() {
-      return this.foodData;
+   public FoodStats getFoodStats() {
+      return this.foodStats;
    }
 
-   public boolean canEat(boolean p_71043_1_) {
-      return this.abilities.invulnerable || p_71043_1_ || this.foodData.needsFood();
+   public boolean canEat(boolean ignoreHunger) {
+      return this.abilities.disableDamage || ignoreHunger || this.foodStats.needFood();
    }
 
-   public boolean isHurt() {
+   public boolean shouldHeal() {
       return this.getHealth() > 0.0F && this.getHealth() < this.getMaxHealth();
    }
 
-   public boolean mayBuild() {
-      return this.abilities.mayBuild;
+   public boolean isAllowEdit() {
+      return this.abilities.allowEdit;
    }
 
-   public boolean mayUseItemAt(BlockPos p_175151_1_, Direction p_175151_2_, ItemStack p_175151_3_) {
-      if (this.abilities.mayBuild) {
+   public boolean canPlayerEdit(BlockPos pos, Direction facing, ItemStack stack) {
+      if (this.abilities.allowEdit) {
          return true;
       } else {
-         BlockPos blockpos = p_175151_1_.relative(p_175151_2_.getOpposite());
-         CachedBlockInfo cachedblockinfo = new CachedBlockInfo(this.level, blockpos, false);
-         return p_175151_3_.hasAdventureModePlaceTagForBlock(this.level.getTagManager(), cachedblockinfo);
+         BlockPos blockpos = pos.offset(facing.getOpposite());
+         CachedBlockInfo cachedblockinfo = new CachedBlockInfo(this.world, blockpos, false);
+         return stack.canPlaceOn(this.world.getTags(), cachedblockinfo);
       }
    }
 
-   protected int getExperienceReward(PlayerEntity p_70693_1_) {
-      if (!this.level.getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) && !this.isSpectator()) {
+   protected int getExperiencePoints(PlayerEntity player) {
+      if (!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY) && !this.isSpectator()) {
          int i = this.experienceLevel * 7;
          return i > 100 ? 100 : i;
       } else {
@@ -1585,79 +1585,79 @@ public abstract class PlayerEntity extends LivingEntity {
       }
    }
 
-   protected boolean isAlwaysExperienceDropper() {
+   protected boolean isPlayer() {
       return true;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean shouldShowName() {
+   public boolean getAlwaysRenderNameTagForRender() {
       return true;
    }
 
-   protected boolean isMovementNoisy() {
-      return !this.abilities.flying && (!this.onGround || !this.isDiscrete());
+   protected boolean canTriggerWalking() {
+      return !this.abilities.isFlying && (!this.onGround || !this.isDiscrete());
    }
 
-   public void onUpdateAbilities() {
+   public void sendPlayerAbilities() {
    }
 
-   public void setGameMode(GameType p_71033_1_) {
+   public void setGameType(GameType gameType) {
    }
 
    public ITextComponent getName() {
       return new StringTextComponent(this.gameProfile.getName());
    }
 
-   public EnderChestInventory getEnderChestInventory() {
-      return this.enderChestInventory;
+   public EnderChestInventory getInventoryEnderChest() {
+      return this.enterChestInventory;
    }
 
-   public ItemStack getItemBySlot(EquipmentSlotType p_184582_1_) {
-      if (p_184582_1_ == EquipmentSlotType.MAINHAND) {
-         return this.inventory.getSelected();
-      } else if (p_184582_1_ == EquipmentSlotType.OFFHAND) {
-         return this.inventory.offhand.get(0);
+   public ItemStack getItemStackFromSlot(EquipmentSlotType slotIn) {
+      if (slotIn == EquipmentSlotType.MAINHAND) {
+         return this.inventory.getCurrentItem();
+      } else if (slotIn == EquipmentSlotType.OFFHAND) {
+         return this.inventory.offHandInventory.get(0);
       } else {
-         return p_184582_1_.getType() == EquipmentSlotType.Group.ARMOR ? this.inventory.armor.get(p_184582_1_.getIndex()) : ItemStack.EMPTY;
+         return slotIn.getSlotType() == EquipmentSlotType.Group.ARMOR ? this.inventory.armorInventory.get(slotIn.getIndex()) : ItemStack.EMPTY;
       }
    }
 
-   public void setItemSlot(EquipmentSlotType p_184201_1_, ItemStack p_184201_2_) {
-      if (p_184201_1_ == EquipmentSlotType.MAINHAND) {
-         this.playEquipSound(p_184201_2_);
-         this.inventory.items.set(this.inventory.selected, p_184201_2_);
-      } else if (p_184201_1_ == EquipmentSlotType.OFFHAND) {
-         this.playEquipSound(p_184201_2_);
-         this.inventory.offhand.set(0, p_184201_2_);
-      } else if (p_184201_1_.getType() == EquipmentSlotType.Group.ARMOR) {
-         this.playEquipSound(p_184201_2_);
-         this.inventory.armor.set(p_184201_1_.getIndex(), p_184201_2_);
+   public void setItemStackToSlot(EquipmentSlotType slotIn, ItemStack stack) {
+      if (slotIn == EquipmentSlotType.MAINHAND) {
+         this.playEquipSound(stack);
+         this.inventory.mainInventory.set(this.inventory.currentItem, stack);
+      } else if (slotIn == EquipmentSlotType.OFFHAND) {
+         this.playEquipSound(stack);
+         this.inventory.offHandInventory.set(0, stack);
+      } else if (slotIn.getSlotType() == EquipmentSlotType.Group.ARMOR) {
+         this.playEquipSound(stack);
+         this.inventory.armorInventory.set(slotIn.getIndex(), stack);
       }
 
    }
 
-   public boolean addItem(ItemStack p_191521_1_) {
+   public boolean addItemStackToInventory(ItemStack p_191521_1_) {
       this.playEquipSound(p_191521_1_);
-      return this.inventory.add(p_191521_1_);
+      return this.inventory.addItemStackToInventory(p_191521_1_);
    }
 
-   public Iterable<ItemStack> getHandSlots() {
-      return Lists.newArrayList(this.getMainHandItem(), this.getOffhandItem());
+   public Iterable<ItemStack> getHeldEquipment() {
+      return Lists.newArrayList(this.getHeldItemMainhand(), this.getHeldItemOffhand());
    }
 
-   public Iterable<ItemStack> getArmorSlots() {
-      return this.inventory.armor;
+   public Iterable<ItemStack> getArmorInventoryList() {
+      return this.inventory.armorInventory;
    }
 
-   public boolean setEntityOnShoulder(CompoundNBT p_192027_1_) {
+   public boolean addShoulderEntity(CompoundNBT p_192027_1_) {
       if (!this.isPassenger() && this.onGround && !this.isInWater()) {
-         if (this.getShoulderEntityLeft().isEmpty()) {
-            this.setShoulderEntityLeft(p_192027_1_);
-            this.timeEntitySatOnShoulder = this.level.getGameTime();
+         if (this.getLeftShoulderEntity().isEmpty()) {
+            this.setLeftShoulderEntity(p_192027_1_);
+            this.timeEntitySatOnShoulder = this.world.getGameTime();
             return true;
-         } else if (this.getShoulderEntityRight().isEmpty()) {
-            this.setShoulderEntityRight(p_192027_1_);
-            this.timeEntitySatOnShoulder = this.level.getGameTime();
+         } else if (this.getRightShoulderEntity().isEmpty()) {
+            this.setRightShoulderEntity(p_192027_1_);
+            this.timeEntitySatOnShoulder = this.world.getGameTime();
             return true;
          } else {
             return false;
@@ -1667,25 +1667,25 @@ public abstract class PlayerEntity extends LivingEntity {
       }
    }
 
-   protected void removeEntitiesOnShoulder() {
-      if (this.timeEntitySatOnShoulder + 20L < this.level.getGameTime()) {
-         this.respawnEntityOnShoulder(this.getShoulderEntityLeft());
-         this.setShoulderEntityLeft(new CompoundNBT());
-         this.respawnEntityOnShoulder(this.getShoulderEntityRight());
-         this.setShoulderEntityRight(new CompoundNBT());
+   protected void spawnShoulderEntities() {
+      if (this.timeEntitySatOnShoulder + 20L < this.world.getGameTime()) {
+         this.spawnShoulderEntity(this.getLeftShoulderEntity());
+         this.setLeftShoulderEntity(new CompoundNBT());
+         this.spawnShoulderEntity(this.getRightShoulderEntity());
+         this.setRightShoulderEntity(new CompoundNBT());
       }
 
    }
 
-   private void respawnEntityOnShoulder(CompoundNBT p_192026_1_) {
-      if (!this.level.isClientSide && !p_192026_1_.isEmpty()) {
-         EntityType.create(p_192026_1_, this.level).ifPresent((p_226562_1_) -> {
+   private void spawnShoulderEntity(CompoundNBT p_192026_1_) {
+      if (!this.world.isRemote && !p_192026_1_.isEmpty()) {
+         EntityType.loadEntityUnchecked(p_192026_1_, this.world).ifPresent((p_226562_1_) -> {
             if (p_226562_1_ instanceof TameableEntity) {
-               ((TameableEntity)p_226562_1_).setOwnerUUID(this.uuid);
+               ((TameableEntity)p_226562_1_).setOwnerId(this.entityUniqueID);
             }
 
-            p_226562_1_.setPos(this.getX(), this.getY() + (double)0.7F, this.getZ());
-            ((ServerWorld)this.level).addWithUUID(p_226562_1_);
+            p_226562_1_.setPosition(this.getPosX(), this.getPosY() + (double)0.7F, this.getPosZ());
+            ((ServerWorld)this.world).summonEntity(p_226562_1_);
          });
       }
 
@@ -1694,28 +1694,28 @@ public abstract class PlayerEntity extends LivingEntity {
    public abstract boolean isSpectator();
 
    public boolean isSwimming() {
-      return !this.abilities.flying && !this.isSpectator() && super.isSwimming();
+      return !this.abilities.isFlying && !this.isSpectator() && super.isSwimming();
    }
 
    public abstract boolean isCreative();
 
-   public boolean isPushedByFluid() {
-      return !this.abilities.flying;
+   public boolean isPushedByWater() {
+      return !this.abilities.isFlying;
    }
 
-   public Scoreboard getScoreboard() {
-      return this.level.getScoreboard();
+   public Scoreboard getWorldScoreboard() {
+      return this.world.getScoreboard();
    }
 
    public ITextComponent getDisplayName() {
-      IFormattableTextComponent iformattabletextcomponent = ScorePlayerTeam.formatNameForTeam(this.getTeam(), this.getName());
-      return this.decorateDisplayNameComponent(iformattabletextcomponent);
+      IFormattableTextComponent iformattabletextcomponent = ScorePlayerTeam.func_237500_a_(this.getTeam(), this.getName());
+      return this.addTellEvent(iformattabletextcomponent);
    }
 
-   private IFormattableTextComponent decorateDisplayNameComponent(IFormattableTextComponent p_208016_1_) {
+   private IFormattableTextComponent addTellEvent(IFormattableTextComponent p_208016_1_) {
       String s = this.getGameProfile().getName();
-      return p_208016_1_.withStyle((p_234565_2_) -> {
-         return p_234565_2_.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tell " + s + " ")).withHoverEvent(this.createHoverEvent()).withInsertion(s);
+      return p_208016_1_.modifyStyle((p_234565_2_) -> {
+         return p_234565_2_.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tell " + s + " ")).setHoverEvent(this.getHoverEvent()).setInsertion(s);
       });
    }
 
@@ -1723,8 +1723,8 @@ public abstract class PlayerEntity extends LivingEntity {
       return this.getGameProfile().getName();
    }
 
-   public float getStandingEyeHeight(Pose p_213348_1_, EntitySize p_213348_2_) {
-      switch(p_213348_1_) {
+   public float getStandingEyeHeight(Pose poseIn, EntitySize sizeIn) {
+      switch(poseIn) {
       case SWIMMING:
       case FALL_FLYING:
       case SPIN_ATTACK:
@@ -1736,220 +1736,220 @@ public abstract class PlayerEntity extends LivingEntity {
       }
    }
 
-   public void setAbsorptionAmount(float p_110149_1_) {
-      if (p_110149_1_ < 0.0F) {
-         p_110149_1_ = 0.0F;
+   public void setAbsorptionAmount(float amount) {
+      if (amount < 0.0F) {
+         amount = 0.0F;
       }
 
-      this.getEntityData().set(DATA_PLAYER_ABSORPTION_ID, p_110149_1_);
+      this.getDataManager().set(ABSORPTION, amount);
    }
 
    public float getAbsorptionAmount() {
-      return this.getEntityData().get(DATA_PLAYER_ABSORPTION_ID);
+      return this.getDataManager().get(ABSORPTION);
    }
 
-   public static UUID createPlayerUUID(GameProfile p_146094_0_) {
-      UUID uuid = p_146094_0_.getId();
+   public static UUID getUUID(GameProfile profile) {
+      UUID uuid = profile.getId();
       if (uuid == null) {
-         uuid = createPlayerUUID(p_146094_0_.getName());
+         uuid = getOfflineUUID(profile.getName());
       }
 
       return uuid;
    }
 
-   public static UUID createPlayerUUID(String p_175147_0_) {
-      return UUID.nameUUIDFromBytes(("OfflinePlayer:" + p_175147_0_).getBytes(StandardCharsets.UTF_8));
+   public static UUID getOfflineUUID(String username) {
+      return UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(StandardCharsets.UTF_8));
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean isModelPartShown(PlayerModelPart p_175148_1_) {
-      return (this.getEntityData().get(DATA_PLAYER_MODE_CUSTOMISATION) & p_175148_1_.getMask()) == p_175148_1_.getMask();
+   public boolean isWearing(PlayerModelPart part) {
+      return (this.getDataManager().get(PLAYER_MODEL_FLAG) & part.getPartMask()) == part.getPartMask();
    }
 
-   public boolean setSlot(int p_174820_1_, ItemStack p_174820_2_) {
-      if (p_174820_1_ >= 0 && p_174820_1_ < this.inventory.items.size()) {
-         this.inventory.setItem(p_174820_1_, p_174820_2_);
+   public boolean replaceItemInInventory(int inventorySlot, ItemStack itemStackIn) {
+      if (inventorySlot >= 0 && inventorySlot < this.inventory.mainInventory.size()) {
+         this.inventory.setInventorySlotContents(inventorySlot, itemStackIn);
          return true;
       } else {
          EquipmentSlotType equipmentslottype;
-         if (p_174820_1_ == 100 + EquipmentSlotType.HEAD.getIndex()) {
+         if (inventorySlot == 100 + EquipmentSlotType.HEAD.getIndex()) {
             equipmentslottype = EquipmentSlotType.HEAD;
-         } else if (p_174820_1_ == 100 + EquipmentSlotType.CHEST.getIndex()) {
+         } else if (inventorySlot == 100 + EquipmentSlotType.CHEST.getIndex()) {
             equipmentslottype = EquipmentSlotType.CHEST;
-         } else if (p_174820_1_ == 100 + EquipmentSlotType.LEGS.getIndex()) {
+         } else if (inventorySlot == 100 + EquipmentSlotType.LEGS.getIndex()) {
             equipmentslottype = EquipmentSlotType.LEGS;
-         } else if (p_174820_1_ == 100 + EquipmentSlotType.FEET.getIndex()) {
+         } else if (inventorySlot == 100 + EquipmentSlotType.FEET.getIndex()) {
             equipmentslottype = EquipmentSlotType.FEET;
          } else {
             equipmentslottype = null;
          }
 
-         if (p_174820_1_ == 98) {
-            this.setItemSlot(EquipmentSlotType.MAINHAND, p_174820_2_);
+         if (inventorySlot == 98) {
+            this.setItemStackToSlot(EquipmentSlotType.MAINHAND, itemStackIn);
             return true;
-         } else if (p_174820_1_ == 99) {
-            this.setItemSlot(EquipmentSlotType.OFFHAND, p_174820_2_);
+         } else if (inventorySlot == 99) {
+            this.setItemStackToSlot(EquipmentSlotType.OFFHAND, itemStackIn);
             return true;
          } else if (equipmentslottype == null) {
-            int i = p_174820_1_ - 200;
-            if (i >= 0 && i < this.enderChestInventory.getContainerSize()) {
-               this.enderChestInventory.setItem(i, p_174820_2_);
+            int i = inventorySlot - 200;
+            if (i >= 0 && i < this.enterChestInventory.getSizeInventory()) {
+               this.enterChestInventory.setInventorySlotContents(i, itemStackIn);
                return true;
             } else {
                return false;
             }
          } else {
-            if (!p_174820_2_.isEmpty()) {
-               if (!(p_174820_2_.getItem() instanceof ArmorItem) && !(p_174820_2_.getItem() instanceof ElytraItem)) {
+            if (!itemStackIn.isEmpty()) {
+               if (!(itemStackIn.getItem() instanceof ArmorItem) && !(itemStackIn.getItem() instanceof ElytraItem)) {
                   if (equipmentslottype != EquipmentSlotType.HEAD) {
                      return false;
                   }
-               } else if (MobEntity.getEquipmentSlotForItem(p_174820_2_) != equipmentslottype) {
+               } else if (MobEntity.getSlotForItemStack(itemStackIn) != equipmentslottype) {
                   return false;
                }
             }
 
-            this.inventory.setItem(equipmentslottype.getIndex() + this.inventory.items.size(), p_174820_2_);
+            this.inventory.setInventorySlotContents(equipmentslottype.getIndex() + this.inventory.mainInventory.size(), itemStackIn);
             return true;
          }
       }
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean isReducedDebugInfo() {
-      return this.reducedDebugInfo;
+   public boolean hasReducedDebug() {
+      return this.hasReducedDebug;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void setReducedDebugInfo(boolean p_175150_1_) {
-      this.reducedDebugInfo = p_175150_1_;
+   public void setReducedDebug(boolean reducedDebug) {
+      this.hasReducedDebug = reducedDebug;
    }
 
-   public void setRemainingFireTicks(int p_241209_1_) {
-      super.setRemainingFireTicks(this.abilities.invulnerable ? Math.min(p_241209_1_, 1) : p_241209_1_);
+   public void forceFireTicks(int ticks) {
+      super.forceFireTicks(this.abilities.disableDamage ? Math.min(ticks, 1) : ticks);
    }
 
-   public HandSide getMainArm() {
-      return this.entityData.get(DATA_PLAYER_MAIN_HAND) == 0 ? HandSide.LEFT : HandSide.RIGHT;
+   public HandSide getPrimaryHand() {
+      return this.dataManager.get(MAIN_HAND) == 0 ? HandSide.LEFT : HandSide.RIGHT;
    }
 
-   public void setMainArm(HandSide p_184819_1_) {
-      this.entityData.set(DATA_PLAYER_MAIN_HAND, (byte)(p_184819_1_ == HandSide.LEFT ? 0 : 1));
+   public void setPrimaryHand(HandSide hand) {
+      this.dataManager.set(MAIN_HAND, (byte)(hand == HandSide.LEFT ? 0 : 1));
    }
 
-   public CompoundNBT getShoulderEntityLeft() {
-      return this.entityData.get(DATA_SHOULDER_LEFT);
+   public CompoundNBT getLeftShoulderEntity() {
+      return this.dataManager.get(LEFT_SHOULDER_ENTITY);
    }
 
-   protected void setShoulderEntityLeft(CompoundNBT p_192029_1_) {
-      this.entityData.set(DATA_SHOULDER_LEFT, p_192029_1_);
+   protected void setLeftShoulderEntity(CompoundNBT tag) {
+      this.dataManager.set(LEFT_SHOULDER_ENTITY, tag);
    }
 
-   public CompoundNBT getShoulderEntityRight() {
-      return this.entityData.get(DATA_SHOULDER_RIGHT);
+   public CompoundNBT getRightShoulderEntity() {
+      return this.dataManager.get(RIGHT_SHOULDER_ENTITY);
    }
 
-   protected void setShoulderEntityRight(CompoundNBT p_192031_1_) {
-      this.entityData.set(DATA_SHOULDER_RIGHT, p_192031_1_);
+   protected void setRightShoulderEntity(CompoundNBT tag) {
+      this.dataManager.set(RIGHT_SHOULDER_ENTITY, tag);
    }
 
-   public float getCurrentItemAttackStrengthDelay() {
+   public float getCooldownPeriod() {
       return (float)(1.0D / this.getAttributeValue(Attributes.ATTACK_SPEED) * 20.0D);
    }
 
-   public float getAttackStrengthScale(float p_184825_1_) {
-      return MathHelper.clamp(((float)this.attackStrengthTicker + p_184825_1_) / this.getCurrentItemAttackStrengthDelay(), 0.0F, 1.0F);
+   public float getCooledAttackStrength(float adjustTicks) {
+      return MathHelper.clamp(((float)this.ticksSinceLastSwing + adjustTicks) / this.getCooldownPeriod(), 0.0F, 1.0F);
    }
 
-   public void resetAttackStrengthTicker() {
-      this.attackStrengthTicker = 0;
+   public void resetCooldown() {
+      this.ticksSinceLastSwing = 0;
    }
 
-   public CooldownTracker getCooldowns() {
-      return this.cooldowns;
+   public CooldownTracker getCooldownTracker() {
+      return this.cooldownTracker;
    }
 
-   protected float getBlockSpeedFactor() {
-      return !this.abilities.flying && !this.isFallFlying() ? super.getBlockSpeedFactor() : 1.0F;
+   protected float getSpeedFactor() {
+      return !this.abilities.isFlying && !this.isElytraFlying() ? super.getSpeedFactor() : 1.0F;
    }
 
    public float getLuck() {
       return (float)this.getAttributeValue(Attributes.LUCK);
    }
 
-   public boolean canUseGameMasterBlocks() {
-      return this.abilities.instabuild && this.getPermissionLevel() >= 2;
+   public boolean canUseCommandBlock() {
+      return this.abilities.isCreativeMode && this.getPermissionLevel() >= 2;
    }
 
-   public boolean canTakeItem(ItemStack p_213365_1_) {
-      EquipmentSlotType equipmentslottype = MobEntity.getEquipmentSlotForItem(p_213365_1_);
-      return this.getItemBySlot(equipmentslottype).isEmpty();
+   public boolean canPickUpItem(ItemStack itemstackIn) {
+      EquipmentSlotType equipmentslottype = MobEntity.getSlotForItemStack(itemstackIn);
+      return this.getItemStackFromSlot(equipmentslottype).isEmpty();
    }
 
-   public EntitySize getDimensions(Pose p_213305_1_) {
-      return POSES.getOrDefault(p_213305_1_, STANDING_DIMENSIONS);
+   public EntitySize getSize(Pose poseIn) {
+      return SIZE_BY_POSE.getOrDefault(poseIn, STANDING_SIZE);
    }
 
-   public ImmutableList<Pose> getDismountPoses() {
+   public ImmutableList<Pose> getAvailablePoses() {
       return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
    }
 
-   public ItemStack getProjectile(ItemStack p_213356_1_) {
-      if (!(p_213356_1_.getItem() instanceof ShootableItem)) {
+   public ItemStack findAmmo(ItemStack shootable) {
+      if (!(shootable.getItem() instanceof ShootableItem)) {
          return ItemStack.EMPTY;
       } else {
-         Predicate<ItemStack> predicate = ((ShootableItem)p_213356_1_.getItem()).getSupportedHeldProjectiles();
-         ItemStack itemstack = ShootableItem.getHeldProjectile(this, predicate);
+         Predicate<ItemStack> predicate = ((ShootableItem)shootable.getItem()).getAmmoPredicate();
+         ItemStack itemstack = ShootableItem.getHeldAmmo(this, predicate);
          if (!itemstack.isEmpty()) {
             return itemstack;
          } else {
-            predicate = ((ShootableItem)p_213356_1_.getItem()).getAllSupportedProjectiles();
+            predicate = ((ShootableItem)shootable.getItem()).getInventoryAmmoPredicate();
 
-            for(int i = 0; i < this.inventory.getContainerSize(); ++i) {
-               ItemStack itemstack1 = this.inventory.getItem(i);
+            for(int i = 0; i < this.inventory.getSizeInventory(); ++i) {
+               ItemStack itemstack1 = this.inventory.getStackInSlot(i);
                if (predicate.test(itemstack1)) {
                   return itemstack1;
                }
             }
 
-            return this.abilities.instabuild ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
+            return this.abilities.isCreativeMode ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
          }
       }
    }
 
-   public ItemStack eat(World p_213357_1_, ItemStack p_213357_2_) {
-      this.getFoodData().eat(p_213357_2_.getItem(), p_213357_2_);
-      this.awardStat(Stats.ITEM_USED.get(p_213357_2_.getItem()));
-      p_213357_1_.playSound((PlayerEntity)null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_BURP, SoundCategory.PLAYERS, 0.5F, p_213357_1_.random.nextFloat() * 0.1F + 0.9F);
+   public ItemStack onFoodEaten(World p_213357_1_, ItemStack p_213357_2_) {
+      this.getFoodStats().consume(p_213357_2_.getItem(), p_213357_2_);
+      this.addStat(Stats.ITEM_USED.get(p_213357_2_.getItem()));
+      p_213357_1_.playSound((PlayerEntity)null, this.getPosX(), this.getPosY(), this.getPosZ(), SoundEvents.ENTITY_PLAYER_BURP, SoundCategory.PLAYERS, 0.5F, p_213357_1_.rand.nextFloat() * 0.1F + 0.9F);
       if (this instanceof ServerPlayerEntity) {
          CriteriaTriggers.CONSUME_ITEM.trigger((ServerPlayerEntity)this, p_213357_2_);
       }
 
-      return super.eat(p_213357_1_, p_213357_2_);
+      return super.onFoodEaten(p_213357_1_, p_213357_2_);
    }
 
-   protected boolean shouldRemoveSoulSpeed(BlockState p_230295_1_) {
-      return this.abilities.flying || super.shouldRemoveSoulSpeed(p_230295_1_);
+   protected boolean func_230295_b_(BlockState p_230295_1_) {
+      return this.abilities.isFlying || super.func_230295_b_(p_230295_1_);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Vector3d getRopeHoldPosition(float p_241843_1_) {
-      double d0 = 0.22D * (this.getMainArm() == HandSide.RIGHT ? -1.0D : 1.0D);
-      float f = MathHelper.lerp(p_241843_1_ * 0.5F, this.xRot, this.xRotO) * ((float)Math.PI / 180F);
-      float f1 = MathHelper.lerp(p_241843_1_, this.yBodyRotO, this.yBodyRot) * ((float)Math.PI / 180F);
-      if (!this.isFallFlying() && !this.isAutoSpinAttack()) {
-         if (this.isVisuallySwimming()) {
-            return this.getPosition(p_241843_1_).add((new Vector3d(d0, 0.2D, -0.15D)).xRot(-f).yRot(-f1));
+   public Vector3d getLeashPosition(float partialTicks) {
+      double d0 = 0.22D * (this.getPrimaryHand() == HandSide.RIGHT ? -1.0D : 1.0D);
+      float f = MathHelper.lerp(partialTicks * 0.5F, this.rotationPitch, this.prevRotationPitch) * ((float)Math.PI / 180F);
+      float f1 = MathHelper.lerp(partialTicks, this.prevRenderYawOffset, this.renderYawOffset) * ((float)Math.PI / 180F);
+      if (!this.isElytraFlying() && !this.isSpinAttacking()) {
+         if (this.isActualySwimming()) {
+            return this.func_242282_l(partialTicks).add((new Vector3d(d0, 0.2D, -0.15D)).rotatePitch(-f).rotateYaw(-f1));
          } else {
-            double d5 = this.getBoundingBox().getYsize() - 1.0D;
+            double d5 = this.getBoundingBox().getYSize() - 1.0D;
             double d6 = this.isCrouching() ? -0.2D : 0.07D;
-            return this.getPosition(p_241843_1_).add((new Vector3d(d0, d5, d6)).yRot(-f1));
+            return this.func_242282_l(partialTicks).add((new Vector3d(d0, d5, d6)).rotateYaw(-f1));
          }
       } else {
-         Vector3d vector3d = this.getViewVector(p_241843_1_);
-         Vector3d vector3d1 = this.getDeltaMovement();
-         double d1 = Entity.getHorizontalDistanceSqr(vector3d1);
-         double d2 = Entity.getHorizontalDistanceSqr(vector3d);
+         Vector3d vector3d = this.getLook(partialTicks);
+         Vector3d vector3d1 = this.getMotion();
+         double d1 = Entity.horizontalMag(vector3d1);
+         double d2 = Entity.horizontalMag(vector3d);
          float f2;
          if (d1 > 0.0D && d2 > 0.0D) {
             double d3 = (vector3d1.x * vector3d.x + vector3d1.z * vector3d.z) / Math.sqrt(d1 * d2);
@@ -1959,7 +1959,7 @@ public abstract class PlayerEntity extends LivingEntity {
             f2 = 0.0F;
          }
 
-         return this.getPosition(p_241843_1_).add((new Vector3d(d0, -0.11D, 0.85D)).zRot(-f2).xRot(-f).yRot(-f1));
+         return this.func_242282_l(partialTicks).add((new Vector3d(d0, -0.11D, 0.85D)).rotateRoll(-f2).rotatePitch(-f).rotateYaw(-f1));
       }
    }
 
@@ -1978,8 +1978,8 @@ public abstract class PlayerEntity extends LivingEntity {
          this.message = null;
       }
 
-      private SleepResult(ITextComponent p_i50668_3_) {
-         this.message = p_i50668_3_;
+      private SleepResult(ITextComponent msg) {
+         this.message = msg;
       }
 
       @Nullable

@@ -17,25 +17,25 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class PunchTreeStep implements ITutorialStep {
    private static final ITextComponent TITLE = new TranslationTextComponent("tutorial.punch_tree.title");
-   private static final ITextComponent DESCRIPTION = new TranslationTextComponent("tutorial.punch_tree.description", Tutorial.key("attack"));
+   private static final ITextComponent DESCRIPTION = new TranslationTextComponent("tutorial.punch_tree.description", Tutorial.createKeybindComponent("attack"));
    private final Tutorial tutorial;
    private TutorialToast toast;
    private int timeWaiting;
    private int resetCount;
 
-   public PunchTreeStep(Tutorial p_i47579_1_) {
-      this.tutorial = p_i47579_1_;
+   public PunchTreeStep(Tutorial tutorial) {
+      this.tutorial = tutorial;
    }
 
    public void tick() {
       ++this.timeWaiting;
-      if (this.tutorial.getGameMode() != GameType.SURVIVAL) {
+      if (this.tutorial.getGameType() != GameType.SURVIVAL) {
          this.tutorial.setStep(TutorialSteps.NONE);
       } else {
          if (this.timeWaiting == 1) {
             ClientPlayerEntity clientplayerentity = this.tutorial.getMinecraft().player;
             if (clientplayerentity != null) {
-               if (clientplayerentity.inventory.contains(ItemTags.LOGS)) {
+               if (clientplayerentity.inventory.hasTag(ItemTags.LOGS)) {
                   this.tutorial.setStep(TutorialSteps.CRAFT_PLANKS);
                   return;
                }
@@ -49,13 +49,13 @@ public class PunchTreeStep implements ITutorialStep {
 
          if ((this.timeWaiting >= 600 || this.resetCount > 3) && this.toast == null) {
             this.toast = new TutorialToast(TutorialToast.Icons.TREE, TITLE, DESCRIPTION, true);
-            this.tutorial.getMinecraft().getToasts().addToast(this.toast);
+            this.tutorial.getMinecraft().getToastGui().add(this.toast);
          }
 
       }
    }
 
-   public void clear() {
+   public void onStop() {
       if (this.toast != null) {
          this.toast.hide();
          this.toast = null;
@@ -63,26 +63,26 @@ public class PunchTreeStep implements ITutorialStep {
 
    }
 
-   public void onDestroyBlock(ClientWorld p_193250_1_, BlockPos p_193250_2_, BlockState p_193250_3_, float p_193250_4_) {
-      boolean flag = p_193250_3_.is(BlockTags.LOGS);
-      if (flag && p_193250_4_ > 0.0F) {
+   public void onHitBlock(ClientWorld worldIn, BlockPos pos, BlockState state, float diggingStage) {
+      boolean flag = state.isIn(BlockTags.LOGS);
+      if (flag && diggingStage > 0.0F) {
          if (this.toast != null) {
-            this.toast.updateProgress(p_193250_4_);
+            this.toast.setProgress(diggingStage);
          }
 
-         if (p_193250_4_ >= 1.0F) {
+         if (diggingStage >= 1.0F) {
             this.tutorial.setStep(TutorialSteps.OPEN_INVENTORY);
          }
       } else if (this.toast != null) {
-         this.toast.updateProgress(0.0F);
+         this.toast.setProgress(0.0F);
       } else if (flag) {
          ++this.resetCount;
       }
 
    }
 
-   public void onGetItem(ItemStack p_193252_1_) {
-      if (ItemTags.LOGS.contains(p_193252_1_.getItem())) {
+   public void handleSetSlot(ItemStack stack) {
+      if (ItemTags.LOGS.contains(stack.getItem())) {
          this.tutorial.setStep(TutorialSteps.CRAFT_PLANKS);
       }
    }

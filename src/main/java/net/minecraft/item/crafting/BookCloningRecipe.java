@@ -12,16 +12,16 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class BookCloningRecipe extends SpecialRecipe {
-   public BookCloningRecipe(ResourceLocation p_i48170_1_) {
-      super(p_i48170_1_);
+   public BookCloningRecipe(ResourceLocation idIn) {
+      super(idIn);
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
       int i = 0;
       ItemStack itemstack = ItemStack.EMPTY;
 
-      for(int j = 0; j < p_77569_1_.getContainerSize(); ++j) {
-         ItemStack itemstack1 = p_77569_1_.getItem(j);
+      for(int j = 0; j < inv.getSizeInventory(); ++j) {
+         ItemStack itemstack1 = inv.getStackInSlot(j);
          if (!itemstack1.isEmpty()) {
             if (itemstack1.getItem() == Items.WRITTEN_BOOK) {
                if (!itemstack.isEmpty()) {
@@ -42,12 +42,12 @@ public class BookCloningRecipe extends SpecialRecipe {
       return !itemstack.isEmpty() && itemstack.hasTag() && i > 0;
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
+   public ItemStack getCraftingResult(CraftingInventory inv) {
       int i = 0;
       ItemStack itemstack = ItemStack.EMPTY;
 
-      for(int j = 0; j < p_77572_1_.getContainerSize(); ++j) {
-         ItemStack itemstack1 = p_77572_1_.getItem(j);
+      for(int j = 0; j < inv.getSizeInventory(); ++j) {
+         ItemStack itemstack1 = inv.getStackInSlot(j);
          if (!itemstack1.isEmpty()) {
             if (itemstack1.getItem() == Items.WRITTEN_BOOK) {
                if (!itemstack.isEmpty()) {
@@ -76,13 +76,13 @@ public class BookCloningRecipe extends SpecialRecipe {
       }
    }
 
-   public NonNullList<ItemStack> getRemainingItems(CraftingInventory p_179532_1_) {
-      NonNullList<ItemStack> nonnulllist = NonNullList.withSize(p_179532_1_.getContainerSize(), ItemStack.EMPTY);
+   public NonNullList<ItemStack> getRemainingItems(CraftingInventory inv) {
+      NonNullList<ItemStack> nonnulllist = NonNullList.withSize(inv.getSizeInventory(), ItemStack.EMPTY);
 
       for(int i = 0; i < nonnulllist.size(); ++i) {
-         ItemStack itemstack = p_179532_1_.getItem(i);
-         if (itemstack.getItem().hasCraftingRemainingItem()) {
-            nonnulllist.set(i, new ItemStack(itemstack.getItem().getCraftingRemainingItem()));
+         ItemStack itemstack = inv.getStackInSlot(i);
+         if (itemstack.getItem().hasContainerItem()) {
+            nonnulllist.set(i, new ItemStack(itemstack.getItem().getContainerItem()));
          } else if (itemstack.getItem() instanceof WrittenBookItem) {
             ItemStack itemstack1 = itemstack.copy();
             itemstack1.setCount(1);
@@ -95,11 +95,11 @@ public class BookCloningRecipe extends SpecialRecipe {
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.BOOK_CLONING;
+      return IRecipeSerializer.CRAFTING_SPECIAL_BOOKCLONING;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ >= 3 && p_194133_2_ >= 3;
+   public boolean canFit(int width, int height) {
+      return width >= 3 && height >= 3;
    }
 }

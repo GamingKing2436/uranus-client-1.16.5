@@ -33,24 +33,24 @@ public class CSeenAdvancementsPacket implements IPacket<IServerPlayNetHandler> {
       return new CSeenAdvancementsPacket(CSeenAdvancementsPacket.Action.CLOSED_SCREEN, (ResourceLocation)null);
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.action = p_148837_1_.readEnum(CSeenAdvancementsPacket.Action.class);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.action = buf.readEnumValue(CSeenAdvancementsPacket.Action.class);
       if (this.action == CSeenAdvancementsPacket.Action.OPENED_TAB) {
-         this.tab = p_148837_1_.readResourceLocation();
+         this.tab = buf.readResourceLocation();
       }
 
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeEnum(this.action);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeEnumValue(this.action);
       if (this.action == CSeenAdvancementsPacket.Action.OPENED_TAB) {
-         p_148840_1_.writeResourceLocation(this.tab);
+         buf.writeResourceLocation(this.tab);
       }
 
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleSeenAdvancements(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.handleSeenAdvancements(this);
    }
 
    public CSeenAdvancementsPacket.Action getAction() {

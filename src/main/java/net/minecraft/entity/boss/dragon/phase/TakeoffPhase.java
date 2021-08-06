@@ -15,14 +15,14 @@ public class TakeoffPhase extends Phase {
    private Path currentPath;
    private Vector3d targetLocation;
 
-   public TakeoffPhase(EnderDragonEntity p_i46783_1_) {
-      super(p_i46783_1_);
+   public TakeoffPhase(EnderDragonEntity dragonIn) {
+      super(dragonIn);
    }
 
-   public void doServerTick() {
+   public void serverTick() {
       if (!this.firstTick && this.currentPath != null) {
-         BlockPos blockpos = this.dragon.level.getHeightmapPos(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.END_PODIUM_LOCATION);
-         if (!blockpos.closerThan(this.dragon.position(), 10.0D)) {
+         BlockPos blockpos = this.dragon.world.getHeight(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.END_PODIUM_LOCATION);
+         if (!blockpos.withinDistance(this.dragon.getPositionVec(), 10.0D)) {
             this.dragon.getPhaseManager().setPhase(PhaseType.HOLDING_PATTERN);
          }
       } else {
@@ -32,17 +32,17 @@ public class TakeoffPhase extends Phase {
 
    }
 
-   public void begin() {
+   public void initPhase() {
       this.firstTick = true;
       this.currentPath = null;
       this.targetLocation = null;
    }
 
    private void findNewTarget() {
-      int i = this.dragon.findClosestNode();
-      Vector3d vector3d = this.dragon.getHeadLookVector(1.0F);
-      int j = this.dragon.findClosestNode(-vector3d.x * 40.0D, 105.0D, -vector3d.z * 40.0D);
-      if (this.dragon.getDragonFight() != null && this.dragon.getDragonFight().getCrystalsAlive() > 0) {
+      int i = this.dragon.initPathPoints();
+      Vector3d vector3d = this.dragon.getHeadLookVec(1.0F);
+      int j = this.dragon.getNearestPpIdx(-vector3d.x * 40.0D, 105.0D, -vector3d.z * 40.0D);
+      if (this.dragon.getFightManager() != null && this.dragon.getFightManager().getNumAliveCrystals() > 0) {
          j = j % 12;
          if (j < 0) {
             j += 12;
@@ -59,14 +59,14 @@ public class TakeoffPhase extends Phase {
 
    private void navigateToNextPathNode() {
       if (this.currentPath != null) {
-         this.currentPath.advance();
-         if (!this.currentPath.isDone()) {
-            Vector3i vector3i = this.currentPath.getNextNodePos();
-            this.currentPath.advance();
+         this.currentPath.incrementPathIndex();
+         if (!this.currentPath.isFinished()) {
+            Vector3i vector3i = this.currentPath.func_242948_g();
+            this.currentPath.incrementPathIndex();
 
             double d0;
             do {
-               d0 = (double)((float)vector3i.getY() + this.dragon.getRandom().nextFloat() * 20.0F);
+               d0 = (double)((float)vector3i.getY() + this.dragon.getRNG().nextFloat() * 20.0F);
             } while(d0 < (double)vector3i.getY());
 
             this.targetLocation = new Vector3d((double)vector3i.getX(), d0, (double)vector3i.getZ());
@@ -76,11 +76,11 @@ public class TakeoffPhase extends Phase {
    }
 
    @Nullable
-   public Vector3d getFlyTargetLocation() {
+   public Vector3d getTargetLocation() {
       return this.targetLocation;
    }
 
-   public PhaseType<TakeoffPhase> getPhase() {
+   public PhaseType<TakeoffPhase> getType() {
       return PhaseType.TAKEOFF;
    }
 }

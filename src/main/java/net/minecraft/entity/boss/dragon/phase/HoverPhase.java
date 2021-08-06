@@ -7,35 +7,35 @@ import net.minecraft.util.math.vector.Vector3d;
 public class HoverPhase extends Phase {
    private Vector3d targetLocation;
 
-   public HoverPhase(EnderDragonEntity p_i46790_1_) {
-      super(p_i46790_1_);
+   public HoverPhase(EnderDragonEntity dragonIn) {
+      super(dragonIn);
    }
 
-   public void doServerTick() {
+   public void serverTick() {
       if (this.targetLocation == null) {
-         this.targetLocation = this.dragon.position();
+         this.targetLocation = this.dragon.getPositionVec();
       }
 
    }
 
-   public boolean isSitting() {
+   public boolean getIsStationary() {
       return true;
    }
 
-   public void begin() {
+   public void initPhase() {
       this.targetLocation = null;
    }
 
-   public float getFlySpeed() {
+   public float getMaxRiseOrFall() {
       return 1.0F;
    }
 
    @Nullable
-   public Vector3d getFlyTargetLocation() {
+   public Vector3d getTargetLocation() {
       return this.targetLocation;
    }
 
-   public PhaseType<HoverPhase> getPhase() {
-      return PhaseType.HOVERING;
+   public PhaseType<HoverPhase> getType() {
+      return PhaseType.HOVER;
    }
 }

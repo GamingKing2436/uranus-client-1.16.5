@@ -23,20 +23,20 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class TeleportToPlayer implements ISpectatorMenuView, ISpectatorMenuObject {
    private static final Ordering<NetworkPlayerInfo> PROFILE_ORDER = Ordering.from((p_210243_0_, p_210243_1_) -> {
-      return ComparisonChain.start().compare(p_210243_0_.getProfile().getId(), p_210243_1_.getProfile().getId()).result();
+      return ComparisonChain.start().compare(p_210243_0_.getGameProfile().getId(), p_210243_1_.getGameProfile().getId()).result();
    });
-   private static final ITextComponent TELEPORT_TEXT = new TranslationTextComponent("spectatorMenu.teleport");
-   private static final ITextComponent TELEPORT_PROMPT = new TranslationTextComponent("spectatorMenu.teleport.prompt");
+   private static final ITextComponent field_243485_b = new TranslationTextComponent("spectatorMenu.teleport");
+   private static final ITextComponent field_243486_c = new TranslationTextComponent("spectatorMenu.teleport.prompt");
    private final List<ISpectatorMenuObject> items = Lists.newArrayList();
 
    public TeleportToPlayer() {
-      this(PROFILE_ORDER.sortedCopy(Minecraft.getInstance().getConnection().getOnlinePlayers()));
+      this(PROFILE_ORDER.sortedCopy(Minecraft.getInstance().getConnection().getPlayerInfoMap()));
    }
 
-   public TeleportToPlayer(Collection<NetworkPlayerInfo> p_i45493_1_) {
-      for(NetworkPlayerInfo networkplayerinfo : PROFILE_ORDER.sortedCopy(p_i45493_1_)) {
-         if (networkplayerinfo.getGameMode() != GameType.SPECTATOR) {
-            this.items.add(new PlayerMenuObject(networkplayerinfo.getProfile()));
+   public TeleportToPlayer(Collection<NetworkPlayerInfo> profiles) {
+      for(NetworkPlayerInfo networkplayerinfo : PROFILE_ORDER.sortedCopy(profiles)) {
+         if (networkplayerinfo.getGameType() != GameType.SPECTATOR) {
+            this.items.add(new PlayerMenuObject(networkplayerinfo.getGameProfile()));
          }
       }
 
@@ -47,19 +47,19 @@ public class TeleportToPlayer implements ISpectatorMenuView, ISpectatorMenuObjec
    }
 
    public ITextComponent getPrompt() {
-      return TELEPORT_PROMPT;
+      return field_243486_c;
    }
 
-   public void selectItem(SpectatorMenu p_178661_1_) {
-      p_178661_1_.selectCategory(this);
+   public void selectItem(SpectatorMenu menu) {
+      menu.selectCategory(this);
    }
 
-   public ITextComponent getName() {
-      return TELEPORT_TEXT;
+   public ITextComponent getSpectatorName() {
+      return field_243485_b;
    }
 
-   public void renderIcon(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
-      Minecraft.getInstance().getTextureManager().bind(SpectatorGui.SPECTATOR_LOCATION);
+   public void func_230485_a_(MatrixStack p_230485_1_, float p_230485_2_, int p_230485_3_) {
+      Minecraft.getInstance().getTextureManager().bindTexture(SpectatorGui.SPECTATOR_WIDGETS);
       AbstractGui.blit(p_230485_1_, 0, 0, 0.0F, 0.0F, 16, 16, 256, 256);
    }
 

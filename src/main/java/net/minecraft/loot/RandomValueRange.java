@@ -18,18 +18,18 @@ public class RandomValueRange implements IRandomRange {
    private final float min;
    private final float max;
 
-   public RandomValueRange(float p_i46629_1_, float p_i46629_2_) {
-      this.min = p_i46629_1_;
-      this.max = p_i46629_2_;
+   public RandomValueRange(float minIn, float maxIn) {
+      this.min = minIn;
+      this.max = maxIn;
    }
 
-   public RandomValueRange(float p_i46630_1_) {
-      this.min = p_i46630_1_;
-      this.max = p_i46630_1_;
+   public RandomValueRange(float value) {
+      this.min = value;
+      this.max = value;
    }
 
-   public static RandomValueRange between(float p_215837_0_, float p_215837_1_) {
-      return new RandomValueRange(p_215837_0_, p_215837_1_);
+   public static RandomValueRange of(float minIn, float maxIn) {
+      return new RandomValueRange(minIn, maxIn);
    }
 
    public float getMin() {
@@ -40,16 +40,16 @@ public class RandomValueRange implements IRandomRange {
       return this.max;
    }
 
-   public int getInt(Random p_186511_1_) {
-      return MathHelper.nextInt(p_186511_1_, MathHelper.floor(this.min), MathHelper.floor(this.max));
+   public int generateInt(Random rand) {
+      return MathHelper.nextInt(rand, MathHelper.floor(this.min), MathHelper.floor(this.max));
    }
 
-   public float getFloat(Random p_186507_1_) {
-      return MathHelper.nextFloat(p_186507_1_, this.min, this.max);
+   public float generateFloat(Random rand) {
+      return MathHelper.nextFloat(rand, this.min, this.max);
    }
 
-   public boolean matchesValue(int p_186510_1_) {
-      return (float)p_186510_1_ <= this.max && (float)p_186510_1_ >= this.min;
+   public boolean isInRange(int value) {
+      return (float)value <= this.max && (float)value >= this.min;
    }
 
    public ResourceLocation getType() {
@@ -58,12 +58,12 @@ public class RandomValueRange implements IRandomRange {
 
    public static class Serializer implements JsonDeserializer<RandomValueRange>, JsonSerializer<RandomValueRange> {
       public RandomValueRange deserialize(JsonElement p_deserialize_1_, Type p_deserialize_2_, JsonDeserializationContext p_deserialize_3_) throws JsonParseException {
-         if (JSONUtils.isNumberValue(p_deserialize_1_)) {
-            return new RandomValueRange(JSONUtils.convertToFloat(p_deserialize_1_, "value"));
+         if (JSONUtils.isNumber(p_deserialize_1_)) {
+            return new RandomValueRange(JSONUtils.getFloat(p_deserialize_1_, "value"));
          } else {
-            JsonObject jsonobject = JSONUtils.convertToJsonObject(p_deserialize_1_, "value");
-            float f = JSONUtils.getAsFloat(jsonobject, "min");
-            float f1 = JSONUtils.getAsFloat(jsonobject, "max");
+            JsonObject jsonobject = JSONUtils.getJsonObject(p_deserialize_1_, "value");
+            float f = JSONUtils.getFloat(jsonobject, "min");
+            float f1 = JSONUtils.getFloat(jsonobject, "max");
             return new RandomValueRange(f, f1);
          }
       }

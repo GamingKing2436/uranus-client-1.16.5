@@ -21,28 +21,28 @@ public class CommandBlockTileEntity extends TileEntity {
    private boolean auto;
    private boolean conditionMet;
    private boolean sendToClient;
-   private final CommandBlockLogic commandBlock = new CommandBlockLogic() {
-      public void setCommand(String p_145752_1_) {
-         super.setCommand(p_145752_1_);
-         CommandBlockTileEntity.this.setChanged();
+   private final CommandBlockLogic commandBlockLogic = new CommandBlockLogic() {
+      public void setCommand(String command) {
+         super.setCommand(command);
+         CommandBlockTileEntity.this.markDirty();
       }
 
-      public ServerWorld getLevel() {
-         return (ServerWorld)CommandBlockTileEntity.this.level;
+      public ServerWorld getWorld() {
+         return (ServerWorld)CommandBlockTileEntity.this.world;
       }
 
-      public void onUpdated() {
-         BlockState blockstate = CommandBlockTileEntity.this.level.getBlockState(CommandBlockTileEntity.this.worldPosition);
-         this.getLevel().sendBlockUpdated(CommandBlockTileEntity.this.worldPosition, blockstate, blockstate, 3);
+      public void updateCommand() {
+         BlockState blockstate = CommandBlockTileEntity.this.world.getBlockState(CommandBlockTileEntity.this.pos);
+         this.getWorld().notifyBlockUpdate(CommandBlockTileEntity.this.pos, blockstate, blockstate, 3);
       }
 
       @OnlyIn(Dist.CLIENT)
-      public Vector3d getPosition() {
-         return Vector3d.atCenterOf(CommandBlockTileEntity.this.worldPosition);
+      public Vector3d getPositionVector() {
+         return Vector3d.copyCentered(CommandBlockTileEntity.this.pos);
       }
 
-      public CommandSource createCommandSourceStack() {
-         return new CommandSource(this, Vector3d.atCenterOf(CommandBlockTileEntity.this.worldPosition), Vector2f.ZERO, this.getLevel(), 2, this.getName().getString(), this.getName(), this.getLevel().getServer(), (Entity)null);
+      public CommandSource getCommandSource() {
+         return new CommandSource(this, Vector3d.copyCentered(CommandBlockTileEntity.this.pos), Vector2f.ZERO, this.getWorld(), 2, this.getName().getString(), this.getName(), this.getWorld().getServer(), (Entity)null);
       }
    };
 
@@ -50,91 +50,91 @@ public class CommandBlockTileEntity extends TileEntity {
       super(TileEntityType.COMMAND_BLOCK);
    }
 
-   public CompoundNBT save(CompoundNBT p_189515_1_) {
-      super.save(p_189515_1_);
-      this.commandBlock.save(p_189515_1_);
-      p_189515_1_.putBoolean("powered", this.isPowered());
-      p_189515_1_.putBoolean("conditionMet", this.wasConditionMet());
-      p_189515_1_.putBoolean("auto", this.isAutomatic());
-      return p_189515_1_;
+   public CompoundNBT write(CompoundNBT compound) {
+      super.write(compound);
+      this.commandBlockLogic.write(compound);
+      compound.putBoolean("powered", this.isPowered());
+      compound.putBoolean("conditionMet", this.isConditionMet());
+      compound.putBoolean("auto", this.isAuto());
+      return compound;
    }
 
-   public void load(BlockState p_230337_1_, CompoundNBT p_230337_2_) {
-      super.load(p_230337_1_, p_230337_2_);
-      this.commandBlock.load(p_230337_2_);
-      this.powered = p_230337_2_.getBoolean("powered");
-      this.conditionMet = p_230337_2_.getBoolean("conditionMet");
-      this.setAutomatic(p_230337_2_.getBoolean("auto"));
+   public void read(BlockState state, CompoundNBT nbt) {
+      super.read(state, nbt);
+      this.commandBlockLogic.read(nbt);
+      this.powered = nbt.getBoolean("powered");
+      this.conditionMet = nbt.getBoolean("conditionMet");
+      this.setAuto(nbt.getBoolean("auto"));
    }
 
    @Nullable
    public SUpdateTileEntityPacket getUpdatePacket() {
       if (this.isSendToClient()) {
          this.setSendToClient(false);
-         CompoundNBT compoundnbt = this.save(new CompoundNBT());
-         return new SUpdateTileEntityPacket(this.worldPosition, 2, compoundnbt);
+         CompoundNBT compoundnbt = this.write(new CompoundNBT());
+         return new SUpdateTileEntityPacket(this.pos, 2, compoundnbt);
       } else {
          return null;
       }
    }
 
-   public boolean onlyOpCanSetNbt() {
+   public boolean onlyOpsCanSetNbt() {
       return true;
    }
 
-   public CommandBlockLogic getCommandBlock() {
-      return this.commandBlock;
+   public CommandBlockLogic getCommandBlockLogic() {
+      return this.commandBlockLogic;
    }
 
-   public void setPowered(boolean p_184250_1_) {
-      this.powered = p_184250_1_;
+   public void setPowered(boolean poweredIn) {
+      this.powered = poweredIn;
    }
 
    public boolean isPowered() {
       return this.powered;
    }
 
-   public boolean isAutomatic() {
+   public boolean isAuto() {
       return this.auto;
    }
 
-   public void setAutomatic(boolean p_184253_1_) {
+   public void setAuto(boolean autoIn) {
       boolean flag = this.auto;
-      this.auto = p_184253_1_;
-      if (!flag && p_184253_1_ && !this.powered && this.level != null && this.getMode() != CommandBlockTileEntity.Mode.SEQUENCE) {
-         this.scheduleTick();
+      this.auto = autoIn;
+      if (!flag && autoIn && !this.powered && this.world != null && this.getMode() != CommandBlockTileEntity.Mode.SEQUENCE) {
+         this.func_226988_y_();
       }
 
    }
 
-   public void onModeSwitch() {
+   public void func_226987_h_() {
       CommandBlockTileEntity.Mode commandblocktileentity$mode = this.getMode();
-      if (commandblocktileentity$mode == CommandBlockTileEntity.Mode.AUTO && (this.powered || this.auto) && this.level != null) {
-         this.scheduleTick();
+      if (commandblocktileentity$mode == CommandBlockTileEntity.Mode.AUTO && (this.powered || this.auto) && this.world != null) {
+         this.func_226988_y_();
       }
 
    }
 
-   private void scheduleTick() {
+   private void func_226988_y_() {
       Block block = this.getBlockState().getBlock();
       if (block instanceof CommandBlockBlock) {
-         this.markConditionMet();
-         this.level.getBlockTicks().scheduleTick(this.worldPosition, block, 1);
+         this.setConditionMet();
+         this.world.getPendingBlockTicks().scheduleTick(this.pos, block, 1);
       }
 
    }
 
-   public boolean wasConditionMet() {
+   public boolean isConditionMet() {
       return this.conditionMet;
    }
 
-   public boolean markConditionMet() {
+   public boolean setConditionMet() {
       this.conditionMet = true;
       if (this.isConditional()) {
-         BlockPos blockpos = this.worldPosition.relative(this.level.getBlockState(this.worldPosition).getValue(CommandBlockBlock.FACING).getOpposite());
-         if (this.level.getBlockState(blockpos).getBlock() instanceof CommandBlockBlock) {
-            TileEntity tileentity = this.level.getBlockEntity(blockpos);
-            this.conditionMet = tileentity instanceof CommandBlockTileEntity && ((CommandBlockTileEntity)tileentity).getCommandBlock().getSuccessCount() > 0;
+         BlockPos blockpos = this.pos.offset(this.world.getBlockState(this.pos).get(CommandBlockBlock.FACING).getOpposite());
+         if (this.world.getBlockState(blockpos).getBlock() instanceof CommandBlockBlock) {
+            TileEntity tileentity = this.world.getTileEntity(blockpos);
+            this.conditionMet = tileentity instanceof CommandBlockTileEntity && ((CommandBlockTileEntity)tileentity).getCommandBlockLogic().getSuccessCount() > 0;
          } else {
             this.conditionMet = false;
          }
@@ -153,23 +153,23 @@ public class CommandBlockTileEntity extends TileEntity {
 
    public CommandBlockTileEntity.Mode getMode() {
       BlockState blockstate = this.getBlockState();
-      if (blockstate.is(Blocks.COMMAND_BLOCK)) {
+      if (blockstate.isIn(Blocks.COMMAND_BLOCK)) {
          return CommandBlockTileEntity.Mode.REDSTONE;
-      } else if (blockstate.is(Blocks.REPEATING_COMMAND_BLOCK)) {
+      } else if (blockstate.isIn(Blocks.REPEATING_COMMAND_BLOCK)) {
          return CommandBlockTileEntity.Mode.AUTO;
       } else {
-         return blockstate.is(Blocks.CHAIN_COMMAND_BLOCK) ? CommandBlockTileEntity.Mode.SEQUENCE : CommandBlockTileEntity.Mode.REDSTONE;
+         return blockstate.isIn(Blocks.CHAIN_COMMAND_BLOCK) ? CommandBlockTileEntity.Mode.SEQUENCE : CommandBlockTileEntity.Mode.REDSTONE;
       }
    }
 
    public boolean isConditional() {
-      BlockState blockstate = this.level.getBlockState(this.getBlockPos());
-      return blockstate.getBlock() instanceof CommandBlockBlock ? blockstate.getValue(CommandBlockBlock.CONDITIONAL) : false;
+      BlockState blockstate = this.world.getBlockState(this.getPos());
+      return blockstate.getBlock() instanceof CommandBlockBlock ? blockstate.get(CommandBlockBlock.CONDITIONAL) : false;
    }
 
-   public void clearRemoved() {
-      this.clearCache();
-      super.clearRemoved();
+   public void validate() {
+      this.updateContainingBlockInfo();
+      super.validate();
    }
 
    public static enum Mode {

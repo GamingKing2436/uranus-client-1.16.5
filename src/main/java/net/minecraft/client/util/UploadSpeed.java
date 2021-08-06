@@ -11,7 +11,7 @@ public enum UploadSpeed {
    MB,
    GB;
 
-   public static UploadSpeed getLargest(long p_237682_0_) {
+   public static UploadSpeed func_237682_a_(long p_237682_0_) {
       if (p_237682_0_ < 1024L) {
          return B;
       } else {
@@ -25,11 +25,11 @@ public enum UploadSpeed {
       }
    }
 
-   public static double convertTo(long p_237683_0_, UploadSpeed p_237683_2_) {
+   public static double func_237683_a_(long p_237683_0_, UploadSpeed p_237683_2_) {
       return p_237683_2_ == B ? (double)p_237683_0_ : (double)p_237683_0_ / Math.pow(1024.0D, (double)p_237683_2_.ordinal());
    }
 
-   public static String humanReadable(long p_237684_0_) {
+   public static String func_237684_b_(long p_237684_0_) {
       int i = 1024;
       if (p_237684_0_ < 1024L) {
          return p_237684_0_ + " B";
@@ -40,7 +40,7 @@ public enum UploadSpeed {
       }
    }
 
-   public static String humanReadable(long p_237685_0_, UploadSpeed p_237685_2_) {
-      return String.format("%." + (p_237685_2_ == GB ? "1" : "0") + "f %s", convertTo(p_237685_0_, p_237685_2_), p_237685_2_.name());
+   public static String func_237685_b_(long p_237685_0_, UploadSpeed p_237685_2_) {
+      return String.format("%." + (p_237685_2_ == GB ? "1" : "0") + "f %s", func_237683_a_(p_237685_0_, p_237685_2_), p_237685_2_.name());
    }
 }

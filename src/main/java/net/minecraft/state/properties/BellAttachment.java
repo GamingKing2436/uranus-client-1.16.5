@@ -10,11 +10,11 @@ public enum BellAttachment implements IStringSerializable {
 
    private final String name;
 
-   private BellAttachment(String p_i49956_3_) {
-      this.name = p_i49956_3_;
+   private BellAttachment(String name) {
+      this.name = name;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 }

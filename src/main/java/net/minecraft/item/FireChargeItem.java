@@ -11,37 +11,37 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class FireChargeItem extends Item {
-   public FireChargeItem(Item.Properties p_i48499_1_) {
-      super(p_i48499_1_);
+   public FireChargeItem(Item.Properties builder) {
+      super(builder);
    }
 
-   public ActionResultType useOn(ItemUseContext p_195939_1_) {
-      World world = p_195939_1_.getLevel();
-      BlockPos blockpos = p_195939_1_.getClickedPos();
+   public ActionResultType onItemUse(ItemUseContext context) {
+      World world = context.getWorld();
+      BlockPos blockpos = context.getPos();
       BlockState blockstate = world.getBlockState(blockpos);
       boolean flag = false;
-      if (CampfireBlock.canLight(blockstate)) {
-         this.playSound(world, blockpos);
-         world.setBlockAndUpdate(blockpos, blockstate.setValue(CampfireBlock.LIT, Boolean.valueOf(true)));
+      if (CampfireBlock.canBeLit(blockstate)) {
+         this.playUseSound(world, blockpos);
+         world.setBlockState(blockpos, blockstate.with(CampfireBlock.LIT, Boolean.valueOf(true)));
          flag = true;
       } else {
-         blockpos = blockpos.relative(p_195939_1_.getClickedFace());
-         if (AbstractFireBlock.canBePlacedAt(world, blockpos, p_195939_1_.getHorizontalDirection())) {
-            this.playSound(world, blockpos);
-            world.setBlockAndUpdate(blockpos, AbstractFireBlock.getState(world, blockpos));
+         blockpos = blockpos.offset(context.getFace());
+         if (AbstractFireBlock.canLightBlock(world, blockpos, context.getPlacementHorizontalFacing())) {
+            this.playUseSound(world, blockpos);
+            world.setBlockState(blockpos, AbstractFireBlock.getFireForPlacement(world, blockpos));
             flag = true;
          }
       }
 
       if (flag) {
-         p_195939_1_.getItemInHand().shrink(1);
-         return ActionResultType.sidedSuccess(world.isClientSide);
+         context.getItem().shrink(1);
+         return ActionResultType.func_233537_a_(world.isRemote);
       } else {
          return ActionResultType.FAIL;
       }
    }
 
-   private void playSound(World p_219995_1_, BlockPos p_219995_2_) {
-      p_219995_1_.playSound((PlayerEntity)null, p_219995_2_, SoundEvents.FIRECHARGE_USE, SoundCategory.BLOCKS, 1.0F, (random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);
+   private void playUseSound(World worldIn, BlockPos pos) {
+      worldIn.playSound((PlayerEntity)null, pos, SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.BLOCKS, 1.0F, (random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);
    }
 }

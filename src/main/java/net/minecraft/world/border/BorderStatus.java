@@ -11,8 +11,8 @@ public enum BorderStatus {
 
    private final int color;
 
-   private BorderStatus(int p_i45647_3_) {
-      this.color = p_i45647_3_;
+   private BorderStatus(int color) {
+      this.color = color;
    }
 
    public int getColor() {

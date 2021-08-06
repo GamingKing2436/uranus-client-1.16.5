@@ -15,47 +15,47 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IResourceManager {
    @OnlyIn(Dist.CLIENT)
-   Set<String> getNamespaces();
+   Set<String> getResourceNamespaces();
 
-   IResource getResource(ResourceLocation p_199002_1_) throws IOException;
-
-   @OnlyIn(Dist.CLIENT)
-   boolean hasResource(ResourceLocation p_219533_1_);
-
-   List<IResource> getResources(ResourceLocation p_199004_1_) throws IOException;
-
-   Collection<ResourceLocation> listResources(String p_199003_1_, Predicate<String> p_199003_2_);
+   IResource getResource(ResourceLocation resourceLocationIn) throws IOException;
 
    @OnlyIn(Dist.CLIENT)
-   Stream<IResourcePack> listPacks();
+   boolean hasResource(ResourceLocation path);
+
+   List<IResource> getAllResources(ResourceLocation resourceLocationIn) throws IOException;
+
+   Collection<ResourceLocation> getAllResourceLocations(String pathIn, Predicate<String> filter);
+
+   @OnlyIn(Dist.CLIENT)
+   Stream<IResourcePack> getResourcePackStream();
 
    public static enum Instance implements IResourceManager {
       INSTANCE;
 
       @OnlyIn(Dist.CLIENT)
-      public Set<String> getNamespaces() {
+      public Set<String> getResourceNamespaces() {
          return ImmutableSet.of();
       }
 
-      public IResource getResource(ResourceLocation p_199002_1_) throws IOException {
-         throw new FileNotFoundException(p_199002_1_.toString());
+      public IResource getResource(ResourceLocation resourceLocationIn) throws IOException {
+         throw new FileNotFoundException(resourceLocationIn.toString());
       }
 
       @OnlyIn(Dist.CLIENT)
-      public boolean hasResource(ResourceLocation p_219533_1_) {
+      public boolean hasResource(ResourceLocation path) {
          return false;
       }
 
-      public List<IResource> getResources(ResourceLocation p_199004_1_) {
+      public List<IResource> getAllResources(ResourceLocation resourceLocationIn) {
          return ImmutableList.of();
       }
 
-      public Collection<ResourceLocation> listResources(String p_199003_1_, Predicate<String> p_199003_2_) {
+      public Collection<ResourceLocation> getAllResourceLocations(String pathIn, Predicate<String> filter) {
          return ImmutableSet.of();
       }
 
       @OnlyIn(Dist.CLIENT)
-      public Stream<IResourcePack> listPacks() {
+      public Stream<IResourcePack> getResourcePackStream() {
          return Stream.of();
       }
    }

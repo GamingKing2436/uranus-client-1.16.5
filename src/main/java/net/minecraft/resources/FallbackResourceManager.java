@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 
 public class FallbackResourceManager implements IResourceManager {
    private static final Logger LOGGER = LogManager.getLogger();
-   protected final List<IResourcePack> fallbacks = Lists.newArrayList();
+   protected final List<IResourcePack> resourcePacks = Lists.newArrayList();
    private final ResourcePackType type;
    private final String namespace;
 
@@ -31,47 +31,47 @@ public class FallbackResourceManager implements IResourceManager {
       this.namespace = p_i226096_2_;
    }
 
-   public void add(IResourcePack p_199021_1_) {
-      this.fallbacks.add(p_199021_1_);
+   public void addResourcePack(IResourcePack resourcePack) {
+      this.resourcePacks.add(resourcePack);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Set<String> getNamespaces() {
+   public Set<String> getResourceNamespaces() {
       return ImmutableSet.of(this.namespace);
    }
 
-   public IResource getResource(ResourceLocation p_199002_1_) throws IOException {
-      this.validateLocation(p_199002_1_);
+   public IResource getResource(ResourceLocation resourceLocationIn) throws IOException {
+      this.checkResourcePath(resourceLocationIn);
       IResourcePack iresourcepack = null;
-      ResourceLocation resourcelocation = getMetadataLocation(p_199002_1_);
+      ResourceLocation resourcelocation = getLocationMcmeta(resourceLocationIn);
 
-      for(int i = this.fallbacks.size() - 1; i >= 0; --i) {
-         IResourcePack iresourcepack1 = this.fallbacks.get(i);
-         if (iresourcepack == null && iresourcepack1.hasResource(this.type, resourcelocation)) {
+      for(int i = this.resourcePacks.size() - 1; i >= 0; --i) {
+         IResourcePack iresourcepack1 = this.resourcePacks.get(i);
+         if (iresourcepack == null && iresourcepack1.resourceExists(this.type, resourcelocation)) {
             iresourcepack = iresourcepack1;
          }
 
-         if (iresourcepack1.hasResource(this.type, p_199002_1_)) {
+         if (iresourcepack1.resourceExists(this.type, resourceLocationIn)) {
             InputStream inputstream = null;
             if (iresourcepack != null) {
-               inputstream = this.getWrappedResource(resourcelocation, iresourcepack);
+               inputstream = this.getInputStream(resourcelocation, iresourcepack);
             }
 
-            return new SimpleResource(iresourcepack1.getName(), p_199002_1_, this.getWrappedResource(p_199002_1_, iresourcepack1), inputstream);
+            return new SimpleResource(iresourcepack1.getName(), resourceLocationIn, this.getInputStream(resourceLocationIn, iresourcepack1), inputstream);
          }
       }
 
-      throw new FileNotFoundException(p_199002_1_.toString());
+      throw new FileNotFoundException(resourceLocationIn.toString());
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean hasResource(ResourceLocation p_219533_1_) {
-      if (!this.isValidLocation(p_219533_1_)) {
+   public boolean hasResource(ResourceLocation path) {
+      if (!this.func_219541_f(path)) {
          return false;
       } else {
-         for(int i = this.fallbacks.size() - 1; i >= 0; --i) {
-            IResourcePack iresourcepack = this.fallbacks.get(i);
-            if (iresourcepack.hasResource(this.type, p_219533_1_)) {
+         for(int i = this.resourcePacks.size() - 1; i >= 0; --i) {
+            IResourcePack iresourcepack = this.resourcePacks.get(i);
+            if (iresourcepack.resourceExists(this.type, path)) {
                return true;
             }
          }
@@ -80,45 +80,45 @@ public class FallbackResourceManager implements IResourceManager {
       }
    }
 
-   protected InputStream getWrappedResource(ResourceLocation p_199019_1_, IResourcePack p_199019_2_) throws IOException {
-      InputStream inputstream = p_199019_2_.getResource(this.type, p_199019_1_);
-      return (InputStream)(LOGGER.isDebugEnabled() ? new FallbackResourceManager.LeakComplainerInputStream(inputstream, p_199019_1_, p_199019_2_.getName()) : inputstream);
+   protected InputStream getInputStream(ResourceLocation location, IResourcePack resourcePack) throws IOException {
+      InputStream inputstream = resourcePack.getResourceStream(this.type, location);
+      return (InputStream)(LOGGER.isDebugEnabled() ? new FallbackResourceManager.LeakComplainerInputStream(inputstream, location, resourcePack.getName()) : inputstream);
    }
 
-   private void validateLocation(ResourceLocation p_199022_1_) throws IOException {
-      if (!this.isValidLocation(p_199022_1_)) {
-         throw new IOException("Invalid relative path to resource: " + p_199022_1_);
+   private void checkResourcePath(ResourceLocation location) throws IOException {
+      if (!this.func_219541_f(location)) {
+         throw new IOException("Invalid relative path to resource: " + location);
       }
    }
 
-   private boolean isValidLocation(ResourceLocation p_219541_1_) {
+   private boolean func_219541_f(ResourceLocation p_219541_1_) {
       return !p_219541_1_.getPath().contains("..");
    }
 
-   public List<IResource> getResources(ResourceLocation p_199004_1_) throws IOException {
-      this.validateLocation(p_199004_1_);
+   public List<IResource> getAllResources(ResourceLocation resourceLocationIn) throws IOException {
+      this.checkResourcePath(resourceLocationIn);
       List<IResource> list = Lists.newArrayList();
-      ResourceLocation resourcelocation = getMetadataLocation(p_199004_1_);
+      ResourceLocation resourcelocation = getLocationMcmeta(resourceLocationIn);
 
-      for(IResourcePack iresourcepack : this.fallbacks) {
-         if (iresourcepack.hasResource(this.type, p_199004_1_)) {
-            InputStream inputstream = iresourcepack.hasResource(this.type, resourcelocation) ? this.getWrappedResource(resourcelocation, iresourcepack) : null;
-            list.add(new SimpleResource(iresourcepack.getName(), p_199004_1_, this.getWrappedResource(p_199004_1_, iresourcepack), inputstream));
+      for(IResourcePack iresourcepack : this.resourcePacks) {
+         if (iresourcepack.resourceExists(this.type, resourceLocationIn)) {
+            InputStream inputstream = iresourcepack.resourceExists(this.type, resourcelocation) ? this.getInputStream(resourcelocation, iresourcepack) : null;
+            list.add(new SimpleResource(iresourcepack.getName(), resourceLocationIn, this.getInputStream(resourceLocationIn, iresourcepack), inputstream));
          }
       }
 
       if (list.isEmpty()) {
-         throw new FileNotFoundException(p_199004_1_.toString());
+         throw new FileNotFoundException(resourceLocationIn.toString());
       } else {
          return list;
       }
    }
 
-   public Collection<ResourceLocation> listResources(String p_199003_1_, Predicate<String> p_199003_2_) {
+   public Collection<ResourceLocation> getAllResourceLocations(String pathIn, Predicate<String> filter) {
       List<ResourceLocation> list = Lists.newArrayList();
 
-      for(IResourcePack iresourcepack : this.fallbacks) {
-         list.addAll(iresourcepack.getResources(this.type, this.namespace, p_199003_1_, Integer.MAX_VALUE, p_199003_2_));
+      for(IResourcePack iresourcepack : this.resourcePacks) {
+         list.addAll(iresourcepack.getAllResourceLocations(this.type, this.namespace, pathIn, Integer.MAX_VALUE, filter));
       }
 
       Collections.sort(list);
@@ -126,32 +126,32 @@ public class FallbackResourceManager implements IResourceManager {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Stream<IResourcePack> listPacks() {
-      return this.fallbacks.stream();
+   public Stream<IResourcePack> getResourcePackStream() {
+      return this.resourcePacks.stream();
    }
 
-   static ResourceLocation getMetadataLocation(ResourceLocation p_199020_0_) {
-      return new ResourceLocation(p_199020_0_.getNamespace(), p_199020_0_.getPath() + ".mcmeta");
+   static ResourceLocation getLocationMcmeta(ResourceLocation location) {
+      return new ResourceLocation(location.getNamespace(), location.getPath() + ".mcmeta");
    }
 
    static class LeakComplainerInputStream extends FilterInputStream {
       private final String message;
-      private boolean closed;
+      private boolean isClosed;
 
-      public LeakComplainerInputStream(InputStream p_i47727_1_, ResourceLocation p_i47727_2_, String p_i47727_3_) {
-         super(p_i47727_1_);
+      public LeakComplainerInputStream(InputStream inputStreamIn, ResourceLocation location, String resourcePack) {
+         super(inputStreamIn);
          ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream();
          (new Exception()).printStackTrace(new PrintStream(bytearrayoutputstream));
-         this.message = "Leaked resource: '" + p_i47727_2_ + "' loaded from pack: '" + p_i47727_3_ + "'\n" + bytearrayoutputstream;
+         this.message = "Leaked resource: '" + location + "' loaded from pack: '" + resourcePack + "'\n" + bytearrayoutputstream;
       }
 
       public void close() throws IOException {
          super.close();
-         this.closed = true;
+         this.isClosed = true;
       }
 
       protected void finalize() throws Throwable {
-         if (!this.closed) {
+         if (!this.isClosed) {
             FallbackResourceManager.LOGGER.warn(this.message);
          }
 

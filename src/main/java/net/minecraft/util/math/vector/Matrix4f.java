@@ -25,30 +25,30 @@ public final class Matrix4f {
    public Matrix4f() {
    }
 
-   public Matrix4f(Matrix4f p_i48105_1_) {
-      this.m00 = p_i48105_1_.m00;
-      this.m01 = p_i48105_1_.m01;
-      this.m02 = p_i48105_1_.m02;
-      this.m03 = p_i48105_1_.m03;
-      this.m10 = p_i48105_1_.m10;
-      this.m11 = p_i48105_1_.m11;
-      this.m12 = p_i48105_1_.m12;
-      this.m13 = p_i48105_1_.m13;
-      this.m20 = p_i48105_1_.m20;
-      this.m21 = p_i48105_1_.m21;
-      this.m22 = p_i48105_1_.m22;
-      this.m23 = p_i48105_1_.m23;
-      this.m30 = p_i48105_1_.m30;
-      this.m31 = p_i48105_1_.m31;
-      this.m32 = p_i48105_1_.m32;
-      this.m33 = p_i48105_1_.m33;
+   public Matrix4f(Matrix4f matrixIn) {
+      this.m00 = matrixIn.m00;
+      this.m01 = matrixIn.m01;
+      this.m02 = matrixIn.m02;
+      this.m03 = matrixIn.m03;
+      this.m10 = matrixIn.m10;
+      this.m11 = matrixIn.m11;
+      this.m12 = matrixIn.m12;
+      this.m13 = matrixIn.m13;
+      this.m20 = matrixIn.m20;
+      this.m21 = matrixIn.m21;
+      this.m22 = matrixIn.m22;
+      this.m23 = matrixIn.m23;
+      this.m30 = matrixIn.m30;
+      this.m31 = matrixIn.m31;
+      this.m32 = matrixIn.m32;
+      this.m33 = matrixIn.m33;
    }
 
-   public Matrix4f(Quaternion p_i48104_1_) {
-      float f = p_i48104_1_.i();
-      float f1 = p_i48104_1_.j();
-      float f2 = p_i48104_1_.k();
-      float f3 = p_i48104_1_.r();
+   public Matrix4f(Quaternion quaternionIn) {
+      float f = quaternionIn.getX();
+      float f1 = quaternionIn.getY();
+      float f2 = quaternionIn.getZ();
+      float f3 = quaternionIn.getW();
       float f4 = 2.0F * f * f;
       float f5 = 2.0F * f1 * f1;
       float f6 = 2.0F * f2 * f2;
@@ -144,23 +144,23 @@ public final class Matrix4f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void store(FloatBuffer p_195879_1_) {
-      p_195879_1_.put(bufferIndex(0, 0), this.m00);
-      p_195879_1_.put(bufferIndex(0, 1), this.m01);
-      p_195879_1_.put(bufferIndex(0, 2), this.m02);
-      p_195879_1_.put(bufferIndex(0, 3), this.m03);
-      p_195879_1_.put(bufferIndex(1, 0), this.m10);
-      p_195879_1_.put(bufferIndex(1, 1), this.m11);
-      p_195879_1_.put(bufferIndex(1, 2), this.m12);
-      p_195879_1_.put(bufferIndex(1, 3), this.m13);
-      p_195879_1_.put(bufferIndex(2, 0), this.m20);
-      p_195879_1_.put(bufferIndex(2, 1), this.m21);
-      p_195879_1_.put(bufferIndex(2, 2), this.m22);
-      p_195879_1_.put(bufferIndex(2, 3), this.m23);
-      p_195879_1_.put(bufferIndex(3, 0), this.m30);
-      p_195879_1_.put(bufferIndex(3, 1), this.m31);
-      p_195879_1_.put(bufferIndex(3, 2), this.m32);
-      p_195879_1_.put(bufferIndex(3, 3), this.m33);
+   public void write(FloatBuffer floatBufferIn) {
+      floatBufferIn.put(bufferIndex(0, 0), this.m00);
+      floatBufferIn.put(bufferIndex(0, 1), this.m01);
+      floatBufferIn.put(bufferIndex(0, 2), this.m02);
+      floatBufferIn.put(bufferIndex(0, 3), this.m03);
+      floatBufferIn.put(bufferIndex(1, 0), this.m10);
+      floatBufferIn.put(bufferIndex(1, 1), this.m11);
+      floatBufferIn.put(bufferIndex(1, 2), this.m12);
+      floatBufferIn.put(bufferIndex(1, 3), this.m13);
+      floatBufferIn.put(bufferIndex(2, 0), this.m20);
+      floatBufferIn.put(bufferIndex(2, 1), this.m21);
+      floatBufferIn.put(bufferIndex(2, 2), this.m22);
+      floatBufferIn.put(bufferIndex(2, 3), this.m23);
+      floatBufferIn.put(bufferIndex(3, 0), this.m30);
+      floatBufferIn.put(bufferIndex(3, 1), this.m31);
+      floatBufferIn.put(bufferIndex(3, 2), this.m32);
+      floatBufferIn.put(bufferIndex(3, 3), this.m33);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -258,7 +258,7 @@ public final class Matrix4f {
    public boolean invert() {
       float f = this.adjugateAndDet();
       if (Math.abs(f) > 1.0E-6F) {
-         this.multiply(f);
+         this.mul(f);
          return true;
       } else {
          return false;
@@ -266,23 +266,23 @@ public final class Matrix4f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void multiply(Matrix4f p_226595_1_) {
-      float f = this.m00 * p_226595_1_.m00 + this.m01 * p_226595_1_.m10 + this.m02 * p_226595_1_.m20 + this.m03 * p_226595_1_.m30;
-      float f1 = this.m00 * p_226595_1_.m01 + this.m01 * p_226595_1_.m11 + this.m02 * p_226595_1_.m21 + this.m03 * p_226595_1_.m31;
-      float f2 = this.m00 * p_226595_1_.m02 + this.m01 * p_226595_1_.m12 + this.m02 * p_226595_1_.m22 + this.m03 * p_226595_1_.m32;
-      float f3 = this.m00 * p_226595_1_.m03 + this.m01 * p_226595_1_.m13 + this.m02 * p_226595_1_.m23 + this.m03 * p_226595_1_.m33;
-      float f4 = this.m10 * p_226595_1_.m00 + this.m11 * p_226595_1_.m10 + this.m12 * p_226595_1_.m20 + this.m13 * p_226595_1_.m30;
-      float f5 = this.m10 * p_226595_1_.m01 + this.m11 * p_226595_1_.m11 + this.m12 * p_226595_1_.m21 + this.m13 * p_226595_1_.m31;
-      float f6 = this.m10 * p_226595_1_.m02 + this.m11 * p_226595_1_.m12 + this.m12 * p_226595_1_.m22 + this.m13 * p_226595_1_.m32;
-      float f7 = this.m10 * p_226595_1_.m03 + this.m11 * p_226595_1_.m13 + this.m12 * p_226595_1_.m23 + this.m13 * p_226595_1_.m33;
-      float f8 = this.m20 * p_226595_1_.m00 + this.m21 * p_226595_1_.m10 + this.m22 * p_226595_1_.m20 + this.m23 * p_226595_1_.m30;
-      float f9 = this.m20 * p_226595_1_.m01 + this.m21 * p_226595_1_.m11 + this.m22 * p_226595_1_.m21 + this.m23 * p_226595_1_.m31;
-      float f10 = this.m20 * p_226595_1_.m02 + this.m21 * p_226595_1_.m12 + this.m22 * p_226595_1_.m22 + this.m23 * p_226595_1_.m32;
-      float f11 = this.m20 * p_226595_1_.m03 + this.m21 * p_226595_1_.m13 + this.m22 * p_226595_1_.m23 + this.m23 * p_226595_1_.m33;
-      float f12 = this.m30 * p_226595_1_.m00 + this.m31 * p_226595_1_.m10 + this.m32 * p_226595_1_.m20 + this.m33 * p_226595_1_.m30;
-      float f13 = this.m30 * p_226595_1_.m01 + this.m31 * p_226595_1_.m11 + this.m32 * p_226595_1_.m21 + this.m33 * p_226595_1_.m31;
-      float f14 = this.m30 * p_226595_1_.m02 + this.m31 * p_226595_1_.m12 + this.m32 * p_226595_1_.m22 + this.m33 * p_226595_1_.m32;
-      float f15 = this.m30 * p_226595_1_.m03 + this.m31 * p_226595_1_.m13 + this.m32 * p_226595_1_.m23 + this.m33 * p_226595_1_.m33;
+   public void mul(Matrix4f matrix) {
+      float f = this.m00 * matrix.m00 + this.m01 * matrix.m10 + this.m02 * matrix.m20 + this.m03 * matrix.m30;
+      float f1 = this.m00 * matrix.m01 + this.m01 * matrix.m11 + this.m02 * matrix.m21 + this.m03 * matrix.m31;
+      float f2 = this.m00 * matrix.m02 + this.m01 * matrix.m12 + this.m02 * matrix.m22 + this.m03 * matrix.m32;
+      float f3 = this.m00 * matrix.m03 + this.m01 * matrix.m13 + this.m02 * matrix.m23 + this.m03 * matrix.m33;
+      float f4 = this.m10 * matrix.m00 + this.m11 * matrix.m10 + this.m12 * matrix.m20 + this.m13 * matrix.m30;
+      float f5 = this.m10 * matrix.m01 + this.m11 * matrix.m11 + this.m12 * matrix.m21 + this.m13 * matrix.m31;
+      float f6 = this.m10 * matrix.m02 + this.m11 * matrix.m12 + this.m12 * matrix.m22 + this.m13 * matrix.m32;
+      float f7 = this.m10 * matrix.m03 + this.m11 * matrix.m13 + this.m12 * matrix.m23 + this.m13 * matrix.m33;
+      float f8 = this.m20 * matrix.m00 + this.m21 * matrix.m10 + this.m22 * matrix.m20 + this.m23 * matrix.m30;
+      float f9 = this.m20 * matrix.m01 + this.m21 * matrix.m11 + this.m22 * matrix.m21 + this.m23 * matrix.m31;
+      float f10 = this.m20 * matrix.m02 + this.m21 * matrix.m12 + this.m22 * matrix.m22 + this.m23 * matrix.m32;
+      float f11 = this.m20 * matrix.m03 + this.m21 * matrix.m13 + this.m22 * matrix.m23 + this.m23 * matrix.m33;
+      float f12 = this.m30 * matrix.m00 + this.m31 * matrix.m10 + this.m32 * matrix.m20 + this.m33 * matrix.m30;
+      float f13 = this.m30 * matrix.m01 + this.m31 * matrix.m11 + this.m32 * matrix.m21 + this.m33 * matrix.m31;
+      float f14 = this.m30 * matrix.m02 + this.m31 * matrix.m12 + this.m32 * matrix.m22 + this.m33 * matrix.m32;
+      float f15 = this.m30 * matrix.m03 + this.m31 * matrix.m13 + this.m32 * matrix.m23 + this.m33 * matrix.m33;
       this.m00 = f;
       this.m01 = f1;
       this.m02 = f2;
@@ -302,61 +302,61 @@ public final class Matrix4f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void multiply(Quaternion p_226596_1_) {
-      this.multiply(new Matrix4f(p_226596_1_));
+   public void mul(Quaternion quaternion) {
+      this.mul(new Matrix4f(quaternion));
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void multiply(float p_226592_1_) {
-      this.m00 *= p_226592_1_;
-      this.m01 *= p_226592_1_;
-      this.m02 *= p_226592_1_;
-      this.m03 *= p_226592_1_;
-      this.m10 *= p_226592_1_;
-      this.m11 *= p_226592_1_;
-      this.m12 *= p_226592_1_;
-      this.m13 *= p_226592_1_;
-      this.m20 *= p_226592_1_;
-      this.m21 *= p_226592_1_;
-      this.m22 *= p_226592_1_;
-      this.m23 *= p_226592_1_;
-      this.m30 *= p_226592_1_;
-      this.m31 *= p_226592_1_;
-      this.m32 *= p_226592_1_;
-      this.m33 *= p_226592_1_;
+   public void mul(float scale) {
+      this.m00 *= scale;
+      this.m01 *= scale;
+      this.m02 *= scale;
+      this.m03 *= scale;
+      this.m10 *= scale;
+      this.m11 *= scale;
+      this.m12 *= scale;
+      this.m13 *= scale;
+      this.m20 *= scale;
+      this.m21 *= scale;
+      this.m22 *= scale;
+      this.m23 *= scale;
+      this.m30 *= scale;
+      this.m31 *= scale;
+      this.m32 *= scale;
+      this.m33 *= scale;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static Matrix4f perspective(double p_195876_0_, float p_195876_2_, float p_195876_3_, float p_195876_4_) {
-      float f = (float)(1.0D / Math.tan(p_195876_0_ * (double)((float)Math.PI / 180F) / 2.0D));
+   public static Matrix4f perspective(double fov, float aspectRatio, float nearPlane, float farPlane) {
+      float f = (float)(1.0D / Math.tan(fov * (double)((float)Math.PI / 180F) / 2.0D));
       Matrix4f matrix4f = new Matrix4f();
-      matrix4f.m00 = f / p_195876_2_;
+      matrix4f.m00 = f / aspectRatio;
       matrix4f.m11 = f;
-      matrix4f.m22 = (p_195876_4_ + p_195876_3_) / (p_195876_3_ - p_195876_4_);
+      matrix4f.m22 = (farPlane + nearPlane) / (nearPlane - farPlane);
       matrix4f.m32 = -1.0F;
-      matrix4f.m23 = 2.0F * p_195876_4_ * p_195876_3_ / (p_195876_3_ - p_195876_4_);
+      matrix4f.m23 = 2.0F * farPlane * nearPlane / (nearPlane - farPlane);
       return matrix4f;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static Matrix4f orthographic(float p_195877_0_, float p_195877_1_, float p_195877_2_, float p_195877_3_) {
+   public static Matrix4f orthographic(float width, float height, float nearPlane, float farPlane) {
       Matrix4f matrix4f = new Matrix4f();
-      matrix4f.m00 = 2.0F / p_195877_0_;
-      matrix4f.m11 = 2.0F / p_195877_1_;
-      float f = p_195877_3_ - p_195877_2_;
+      matrix4f.m00 = 2.0F / width;
+      matrix4f.m11 = 2.0F / height;
+      float f = farPlane - nearPlane;
       matrix4f.m22 = -2.0F / f;
       matrix4f.m33 = 1.0F;
       matrix4f.m03 = -1.0F;
       matrix4f.m13 = -1.0F;
-      matrix4f.m23 = -(p_195877_3_ + p_195877_2_) / f;
+      matrix4f.m23 = -(farPlane + nearPlane) / f;
       return matrix4f;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void translate(Vector3f p_226597_1_) {
-      this.m03 += p_226597_1_.x();
-      this.m13 += p_226597_1_.y();
-      this.m23 += p_226597_1_.z();
+   public void translate(Vector3f vector) {
+      this.m03 += vector.getX();
+      this.m13 += vector.getY();
+      this.m23 += vector.getZ();
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -365,7 +365,7 @@ public final class Matrix4f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static Matrix4f createScaleMatrix(float p_226593_0_, float p_226593_1_, float p_226593_2_) {
+   public static Matrix4f makeScale(float p_226593_0_, float p_226593_1_, float p_226593_2_) {
       Matrix4f matrix4f = new Matrix4f();
       matrix4f.m00 = p_226593_0_;
       matrix4f.m11 = p_226593_1_;
@@ -375,7 +375,7 @@ public final class Matrix4f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public static Matrix4f createTranslateMatrix(float p_226599_0_, float p_226599_1_, float p_226599_2_) {
+   public static Matrix4f makeTranslate(float p_226599_0_, float p_226599_1_, float p_226599_2_) {
       Matrix4f matrix4f = new Matrix4f();
       matrix4f.m00 = 1.0F;
       matrix4f.m11 = 1.0F;

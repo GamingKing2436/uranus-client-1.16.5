@@ -12,14 +12,14 @@ public class GenerationStage {
       AIR("air"),
       LIQUID("liquid");
 
-      public static final Codec<GenerationStage.Carving> CODEC = IStringSerializable.fromEnum(GenerationStage.Carving::values, GenerationStage.Carving::byName);
+      public static final Codec<GenerationStage.Carving> CODEC = IStringSerializable.createEnumCodec(GenerationStage.Carving::values, GenerationStage.Carving::getByName);
       private static final Map<String, GenerationStage.Carving> BY_NAME = Arrays.stream(values()).collect(Collectors.toMap(GenerationStage.Carving::getName, (p_222672_0_) -> {
          return p_222672_0_;
       }));
       private final String name;
 
-      private Carving(String p_i50879_3_) {
-         this.name = p_i50879_3_;
+      private Carving(String name) {
+         this.name = name;
       }
 
       public String getName() {
@@ -27,11 +27,11 @@ public class GenerationStage {
       }
 
       @Nullable
-      public static GenerationStage.Carving byName(String p_236075_0_) {
-         return BY_NAME.get(p_236075_0_);
+      public static GenerationStage.Carving getByName(String name) {
+         return BY_NAME.get(name);
       }
 
-      public String getSerializedName() {
+      public String getString() {
          return this.name;
       }
    }

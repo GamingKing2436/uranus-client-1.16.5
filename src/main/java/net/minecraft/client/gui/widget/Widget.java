@@ -37,32 +37,32 @@ public abstract class Widget extends AbstractGui implements IRenderable, IGuiEve
    protected long nextNarration = Long.MAX_VALUE;
    private boolean focused;
 
-   public Widget(int p_i232254_1_, int p_i232254_2_, int p_i232254_3_, int p_i232254_4_, ITextComponent p_i232254_5_) {
-      this.x = p_i232254_1_;
-      this.y = p_i232254_2_;
-      this.width = p_i232254_3_;
-      this.height = p_i232254_4_;
-      this.message = p_i232254_5_;
+   public Widget(int x, int y, int width, int height, ITextComponent title) {
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
+      this.message = title;
    }
 
-   public int getHeight() {
+   public int getHeightRealms() {
       return this.height;
    }
 
-   protected int getYImage(boolean p_230989_1_) {
+   protected int getYImage(boolean isHovered) {
       int i = 1;
       if (!this.active) {
          i = 0;
-      } else if (p_230989_1_) {
+      } else if (isHovered) {
          i = 2;
       }
 
       return i;
    }
 
-   public void render(MatrixStack p_230430_1_, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
+   public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
       if (this.visible) {
-         this.isHovered = p_230430_2_ >= this.x && p_230430_3_ >= this.y && p_230430_2_ < this.x + this.width && p_230430_3_ < this.y + this.height;
+         this.isHovered = mouseX >= this.x && mouseY >= this.y && mouseX < this.x + this.width && mouseY < this.y + this.height;
          if (this.wasHovered != this.isHovered()) {
             if (this.isHovered()) {
                if (this.focused) {
@@ -76,7 +76,7 @@ public abstract class Widget extends AbstractGui implements IRenderable, IGuiEve
          }
 
          if (this.visible) {
-            this.renderButton(p_230430_1_, p_230430_2_, p_230430_3_, p_230430_4_);
+            this.renderButton(matrixStack, mouseX, mouseY, partialTicks);
          }
 
          this.narrate();
@@ -85,55 +85,55 @@ public abstract class Widget extends AbstractGui implements IRenderable, IGuiEve
    }
 
    protected void narrate() {
-      if (this.active && this.isHovered() && Util.getMillis() > this.nextNarration) {
-         String s = this.createNarrationMessage().getString();
+      if (this.active && this.isHovered() && Util.milliTime() > this.nextNarration) {
+         String s = this.getNarrationMessage().getString();
          if (!s.isEmpty()) {
-            NarratorChatListener.INSTANCE.sayNow(s);
+            NarratorChatListener.INSTANCE.say(s);
             this.nextNarration = Long.MAX_VALUE;
          }
       }
 
    }
 
-   protected IFormattableTextComponent createNarrationMessage() {
+   protected IFormattableTextComponent getNarrationMessage() {
       return new TranslationTextComponent("gui.narrate.button", this.getMessage());
    }
 
-   public void renderButton(MatrixStack p_230431_1_, int p_230431_2_, int p_230431_3_, float p_230431_4_) {
+   public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
       Minecraft minecraft = Minecraft.getInstance();
-      FontRenderer fontrenderer = minecraft.font;
-      minecraft.getTextureManager().bind(WIDGETS_LOCATION);
-      RenderSystem.color4f(0.96F, 0.58F, 0.13F, this.alpha);
+      FontRenderer fontrenderer = minecraft.fontRenderer;
+      minecraft.getTextureManager().bindTexture(WIDGETS_LOCATION);
+      RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
       int i = this.getYImage(this.isHovered());
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.enableDepthTest();
-      this.blit(p_230431_1_, this.x, this.y, 0, 46 + i * 20, this.width / 2, this.height);
-      this.blit(p_230431_1_, this.x + this.width / 2, this.y, 200 - this.width / 2, 46 + i * 20, this.width / 2, this.height);
-      this.renderBg(p_230431_1_, minecraft, p_230431_2_, p_230431_3_);
+      this.blit(matrixStack, this.x, this.y, 0, 46 + i * 20, this.width / 2, this.height);
+      this.blit(matrixStack, this.x + this.width / 2, this.y, 200 - this.width / 2, 46 + i * 20, this.width / 2, this.height);
+      this.renderBg(matrixStack, minecraft, mouseX, mouseY);
       int j = this.active ? 16777215 : 10526880;
-      drawCenteredString(p_230431_1_, fontrenderer, this.getMessage(), this.x + this.width / 2, this.y + (this.height - 8) / 2, j | MathHelper.ceil(this.alpha * 255.0F) << 24);
+      drawCenteredString(matrixStack, fontrenderer, this.getMessage(), this.x + this.width / 2, this.y + (this.height - 8) / 2, j | MathHelper.ceil(this.alpha * 255.0F) << 24);
    }
 
-   protected void renderBg(MatrixStack p_230441_1_, Minecraft p_230441_2_, int p_230441_3_, int p_230441_4_) {
+   protected void renderBg(MatrixStack matrixStack, Minecraft minecraft, int mouseX, int mouseY) {
    }
 
-   public void onClick(double p_230982_1_, double p_230982_3_) {
+   public void onClick(double mouseX, double mouseY) {
    }
 
-   public void onRelease(double p_231000_1_, double p_231000_3_) {
+   public void onRelease(double mouseX, double mouseY) {
    }
 
-   protected void onDrag(double p_230983_1_, double p_230983_3_, double p_230983_5_, double p_230983_7_) {
+   protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
    }
 
-   public boolean mouseClicked(double p_231044_1_, double p_231044_3_, int p_231044_5_) {
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
       if (this.active && this.visible) {
-         if (this.isValidClickButton(p_231044_5_)) {
-            boolean flag = this.clicked(p_231044_1_, p_231044_3_);
+         if (this.isValidClickButton(button)) {
+            boolean flag = this.clicked(mouseX, mouseY);
             if (flag) {
-               this.playDownSound(Minecraft.getInstance().getSoundManager());
-               this.onClick(p_231044_1_, p_231044_3_);
+               this.playDownSound(Minecraft.getInstance().getSoundHandler());
+               this.onClick(mouseX, mouseY);
                return true;
             }
          }
@@ -144,37 +144,37 @@ public abstract class Widget extends AbstractGui implements IRenderable, IGuiEve
       }
    }
 
-   public boolean mouseReleased(double p_231048_1_, double p_231048_3_, int p_231048_5_) {
-      if (this.isValidClickButton(p_231048_5_)) {
-         this.onRelease(p_231048_1_, p_231048_3_);
+   public boolean mouseReleased(double mouseX, double mouseY, int button) {
+      if (this.isValidClickButton(button)) {
+         this.onRelease(mouseX, mouseY);
          return true;
       } else {
          return false;
       }
    }
 
-   protected boolean isValidClickButton(int p_230987_1_) {
-      return p_230987_1_ == 0;
+   protected boolean isValidClickButton(int button) {
+      return button == 0;
    }
 
-   public boolean mouseDragged(double p_231045_1_, double p_231045_3_, int p_231045_5_, double p_231045_6_, double p_231045_8_) {
-      if (this.isValidClickButton(p_231045_5_)) {
-         this.onDrag(p_231045_1_, p_231045_3_, p_231045_6_, p_231045_8_);
+   public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+      if (this.isValidClickButton(button)) {
+         this.onDrag(mouseX, mouseY, dragX, dragY);
          return true;
       } else {
          return false;
       }
    }
 
-   protected boolean clicked(double p_230992_1_, double p_230992_3_) {
-      return this.active && this.visible && p_230992_1_ >= (double)this.x && p_230992_3_ >= (double)this.y && p_230992_1_ < (double)(this.x + this.width) && p_230992_3_ < (double)(this.y + this.height);
+   protected boolean clicked(double mouseX, double mouseY) {
+      return this.active && this.visible && mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)(this.x + this.width) && mouseY < (double)(this.y + this.height);
    }
 
    public boolean isHovered() {
       return this.isHovered || this.focused;
    }
 
-   public boolean changeFocus(boolean p_231049_1_) {
+   public boolean changeFocus(boolean focus) {
       if (this.active && this.visible) {
          this.focused = !this.focused;
          this.onFocusedChanged(this.focused);
@@ -184,42 +184,42 @@ public abstract class Widget extends AbstractGui implements IRenderable, IGuiEve
       }
    }
 
-   protected void onFocusedChanged(boolean p_230995_1_) {
+   protected void onFocusedChanged(boolean focused) {
    }
 
-   public boolean isMouseOver(double p_231047_1_, double p_231047_3_) {
-      return this.active && this.visible && p_231047_1_ >= (double)this.x && p_231047_3_ >= (double)this.y && p_231047_1_ < (double)(this.x + this.width) && p_231047_3_ < (double)(this.y + this.height);
+   public boolean isMouseOver(double mouseX, double mouseY) {
+      return this.active && this.visible && mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)(this.x + this.width) && mouseY < (double)(this.y + this.height);
    }
 
-   public void renderToolTip(MatrixStack p_230443_1_, int p_230443_2_, int p_230443_3_) {
+   public void renderToolTip(MatrixStack matrixStack, int mouseX, int mouseY) {
    }
 
-   public void playDownSound(SoundHandler p_230988_1_) {
-      p_230988_1_.play(SimpleSound.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+   public void playDownSound(SoundHandler handler) {
+      handler.play(SimpleSound.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
    }
 
    public int getWidth() {
       return this.width;
    }
 
-   public void setWidth(int p_230991_1_) {
-      this.width = p_230991_1_;
+   public void setWidth(int width) {
+      this.width = width;
    }
 
-   public void setAlpha(float p_230986_1_) {
-      this.alpha = p_230986_1_;
+   public void setAlpha(float alpha) {
+      this.alpha = alpha;
    }
 
-   public void setMessage(ITextComponent p_238482_1_) {
-      if (!Objects.equals(p_238482_1_.getString(), this.message.getString())) {
+   public void setMessage(ITextComponent message) {
+      if (!Objects.equals(message.getString(), this.message.getString())) {
          this.queueNarration(250);
       }
 
-      this.message = p_238482_1_;
+      this.message = message;
    }
 
-   public void queueNarration(int p_230994_1_) {
-      this.nextNarration = Util.getMillis() + (long)p_230994_1_;
+   public void queueNarration(int delay) {
+      this.nextNarration = Util.milliTime() + (long)delay;
    }
 
    public ITextComponent getMessage() {
@@ -230,7 +230,7 @@ public abstract class Widget extends AbstractGui implements IRenderable, IGuiEve
       return this.focused;
    }
 
-   protected void setFocused(boolean p_230996_1_) {
-      this.focused = p_230996_1_;
+   protected void setFocused(boolean focused) {
+      this.focused = focused;
    }
 }

@@ -14,26 +14,26 @@ public class MemoryExpiry extends NamedEntityFix {
    }
 
    protected Typed<?> fix(Typed<?> p_207419_1_) {
-      return p_207419_1_.update(DSL.remainderFinder(), this::fixTag);
+      return p_207419_1_.update(DSL.remainderFinder(), this::func_233326_a_);
    }
 
-   public Dynamic<?> fixTag(Dynamic<?> p_233326_1_) {
-      return p_233326_1_.update("Brain", this::updateBrain);
+   public Dynamic<?> func_233326_a_(Dynamic<?> p_233326_1_) {
+      return p_233326_1_.update("Brain", this::func_233327_b_);
    }
 
-   private Dynamic<?> updateBrain(Dynamic<?> p_233327_1_) {
-      return p_233327_1_.update("memories", this::updateMemories);
+   private Dynamic<?> func_233327_b_(Dynamic<?> p_233327_1_) {
+      return p_233327_1_.update("memories", this::func_233328_c_);
    }
 
-   private Dynamic<?> updateMemories(Dynamic<?> p_233328_1_) {
-      return p_233328_1_.updateMapValues(this::updateMemoryEntry);
+   private Dynamic<?> func_233328_c_(Dynamic<?> p_233328_1_) {
+      return p_233328_1_.updateMapValues(this::func_233325_a_);
    }
 
-   private Pair<Dynamic<?>, Dynamic<?>> updateMemoryEntry(Pair<Dynamic<?>, Dynamic<?>> p_233325_1_) {
-      return p_233325_1_.mapSecond(this::wrapMemoryValue);
+   private Pair<Dynamic<?>, Dynamic<?>> func_233325_a_(Pair<Dynamic<?>, Dynamic<?>> p_233325_1_) {
+      return p_233325_1_.mapSecond(this::func_233329_d_);
    }
 
-   private Dynamic<?> wrapMemoryValue(Dynamic<?> p_233329_1_) {
+   private Dynamic<?> func_233329_d_(Dynamic<?> p_233329_1_) {
       return p_233329_1_.createMap(ImmutableMap.of(p_233329_1_.createString("value"), p_233329_1_));
    }
 }

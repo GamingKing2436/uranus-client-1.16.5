@@ -14,7 +14,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public final class HorseRenderer extends AbstractHorseRenderer<HorseEntity, HorseModel<HorseEntity>> {
-   private static final Map<CoatColors, ResourceLocation> LOCATION_BY_VARIANT = Util.make(Maps.newEnumMap(CoatColors.class), (p_239384_0_) -> {
+   private static final Map<CoatColors, ResourceLocation> field_239383_a_ = Util.make(Maps.newEnumMap(CoatColors.class), (p_239384_0_) -> {
       p_239384_0_.put(CoatColors.WHITE, new ResourceLocation("textures/entity/horse/horse_white.png"));
       p_239384_0_.put(CoatColors.CREAMY, new ResourceLocation("textures/entity/horse/horse_creamy.png"));
       p_239384_0_.put(CoatColors.CHESTNUT, new ResourceLocation("textures/entity/horse/horse_chestnut.png"));
@@ -24,13 +24,13 @@ public final class HorseRenderer extends AbstractHorseRenderer<HorseEntity, Hors
       p_239384_0_.put(CoatColors.DARKBROWN, new ResourceLocation("textures/entity/horse/horse_darkbrown.png"));
    });
 
-   public HorseRenderer(EntityRendererManager p_i47205_1_) {
-      super(p_i47205_1_, new HorseModel<>(0.0F), 1.1F);
+   public HorseRenderer(EntityRendererManager renderManagerIn) {
+      super(renderManagerIn, new HorseModel<>(0.0F), 1.1F);
       this.addLayer(new HorseMarkingsLayer(this));
       this.addLayer(new LeatherHorseArmorLayer(this));
    }
 
-   public ResourceLocation getTextureLocation(HorseEntity p_110775_1_) {
-      return LOCATION_BY_VARIANT.get(p_110775_1_.getVariant());
+   public ResourceLocation getEntityTexture(HorseEntity entity) {
+      return field_239383_a_.get(entity.func_234239_eK_());
    }
 }

@@ -18,129 +18,129 @@ import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
 public class HopperMinecartEntity extends ContainerMinecartEntity implements IHopper {
-   private boolean enabled = true;
-   private int cooldownTime = -1;
+   private boolean isBlocked = true;
+   private int transferTicker = -1;
    private final BlockPos lastPosition = BlockPos.ZERO;
 
-   public HopperMinecartEntity(EntityType<? extends HopperMinecartEntity> p_i50116_1_, World p_i50116_2_) {
-      super(p_i50116_1_, p_i50116_2_);
+   public HopperMinecartEntity(EntityType<? extends HopperMinecartEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
-   public HopperMinecartEntity(World p_i1721_1_, double p_i1721_2_, double p_i1721_4_, double p_i1721_6_) {
-      super(EntityType.HOPPER_MINECART, p_i1721_2_, p_i1721_4_, p_i1721_6_, p_i1721_1_);
+   public HopperMinecartEntity(World worldIn, double x, double y, double z) {
+      super(EntityType.HOPPER_MINECART, x, y, z, worldIn);
    }
 
    public AbstractMinecartEntity.Type getMinecartType() {
       return AbstractMinecartEntity.Type.HOPPER;
    }
 
-   public BlockState getDefaultDisplayBlockState() {
-      return Blocks.HOPPER.defaultBlockState();
+   public BlockState getDefaultDisplayTile() {
+      return Blocks.HOPPER.getDefaultState();
    }
 
-   public int getDefaultDisplayOffset() {
+   public int getDefaultDisplayTileOffset() {
       return 1;
    }
 
-   public int getContainerSize() {
+   public int getSizeInventory() {
       return 5;
    }
 
-   public void activateMinecart(int p_96095_1_, int p_96095_2_, int p_96095_3_, boolean p_96095_4_) {
-      boolean flag = !p_96095_4_;
-      if (flag != this.isEnabled()) {
-         this.setEnabled(flag);
+   public void onActivatorRailPass(int x, int y, int z, boolean receivingPower) {
+      boolean flag = !receivingPower;
+      if (flag != this.getBlocked()) {
+         this.setBlocked(flag);
       }
 
    }
 
-   public boolean isEnabled() {
-      return this.enabled;
+   public boolean getBlocked() {
+      return this.isBlocked;
    }
 
-   public void setEnabled(boolean p_96110_1_) {
-      this.enabled = p_96110_1_;
+   public void setBlocked(boolean blocked) {
+      this.isBlocked = blocked;
    }
 
-   public World getLevel() {
-      return this.level;
+   public World getWorld() {
+      return this.world;
    }
 
-   public double getLevelX() {
-      return this.getX();
+   public double getXPos() {
+      return this.getPosX();
    }
 
-   public double getLevelY() {
-      return this.getY() + 0.5D;
+   public double getYPos() {
+      return this.getPosY() + 0.5D;
    }
 
-   public double getLevelZ() {
-      return this.getZ();
+   public double getZPos() {
+      return this.getPosZ();
    }
 
    public void tick() {
       super.tick();
-      if (!this.level.isClientSide && this.isAlive() && this.isEnabled()) {
-         BlockPos blockpos = this.blockPosition();
+      if (!this.world.isRemote && this.isAlive() && this.getBlocked()) {
+         BlockPos blockpos = this.getPosition();
          if (blockpos.equals(this.lastPosition)) {
-            --this.cooldownTime;
+            --this.transferTicker;
          } else {
-            this.setCooldown(0);
+            this.setTransferTicker(0);
          }
 
-         if (!this.isOnCooldown()) {
-            this.setCooldown(0);
-            if (this.suckInItems()) {
-               this.setCooldown(4);
-               this.setChanged();
+         if (!this.canTransfer()) {
+            this.setTransferTicker(0);
+            if (this.captureDroppedItems()) {
+               this.setTransferTicker(4);
+               this.markDirty();
             }
          }
       }
 
    }
 
-   public boolean suckInItems() {
-      if (HopperTileEntity.suckInItems(this)) {
+   public boolean captureDroppedItems() {
+      if (HopperTileEntity.pullItems(this)) {
          return true;
       } else {
-         List<ItemEntity> list = this.level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(0.25D, 0.0D, 0.25D), EntityPredicates.ENTITY_STILL_ALIVE);
+         List<ItemEntity> list = this.world.getEntitiesWithinAABB(ItemEntity.class, this.getBoundingBox().grow(0.25D, 0.0D, 0.25D), EntityPredicates.IS_ALIVE);
          if (!list.isEmpty()) {
-            HopperTileEntity.addItem(this, list.get(0));
+            HopperTileEntity.captureItem(this, list.get(0));
          }
 
          return false;
       }
    }
 
-   public void destroy(DamageSource p_94095_1_) {
-      super.destroy(p_94095_1_);
-      if (this.level.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
-         this.spawnAtLocation(Blocks.HOPPER);
+   public void killMinecart(DamageSource source) {
+      super.killMinecart(source);
+      if (this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
+         this.entityDropItem(Blocks.HOPPER);
       }
 
    }
 
-   protected void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      p_213281_1_.putInt("TransferCooldown", this.cooldownTime);
-      p_213281_1_.putBoolean("Enabled", this.enabled);
+   protected void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      compound.putInt("TransferCooldown", this.transferTicker);
+      compound.putBoolean("Enabled", this.isBlocked);
    }
 
-   protected void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.cooldownTime = p_70037_1_.getInt("TransferCooldown");
-      this.enabled = p_70037_1_.contains("Enabled") ? p_70037_1_.getBoolean("Enabled") : true;
+   protected void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.transferTicker = compound.getInt("TransferCooldown");
+      this.isBlocked = compound.contains("Enabled") ? compound.getBoolean("Enabled") : true;
    }
 
-   public void setCooldown(int p_98042_1_) {
-      this.cooldownTime = p_98042_1_;
+   public void setTransferTicker(int transferTickerIn) {
+      this.transferTicker = transferTickerIn;
    }
 
-   public boolean isOnCooldown() {
-      return this.cooldownTime > 0;
+   public boolean canTransfer() {
+      return this.transferTicker > 0;
    }
 
-   public Container createMenu(int p_213968_1_, PlayerInventory p_213968_2_) {
-      return new HopperContainer(p_213968_1_, p_213968_2_, this);
+   public Container createContainer(int id, PlayerInventory playerInventoryIn) {
+      return new HopperContainer(id, playerInventoryIn, this);
    }
 }

@@ -23,11 +23,11 @@ public class ShipwreckStructure extends Structure<ShipwreckConfig> {
          super(p_i225817_1_, p_i225817_2_, p_i225817_3_, p_i225817_4_, p_i225817_5_, p_i225817_6_);
       }
 
-      public void generatePieces(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, ShipwreckConfig p_230364_7_) {
-         Rotation rotation = Rotation.getRandom(this.random);
+      public void func_230364_a_(DynamicRegistries p_230364_1_, ChunkGenerator p_230364_2_, TemplateManager p_230364_3_, int p_230364_4_, int p_230364_5_, Biome p_230364_6_, ShipwreckConfig p_230364_7_) {
+         Rotation rotation = Rotation.randomRotation(this.rand);
          BlockPos blockpos = new BlockPos(p_230364_4_ * 16, 90, p_230364_5_ * 16);
-         ShipwreckPieces.addPieces(p_230364_3_, blockpos, rotation, this.pieces, this.random, p_230364_7_);
-         this.calculateBoundingBox();
+         ShipwreckPieces.func_204760_a(p_230364_3_, blockpos, rotation, this.components, this.rand, p_230364_7_);
+         this.recalculateStructureSize();
       }
    }
 }

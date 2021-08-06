@@ -15,7 +15,7 @@ import net.minecraft.tags.BlockTags;
 public class BlockStateArgument implements ArgumentType<BlockStateInput> {
    private static final Collection<String> EXAMPLES = Arrays.asList("stone", "minecraft:stone", "stone[foo=bar]", "foo{bar=baz}");
 
-   public static BlockStateArgument block() {
+   public static BlockStateArgument blockState() {
       return new BlockStateArgument();
    }
 
@@ -24,8 +24,8 @@ public class BlockStateArgument implements ArgumentType<BlockStateInput> {
       return new BlockStateInput(blockstateparser.getState(), blockstateparser.getProperties().keySet(), blockstateparser.getNbt());
    }
 
-   public static BlockStateInput getBlock(CommandContext<CommandSource> p_197238_0_, String p_197238_1_) {
-      return p_197238_0_.getArgument(p_197238_1_, BlockStateInput.class);
+   public static BlockStateInput getBlockState(CommandContext<CommandSource> context, String name) {
+      return context.getArgument(name, BlockStateInput.class);
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
@@ -38,7 +38,7 @@ public class BlockStateArgument implements ArgumentType<BlockStateInput> {
       } catch (CommandSyntaxException commandsyntaxexception) {
       }
 
-      return blockstateparser.fillSuggestions(p_listSuggestions_2_, BlockTags.getAllTags());
+      return blockstateparser.getSuggestions(p_listSuggestions_2_, BlockTags.getCollection());
    }
 
    public Collection<String> getExamples() {

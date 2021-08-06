@@ -13,46 +13,46 @@ public class SPlayerPositionLookPacket implements IPacket<IClientPlayNetHandler>
    private double x;
    private double y;
    private double z;
-   private float yRot;
-   private float xRot;
-   private Set<SPlayerPositionLookPacket.Flags> relativeArguments;
-   private int id;
+   private float yaw;
+   private float pitch;
+   private Set<SPlayerPositionLookPacket.Flags> flags;
+   private int teleportId;
 
    public SPlayerPositionLookPacket() {
    }
 
-   public SPlayerPositionLookPacket(double p_i46928_1_, double p_i46928_3_, double p_i46928_5_, float p_i46928_7_, float p_i46928_8_, Set<SPlayerPositionLookPacket.Flags> p_i46928_9_, int p_i46928_10_) {
-      this.x = p_i46928_1_;
-      this.y = p_i46928_3_;
-      this.z = p_i46928_5_;
-      this.yRot = p_i46928_7_;
-      this.xRot = p_i46928_8_;
-      this.relativeArguments = p_i46928_9_;
-      this.id = p_i46928_10_;
+   public SPlayerPositionLookPacket(double xIn, double yIn, double zIn, float yawIn, float pitchIn, Set<SPlayerPositionLookPacket.Flags> flagsIn, int teleportIdIn) {
+      this.x = xIn;
+      this.y = yIn;
+      this.z = zIn;
+      this.yaw = yawIn;
+      this.pitch = pitchIn;
+      this.flags = flagsIn;
+      this.teleportId = teleportIdIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.x = p_148837_1_.readDouble();
-      this.y = p_148837_1_.readDouble();
-      this.z = p_148837_1_.readDouble();
-      this.yRot = p_148837_1_.readFloat();
-      this.xRot = p_148837_1_.readFloat();
-      this.relativeArguments = SPlayerPositionLookPacket.Flags.unpack(p_148837_1_.readUnsignedByte());
-      this.id = p_148837_1_.readVarInt();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.x = buf.readDouble();
+      this.y = buf.readDouble();
+      this.z = buf.readDouble();
+      this.yaw = buf.readFloat();
+      this.pitch = buf.readFloat();
+      this.flags = SPlayerPositionLookPacket.Flags.unpack(buf.readUnsignedByte());
+      this.teleportId = buf.readVarInt();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeDouble(this.x);
-      p_148840_1_.writeDouble(this.y);
-      p_148840_1_.writeDouble(this.z);
-      p_148840_1_.writeFloat(this.yRot);
-      p_148840_1_.writeFloat(this.xRot);
-      p_148840_1_.writeByte(SPlayerPositionLookPacket.Flags.pack(this.relativeArguments));
-      p_148840_1_.writeVarInt(this.id);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeDouble(this.x);
+      buf.writeDouble(this.y);
+      buf.writeDouble(this.z);
+      buf.writeFloat(this.yaw);
+      buf.writeFloat(this.pitch);
+      buf.writeByte(SPlayerPositionLookPacket.Flags.pack(this.flags));
+      buf.writeVarInt(this.teleportId);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleMovePlayer(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handlePlayerPosLook(this);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -71,23 +71,23 @@ public class SPlayerPositionLookPacket implements IPacket<IClientPlayNetHandler>
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getYRot() {
-      return this.yRot;
+   public float getYaw() {
+      return this.yaw;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getXRot() {
-      return this.xRot;
+   public float getPitch() {
+      return this.pitch;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getId() {
-      return this.id;
+   public int getTeleportId() {
+      return this.teleportId;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Set<SPlayerPositionLookPacket.Flags> getRelativeArguments() {
-      return this.relativeArguments;
+   public Set<SPlayerPositionLookPacket.Flags> getFlags() {
+      return this.flags;
    }
 
    public static enum Flags {
@@ -99,23 +99,23 @@ public class SPlayerPositionLookPacket implements IPacket<IClientPlayNetHandler>
 
       private final int bit;
 
-      private Flags(int p_i46690_3_) {
-         this.bit = p_i46690_3_;
+      private Flags(int bitIn) {
+         this.bit = bitIn;
       }
 
       private int getMask() {
          return 1 << this.bit;
       }
 
-      private boolean isSet(int p_187043_1_) {
-         return (p_187043_1_ & this.getMask()) == this.getMask();
+      private boolean isSet(int flags) {
+         return (flags & this.getMask()) == this.getMask();
       }
 
-      public static Set<SPlayerPositionLookPacket.Flags> unpack(int p_187044_0_) {
+      public static Set<SPlayerPositionLookPacket.Flags> unpack(int flags) {
          Set<SPlayerPositionLookPacket.Flags> set = EnumSet.noneOf(SPlayerPositionLookPacket.Flags.class);
 
          for(SPlayerPositionLookPacket.Flags splayerpositionlookpacket$flags : values()) {
-            if (splayerpositionlookpacket$flags.isSet(p_187044_0_)) {
+            if (splayerpositionlookpacket$flags.isSet(flags)) {
                set.add(splayerpositionlookpacket$flags);
             }
          }
@@ -123,10 +123,10 @@ public class SPlayerPositionLookPacket implements IPacket<IClientPlayNetHandler>
          return set;
       }
 
-      public static int pack(Set<SPlayerPositionLookPacket.Flags> p_187040_0_) {
+      public static int pack(Set<SPlayerPositionLookPacket.Flags> flags) {
          int i = 0;
 
-         for(SPlayerPositionLookPacket.Flags splayerpositionlookpacket$flags : p_187040_0_) {
+         for(SPlayerPositionLookPacket.Flags splayerpositionlookpacket$flags : flags) {
             i |= splayerpositionlookpacket$flags.getMask();
          }
 

@@ -7,7 +7,7 @@ import org.lwjgl.system.MemoryUtil;
 
 @OnlyIn(Dist.CLIENT)
 public class NativeUtil {
-   public static void youJustLostTheGame() {
+   public static void crash() {
       MemoryUtil.memSet(0L, 0, 1L);
    }
 

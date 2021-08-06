@@ -13,25 +13,25 @@ import org.apache.logging.log4j.Logger;
 
 public class Layer {
    private static final Logger LOGGER = LogManager.getLogger();
-   private final LazyArea area;
+   private final LazyArea field_215742_b;
 
-   public Layer(IAreaFactory<LazyArea> p_i48639_1_) {
-      this.area = p_i48639_1_.make();
+   public Layer(IAreaFactory<LazyArea> lazyAreaFactoryIn) {
+      this.field_215742_b = lazyAreaFactoryIn.make();
    }
 
-   public Biome get(Registry<Biome> p_242936_1_, int p_242936_2_, int p_242936_3_) {
-      int i = this.area.get(p_242936_2_, p_242936_3_);
-      RegistryKey<Biome> registrykey = BiomeRegistry.byId(i);
+   public Biome func_242936_a(Registry<Biome> p_242936_1_, int p_242936_2_, int p_242936_3_) {
+      int i = this.field_215742_b.getValue(p_242936_2_, p_242936_3_);
+      RegistryKey<Biome> registrykey = BiomeRegistry.getKeyFromID(i);
       if (registrykey == null) {
          throw new IllegalStateException("Unknown biome id emitted by layers: " + i);
       } else {
-         Biome biome = p_242936_1_.get(registrykey);
+         Biome biome = p_242936_1_.getValueForKey(registrykey);
          if (biome == null) {
-            if (SharedConstants.IS_RUNNING_IN_IDE) {
-               throw (IllegalStateException)Util.pauseInIde(new IllegalStateException("Unknown biome id: " + i));
+            if (SharedConstants.developmentMode) {
+               throw (IllegalStateException)Util.pauseDevMode(new IllegalStateException("Unknown biome id: " + i));
             } else {
                LOGGER.warn("Unknown biome id: ", (int)i);
-               return p_242936_1_.get(BiomeRegistry.byId(0));
+               return p_242936_1_.getValueForKey(BiomeRegistry.getKeyFromID(0));
             }
          } else {
             return biome;

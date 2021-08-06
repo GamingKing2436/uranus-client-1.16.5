@@ -10,90 +10,90 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 
 public class GroundPathNavigator extends PathNavigator {
-   private boolean avoidSun;
+   private boolean shouldAvoidSun;
 
-   public GroundPathNavigator(MobEntity p_i45875_1_, World p_i45875_2_) {
-      super(p_i45875_1_, p_i45875_2_);
+   public GroundPathNavigator(MobEntity entitylivingIn, World worldIn) {
+      super(entitylivingIn, worldIn);
    }
 
-   protected PathFinder createPathFinder(int p_179679_1_) {
-      this.nodeEvaluator = new WalkNodeProcessor();
-      this.nodeEvaluator.setCanPassDoors(true);
-      return new PathFinder(this.nodeEvaluator, p_179679_1_);
+   protected PathFinder getPathFinder(int p_179679_1_) {
+      this.nodeProcessor = new WalkNodeProcessor();
+      this.nodeProcessor.setCanEnterDoors(true);
+      return new PathFinder(this.nodeProcessor, p_179679_1_);
    }
 
-   protected boolean canUpdatePath() {
-      return this.mob.isOnGround() || this.isInLiquid() || this.mob.isPassenger();
+   protected boolean canNavigate() {
+      return this.entity.isOnGround() || this.isInLiquid() || this.entity.isPassenger();
    }
 
-   protected Vector3d getTempMobPos() {
-      return new Vector3d(this.mob.getX(), (double)this.getSurfaceY(), this.mob.getZ());
+   protected Vector3d getEntityPosition() {
+      return new Vector3d(this.entity.getPosX(), (double)this.getPathablePosY(), this.entity.getPosZ());
    }
 
-   public Path createPath(BlockPos p_179680_1_, int p_179680_2_) {
-      if (this.level.getBlockState(p_179680_1_).isAir()) {
+   public Path getPathToPos(BlockPos pos, int p_179680_2_) {
+      if (this.world.getBlockState(pos).isAir()) {
          BlockPos blockpos;
-         for(blockpos = p_179680_1_.below(); blockpos.getY() > 0 && this.level.getBlockState(blockpos).isAir(); blockpos = blockpos.below()) {
+         for(blockpos = pos.down(); blockpos.getY() > 0 && this.world.getBlockState(blockpos).isAir(); blockpos = blockpos.down()) {
          }
 
          if (blockpos.getY() > 0) {
-            return super.createPath(blockpos.above(), p_179680_2_);
+            return super.getPathToPos(blockpos.up(), p_179680_2_);
          }
 
-         while(blockpos.getY() < this.level.getMaxBuildHeight() && this.level.getBlockState(blockpos).isAir()) {
-            blockpos = blockpos.above();
+         while(blockpos.getY() < this.world.getHeight() && this.world.getBlockState(blockpos).isAir()) {
+            blockpos = blockpos.up();
          }
 
-         p_179680_1_ = blockpos;
+         pos = blockpos;
       }
 
-      if (!this.level.getBlockState(p_179680_1_).getMaterial().isSolid()) {
-         return super.createPath(p_179680_1_, p_179680_2_);
+      if (!this.world.getBlockState(pos).getMaterial().isSolid()) {
+         return super.getPathToPos(pos, p_179680_2_);
       } else {
          BlockPos blockpos1;
-         for(blockpos1 = p_179680_1_.above(); blockpos1.getY() < this.level.getMaxBuildHeight() && this.level.getBlockState(blockpos1).getMaterial().isSolid(); blockpos1 = blockpos1.above()) {
+         for(blockpos1 = pos.up(); blockpos1.getY() < this.world.getHeight() && this.world.getBlockState(blockpos1).getMaterial().isSolid(); blockpos1 = blockpos1.up()) {
          }
 
-         return super.createPath(blockpos1, p_179680_2_);
+         return super.getPathToPos(blockpos1, p_179680_2_);
       }
    }
 
-   public Path createPath(Entity p_75494_1_, int p_75494_2_) {
-      return this.createPath(p_75494_1_.blockPosition(), p_75494_2_);
+   public Path getPathToEntity(Entity entityIn, int p_75494_2_) {
+      return this.getPathToPos(entityIn.getPosition(), p_75494_2_);
    }
 
-   private int getSurfaceY() {
-      if (this.mob.isInWater() && this.canFloat()) {
-         int i = MathHelper.floor(this.mob.getY());
-         Block block = this.level.getBlockState(new BlockPos(this.mob.getX(), (double)i, this.mob.getZ())).getBlock();
+   private int getPathablePosY() {
+      if (this.entity.isInWater() && this.getCanSwim()) {
+         int i = MathHelper.floor(this.entity.getPosY());
+         Block block = this.world.getBlockState(new BlockPos(this.entity.getPosX(), (double)i, this.entity.getPosZ())).getBlock();
          int j = 0;
 
          while(block == Blocks.WATER) {
             ++i;
-            block = this.level.getBlockState(new BlockPos(this.mob.getX(), (double)i, this.mob.getZ())).getBlock();
+            block = this.world.getBlockState(new BlockPos(this.entity.getPosX(), (double)i, this.entity.getPosZ())).getBlock();
             ++j;
             if (j > 16) {
-               return MathHelper.floor(this.mob.getY());
+               return MathHelper.floor(this.entity.getPosY());
             }
          }
 
          return i;
       } else {
-         return MathHelper.floor(this.mob.getY() + 0.5D);
+         return MathHelper.floor(this.entity.getPosY() + 0.5D);
       }
    }
 
    protected void trimPath() {
       super.trimPath();
-      if (this.avoidSun) {
-         if (this.level.canSeeSky(new BlockPos(this.mob.getX(), this.mob.getY() + 0.5D, this.mob.getZ()))) {
+      if (this.shouldAvoidSun) {
+         if (this.world.canSeeSky(new BlockPos(this.entity.getPosX(), this.entity.getPosY() + 0.5D, this.entity.getPosZ()))) {
             return;
          }
 
-         for(int i = 0; i < this.path.getNodeCount(); ++i) {
-            PathPoint pathpoint = this.path.getNode(i);
-            if (this.level.canSeeSky(new BlockPos(pathpoint.x, pathpoint.y, pathpoint.z))) {
-               this.path.truncateNodes(i);
+         for(int i = 0; i < this.currentPath.getCurrentPathLength(); ++i) {
+            PathPoint pathpoint = this.currentPath.getPathPointFromIndex(i);
+            if (this.world.canSeeSky(new BlockPos(pathpoint.x, pathpoint.y, pathpoint.z))) {
+               this.currentPath.setCurrentPathLength(i);
                return;
             }
          }
@@ -101,11 +101,11 @@ public class GroundPathNavigator extends PathNavigator {
 
    }
 
-   protected boolean canMoveDirectly(Vector3d p_75493_1_, Vector3d p_75493_2_, int p_75493_3_, int p_75493_4_, int p_75493_5_) {
-      int i = MathHelper.floor(p_75493_1_.x);
-      int j = MathHelper.floor(p_75493_1_.z);
-      double d0 = p_75493_2_.x - p_75493_1_.x;
-      double d1 = p_75493_2_.z - p_75493_1_.z;
+   protected boolean isDirectPathBetweenPoints(Vector3d posVec31, Vector3d posVec32, int sizeX, int sizeY, int sizeZ) {
+      int i = MathHelper.floor(posVec31.x);
+      int j = MathHelper.floor(posVec31.z);
+      double d0 = posVec32.x - posVec31.x;
+      double d1 = posVec32.z - posVec31.z;
       double d2 = d0 * d0 + d1 * d1;
       if (d2 < 1.0E-8D) {
          return false;
@@ -113,17 +113,17 @@ public class GroundPathNavigator extends PathNavigator {
          double d3 = 1.0D / Math.sqrt(d2);
          d0 = d0 * d3;
          d1 = d1 * d3;
-         p_75493_3_ = p_75493_3_ + 2;
-         p_75493_5_ = p_75493_5_ + 2;
-         if (!this.canWalkOn(i, MathHelper.floor(p_75493_1_.y), j, p_75493_3_, p_75493_4_, p_75493_5_, p_75493_1_, d0, d1)) {
+         sizeX = sizeX + 2;
+         sizeZ = sizeZ + 2;
+         if (!this.isSafeToStandAt(i, MathHelper.floor(posVec31.y), j, sizeX, sizeY, sizeZ, posVec31, d0, d1)) {
             return false;
          } else {
-            p_75493_3_ = p_75493_3_ - 2;
-            p_75493_5_ = p_75493_5_ - 2;
+            sizeX = sizeX - 2;
+            sizeZ = sizeZ - 2;
             double d4 = 1.0D / Math.abs(d0);
             double d5 = 1.0D / Math.abs(d1);
-            double d6 = (double)i - p_75493_1_.x;
-            double d7 = (double)j - p_75493_1_.z;
+            double d6 = (double)i - posVec31.x;
+            double d7 = (double)j - posVec31.z;
             if (d0 >= 0.0D) {
                ++d6;
             }
@@ -136,8 +136,8 @@ public class GroundPathNavigator extends PathNavigator {
             d7 = d7 / d1;
             int k = d0 < 0.0D ? -1 : 1;
             int l = d1 < 0.0D ? -1 : 1;
-            int i1 = MathHelper.floor(p_75493_2_.x);
-            int j1 = MathHelper.floor(p_75493_2_.z);
+            int i1 = MathHelper.floor(posVec32.x);
+            int j1 = MathHelper.floor(posVec32.z);
             int k1 = i1 - i;
             int l1 = j1 - j;
 
@@ -152,7 +152,7 @@ public class GroundPathNavigator extends PathNavigator {
                   l1 = j1 - j;
                }
 
-               if (!this.canWalkOn(i, MathHelper.floor(p_75493_1_.y), j, p_75493_3_, p_75493_4_, p_75493_5_, p_75493_1_, d0, d1)) {
+               if (!this.isSafeToStandAt(i, MathHelper.floor(posVec31.y), j, sizeX, sizeY, sizeZ, posVec31, d0, d1)) {
                   return false;
                }
             }
@@ -162,24 +162,24 @@ public class GroundPathNavigator extends PathNavigator {
       }
    }
 
-   private boolean canWalkOn(int p_179683_1_, int p_179683_2_, int p_179683_3_, int p_179683_4_, int p_179683_5_, int p_179683_6_, Vector3d p_179683_7_, double p_179683_8_, double p_179683_10_) {
-      int i = p_179683_1_ - p_179683_4_ / 2;
-      int j = p_179683_3_ - p_179683_6_ / 2;
-      if (!this.canWalkAbove(i, p_179683_2_, j, p_179683_4_, p_179683_5_, p_179683_6_, p_179683_7_, p_179683_8_, p_179683_10_)) {
+   private boolean isSafeToStandAt(int x, int y, int z, int sizeX, int sizeY, int sizeZ, Vector3d vec31, double p_179683_8_, double p_179683_10_) {
+      int i = x - sizeX / 2;
+      int j = z - sizeZ / 2;
+      if (!this.isPositionClear(i, y, j, sizeX, sizeY, sizeZ, vec31, p_179683_8_, p_179683_10_)) {
          return false;
       } else {
-         for(int k = i; k < i + p_179683_4_; ++k) {
-            for(int l = j; l < j + p_179683_6_; ++l) {
-               double d0 = (double)k + 0.5D - p_179683_7_.x;
-               double d1 = (double)l + 0.5D - p_179683_7_.z;
+         for(int k = i; k < i + sizeX; ++k) {
+            for(int l = j; l < j + sizeZ; ++l) {
+               double d0 = (double)k + 0.5D - vec31.x;
+               double d1 = (double)l + 0.5D - vec31.z;
                if (!(d0 * p_179683_8_ + d1 * p_179683_10_ < 0.0D)) {
-                  PathNodeType pathnodetype = this.nodeEvaluator.getBlockPathType(this.level, k, p_179683_2_ - 1, l, this.mob, p_179683_4_, p_179683_5_, p_179683_6_, true, true);
-                  if (!this.hasValidPathType(pathnodetype)) {
+                  PathNodeType pathnodetype = this.nodeProcessor.getPathNodeType(this.world, k, y - 1, l, this.entity, sizeX, sizeY, sizeZ, true, true);
+                  if (!this.func_230287_a_(pathnodetype)) {
                      return false;
                   }
 
-                  pathnodetype = this.nodeEvaluator.getBlockPathType(this.level, k, p_179683_2_, l, this.mob, p_179683_4_, p_179683_5_, p_179683_6_, true, true);
-                  float f = this.mob.getPathfindingMalus(pathnodetype);
+                  pathnodetype = this.nodeProcessor.getPathNodeType(this.world, k, y, l, this.entity, sizeX, sizeY, sizeZ, true, true);
+                  float f = this.entity.getPathPriority(pathnodetype);
                   if (f < 0.0F || f >= 8.0F) {
                      return false;
                   }
@@ -195,7 +195,7 @@ public class GroundPathNavigator extends PathNavigator {
       }
    }
 
-   protected boolean hasValidPathType(PathNodeType p_230287_1_) {
+   protected boolean func_230287_a_(PathNodeType p_230287_1_) {
       if (p_230287_1_ == PathNodeType.WATER) {
          return false;
       } else if (p_230287_1_ == PathNodeType.LAVA) {
@@ -205,11 +205,11 @@ public class GroundPathNavigator extends PathNavigator {
       }
    }
 
-   private boolean canWalkAbove(int p_179692_1_, int p_179692_2_, int p_179692_3_, int p_179692_4_, int p_179692_5_, int p_179692_6_, Vector3d p_179692_7_, double p_179692_8_, double p_179692_10_) {
-      for(BlockPos blockpos : BlockPos.betweenClosed(new BlockPos(p_179692_1_, p_179692_2_, p_179692_3_), new BlockPos(p_179692_1_ + p_179692_4_ - 1, p_179692_2_ + p_179692_5_ - 1, p_179692_3_ + p_179692_6_ - 1))) {
+   private boolean isPositionClear(int x, int y, int z, int sizeX, int sizeY, int sizeZ, Vector3d p_179692_7_, double p_179692_8_, double p_179692_10_) {
+      for(BlockPos blockpos : BlockPos.getAllInBoxMutable(new BlockPos(x, y, z), new BlockPos(x + sizeX - 1, y + sizeY - 1, z + sizeZ - 1))) {
          double d0 = (double)blockpos.getX() + 0.5D - p_179692_7_.x;
          double d1 = (double)blockpos.getZ() + 0.5D - p_179692_7_.z;
-         if (!(d0 * p_179692_8_ + d1 * p_179692_10_ < 0.0D) && !this.level.getBlockState(blockpos).isPathfindable(this.level, blockpos, PathType.LAND)) {
+         if (!(d0 * p_179692_8_ + d1 * p_179692_10_ < 0.0D) && !this.world.getBlockState(blockpos).allowsMovement(this.world, blockpos, PathType.LAND)) {
             return false;
          }
       }
@@ -217,15 +217,15 @@ public class GroundPathNavigator extends PathNavigator {
       return true;
    }
 
-   public void setCanOpenDoors(boolean p_179688_1_) {
-      this.nodeEvaluator.setCanOpenDoors(p_179688_1_);
+   public void setBreakDoors(boolean canBreakDoors) {
+      this.nodeProcessor.setCanOpenDoors(canBreakDoors);
    }
 
-   public boolean canOpenDoors() {
-      return this.nodeEvaluator.canPassDoors();
+   public boolean getEnterDoors() {
+      return this.nodeProcessor.getCanEnterDoors();
    }
 
-   public void setAvoidSun(boolean p_179685_1_) {
-      this.avoidSun = p_179685_1_;
+   public void setAvoidSun(boolean avoidSun) {
+      this.shouldAvoidSun = avoidSun;
    }
 }

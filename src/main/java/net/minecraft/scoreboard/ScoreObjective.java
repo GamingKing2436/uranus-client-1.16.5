@@ -10,17 +10,17 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class ScoreObjective {
    private final Scoreboard scoreboard;
    private final String name;
-   private final ScoreCriteria criteria;
+   private final ScoreCriteria objectiveCriteria;
    private ITextComponent displayName;
-   private ITextComponent formattedDisplayName;
+   private ITextComponent field_237496_e_;
    private ScoreCriteria.RenderType renderType;
 
    public ScoreObjective(Scoreboard p_i49788_1_, String p_i49788_2_, ScoreCriteria p_i49788_3_, ITextComponent p_i49788_4_, ScoreCriteria.RenderType p_i49788_5_) {
       this.scoreboard = p_i49788_1_;
       this.name = p_i49788_2_;
-      this.criteria = p_i49788_3_;
+      this.objectiveCriteria = p_i49788_3_;
       this.displayName = p_i49788_4_;
-      this.formattedDisplayName = this.createFormattedDisplayName();
+      this.field_237496_e_ = this.func_237498_g_();
       this.renderType = p_i49788_5_;
    }
 
@@ -34,26 +34,26 @@ public class ScoreObjective {
    }
 
    public ScoreCriteria getCriteria() {
-      return this.criteria;
+      return this.objectiveCriteria;
    }
 
    public ITextComponent getDisplayName() {
       return this.displayName;
    }
 
-   private ITextComponent createFormattedDisplayName() {
-      return TextComponentUtils.wrapInSquareBrackets(this.displayName.copy().withStyle((p_237497_1_) -> {
-         return p_237497_1_.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(this.name)));
+   private ITextComponent func_237498_g_() {
+      return TextComponentUtils.wrapWithSquareBrackets(this.displayName.deepCopy().modifyStyle((p_237497_1_) -> {
+         return p_237497_1_.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(this.name)));
       }));
    }
 
-   public ITextComponent getFormattedDisplayName() {
-      return this.formattedDisplayName;
+   public ITextComponent func_197890_e() {
+      return this.field_237496_e_;
    }
 
    public void setDisplayName(ITextComponent p_199864_1_) {
       this.displayName = p_199864_1_;
-      this.formattedDisplayName = this.createFormattedDisplayName();
+      this.field_237496_e_ = this.func_237498_g_();
       this.scoreboard.onObjectiveChanged(this);
    }
 

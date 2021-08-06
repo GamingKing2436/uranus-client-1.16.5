@@ -3,59 +3,59 @@ package net.minecraft.util;
 import java.util.Random;
 
 public class SharedSeedRandom extends Random {
-   private int count;
+   private int usageCount;
 
    public SharedSeedRandom() {
    }
 
-   public SharedSeedRandom(long p_i48691_1_) {
-      super(p_i48691_1_);
+   public SharedSeedRandom(long seed) {
+      super(seed);
    }
 
-   public void consumeCount(int p_202423_1_) {
-      for(int i = 0; i < p_202423_1_; ++i) {
+   public void skip(int bits) {
+      for(int i = 0; i < bits; ++i) {
          this.next(1);
       }
 
    }
 
    protected int next(int p_next_1_) {
-      ++this.count;
+      ++this.usageCount;
       return super.next(p_next_1_);
    }
 
-   public long setBaseChunkSeed(int p_202422_1_, int p_202422_2_) {
-      long i = (long)p_202422_1_ * 341873128712L + (long)p_202422_2_ * 132897987541L;
+   public long setBaseChunkSeed(int x, int z) {
+      long i = (long)x * 341873128712L + (long)z * 132897987541L;
       this.setSeed(i);
       return i;
    }
 
-   public long setDecorationSeed(long p_202424_1_, int p_202424_3_, int p_202424_4_) {
-      this.setSeed(p_202424_1_);
+   public long setDecorationSeed(long baseSeed, int x, int z) {
+      this.setSeed(baseSeed);
       long i = this.nextLong() | 1L;
       long j = this.nextLong() | 1L;
-      long k = (long)p_202424_3_ * i + (long)p_202424_4_ * j ^ p_202424_1_;
+      long k = (long)x * i + (long)z * j ^ baseSeed;
       this.setSeed(k);
       return k;
    }
 
-   public long setFeatureSeed(long p_202426_1_, int p_202426_3_, int p_202426_4_) {
-      long i = p_202426_1_ + (long)p_202426_3_ + (long)(10000 * p_202426_4_);
+   public long setFeatureSeed(long baseSeed, int x, int z) {
+      long i = baseSeed + (long)x + (long)(10000 * z);
       this.setSeed(i);
       return i;
    }
 
-   public long setLargeFeatureSeed(long p_202425_1_, int p_202425_3_, int p_202425_4_) {
-      this.setSeed(p_202425_1_);
+   public long setLargeFeatureSeed(long seed, int x, int z) {
+      this.setSeed(seed);
       long i = this.nextLong();
       long j = this.nextLong();
-      long k = (long)p_202425_3_ * i ^ (long)p_202425_4_ * j ^ p_202425_1_;
+      long k = (long)x * i ^ (long)z * j ^ seed;
       this.setSeed(k);
       return k;
    }
 
-   public long setLargeFeatureWithSalt(long p_202427_1_, int p_202427_3_, int p_202427_4_, int p_202427_5_) {
-      long i = (long)p_202427_3_ * 341873128712L + (long)p_202427_4_ * 132897987541L + p_202427_1_ + (long)p_202427_5_;
+   public long setLargeFeatureSeedWithSalt(long baseSeed, int x, int z, int modifier) {
+      long i = (long)x * 341873128712L + (long)z * 132897987541L + baseSeed + (long)modifier;
       this.setSeed(i);
       return i;
    }

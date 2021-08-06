@@ -8,28 +8,28 @@ import net.minecraft.network.play.IServerPlayNetHandler;
 import net.minecraft.util.ResourceLocation;
 
 public class CMarkRecipeSeenPacket implements IPacket<IServerPlayNetHandler> {
-   private ResourceLocation recipe;
+   private ResourceLocation field_244320_a;
 
    public CMarkRecipeSeenPacket() {
    }
 
    public CMarkRecipeSeenPacket(IRecipe<?> p_i242089_1_) {
-      this.recipe = p_i242089_1_.getId();
+      this.field_244320_a = p_i242089_1_.getId();
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.recipe = p_148837_1_.readResourceLocation();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.field_244320_a = buf.readResourceLocation();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeResourceLocation(this.recipe);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeResourceLocation(this.field_244320_a);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleRecipeBookSeenRecipePacket(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.handleRecipeBookUpdate(this);
    }
 
-   public ResourceLocation getRecipe() {
-      return this.recipe;
+   public ResourceLocation func_244321_b() {
+      return this.field_244320_a;
    }
 }

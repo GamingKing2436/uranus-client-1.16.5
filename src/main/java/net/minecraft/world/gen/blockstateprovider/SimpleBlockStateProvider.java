@@ -11,15 +11,15 @@ public class SimpleBlockStateProvider extends BlockStateProvider {
    }).codec();
    private final BlockState state;
 
-   public SimpleBlockStateProvider(BlockState p_i225860_1_) {
-      this.state = p_i225860_1_;
+   public SimpleBlockStateProvider(BlockState state) {
+      this.state = state;
    }
 
-   protected BlockStateProviderType<?> type() {
+   protected BlockStateProviderType<?> getProviderType() {
       return BlockStateProviderType.SIMPLE_STATE_PROVIDER;
    }
 
-   public BlockState getState(Random p_225574_1_, BlockPos p_225574_2_) {
+   public BlockState getBlockState(Random randomIn, BlockPos blockPosIn) {
       return this.state;
    }
 }

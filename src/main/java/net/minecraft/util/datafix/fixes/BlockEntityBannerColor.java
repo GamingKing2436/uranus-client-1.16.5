@@ -8,8 +8,8 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class BlockEntityBannerColor extends NamedEntityFix {
-   public BlockEntityBannerColor(Schema p_i49687_1_, boolean p_i49687_2_) {
-      super(p_i49687_1_, p_i49687_2_, "BlockEntityBannerColorFix", TypeReferences.BLOCK_ENTITY, "minecraft:banner");
+   public BlockEntityBannerColor(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "BlockEntityBannerColorFix", TypeReferences.BLOCK_ENTITY, "minecraft:banner");
    }
 
    public Dynamic<?> fixTag(Dynamic<?> p_209643_1_) {

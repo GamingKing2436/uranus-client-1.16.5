@@ -1,21 +1,21 @@
 package net.minecraft.crash;
 
 public class ReportedException extends RuntimeException {
-   private final CrashReport report;
+   private final CrashReport crashReport;
 
-   public ReportedException(CrashReport p_i1356_1_) {
-      this.report = p_i1356_1_;
+   public ReportedException(CrashReport report) {
+      this.crashReport = report;
    }
 
-   public CrashReport getReport() {
-      return this.report;
+   public CrashReport getCrashReport() {
+      return this.crashReport;
    }
 
    public Throwable getCause() {
-      return this.report.getException();
+      return this.crashReport.getCrashCause();
    }
 
    public String getMessage() {
-      return this.report.getTitle();
+      return this.crashReport.getDescription();
    }
 }

@@ -5,5 +5,5 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorld;
 
 public interface ISidedInventoryProvider {
-   ISidedInventory getContainer(BlockState p_219966_1_, IWorld p_219966_2_, BlockPos p_219966_3_);
+   ISidedInventory createInventory(BlockState state, IWorld world, BlockPos pos);
 }

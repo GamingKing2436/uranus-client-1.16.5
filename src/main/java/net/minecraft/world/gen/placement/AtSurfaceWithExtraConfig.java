@@ -17,9 +17,9 @@ public class AtSurfaceWithExtraConfig implements IPlacementConfig {
    public final float extraChance;
    public final int extraCount;
 
-   public AtSurfaceWithExtraConfig(int p_i48662_1_, float p_i48662_2_, int p_i48662_3_) {
-      this.count = p_i48662_1_;
-      this.extraChance = p_i48662_2_;
-      this.extraCount = p_i48662_3_;
+   public AtSurfaceWithExtraConfig(int count, float extraChanceIn, int extraCountIn) {
+      this.count = count;
+      this.extraChance = extraChanceIn;
+      this.extraCount = extraCountIn;
    }
 }

@@ -8,21 +8,21 @@ import org.apache.logging.log4j.Logger;
 public class PacketThreadUtil {
    private static final Logger LOGGER = LogManager.getLogger();
 
-   public static <T extends INetHandler> void ensureRunningOnSameThread(IPacket<T> p_218796_0_, T p_218796_1_, ServerWorld p_218796_2_) throws ThreadQuickExitException {
-      ensureRunningOnSameThread(p_218796_0_, p_218796_1_, p_218796_2_.getServer());
+   public static <T extends INetHandler> void checkThreadAndEnqueue(IPacket<T> packetIn, T processor, ServerWorld worldIn) throws ThreadQuickExitException {
+      checkThreadAndEnqueue(packetIn, processor, worldIn.getServer());
    }
 
-   public static <T extends INetHandler> void ensureRunningOnSameThread(IPacket<T> p_218797_0_, T p_218797_1_, ThreadTaskExecutor<?> p_218797_2_) throws ThreadQuickExitException {
-      if (!p_218797_2_.isSameThread()) {
-         p_218797_2_.execute(() -> {
-            if (p_218797_1_.getConnection().isConnected()) {
-               p_218797_0_.handle(p_218797_1_);
+   public static <T extends INetHandler> void checkThreadAndEnqueue(IPacket<T> packetIn, T processor, ThreadTaskExecutor<?> executor) throws ThreadQuickExitException {
+      if (!executor.isOnExecutionThread()) {
+         executor.execute(() -> {
+            if (processor.getNetworkManager().isChannelOpen()) {
+               packetIn.processPacket(processor);
             } else {
-               LOGGER.debug("Ignoring packet due to disconnection: " + p_218797_0_);
+               LOGGER.debug("Ignoring packet due to disconnection: " + packetIn);
             }
 
          });
-         throw ThreadQuickExitException.RUNNING_ON_DIFFERENT_THREAD;
+         throw ThreadQuickExitException.INSTANCE;
       }
    }
 }

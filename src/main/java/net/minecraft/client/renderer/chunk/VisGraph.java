@@ -36,29 +36,29 @@ public class VisGraph {
    });
    private int empty = 4096;
 
-   public void setOpaque(BlockPos p_178606_1_) {
-      this.bitSet.set(getIndex(p_178606_1_), true);
+   public void setOpaqueCube(BlockPos pos) {
+      this.bitSet.set(getIndex(pos), true);
       --this.empty;
    }
 
-   private static int getIndex(BlockPos p_178608_0_) {
-      return getIndex(p_178608_0_.getX() & 15, p_178608_0_.getY() & 15, p_178608_0_.getZ() & 15);
+   private static int getIndex(BlockPos pos) {
+      return getIndex(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15);
    }
 
-   private static int getIndex(int p_178605_0_, int p_178605_1_, int p_178605_2_) {
-      return p_178605_0_ << 0 | p_178605_1_ << 8 | p_178605_2_ << 4;
+   private static int getIndex(int x, int y, int z) {
+      return x << 0 | y << 8 | z << 4;
    }
 
-   public SetVisibility resolve() {
+   public SetVisibility computeVisibility() {
       SetVisibility setvisibility = new SetVisibility();
       if (4096 - this.empty < 256) {
-         setvisibility.setAll(true);
+         setvisibility.setAllVisible(true);
       } else if (this.empty == 0) {
-         setvisibility.setAll(false);
+         setvisibility.setAllVisible(false);
       } else {
          for(int i : INDEX_OF_EDGES) {
             if (!this.bitSet.get(i)) {
-               setvisibility.add(this.floodFill(i));
+               setvisibility.setManyVisible(this.floodFill(i));
             }
          }
       }
@@ -66,11 +66,11 @@ public class VisGraph {
       return setvisibility;
    }
 
-   private Set<Direction> floodFill(int p_178604_1_) {
+   private Set<Direction> floodFill(int pos) {
       Set<Direction> set = EnumSet.noneOf(Direction.class);
       IntPriorityQueue intpriorityqueue = new IntArrayFIFOQueue();
-      intpriorityqueue.enqueue(p_178604_1_);
-      this.bitSet.set(p_178604_1_, true);
+      intpriorityqueue.enqueue(pos);
+      this.bitSet.set(pos, true);
 
       while(!intpriorityqueue.isEmpty()) {
          int i = intpriorityqueue.dequeueInt();
@@ -88,68 +88,68 @@ public class VisGraph {
       return set;
    }
 
-   private void addEdges(int p_178610_1_, Set<Direction> p_178610_2_) {
-      int i = p_178610_1_ >> 0 & 15;
+   private void addEdges(int pos, Set<Direction> setFacings) {
+      int i = pos >> 0 & 15;
       if (i == 0) {
-         p_178610_2_.add(Direction.WEST);
+         setFacings.add(Direction.WEST);
       } else if (i == 15) {
-         p_178610_2_.add(Direction.EAST);
+         setFacings.add(Direction.EAST);
       }
 
-      int j = p_178610_1_ >> 8 & 15;
+      int j = pos >> 8 & 15;
       if (j == 0) {
-         p_178610_2_.add(Direction.DOWN);
+         setFacings.add(Direction.DOWN);
       } else if (j == 15) {
-         p_178610_2_.add(Direction.UP);
+         setFacings.add(Direction.UP);
       }
 
-      int k = p_178610_1_ >> 4 & 15;
+      int k = pos >> 4 & 15;
       if (k == 0) {
-         p_178610_2_.add(Direction.NORTH);
+         setFacings.add(Direction.NORTH);
       } else if (k == 15) {
-         p_178610_2_.add(Direction.SOUTH);
+         setFacings.add(Direction.SOUTH);
       }
 
    }
 
-   private int getNeighborIndexAtFace(int p_178603_1_, Direction p_178603_2_) {
-      switch(p_178603_2_) {
+   private int getNeighborIndexAtFace(int pos, Direction facing) {
+      switch(facing) {
       case DOWN:
-         if ((p_178603_1_ >> 8 & 15) == 0) {
+         if ((pos >> 8 & 15) == 0) {
             return -1;
          }
 
-         return p_178603_1_ - DY;
+         return pos - DY;
       case UP:
-         if ((p_178603_1_ >> 8 & 15) == 15) {
+         if ((pos >> 8 & 15) == 15) {
             return -1;
          }
 
-         return p_178603_1_ + DY;
+         return pos + DY;
       case NORTH:
-         if ((p_178603_1_ >> 4 & 15) == 0) {
+         if ((pos >> 4 & 15) == 0) {
             return -1;
          }
 
-         return p_178603_1_ - DZ;
+         return pos - DZ;
       case SOUTH:
-         if ((p_178603_1_ >> 4 & 15) == 15) {
+         if ((pos >> 4 & 15) == 15) {
             return -1;
          }
 
-         return p_178603_1_ + DZ;
+         return pos + DZ;
       case WEST:
-         if ((p_178603_1_ >> 0 & 15) == 0) {
+         if ((pos >> 0 & 15) == 0) {
             return -1;
          }
 
-         return p_178603_1_ - DX;
+         return pos - DX;
       case EAST:
-         if ((p_178603_1_ >> 0 & 15) == 15) {
+         if ((pos >> 0 & 15) == 15) {
             return -1;
          }
 
-         return p_178603_1_ + DX;
+         return pos + DX;
       default:
          return -1;
       }

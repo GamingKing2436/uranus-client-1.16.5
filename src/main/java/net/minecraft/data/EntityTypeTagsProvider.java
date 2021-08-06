@@ -11,16 +11,16 @@ public class EntityTypeTagsProvider extends TagsProvider<EntityType<?>> {
       super(p_i50784_1_, Registry.ENTITY_TYPE);
    }
 
-   protected void addTags() {
-      this.tag(EntityTypeTags.SKELETONS).add(EntityType.SKELETON, EntityType.STRAY, EntityType.WITHER_SKELETON);
-      this.tag(EntityTypeTags.RAIDERS).add(EntityType.EVOKER, EntityType.PILLAGER, EntityType.RAVAGER, EntityType.VINDICATOR, EntityType.ILLUSIONER, EntityType.WITCH);
-      this.tag(EntityTypeTags.BEEHIVE_INHABITORS).add(EntityType.BEE);
-      this.tag(EntityTypeTags.ARROWS).add(EntityType.ARROW, EntityType.SPECTRAL_ARROW);
-      this.tag(EntityTypeTags.IMPACT_PROJECTILES).addTag(EntityTypeTags.ARROWS).add(EntityType.SNOWBALL, EntityType.FIREBALL, EntityType.SMALL_FIREBALL, EntityType.EGG, EntityType.TRIDENT, EntityType.DRAGON_FIREBALL, EntityType.WITHER_SKULL);
+   protected void registerTags() {
+      this.getOrCreateBuilder(EntityTypeTags.SKELETONS).add(EntityType.SKELETON, EntityType.STRAY, EntityType.WITHER_SKELETON);
+      this.getOrCreateBuilder(EntityTypeTags.RAIDERS).add(EntityType.EVOKER, EntityType.PILLAGER, EntityType.RAVAGER, EntityType.VINDICATOR, EntityType.ILLUSIONER, EntityType.WITCH);
+      this.getOrCreateBuilder(EntityTypeTags.BEEHIVE_INHABITORS).addItemEntry(EntityType.BEE);
+      this.getOrCreateBuilder(EntityTypeTags.ARROWS).add(EntityType.ARROW, EntityType.SPECTRAL_ARROW);
+      this.getOrCreateBuilder(EntityTypeTags.IMPACT_PROJECTILES).addTag(EntityTypeTags.ARROWS).add(EntityType.SNOWBALL, EntityType.FIREBALL, EntityType.SMALL_FIREBALL, EntityType.EGG, EntityType.TRIDENT, EntityType.DRAGON_FIREBALL, EntityType.WITHER_SKULL);
    }
 
-   protected Path getPath(ResourceLocation p_200431_1_) {
-      return this.generator.getOutputFolder().resolve("data/" + p_200431_1_.getNamespace() + "/tags/entity_types/" + p_200431_1_.getPath() + ".json");
+   protected Path makePath(ResourceLocation id) {
+      return this.generator.getOutputFolder().resolve("data/" + id.getNamespace() + "/tags/entity_types/" + id.getPath() + ".json");
    }
 
    public String getName() {

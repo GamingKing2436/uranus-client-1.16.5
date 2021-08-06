@@ -16,41 +16,41 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class RenderMaterial {
    private final ResourceLocation atlasLocation;
-   private final ResourceLocation texture;
+   private final ResourceLocation textureLocation;
    @Nullable
    private RenderType renderType;
 
-   public RenderMaterial(ResourceLocation p_i226055_1_, ResourceLocation p_i226055_2_) {
-      this.atlasLocation = p_i226055_1_;
-      this.texture = p_i226055_2_;
+   public RenderMaterial(ResourceLocation atlasLocationIn, ResourceLocation textureLocationIn) {
+      this.atlasLocation = atlasLocationIn;
+      this.textureLocation = textureLocationIn;
    }
 
-   public ResourceLocation atlasLocation() {
+   public ResourceLocation getAtlasLocation() {
       return this.atlasLocation;
    }
 
-   public ResourceLocation texture() {
-      return this.texture;
+   public ResourceLocation getTextureLocation() {
+      return this.textureLocation;
    }
 
-   public TextureAtlasSprite sprite() {
-      return Minecraft.getInstance().getTextureAtlas(this.atlasLocation()).apply(this.texture());
+   public TextureAtlasSprite getSprite() {
+      return Minecraft.getInstance().getAtlasSpriteGetter(this.getAtlasLocation()).apply(this.getTextureLocation());
    }
 
-   public RenderType renderType(Function<ResourceLocation, RenderType> p_229312_1_) {
+   public RenderType getRenderType(Function<ResourceLocation, RenderType> renderTypeGetter) {
       if (this.renderType == null) {
-         this.renderType = p_229312_1_.apply(this.atlasLocation);
+         this.renderType = renderTypeGetter.apply(this.atlasLocation);
       }
 
       return this.renderType;
    }
 
-   public IVertexBuilder buffer(IRenderTypeBuffer p_229311_1_, Function<ResourceLocation, RenderType> p_229311_2_) {
-      return this.sprite().wrap(p_229311_1_.getBuffer(this.renderType(p_229311_2_)));
+   public IVertexBuilder getBuffer(IRenderTypeBuffer bufferIn, Function<ResourceLocation, RenderType> renderTypeGetter) {
+      return this.getSprite().wrapBuffer(bufferIn.getBuffer(this.getRenderType(renderTypeGetter)));
    }
 
-   public IVertexBuilder buffer(IRenderTypeBuffer p_241742_1_, Function<ResourceLocation, RenderType> p_241742_2_, boolean p_241742_3_) {
-      return this.sprite().wrap(ItemRenderer.getFoilBufferDirect(p_241742_1_, this.renderType(p_241742_2_), true, p_241742_3_));
+   public IVertexBuilder getItemRendererBuffer(IRenderTypeBuffer buffer, Function<ResourceLocation, RenderType> renderTypeGetter, boolean withGlint) {
+      return this.getSprite().wrapBuffer(ItemRenderer.getEntityGlintVertexBuilder(buffer, this.getRenderType(renderTypeGetter), true, withGlint));
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -58,17 +58,17 @@ public class RenderMaterial {
          return true;
       } else if (p_equals_1_ != null && this.getClass() == p_equals_1_.getClass()) {
          RenderMaterial rendermaterial = (RenderMaterial)p_equals_1_;
-         return this.atlasLocation.equals(rendermaterial.atlasLocation) && this.texture.equals(rendermaterial.texture);
+         return this.atlasLocation.equals(rendermaterial.atlasLocation) && this.textureLocation.equals(rendermaterial.textureLocation);
       } else {
          return false;
       }
    }
 
    public int hashCode() {
-      return Objects.hash(this.atlasLocation, this.texture);
+      return Objects.hash(this.atlasLocation, this.textureLocation);
    }
 
    public String toString() {
-      return "Material{atlasLocation=" + this.atlasLocation + ", texture=" + this.texture + '}';
+      return "Material{atlasLocation=" + this.atlasLocation + ", texture=" + this.textureLocation + '}';
    }
 }

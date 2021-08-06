@@ -9,8 +9,8 @@ import net.minecraft.util.SharedSeedRandom;
 
 public class PerlinNoiseGenerator implements INoiseGenerator {
    private final SimplexNoiseGenerator[] noiseLevels;
-   private final double highestFreqValueFactor;
-   private final double highestFreqInputFactor;
+   private final double field_227462_b_;
+   private final double field_227463_c_;
 
    public PerlinNoiseGenerator(SharedSeedRandom p_i232144_1_, IntStream p_i232144_2_) {
       this(p_i232144_1_, p_i232144_2_.boxed().collect(ImmutableList.toImmutableList()));
@@ -41,37 +41,37 @@ public class PerlinNoiseGenerator implements INoiseGenerator {
                if (i1 >= 0 && p_i225881_2_.contains(l - i1)) {
                   this.noiseLevels[i1] = new SimplexNoiseGenerator(p_i225881_1_);
                } else {
-                  p_i225881_1_.consumeCount(262);
+                  p_i225881_1_.skip(262);
                }
             }
 
             if (j > 0) {
-               long k1 = (long)(simplexnoisegenerator.getValue(simplexnoisegenerator.xo, simplexnoisegenerator.yo, simplexnoisegenerator.zo) * (double)9.223372E18F);
+               long k1 = (long)(simplexnoisegenerator.func_227464_a_(simplexnoisegenerator.xo, simplexnoisegenerator.yo, simplexnoisegenerator.zo) * (double)9.223372E18F);
                SharedSeedRandom sharedseedrandom = new SharedSeedRandom(k1);
 
                for(int j1 = l - 1; j1 >= 0; --j1) {
                   if (j1 < k && p_i225881_2_.contains(l - j1)) {
                      this.noiseLevels[j1] = new SimplexNoiseGenerator(sharedseedrandom);
                   } else {
-                     sharedseedrandom.consumeCount(262);
+                     sharedseedrandom.skip(262);
                   }
                }
             }
 
-            this.highestFreqInputFactor = Math.pow(2.0D, (double)j);
-            this.highestFreqValueFactor = 1.0D / (Math.pow(2.0D, (double)k) - 1.0D);
+            this.field_227463_c_ = Math.pow(2.0D, (double)j);
+            this.field_227462_b_ = 1.0D / (Math.pow(2.0D, (double)k) - 1.0D);
          }
       }
    }
 
-   public double getValue(double p_215464_1_, double p_215464_3_, boolean p_215464_5_) {
+   public double noiseAt(double x, double y, boolean useNoiseOffsets) {
       double d0 = 0.0D;
-      double d1 = this.highestFreqInputFactor;
-      double d2 = this.highestFreqValueFactor;
+      double d1 = this.field_227463_c_;
+      double d2 = this.field_227462_b_;
 
       for(SimplexNoiseGenerator simplexnoisegenerator : this.noiseLevels) {
          if (simplexnoisegenerator != null) {
-            d0 += simplexnoisegenerator.getValue(p_215464_1_ * d1 + (p_215464_5_ ? simplexnoisegenerator.xo : 0.0D), p_215464_3_ * d1 + (p_215464_5_ ? simplexnoisegenerator.yo : 0.0D)) * d2;
+            d0 += simplexnoisegenerator.getValue(x * d1 + (useNoiseOffsets ? simplexnoisegenerator.xo : 0.0D), y * d1 + (useNoiseOffsets ? simplexnoisegenerator.yo : 0.0D)) * d2;
          }
 
          d1 /= 2.0D;
@@ -81,7 +81,7 @@ public class PerlinNoiseGenerator implements INoiseGenerator {
       return d0;
    }
 
-   public double getSurfaceNoiseValue(double p_215460_1_, double p_215460_3_, double p_215460_5_, double p_215460_7_) {
-      return this.getValue(p_215460_1_, p_215460_3_, true) * 0.55D;
+   public double noiseAt(double x, double y, double z, double p_215460_7_) {
+      return this.noiseAt(x, y, true) * 0.55D;
    }
 }

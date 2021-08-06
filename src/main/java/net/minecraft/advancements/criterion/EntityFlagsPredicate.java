@@ -9,108 +9,108 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.JSONUtils;
 
 public class EntityFlagsPredicate {
-   public static final EntityFlagsPredicate ANY = (new EntityFlagsPredicate.Builder()).build();
+   public static final EntityFlagsPredicate ALWAYS_TRUE = (new EntityFlagsPredicate.Builder()).build();
    @Nullable
-   private final Boolean isOnFire;
+   private final Boolean onFire;
    @Nullable
-   private final Boolean isCrouching;
+   private final Boolean sneaking;
    @Nullable
-   private final Boolean isSprinting;
+   private final Boolean sprinting;
    @Nullable
-   private final Boolean isSwimming;
+   private final Boolean swimming;
    @Nullable
-   private final Boolean isBaby;
+   private final Boolean baby;
 
-   public EntityFlagsPredicate(@Nullable Boolean p_i50808_1_, @Nullable Boolean p_i50808_2_, @Nullable Boolean p_i50808_3_, @Nullable Boolean p_i50808_4_, @Nullable Boolean p_i50808_5_) {
-      this.isOnFire = p_i50808_1_;
-      this.isCrouching = p_i50808_2_;
-      this.isSprinting = p_i50808_3_;
-      this.isSwimming = p_i50808_4_;
-      this.isBaby = p_i50808_5_;
+   public EntityFlagsPredicate(@Nullable Boolean onFire, @Nullable Boolean sneaking, @Nullable Boolean sprinting, @Nullable Boolean swimming, @Nullable Boolean baby) {
+      this.onFire = onFire;
+      this.sneaking = sneaking;
+      this.sprinting = sprinting;
+      this.swimming = swimming;
+      this.baby = baby;
    }
 
-   public boolean matches(Entity p_217974_1_) {
-      if (this.isOnFire != null && p_217974_1_.isOnFire() != this.isOnFire) {
+   public boolean test(Entity entity) {
+      if (this.onFire != null && entity.isBurning() != this.onFire) {
          return false;
-      } else if (this.isCrouching != null && p_217974_1_.isCrouching() != this.isCrouching) {
+      } else if (this.sneaking != null && entity.isCrouching() != this.sneaking) {
          return false;
-      } else if (this.isSprinting != null && p_217974_1_.isSprinting() != this.isSprinting) {
+      } else if (this.sprinting != null && entity.isSprinting() != this.sprinting) {
          return false;
-      } else if (this.isSwimming != null && p_217974_1_.isSwimming() != this.isSwimming) {
+      } else if (this.swimming != null && entity.isSwimming() != this.swimming) {
          return false;
       } else {
-         return this.isBaby == null || !(p_217974_1_ instanceof LivingEntity) || ((LivingEntity)p_217974_1_).isBaby() == this.isBaby;
+         return this.baby == null || !(entity instanceof LivingEntity) || ((LivingEntity)entity).isChild() == this.baby;
       }
    }
 
    @Nullable
-   private static Boolean getOptionalBoolean(JsonObject p_217977_0_, String p_217977_1_) {
-      return p_217977_0_.has(p_217977_1_) ? JSONUtils.getAsBoolean(p_217977_0_, p_217977_1_) : null;
+   private static Boolean getBoolean(JsonObject jsonObject, String name) {
+      return jsonObject.has(name) ? JSONUtils.getBoolean(jsonObject, name) : null;
    }
 
-   public static EntityFlagsPredicate fromJson(@Nullable JsonElement p_217975_0_) {
-      if (p_217975_0_ != null && !p_217975_0_.isJsonNull()) {
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(p_217975_0_, "entity flags");
-         Boolean obool = getOptionalBoolean(jsonobject, "is_on_fire");
-         Boolean obool1 = getOptionalBoolean(jsonobject, "is_sneaking");
-         Boolean obool2 = getOptionalBoolean(jsonobject, "is_sprinting");
-         Boolean obool3 = getOptionalBoolean(jsonobject, "is_swimming");
-         Boolean obool4 = getOptionalBoolean(jsonobject, "is_baby");
+   public static EntityFlagsPredicate deserialize(@Nullable JsonElement element) {
+      if (element != null && !element.isJsonNull()) {
+         JsonObject jsonobject = JSONUtils.getJsonObject(element, "entity flags");
+         Boolean obool = getBoolean(jsonobject, "is_on_fire");
+         Boolean obool1 = getBoolean(jsonobject, "is_sneaking");
+         Boolean obool2 = getBoolean(jsonobject, "is_sprinting");
+         Boolean obool3 = getBoolean(jsonobject, "is_swimming");
+         Boolean obool4 = getBoolean(jsonobject, "is_baby");
          return new EntityFlagsPredicate(obool, obool1, obool2, obool3, obool4);
       } else {
-         return ANY;
+         return ALWAYS_TRUE;
       }
    }
 
-   private void addOptionalBoolean(JsonObject p_217978_1_, String p_217978_2_, @Nullable Boolean p_217978_3_) {
-      if (p_217978_3_ != null) {
-         p_217978_1_.addProperty(p_217978_2_, p_217978_3_);
+   private void putBoolean(JsonObject jsonObject, String name, @Nullable Boolean bool) {
+      if (bool != null) {
+         jsonObject.addProperty(name, bool);
       }
 
    }
 
-   public JsonElement serializeToJson() {
-      if (this == ANY) {
+   public JsonElement serialize() {
+      if (this == ALWAYS_TRUE) {
          return JsonNull.INSTANCE;
       } else {
          JsonObject jsonobject = new JsonObject();
-         this.addOptionalBoolean(jsonobject, "is_on_fire", this.isOnFire);
-         this.addOptionalBoolean(jsonobject, "is_sneaking", this.isCrouching);
-         this.addOptionalBoolean(jsonobject, "is_sprinting", this.isSprinting);
-         this.addOptionalBoolean(jsonobject, "is_swimming", this.isSwimming);
-         this.addOptionalBoolean(jsonobject, "is_baby", this.isBaby);
+         this.putBoolean(jsonobject, "is_on_fire", this.onFire);
+         this.putBoolean(jsonobject, "is_sneaking", this.sneaking);
+         this.putBoolean(jsonobject, "is_sprinting", this.sprinting);
+         this.putBoolean(jsonobject, "is_swimming", this.swimming);
+         this.putBoolean(jsonobject, "is_baby", this.baby);
          return jsonobject;
       }
    }
 
    public static class Builder {
       @Nullable
-      private Boolean isOnFire;
+      private Boolean onFire;
       @Nullable
-      private Boolean isCrouching;
+      private Boolean sneaking;
       @Nullable
-      private Boolean isSprinting;
+      private Boolean sprinting;
       @Nullable
-      private Boolean isSwimming;
+      private Boolean swimming;
       @Nullable
-      private Boolean isBaby;
+      private Boolean baby;
 
-      public static EntityFlagsPredicate.Builder flags() {
+      public static EntityFlagsPredicate.Builder create() {
          return new EntityFlagsPredicate.Builder();
       }
 
-      public EntityFlagsPredicate.Builder setOnFire(@Nullable Boolean p_217968_1_) {
-         this.isOnFire = p_217968_1_;
+      public EntityFlagsPredicate.Builder onFire(@Nullable Boolean onFire) {
+         this.onFire = onFire;
          return this;
       }
 
-      public EntityFlagsPredicate.Builder setIsBaby(@Nullable Boolean p_241396_1_) {
-         this.isBaby = p_241396_1_;
+      public EntityFlagsPredicate.Builder isBaby(@Nullable Boolean baby) {
+         this.baby = baby;
          return this;
       }
 
       public EntityFlagsPredicate build() {
-         return new EntityFlagsPredicate(this.isOnFire, this.isCrouching, this.isSprinting, this.isSwimming, this.isBaby);
+         return new EntityFlagsPredicate(this.onFire, this.sneaking, this.sprinting, this.swimming, this.baby);
       }
    }
 }

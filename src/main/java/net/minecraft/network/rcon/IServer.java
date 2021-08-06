@@ -3,25 +3,25 @@ package net.minecraft.network.rcon;
 import net.minecraft.server.dedicated.ServerProperties;
 
 public interface IServer {
-   ServerProperties getProperties();
+   ServerProperties getServerProperties();
 
-   String getServerIp();
+   String getHostname();
 
-   int getServerPort();
+   int getPort();
 
-   String getServerName();
+   String getMotd();
 
-   String getServerVersion();
+   String getMinecraftVersion();
 
-   int getPlayerCount();
+   int getCurrentPlayerCount();
 
    int getMaxPlayers();
 
-   String[] getPlayerNames();
+   String[] getOnlinePlayerNames();
 
-   String getLevelIdName();
+   String func_230542_k__();
 
-   String getPluginNames();
+   String getPlugins();
 
-   String runCommand(String p_71252_1_);
+   String handleRConCommand(String command);
 }

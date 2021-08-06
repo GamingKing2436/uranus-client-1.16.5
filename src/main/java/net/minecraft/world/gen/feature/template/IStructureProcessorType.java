@@ -7,31 +7,31 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKeyCodec;
 
 public interface IStructureProcessorType<P extends StructureProcessor> {
-   IStructureProcessorType<BlockIgnoreStructureProcessor> BLOCK_IGNORE = register("block_ignore", BlockIgnoreStructureProcessor.CODEC);
-   IStructureProcessorType<IntegrityProcessor> BLOCK_ROT = register("block_rot", IntegrityProcessor.CODEC);
-   IStructureProcessorType<GravityStructureProcessor> GRAVITY = register("gravity", GravityStructureProcessor.CODEC);
-   IStructureProcessorType<JigsawReplacementStructureProcessor> JIGSAW_REPLACEMENT = register("jigsaw_replacement", JigsawReplacementStructureProcessor.CODEC);
-   IStructureProcessorType<RuleStructureProcessor> RULE = register("rule", RuleStructureProcessor.CODEC);
-   IStructureProcessorType<NopProcessor> NOP = register("nop", NopProcessor.CODEC);
-   IStructureProcessorType<BlockMosinessProcessor> BLOCK_AGE = register("block_age", BlockMosinessProcessor.CODEC);
-   IStructureProcessorType<BlackStoneReplacementProcessor> BLACKSTONE_REPLACE = register("blackstone_replace", BlackStoneReplacementProcessor.CODEC);
-   IStructureProcessorType<LavaSubmergingProcessor> LAVA_SUBMERGED_BLOCK = register("lava_submerged_block", LavaSubmergingProcessor.CODEC);
-   Codec<StructureProcessor> SINGLE_CODEC = Registry.STRUCTURE_PROCESSOR.dispatch("processor_type", StructureProcessor::getType, IStructureProcessorType::codec);
-   Codec<StructureProcessorList> LIST_OBJECT_CODEC = SINGLE_CODEC.listOf().xmap(StructureProcessorList::new, StructureProcessorList::list);
-   Codec<StructureProcessorList> DIRECT_CODEC = Codec.either(LIST_OBJECT_CODEC.fieldOf("processors").codec(), LIST_OBJECT_CODEC).xmap((p_242923_0_) -> {
+   IStructureProcessorType<BlockIgnoreStructureProcessor> BLOCK_IGNORE = register("block_ignore", BlockIgnoreStructureProcessor.field_237073_a_);
+   IStructureProcessorType<IntegrityProcessor> BLOCK_ROT = register("block_rot", IntegrityProcessor.field_237077_a_);
+   IStructureProcessorType<GravityStructureProcessor> GRAVITY = register("gravity", GravityStructureProcessor.field_237081_a_);
+   IStructureProcessorType<JigsawReplacementStructureProcessor> JIGSAW_REPLACEMENT = register("jigsaw_replacement", JigsawReplacementStructureProcessor.field_237085_a_);
+   IStructureProcessorType<RuleStructureProcessor> RULE = register("rule", RuleStructureProcessor.field_237125_a_);
+   IStructureProcessorType<NopProcessor> NOP = register("nop", NopProcessor.field_237097_a_);
+   IStructureProcessorType<BlockMosinessProcessor> BLOCK_AGE = register("block_age", BlockMosinessProcessor.field_237062_a_);
+   IStructureProcessorType<BlackStoneReplacementProcessor> BLACKSTONE_REPLACE = register("blackstone_replace", BlackStoneReplacementProcessor.field_237057_a_);
+   IStructureProcessorType<LavaSubmergingProcessor> LAVA_SUBMERGED_BLOCK = register("lava_submerged_block", LavaSubmergingProcessor.field_241531_a_);
+   Codec<StructureProcessor> PROCESSOR_TYPE = Registry.STRUCTURE_PROCESSOR.dispatch("processor_type", StructureProcessor::getType, IStructureProcessorType::codec);
+   Codec<StructureProcessorList> field_242920_k = PROCESSOR_TYPE.listOf().xmap(StructureProcessorList::new, StructureProcessorList::func_242919_a);
+   Codec<StructureProcessorList> field_242921_l = Codec.either(field_242920_k.fieldOf("processors").codec(), field_242920_k).xmap((p_242923_0_) -> {
       return p_242923_0_.map((p_242926_0_) -> {
          return p_242926_0_;
       }, (p_242925_0_) -> {
          return p_242925_0_;
       });
    }, Either::left);
-   Codec<Supplier<StructureProcessorList>> LIST_CODEC = RegistryKeyCodec.create(Registry.PROCESSOR_LIST_REGISTRY, DIRECT_CODEC);
+   Codec<Supplier<StructureProcessorList>> field_242922_m = RegistryKeyCodec.create(Registry.STRUCTURE_PROCESSOR_LIST_KEY, field_242921_l);
 
    Codec<P> codec();
 
-   static <P extends StructureProcessor> IStructureProcessorType<P> register(String p_237139_0_, Codec<P> p_237139_1_) {
-      return Registry.register(Registry.STRUCTURE_PROCESSOR, p_237139_0_, () -> {
-         return p_237139_1_;
+   static <P extends StructureProcessor> IStructureProcessorType<P> register(String name, Codec<P> codec) {
+      return Registry.register(Registry.STRUCTURE_PROCESSOR, name, () -> {
+         return codec;
       });
    }
 }

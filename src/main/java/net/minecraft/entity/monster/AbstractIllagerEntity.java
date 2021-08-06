@@ -8,15 +8,15 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class AbstractIllagerEntity extends AbstractRaiderEntity {
-   protected AbstractIllagerEntity(EntityType<? extends AbstractIllagerEntity> p_i48556_1_, World p_i48556_2_) {
-      super(p_i48556_1_, p_i48556_2_);
+   protected AbstractIllagerEntity(EntityType<? extends AbstractIllagerEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
    protected void registerGoals() {
       super.registerGoals();
    }
 
-   public CreatureAttribute getMobType() {
+   public CreatureAttribute getCreatureAttribute() {
       return CreatureAttribute.ILLAGER;
    }
 
@@ -38,12 +38,12 @@ public abstract class AbstractIllagerEntity extends AbstractRaiderEntity {
    }
 
    public class RaidOpenDoorGoal extends OpenDoorGoal {
-      public RaidOpenDoorGoal(AbstractRaiderEntity p_i51284_2_) {
-         super(p_i51284_2_, false);
+      public RaidOpenDoorGoal(AbstractRaiderEntity raider) {
+         super(raider, false);
       }
 
-      public boolean canUse() {
-         return super.canUse() && AbstractIllagerEntity.this.hasActiveRaid();
+      public boolean shouldExecute() {
+         return super.shouldExecute() && AbstractIllagerEntity.this.isRaidActive();
       }
    }
 }

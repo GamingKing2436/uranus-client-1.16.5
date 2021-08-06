@@ -9,23 +9,23 @@ public enum HandSide {
    LEFT(new TranslationTextComponent("options.mainHand.left")),
    RIGHT(new TranslationTextComponent("options.mainHand.right"));
 
-   private final ITextComponent name;
+   private final ITextComponent handName;
 
-   private HandSide(ITextComponent p_i46806_3_) {
-      this.name = p_i46806_3_;
+   private HandSide(ITextComponent nameIn) {
+      this.handName = nameIn;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public HandSide getOpposite() {
+   public HandSide opposite() {
       return this == LEFT ? RIGHT : LEFT;
    }
 
    public String toString() {
-      return this.name.getString();
+      return this.handName.getString();
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ITextComponent getName() {
-      return this.name;
+   public ITextComponent getHandName() {
+      return this.handName;
    }
 }

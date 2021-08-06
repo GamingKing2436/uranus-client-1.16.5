@@ -16,7 +16,7 @@ public interface IResource extends Closeable {
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   <T> T getMetadata(IMetadataSectionSerializer<T> p_199028_1_);
+   <T> T getMetadata(IMetadataSectionSerializer<T> serializer);
 
-   String getSourceName();
+   String getPackName();
 }

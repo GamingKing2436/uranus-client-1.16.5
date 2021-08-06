@@ -18,154 +18,154 @@ import net.minecraft.world.chunk.IChunkLightProvider;
 import net.minecraft.world.chunk.NibbleArray;
 
 public abstract class SectionLightStorage<M extends LightDataMap<M>> extends SectionDistanceGraph {
-   protected static final NibbleArray EMPTY_DATA = new NibbleArray();
+   protected static final NibbleArray EMPTY_ARRAY = new NibbleArray();
    private static final Direction[] DIRECTIONS = Direction.values();
-   private final LightType layer;
-   private final IChunkLightProvider chunkSource;
-   protected final LongSet dataSectionSet = new LongOpenHashSet();
-   protected final LongSet toMarkNoData = new LongOpenHashSet();
-   protected final LongSet toMarkData = new LongOpenHashSet();
-   protected volatile M visibleSectionData;
-   protected final M updatingSectionData;
-   protected final LongSet changedSections = new LongOpenHashSet();
-   protected final LongSet sectionsAffectedByLightUpdates = new LongOpenHashSet();
-   protected final Long2ObjectMap<NibbleArray> queuedSections = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
-   private final LongSet untrustedSections = new LongOpenHashSet();
-   private final LongSet columnsToRetainQueuedDataFor = new LongOpenHashSet();
-   private final LongSet toRemove = new LongOpenHashSet();
-   protected volatile boolean hasToRemove;
+   private final LightType type;
+   private final IChunkLightProvider chunkProvider;
+   protected final LongSet activeLightSections = new LongOpenHashSet();
+   protected final LongSet addedEmptySections = new LongOpenHashSet();
+   protected final LongSet addedActiveLightSections = new LongOpenHashSet();
+   protected volatile M uncachedLightData;
+   protected final M cachedLightData;
+   protected final LongSet dirtyCachedSections = new LongOpenHashSet();
+   protected final LongSet changedLightPositions = new LongOpenHashSet();
+   protected final Long2ObjectMap<NibbleArray> newArrays = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<>());
+   private final LongSet field_241536_n_ = new LongOpenHashSet();
+   private final LongSet chunksToRetain = new LongOpenHashSet();
+   private final LongSet noLightSections = new LongOpenHashSet();
+   protected volatile boolean hasSectionsToUpdate;
 
-   protected SectionLightStorage(LightType p_i51291_1_, IChunkLightProvider p_i51291_2_, M p_i51291_3_) {
+   protected SectionLightStorage(LightType lightTypeIn, IChunkLightProvider chunkLightProvider, M dataMap) {
       super(3, 16, 256);
-      this.layer = p_i51291_1_;
-      this.chunkSource = p_i51291_2_;
-      this.updatingSectionData = p_i51291_3_;
-      this.visibleSectionData = p_i51291_3_.copy();
-      this.visibleSectionData.disableCache();
+      this.type = lightTypeIn;
+      this.chunkProvider = chunkLightProvider;
+      this.cachedLightData = dataMap;
+      this.uncachedLightData = dataMap.copy();
+      this.uncachedLightData.disableCaching();
    }
 
-   protected boolean storingLightForSection(long p_215518_1_) {
-      return this.getDataLayer(p_215518_1_, true) != null;
-   }
-
-   @Nullable
-   protected NibbleArray getDataLayer(long p_215520_1_, boolean p_215520_3_) {
-      return this.getDataLayer((M)(p_215520_3_ ? this.updatingSectionData : this.visibleSectionData), p_215520_1_);
+   protected boolean hasSection(long sectionPosIn) {
+      return this.getArray(sectionPosIn, true) != null;
    }
 
    @Nullable
-   protected NibbleArray getDataLayer(M p_215531_1_, long p_215531_2_) {
-      return p_215531_1_.getLayer(p_215531_2_);
+   protected NibbleArray getArray(long sectionPosIn, boolean cached) {
+      return this.getArray((M)(cached ? this.cachedLightData : this.uncachedLightData), sectionPosIn);
    }
 
    @Nullable
-   public NibbleArray getDataLayerData(long p_222858_1_) {
-      NibbleArray nibblearray = this.queuedSections.get(p_222858_1_);
-      return nibblearray != null ? nibblearray : this.getDataLayer(p_222858_1_, false);
+   protected NibbleArray getArray(M map, long sectionPosIn) {
+      return map.getArray(sectionPosIn);
    }
 
-   protected abstract int getLightValue(long p_215525_1_);
-
-   protected int getStoredLevel(long p_215521_1_) {
-      long i = SectionPos.blockToSection(p_215521_1_);
-      NibbleArray nibblearray = this.getDataLayer(i, true);
-      return nibblearray.get(SectionPos.sectionRelative(BlockPos.getX(p_215521_1_)), SectionPos.sectionRelative(BlockPos.getY(p_215521_1_)), SectionPos.sectionRelative(BlockPos.getZ(p_215521_1_)));
+   @Nullable
+   public NibbleArray getArray(long sectionPosIn) {
+      NibbleArray nibblearray = this.newArrays.get(sectionPosIn);
+      return nibblearray != null ? nibblearray : this.getArray(sectionPosIn, false);
    }
 
-   protected void setStoredLevel(long p_215517_1_, int p_215517_3_) {
-      long i = SectionPos.blockToSection(p_215517_1_);
-      if (this.changedSections.add(i)) {
-         this.updatingSectionData.copyDataLayer(i);
+   protected abstract int getLightOrDefault(long worldPos);
+
+   protected int getLight(long worldPos) {
+      long i = SectionPos.worldToSection(worldPos);
+      NibbleArray nibblearray = this.getArray(i, true);
+      return nibblearray.get(SectionPos.mask(BlockPos.unpackX(worldPos)), SectionPos.mask(BlockPos.unpackY(worldPos)), SectionPos.mask(BlockPos.unpackZ(worldPos)));
+   }
+
+   protected void setLight(long worldPos, int lightLevel) {
+      long i = SectionPos.worldToSection(worldPos);
+      if (this.dirtyCachedSections.add(i)) {
+         this.cachedLightData.copyArray(i);
       }
 
-      NibbleArray nibblearray = this.getDataLayer(i, true);
-      nibblearray.set(SectionPos.sectionRelative(BlockPos.getX(p_215517_1_)), SectionPos.sectionRelative(BlockPos.getY(p_215517_1_)), SectionPos.sectionRelative(BlockPos.getZ(p_215517_1_)), p_215517_3_);
+      NibbleArray nibblearray = this.getArray(i, true);
+      nibblearray.set(SectionPos.mask(BlockPos.unpackX(worldPos)), SectionPos.mask(BlockPos.unpackY(worldPos)), SectionPos.mask(BlockPos.unpackZ(worldPos)), lightLevel);
 
       for(int j = -1; j <= 1; ++j) {
          for(int k = -1; k <= 1; ++k) {
             for(int l = -1; l <= 1; ++l) {
-               this.sectionsAffectedByLightUpdates.add(SectionPos.blockToSection(BlockPos.offset(p_215517_1_, k, l, j)));
+               this.changedLightPositions.add(SectionPos.worldToSection(BlockPos.offset(worldPos, k, l, j)));
             }
          }
       }
 
    }
 
-   protected int getLevel(long p_215471_1_) {
-      if (p_215471_1_ == Long.MAX_VALUE) {
+   protected int getLevel(long sectionPosIn) {
+      if (sectionPosIn == Long.MAX_VALUE) {
          return 2;
-      } else if (this.dataSectionSet.contains(p_215471_1_)) {
+      } else if (this.activeLightSections.contains(sectionPosIn)) {
          return 0;
       } else {
-         return !this.toRemove.contains(p_215471_1_) && this.updatingSectionData.hasLayer(p_215471_1_) ? 1 : 2;
+         return !this.noLightSections.contains(sectionPosIn) && this.cachedLightData.hasArray(sectionPosIn) ? 1 : 2;
       }
    }
 
-   protected int getLevelFromSource(long p_215516_1_) {
-      if (this.toMarkNoData.contains(p_215516_1_)) {
+   protected int getSourceLevel(long pos) {
+      if (this.addedEmptySections.contains(pos)) {
          return 2;
       } else {
-         return !this.dataSectionSet.contains(p_215516_1_) && !this.toMarkData.contains(p_215516_1_) ? 2 : 0;
+         return !this.activeLightSections.contains(pos) && !this.addedActiveLightSections.contains(pos) ? 2 : 0;
       }
    }
 
-   protected void setLevel(long p_215476_1_, int p_215476_3_) {
-      int i = this.getLevel(p_215476_1_);
-      if (i != 0 && p_215476_3_ == 0) {
-         this.dataSectionSet.add(p_215476_1_);
-         this.toMarkData.remove(p_215476_1_);
+   protected void setLevel(long sectionPosIn, int level) {
+      int i = this.getLevel(sectionPosIn);
+      if (i != 0 && level == 0) {
+         this.activeLightSections.add(sectionPosIn);
+         this.addedActiveLightSections.remove(sectionPosIn);
       }
 
-      if (i == 0 && p_215476_3_ != 0) {
-         this.dataSectionSet.remove(p_215476_1_);
-         this.toMarkNoData.remove(p_215476_1_);
+      if (i == 0 && level != 0) {
+         this.activeLightSections.remove(sectionPosIn);
+         this.addedEmptySections.remove(sectionPosIn);
       }
 
-      if (i >= 2 && p_215476_3_ != 2) {
-         if (this.toRemove.contains(p_215476_1_)) {
-            this.toRemove.remove(p_215476_1_);
+      if (i >= 2 && level != 2) {
+         if (this.noLightSections.contains(sectionPosIn)) {
+            this.noLightSections.remove(sectionPosIn);
          } else {
-            this.updatingSectionData.setLayer(p_215476_1_, this.createDataLayer(p_215476_1_));
-            this.changedSections.add(p_215476_1_);
-            this.onNodeAdded(p_215476_1_);
+            this.cachedLightData.setArray(sectionPosIn, this.getOrCreateArray(sectionPosIn));
+            this.dirtyCachedSections.add(sectionPosIn);
+            this.addSection(sectionPosIn);
 
             for(int j = -1; j <= 1; ++j) {
                for(int k = -1; k <= 1; ++k) {
                   for(int l = -1; l <= 1; ++l) {
-                     this.sectionsAffectedByLightUpdates.add(SectionPos.blockToSection(BlockPos.offset(p_215476_1_, k, l, j)));
+                     this.changedLightPositions.add(SectionPos.worldToSection(BlockPos.offset(sectionPosIn, k, l, j)));
                   }
                }
             }
          }
       }
 
-      if (i != 2 && p_215476_3_ >= 2) {
-         this.toRemove.add(p_215476_1_);
+      if (i != 2 && level >= 2) {
+         this.noLightSections.add(sectionPosIn);
       }
 
-      this.hasToRemove = !this.toRemove.isEmpty();
+      this.hasSectionsToUpdate = !this.noLightSections.isEmpty();
    }
 
-   protected NibbleArray createDataLayer(long p_215530_1_) {
-      NibbleArray nibblearray = this.queuedSections.get(p_215530_1_);
+   protected NibbleArray getOrCreateArray(long sectionPosIn) {
+      NibbleArray nibblearray = this.newArrays.get(sectionPosIn);
       return nibblearray != null ? nibblearray : new NibbleArray();
    }
 
-   protected void clearQueuedSectionBlocks(LightEngine<?, ?> p_215528_1_, long p_215528_2_) {
-      if (p_215528_1_.getQueueSize() < 8192) {
-         p_215528_1_.removeIf((p_227469_2_) -> {
-            return SectionPos.blockToSection(p_227469_2_) == p_215528_2_;
+   protected void cancelSectionUpdates(LightEngine<?, ?> engine, long sectionPosIn) {
+      if (engine.func_227467_c_() < 8192) {
+         engine.func_227465_a_((p_227469_2_) -> {
+            return SectionPos.worldToSection(p_227469_2_) == sectionPosIn;
          });
       } else {
-         int i = SectionPos.sectionToBlockCoord(SectionPos.x(p_215528_2_));
-         int j = SectionPos.sectionToBlockCoord(SectionPos.y(p_215528_2_));
-         int k = SectionPos.sectionToBlockCoord(SectionPos.z(p_215528_2_));
+         int i = SectionPos.toWorld(SectionPos.extractX(sectionPosIn));
+         int j = SectionPos.toWorld(SectionPos.extractY(sectionPosIn));
+         int k = SectionPos.toWorld(SectionPos.extractZ(sectionPosIn));
 
          for(int l = 0; l < 16; ++l) {
             for(int i1 = 0; i1 < 16; ++i1) {
                for(int j1 = 0; j1 < 16; ++j1) {
-                  long k1 = BlockPos.asLong(i + l, j + i1, k + j1);
-                  p_215528_1_.removeFromQueue(k1);
+                  long k1 = BlockPos.pack(i + l, j + i1, k + j1);
+                  engine.cancelUpdate(k1);
                }
             }
          }
@@ -173,64 +173,64 @@ public abstract class SectionLightStorage<M extends LightDataMap<M>> extends Sec
       }
    }
 
-   protected boolean hasInconsistencies() {
-      return this.hasToRemove;
+   protected boolean hasSectionsToUpdate() {
+      return this.hasSectionsToUpdate;
    }
 
-   protected void markNewInconsistencies(LightEngine<M, ?> p_215522_1_, boolean p_215522_2_, boolean p_215522_3_) {
-      if (this.hasInconsistencies() || !this.queuedSections.isEmpty()) {
-         for(long i : this.toRemove) {
-            this.clearQueuedSectionBlocks(p_215522_1_, i);
-            NibbleArray nibblearray = this.queuedSections.remove(i);
-            NibbleArray nibblearray1 = this.updatingSectionData.removeLayer(i);
-            if (this.columnsToRetainQueuedDataFor.contains(SectionPos.getZeroNode(i))) {
+   protected void updateSections(LightEngine<M, ?> engine, boolean updateSkyLight, boolean updateBlockLight) {
+      if (this.hasSectionsToUpdate() || !this.newArrays.isEmpty()) {
+         for(long i : this.noLightSections) {
+            this.cancelSectionUpdates(engine, i);
+            NibbleArray nibblearray = this.newArrays.remove(i);
+            NibbleArray nibblearray1 = this.cachedLightData.removeArray(i);
+            if (this.chunksToRetain.contains(SectionPos.toSectionColumnPos(i))) {
                if (nibblearray != null) {
-                  this.queuedSections.put(i, nibblearray);
+                  this.newArrays.put(i, nibblearray);
                } else if (nibblearray1 != null) {
-                  this.queuedSections.put(i, nibblearray1);
+                  this.newArrays.put(i, nibblearray1);
                }
             }
          }
 
-         this.updatingSectionData.clearCache();
+         this.cachedLightData.invalidateCaches();
 
-         for(long k : this.toRemove) {
-            this.onNodeRemoved(k);
+         for(long k : this.noLightSections) {
+            this.removeSection(k);
          }
 
-         this.toRemove.clear();
-         this.hasToRemove = false;
+         this.noLightSections.clear();
+         this.hasSectionsToUpdate = false;
 
-         for(Entry<NibbleArray> entry : this.queuedSections.long2ObjectEntrySet()) {
+         for(Entry<NibbleArray> entry : this.newArrays.long2ObjectEntrySet()) {
             long j = entry.getLongKey();
-            if (this.storingLightForSection(j)) {
+            if (this.hasSection(j)) {
                NibbleArray nibblearray2 = entry.getValue();
-               if (this.updatingSectionData.getLayer(j) != nibblearray2) {
-                  this.clearQueuedSectionBlocks(p_215522_1_, j);
-                  this.updatingSectionData.setLayer(j, nibblearray2);
-                  this.changedSections.add(j);
+               if (this.cachedLightData.getArray(j) != nibblearray2) {
+                  this.cancelSectionUpdates(engine, j);
+                  this.cachedLightData.setArray(j, nibblearray2);
+                  this.dirtyCachedSections.add(j);
                }
             }
          }
 
-         this.updatingSectionData.clearCache();
-         if (!p_215522_3_) {
-            for(long l : this.queuedSections.keySet()) {
-               this.checkEdgesForSection(p_215522_1_, l);
+         this.cachedLightData.invalidateCaches();
+         if (!updateBlockLight) {
+            for(long l : this.newArrays.keySet()) {
+               this.func_241538_b_(engine, l);
             }
          } else {
-            for(long i1 : this.untrustedSections) {
-               this.checkEdgesForSection(p_215522_1_, i1);
+            for(long i1 : this.field_241536_n_) {
+               this.func_241538_b_(engine, i1);
             }
          }
 
-         this.untrustedSections.clear();
-         ObjectIterator<Entry<NibbleArray>> objectiterator = this.queuedSections.long2ObjectEntrySet().iterator();
+         this.field_241536_n_.clear();
+         ObjectIterator<Entry<NibbleArray>> objectiterator = this.newArrays.long2ObjectEntrySet().iterator();
 
          while(objectiterator.hasNext()) {
             Entry<NibbleArray> entry1 = objectiterator.next();
             long j1 = entry1.getLongKey();
-            if (this.storingLightForSection(j1)) {
+            if (this.hasSection(j1)) {
                objectiterator.remove();
             }
          }
@@ -238,47 +238,47 @@ public abstract class SectionLightStorage<M extends LightDataMap<M>> extends Sec
       }
    }
 
-   private void checkEdgesForSection(LightEngine<M, ?> p_241538_1_, long p_241538_2_) {
-      if (this.storingLightForSection(p_241538_2_)) {
-         int i = SectionPos.sectionToBlockCoord(SectionPos.x(p_241538_2_));
-         int j = SectionPos.sectionToBlockCoord(SectionPos.y(p_241538_2_));
-         int k = SectionPos.sectionToBlockCoord(SectionPos.z(p_241538_2_));
+   private void func_241538_b_(LightEngine<M, ?> p_241538_1_, long p_241538_2_) {
+      if (this.hasSection(p_241538_2_)) {
+         int i = SectionPos.toWorld(SectionPos.extractX(p_241538_2_));
+         int j = SectionPos.toWorld(SectionPos.extractY(p_241538_2_));
+         int k = SectionPos.toWorld(SectionPos.extractZ(p_241538_2_));
 
          for(Direction direction : DIRECTIONS) {
-            long l = SectionPos.offset(p_241538_2_, direction);
-            if (!this.queuedSections.containsKey(l) && this.storingLightForSection(l)) {
+            long l = SectionPos.withOffset(p_241538_2_, direction);
+            if (!this.newArrays.containsKey(l) && this.hasSection(l)) {
                for(int i1 = 0; i1 < 16; ++i1) {
                   for(int j1 = 0; j1 < 16; ++j1) {
                      long k1;
                      long l1;
                      switch(direction) {
                      case DOWN:
-                        k1 = BlockPos.asLong(i + j1, j, k + i1);
-                        l1 = BlockPos.asLong(i + j1, j - 1, k + i1);
+                        k1 = BlockPos.pack(i + j1, j, k + i1);
+                        l1 = BlockPos.pack(i + j1, j - 1, k + i1);
                         break;
                      case UP:
-                        k1 = BlockPos.asLong(i + j1, j + 16 - 1, k + i1);
-                        l1 = BlockPos.asLong(i + j1, j + 16, k + i1);
+                        k1 = BlockPos.pack(i + j1, j + 16 - 1, k + i1);
+                        l1 = BlockPos.pack(i + j1, j + 16, k + i1);
                         break;
                      case NORTH:
-                        k1 = BlockPos.asLong(i + i1, j + j1, k);
-                        l1 = BlockPos.asLong(i + i1, j + j1, k - 1);
+                        k1 = BlockPos.pack(i + i1, j + j1, k);
+                        l1 = BlockPos.pack(i + i1, j + j1, k - 1);
                         break;
                      case SOUTH:
-                        k1 = BlockPos.asLong(i + i1, j + j1, k + 16 - 1);
-                        l1 = BlockPos.asLong(i + i1, j + j1, k + 16);
+                        k1 = BlockPos.pack(i + i1, j + j1, k + 16 - 1);
+                        l1 = BlockPos.pack(i + i1, j + j1, k + 16);
                         break;
                      case WEST:
-                        k1 = BlockPos.asLong(i, j + i1, k + j1);
-                        l1 = BlockPos.asLong(i - 1, j + i1, k + j1);
+                        k1 = BlockPos.pack(i, j + i1, k + j1);
+                        l1 = BlockPos.pack(i - 1, j + i1, k + j1);
                         break;
                      default:
-                        k1 = BlockPos.asLong(i + 16 - 1, j + i1, k + j1);
-                        l1 = BlockPos.asLong(i + 16, j + i1, k + j1);
+                        k1 = BlockPos.pack(i + 16 - 1, j + i1, k + j1);
+                        l1 = BlockPos.pack(i + 16, j + i1, k + j1);
                      }
 
-                     p_241538_1_.checkEdge(k1, l1, p_241538_1_.computeLevelFromNeighbor(k1, l1, p_241538_1_.getLevel(k1)), false);
-                     p_241538_1_.checkEdge(l1, k1, p_241538_1_.computeLevelFromNeighbor(l1, k1, p_241538_1_.getLevel(l1)), false);
+                     p_241538_1_.scheduleUpdate(k1, l1, p_241538_1_.getEdgeLevel(k1, l1, p_241538_1_.getLevel(k1)), false);
+                     p_241538_1_.scheduleUpdate(l1, k1, p_241538_1_.getEdgeLevel(l1, k1, p_241538_1_.getLevel(l1)), false);
                   }
                }
             }
@@ -287,74 +287,74 @@ public abstract class SectionLightStorage<M extends LightDataMap<M>> extends Sec
       }
    }
 
-   protected void onNodeAdded(long p_215524_1_) {
+   protected void addSection(long sectionPos) {
    }
 
-   protected void onNodeRemoved(long p_215523_1_) {
+   protected void removeSection(long p_215523_1_) {
    }
 
-   protected void enableLightSources(long p_215526_1_, boolean p_215526_3_) {
+   protected void setColumnEnabled(long p_215526_1_, boolean p_215526_3_) {
    }
 
-   public void retainData(long p_223113_1_, boolean p_223113_3_) {
-      if (p_223113_3_) {
-         this.columnsToRetainQueuedDataFor.add(p_223113_1_);
+   public void retainChunkData(long sectionColumnPos, boolean retain) {
+      if (retain) {
+         this.chunksToRetain.add(sectionColumnPos);
       } else {
-         this.columnsToRetainQueuedDataFor.remove(p_223113_1_);
+         this.chunksToRetain.remove(sectionColumnPos);
       }
 
    }
 
-   protected void queueSectionData(long p_215529_1_, @Nullable NibbleArray p_215529_3_, boolean p_215529_4_) {
-      if (p_215529_3_ != null) {
-         this.queuedSections.put(p_215529_1_, p_215529_3_);
+   protected void setData(long sectionPosIn, @Nullable NibbleArray array, boolean p_215529_4_) {
+      if (array != null) {
+         this.newArrays.put(sectionPosIn, array);
          if (!p_215529_4_) {
-            this.untrustedSections.add(p_215529_1_);
+            this.field_241536_n_.add(sectionPosIn);
          }
       } else {
-         this.queuedSections.remove(p_215529_1_);
+         this.newArrays.remove(sectionPosIn);
       }
 
    }
 
-   protected void updateSectionStatus(long p_215519_1_, boolean p_215519_3_) {
-      boolean flag = this.dataSectionSet.contains(p_215519_1_);
-      if (!flag && !p_215519_3_) {
-         this.toMarkData.add(p_215519_1_);
-         this.checkEdge(Long.MAX_VALUE, p_215519_1_, 0, true);
+   protected void updateSectionStatus(long sectionPosIn, boolean isEmpty) {
+      boolean flag = this.activeLightSections.contains(sectionPosIn);
+      if (!flag && !isEmpty) {
+         this.addedActiveLightSections.add(sectionPosIn);
+         this.scheduleUpdate(Long.MAX_VALUE, sectionPosIn, 0, true);
       }
 
-      if (flag && p_215519_3_) {
-         this.toMarkNoData.add(p_215519_1_);
-         this.checkEdge(Long.MAX_VALUE, p_215519_1_, 2, false);
-      }
-
-   }
-
-   protected void runAllUpdates() {
-      if (this.hasWork()) {
-         this.runUpdates(Integer.MAX_VALUE);
+      if (flag && isEmpty) {
+         this.addedEmptySections.add(sectionPosIn);
+         this.scheduleUpdate(Long.MAX_VALUE, sectionPosIn, 2, false);
       }
 
    }
 
-   protected void swapSectionMap() {
-      if (!this.changedSections.isEmpty()) {
-         M m = this.updatingSectionData.copy();
-         m.disableCache();
-         this.visibleSectionData = m;
-         this.changedSections.clear();
+   protected void processAllLevelUpdates() {
+      if (this.needsUpdate()) {
+         this.processUpdates(Integer.MAX_VALUE);
       }
 
-      if (!this.sectionsAffectedByLightUpdates.isEmpty()) {
-         LongIterator longiterator = this.sectionsAffectedByLightUpdates.iterator();
+   }
+
+   protected void updateAndNotify() {
+      if (!this.dirtyCachedSections.isEmpty()) {
+         M m = this.cachedLightData.copy();
+         m.disableCaching();
+         this.uncachedLightData = m;
+         this.dirtyCachedSections.clear();
+      }
+
+      if (!this.changedLightPositions.isEmpty()) {
+         LongIterator longiterator = this.changedLightPositions.iterator();
 
          while(longiterator.hasNext()) {
             long i = longiterator.nextLong();
-            this.chunkSource.onLightUpdate(this.layer, SectionPos.of(i));
+            this.chunkProvider.markLightChanged(this.type, SectionPos.from(i));
          }
 
-         this.sectionsAffectedByLightUpdates.clear();
+         this.changedLightPositions.clear();
       }
 
    }

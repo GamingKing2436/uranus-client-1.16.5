@@ -7,16 +7,16 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SmokingRecipe extends AbstractCookingRecipe {
-   public SmokingRecipe(ResourceLocation p_i50022_1_, String p_i50022_2_, Ingredient p_i50022_3_, ItemStack p_i50022_4_, float p_i50022_5_, int p_i50022_6_) {
-      super(IRecipeType.SMOKING, p_i50022_1_, p_i50022_2_, p_i50022_3_, p_i50022_4_, p_i50022_5_, p_i50022_6_);
+   public SmokingRecipe(ResourceLocation id, String group, Ingredient ingredient, ItemStack result, float experience, int cookTime) {
+      super(IRecipeType.SMOKING, id, group, ingredient, result, experience, cookTime);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public ItemStack getToastSymbol() {
+   public ItemStack getIcon() {
       return new ItemStack(Blocks.SMOKER);
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.SMOKING_RECIPE;
+      return IRecipeSerializer.SMOKING;
    }
 }

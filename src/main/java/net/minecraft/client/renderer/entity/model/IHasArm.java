@@ -7,5 +7,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IHasArm {
-   void translateToHand(HandSide p_225599_1_, MatrixStack p_225599_2_);
+   void translateHand(HandSide sideIn, MatrixStack matrixStackIn);
 }

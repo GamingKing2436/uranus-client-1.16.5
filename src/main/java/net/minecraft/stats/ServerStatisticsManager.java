@@ -36,37 +36,37 @@ import org.apache.logging.log4j.Logger;
 public class ServerStatisticsManager extends StatisticsManager {
    private static final Logger LOGGER = LogManager.getLogger();
    private final MinecraftServer server;
-   private final File file;
+   private final File statsFile;
    private final Set<Stat<?>> dirty = Sets.newHashSet();
    private int lastStatRequest = -300;
 
-   public ServerStatisticsManager(MinecraftServer p_i45306_1_, File p_i45306_2_) {
-      this.server = p_i45306_1_;
-      this.file = p_i45306_2_;
-      if (p_i45306_2_.isFile()) {
+   public ServerStatisticsManager(MinecraftServer serverIn, File statsFileIn) {
+      this.server = serverIn;
+      this.statsFile = statsFileIn;
+      if (statsFileIn.isFile()) {
          try {
-            this.parseLocal(p_i45306_1_.getFixerUpper(), FileUtils.readFileToString(p_i45306_2_));
+            this.parseLocal(serverIn.getDataFixer(), FileUtils.readFileToString(statsFileIn));
          } catch (IOException ioexception) {
-            LOGGER.error("Couldn't read statistics file {}", p_i45306_2_, ioexception);
+            LOGGER.error("Couldn't read statistics file {}", statsFileIn, ioexception);
          } catch (JsonParseException jsonparseexception) {
-            LOGGER.error("Couldn't parse statistics file {}", p_i45306_2_, jsonparseexception);
+            LOGGER.error("Couldn't parse statistics file {}", statsFileIn, jsonparseexception);
          }
       }
 
    }
 
-   public void save() {
+   public void saveStatFile() {
       try {
-         FileUtils.writeStringToFile(this.file, this.toJson());
+         FileUtils.writeStringToFile(this.statsFile, this.func_199061_b());
       } catch (IOException ioexception) {
          LOGGER.error("Couldn't save stats", (Throwable)ioexception);
       }
 
    }
 
-   public void setValue(PlayerEntity p_150873_1_, Stat<?> p_150873_2_, int p_150873_3_) {
-      super.setValue(p_150873_1_, p_150873_2_, p_150873_3_);
-      this.dirty.add(p_150873_2_);
+   public void setValue(PlayerEntity playerIn, Stat<?> statIn, int p_150873_3_) {
+      super.setValue(playerIn, statIn, p_150873_3_);
+      this.dirty.add(statIn);
    }
 
    private Set<Stat<?>> getDirty() {
@@ -80,11 +80,11 @@ public class ServerStatisticsManager extends StatisticsManager {
          jsonreader.setLenient(false);
          JsonElement jsonelement = Streams.parse(jsonreader);
          if (jsonelement.isJsonNull()) {
-            LOGGER.error("Unable to parse Stat data from {}", (Object)this.file);
+            LOGGER.error("Unable to parse Stat data from {}", (Object)this.statsFile);
             return;
          }
 
-         CompoundNBT compoundnbt = fromJson(jsonelement.getAsJsonObject());
+         CompoundNBT compoundnbt = func_199065_a(jsonelement.getAsJsonObject());
          if (!compoundnbt.contains("DataVersion", 99)) {
             compoundnbt.putInt("DataVersion", 1343);
          }
@@ -93,46 +93,46 @@ public class ServerStatisticsManager extends StatisticsManager {
          if (compoundnbt.contains("stats", 10)) {
             CompoundNBT compoundnbt1 = compoundnbt.getCompound("stats");
 
-            for(String s : compoundnbt1.getAllKeys()) {
+            for(String s : compoundnbt1.keySet()) {
                if (compoundnbt1.contains(s, 10)) {
-                  Util.ifElse(Registry.STAT_TYPE.getOptional(new ResourceLocation(s)), (p_219731_3_) -> {
+                  Util.acceptOrElse(Registry.STATS.getOptional(new ResourceLocation(s)), (p_219731_3_) -> {
                      CompoundNBT compoundnbt2 = compoundnbt1.getCompound(s);
 
-                     for(String s1 : compoundnbt2.getAllKeys()) {
+                     for(String s1 : compoundnbt2.keySet()) {
                         if (compoundnbt2.contains(s1, 99)) {
-                           Util.ifElse(this.getStat(p_219731_3_, s1), (p_219730_3_) -> {
-                              this.stats.put(p_219730_3_, compoundnbt2.getInt(s1));
+                           Util.acceptOrElse(this.func_219728_a(p_219731_3_, s1), (p_219730_3_) -> {
+                              this.statsData.put(p_219730_3_, compoundnbt2.getInt(s1));
                            }, () -> {
-                              LOGGER.warn("Invalid statistic in {}: Don't know what {} is", this.file, s1);
+                              LOGGER.warn("Invalid statistic in {}: Don't know what {} is", this.statsFile, s1);
                            });
                         } else {
-                           LOGGER.warn("Invalid statistic value in {}: Don't know what {} is for key {}", this.file, compoundnbt2.get(s1), s1);
+                           LOGGER.warn("Invalid statistic value in {}: Don't know what {} is for key {}", this.statsFile, compoundnbt2.get(s1), s1);
                         }
                      }
 
                   }, () -> {
-                     LOGGER.warn("Invalid statistic type in {}: Don't know what {} is", this.file, s);
+                     LOGGER.warn("Invalid statistic type in {}: Don't know what {} is", this.statsFile, s);
                   });
                }
             }
          }
       } catch (IOException | JsonParseException jsonparseexception) {
-         LOGGER.error("Unable to parse Stat data from {}", this.file, jsonparseexception);
+         LOGGER.error("Unable to parse Stat data from {}", this.statsFile, jsonparseexception);
       }
 
    }
 
-   private <T> Optional<Stat<T>> getStat(StatType<T> p_219728_1_, String p_219728_2_) {
-      return Optional.ofNullable(ResourceLocation.tryParse(p_219728_2_)).flatMap(p_219728_1_.getRegistry()::getOptional).map(p_219728_1_::get);
+   private <T> Optional<Stat<T>> func_219728_a(StatType<T> p_219728_1_, String p_219728_2_) {
+      return Optional.ofNullable(ResourceLocation.tryCreate(p_219728_2_)).flatMap(p_219728_1_.getRegistry()::getOptional).map(p_219728_1_::get);
    }
 
-   private static CompoundNBT fromJson(JsonObject p_199065_0_) {
+   private static CompoundNBT func_199065_a(JsonObject p_199065_0_) {
       CompoundNBT compoundnbt = new CompoundNBT();
 
       for(Entry<String, JsonElement> entry : p_199065_0_.entrySet()) {
          JsonElement jsonelement = entry.getValue();
          if (jsonelement.isJsonObject()) {
-            compoundnbt.put(entry.getKey(), fromJson(jsonelement.getAsJsonObject()));
+            compoundnbt.put(entry.getKey(), func_199065_a(jsonelement.getAsJsonObject()));
          } else if (jsonelement.isJsonPrimitive()) {
             JsonPrimitive jsonprimitive = jsonelement.getAsJsonPrimitive();
             if (jsonprimitive.isNumber()) {
@@ -144,38 +144,38 @@ public class ServerStatisticsManager extends StatisticsManager {
       return compoundnbt;
    }
 
-   protected String toJson() {
+   protected String func_199061_b() {
       Map<StatType<?>, JsonObject> map = Maps.newHashMap();
 
-      for(it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Stat<?>> entry : this.stats.object2IntEntrySet()) {
+      for(it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<Stat<?>> entry : this.statsData.object2IntEntrySet()) {
          Stat<?> stat = entry.getKey();
          map.computeIfAbsent(stat.getType(), (p_199064_0_) -> {
             return new JsonObject();
-         }).addProperty(getKey(stat).toString(), entry.getIntValue());
+         }).addProperty(func_199066_b(stat).toString(), entry.getIntValue());
       }
 
       JsonObject jsonobject = new JsonObject();
 
       for(Entry<StatType<?>, JsonObject> entry1 : map.entrySet()) {
-         jsonobject.add(Registry.STAT_TYPE.getKey(entry1.getKey()).toString(), entry1.getValue());
+         jsonobject.add(Registry.STATS.getKey(entry1.getKey()).toString(), entry1.getValue());
       }
 
       JsonObject jsonobject1 = new JsonObject();
       jsonobject1.add("stats", jsonobject);
-      jsonobject1.addProperty("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+      jsonobject1.addProperty("DataVersion", SharedConstants.getVersion().getWorldVersion());
       return jsonobject1.toString();
    }
 
-   private static <T> ResourceLocation getKey(Stat<T> p_199066_0_) {
+   private static <T> ResourceLocation func_199066_b(Stat<T> p_199066_0_) {
       return p_199066_0_.getType().getRegistry().getKey(p_199066_0_.getValue());
    }
 
    public void markAllDirty() {
-      this.dirty.addAll(this.stats.keySet());
+      this.dirty.addAll(this.statsData.keySet());
    }
 
-   public void sendStats(ServerPlayerEntity p_150876_1_) {
-      int i = this.server.getTickCount();
+   public void sendStats(ServerPlayerEntity player) {
+      int i = this.server.getTickCounter();
       Object2IntMap<Stat<?>> object2intmap = new Object2IntOpenHashMap<>();
       if (i - this.lastStatRequest > 300) {
          this.lastStatRequest = i;
@@ -185,6 +185,6 @@ public class ServerStatisticsManager extends StatisticsManager {
          }
       }
 
-      p_150876_1_.connection.send(new SStatisticsPacket(object2intmap));
+      player.connection.sendPacket(new SStatisticsPacket(object2intmap));
    }
 }

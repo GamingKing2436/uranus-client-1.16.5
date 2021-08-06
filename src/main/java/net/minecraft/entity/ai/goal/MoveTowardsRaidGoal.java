@@ -13,48 +13,48 @@ import net.minecraft.world.raid.RaidManager;
 import net.minecraft.world.server.ServerWorld;
 
 public class MoveTowardsRaidGoal<T extends AbstractRaiderEntity> extends Goal {
-   private final T mob;
+   private final T raider;
 
-   public MoveTowardsRaidGoal(T p_i50323_1_) {
-      this.mob = p_i50323_1_;
-      this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+   public MoveTowardsRaidGoal(T raider) {
+      this.raider = raider;
+      this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE));
    }
 
-   public boolean canUse() {
-      return this.mob.getTarget() == null && !this.mob.isVehicle() && this.mob.hasActiveRaid() && !this.mob.getCurrentRaid().isOver() && !((ServerWorld)this.mob.level).isVillage(this.mob.blockPosition());
+   public boolean shouldExecute() {
+      return this.raider.getAttackTarget() == null && !this.raider.isBeingRidden() && this.raider.isRaidActive() && !this.raider.getRaid().isOver() && !((ServerWorld)this.raider.world).isVillage(this.raider.getPosition());
    }
 
-   public boolean canContinueToUse() {
-      return this.mob.hasActiveRaid() && !this.mob.getCurrentRaid().isOver() && this.mob.level instanceof ServerWorld && !((ServerWorld)this.mob.level).isVillage(this.mob.blockPosition());
+   public boolean shouldContinueExecuting() {
+      return this.raider.isRaidActive() && !this.raider.getRaid().isOver() && this.raider.world instanceof ServerWorld && !((ServerWorld)this.raider.world).isVillage(this.raider.getPosition());
    }
 
    public void tick() {
-      if (this.mob.hasActiveRaid()) {
-         Raid raid = this.mob.getCurrentRaid();
-         if (this.mob.tickCount % 20 == 0) {
-            this.recruitNearby(raid);
+      if (this.raider.isRaidActive()) {
+         Raid raid = this.raider.getRaid();
+         if (this.raider.ticksExisted % 20 == 0) {
+            this.func_220743_a(raid);
          }
 
-         if (!this.mob.isPathFinding()) {
-            Vector3d vector3d = RandomPositionGenerator.getPosTowards(this.mob, 15, 4, Vector3d.atBottomCenterOf(raid.getCenter()));
+         if (!this.raider.hasPath()) {
+            Vector3d vector3d = RandomPositionGenerator.findRandomTargetBlockTowards(this.raider, 15, 4, Vector3d.copyCenteredHorizontally(raid.getCenter()));
             if (vector3d != null) {
-               this.mob.getNavigation().moveTo(vector3d.x, vector3d.y, vector3d.z, 1.0D);
+               this.raider.getNavigator().tryMoveToXYZ(vector3d.x, vector3d.y, vector3d.z, 1.0D);
             }
          }
       }
 
    }
 
-   private void recruitNearby(Raid p_220743_1_) {
-      if (p_220743_1_.isActive()) {
+   private void func_220743_a(Raid raid) {
+      if (raid.isActive()) {
          Set<AbstractRaiderEntity> set = Sets.newHashSet();
-         List<AbstractRaiderEntity> list = this.mob.level.getEntitiesOfClass(AbstractRaiderEntity.class, this.mob.getBoundingBox().inflate(16.0D), (p_220742_1_) -> {
-            return !p_220742_1_.hasActiveRaid() && RaidManager.canJoinRaid(p_220742_1_, p_220743_1_);
+         List<AbstractRaiderEntity> list = this.raider.world.getEntitiesWithinAABB(AbstractRaiderEntity.class, this.raider.getBoundingBox().grow(16.0D), (p_220742_1_) -> {
+            return !p_220742_1_.isRaidActive() && RaidManager.canJoinRaid(p_220742_1_, raid);
          });
          set.addAll(list);
 
          for(AbstractRaiderEntity abstractraiderentity : set) {
-            p_220743_1_.joinRaid(p_220743_1_.getGroupsSpawned(), abstractraiderentity, (BlockPos)null, true);
+            raid.joinRaid(raid.getGroupsSpawned(), abstractraiderentity, (BlockPos)null, true);
          }
       }
 

@@ -10,31 +10,31 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class CreateWorldRealmsAction extends LongRunningTask {
-   private final String name;
-   private final String motd;
-   private final long worldId;
-   private final Screen lastScreen;
+   private final String field_238148_c_;
+   private final String field_238149_d_;
+   private final long field_238150_e_;
+   private final Screen field_238151_f_;
 
    public CreateWorldRealmsAction(long p_i232237_1_, String p_i232237_3_, String p_i232237_4_, Screen p_i232237_5_) {
-      this.worldId = p_i232237_1_;
-      this.name = p_i232237_3_;
-      this.motd = p_i232237_4_;
-      this.lastScreen = p_i232237_5_;
+      this.field_238150_e_ = p_i232237_1_;
+      this.field_238148_c_ = p_i232237_3_;
+      this.field_238149_d_ = p_i232237_4_;
+      this.field_238151_f_ = p_i232237_5_;
    }
 
    public void run() {
-      this.setTitle(new TranslationTextComponent("mco.create.world.wait"));
-      RealmsClient realmsclient = RealmsClient.create();
+      this.func_224989_b(new TranslationTextComponent("mco.create.world.wait"));
+      RealmsClient realmsclient = RealmsClient.func_224911_a();
 
       try {
-         realmsclient.initializeWorld(this.worldId, this.name, this.motd);
-         setScreen(this.lastScreen);
+         realmsclient.func_224900_a(this.field_238150_e_, this.field_238148_c_, this.field_238149_d_);
+         func_238127_a_(this.field_238151_f_);
       } catch (RealmsServiceException realmsserviceexception) {
-         LOGGER.error("Couldn't create world");
-         this.error(realmsserviceexception.toString());
+         field_238124_a_.error("Couldn't create world");
+         this.func_237703_a_(realmsserviceexception.toString());
       } catch (Exception exception) {
-         LOGGER.error("Could not create world");
-         this.error(exception.getLocalizedMessage());
+         field_238124_a_.error("Could not create world");
+         this.func_237703_a_(exception.getLocalizedMessage());
       }
 
    }

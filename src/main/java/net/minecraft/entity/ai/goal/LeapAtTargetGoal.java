@@ -6,30 +6,30 @@ import net.minecraft.entity.MobEntity;
 import net.minecraft.util.math.vector.Vector3d;
 
 public class LeapAtTargetGoal extends Goal {
-   private final MobEntity mob;
-   private LivingEntity target;
-   private final float yd;
+   private final MobEntity leaper;
+   private LivingEntity leapTarget;
+   private final float leapMotionY;
 
-   public LeapAtTargetGoal(MobEntity p_i1630_1_, float p_i1630_2_) {
-      this.mob = p_i1630_1_;
-      this.yd = p_i1630_2_;
-      this.setFlags(EnumSet.of(Goal.Flag.JUMP, Goal.Flag.MOVE));
+   public LeapAtTargetGoal(MobEntity leapingEntity, float leapMotionYIn) {
+      this.leaper = leapingEntity;
+      this.leapMotionY = leapMotionYIn;
+      this.setMutexFlags(EnumSet.of(Goal.Flag.JUMP, Goal.Flag.MOVE));
    }
 
-   public boolean canUse() {
-      if (this.mob.isVehicle()) {
+   public boolean shouldExecute() {
+      if (this.leaper.isBeingRidden()) {
          return false;
       } else {
-         this.target = this.mob.getTarget();
-         if (this.target == null) {
+         this.leapTarget = this.leaper.getAttackTarget();
+         if (this.leapTarget == null) {
             return false;
          } else {
-            double d0 = this.mob.distanceToSqr(this.target);
+            double d0 = this.leaper.getDistanceSq(this.leapTarget);
             if (!(d0 < 4.0D) && !(d0 > 16.0D)) {
-               if (!this.mob.isOnGround()) {
+               if (!this.leaper.isOnGround()) {
                   return false;
                } else {
-                  return this.mob.getRandom().nextInt(5) == 0;
+                  return this.leaper.getRNG().nextInt(5) == 0;
                }
             } else {
                return false;
@@ -38,17 +38,17 @@ public class LeapAtTargetGoal extends Goal {
       }
    }
 
-   public boolean canContinueToUse() {
-      return !this.mob.isOnGround();
+   public boolean shouldContinueExecuting() {
+      return !this.leaper.isOnGround();
    }
 
-   public void start() {
-      Vector3d vector3d = this.mob.getDeltaMovement();
-      Vector3d vector3d1 = new Vector3d(this.target.getX() - this.mob.getX(), 0.0D, this.target.getZ() - this.mob.getZ());
-      if (vector3d1.lengthSqr() > 1.0E-7D) {
+   public void startExecuting() {
+      Vector3d vector3d = this.leaper.getMotion();
+      Vector3d vector3d1 = new Vector3d(this.leapTarget.getPosX() - this.leaper.getPosX(), 0.0D, this.leapTarget.getPosZ() - this.leaper.getPosZ());
+      if (vector3d1.lengthSquared() > 1.0E-7D) {
          vector3d1 = vector3d1.normalize().scale(0.4D).add(vector3d.scale(0.2D));
       }
 
-      this.mob.setDeltaMovement(vector3d1.x, (double)this.yd, vector3d1.z);
+      this.leaper.setMotion(vector3d1.x, (double)this.leapMotionY, vector3d1.z);
    }
 }

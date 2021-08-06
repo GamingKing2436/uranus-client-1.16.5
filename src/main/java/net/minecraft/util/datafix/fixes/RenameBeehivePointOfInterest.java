@@ -7,7 +7,7 @@ public class RenameBeehivePointOfInterest extends PointOfInterestRename {
       super(p_i225700_1_, false);
    }
 
-   protected String rename(String p_225501_1_) {
+   protected String func_225501_a_(String p_225501_1_) {
       return p_225501_1_.equals("minecraft:bee_hive") ? "minecraft:beehive" : p_225501_1_;
    }
 }

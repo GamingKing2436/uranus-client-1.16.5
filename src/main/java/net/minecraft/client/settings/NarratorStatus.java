@@ -19,22 +19,22 @@ public enum NarratorStatus {
       return new NarratorStatus[p_216826_0_];
    });
    private final int id;
-   private final ITextComponent name;
+   private final ITextComponent field_238232_g_;
 
-   private NarratorStatus(int p_i51160_3_, String p_i51160_4_) {
-      this.id = p_i51160_3_;
-      this.name = new TranslationTextComponent(p_i51160_4_);
+   private NarratorStatus(int id, String resourceKeyIn) {
+      this.id = id;
+      this.field_238232_g_ = new TranslationTextComponent(resourceKeyIn);
    }
 
    public int getId() {
       return this.id;
    }
 
-   public ITextComponent getName() {
-      return this.name;
+   public ITextComponent func_238233_b_() {
+      return this.field_238232_g_;
    }
 
-   public static NarratorStatus byId(int p_216825_0_) {
-      return BY_ID[MathHelper.positiveModulo(p_216825_0_, BY_ID.length)];
+   public static NarratorStatus byId(int id) {
+      return BY_ID[MathHelper.normalizeAngle(id, BY_ID.length)];
    }
 }

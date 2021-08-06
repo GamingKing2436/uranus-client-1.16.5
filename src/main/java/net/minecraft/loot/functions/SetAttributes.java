@@ -35,52 +35,52 @@ public class SetAttributes extends LootFunction {
       this.modifiers = ImmutableList.copyOf(p_i51228_2_);
    }
 
-   public LootFunctionType getType() {
+   public LootFunctionType getFunctionType() {
       return LootFunctionManager.SET_ATTRIBUTES;
    }
 
-   public ItemStack run(ItemStack p_215859_1_, LootContext p_215859_2_) {
-      Random random = p_215859_2_.getRandom();
+   public ItemStack doApply(ItemStack stack, LootContext context) {
+      Random random = context.getRandom();
 
       for(SetAttributes.Modifier setattributes$modifier : this.modifiers) {
-         UUID uuid = setattributes$modifier.id;
+         UUID uuid = setattributes$modifier.uuid;
          if (uuid == null) {
             uuid = UUID.randomUUID();
          }
 
-         EquipmentSlotType equipmentslottype = Util.getRandom(setattributes$modifier.slots, random);
-         p_215859_1_.addAttributeModifier(setattributes$modifier.attribute, new AttributeModifier(uuid, setattributes$modifier.name, (double)setattributes$modifier.amount.getFloat(random), setattributes$modifier.operation), equipmentslottype);
+         EquipmentSlotType equipmentslottype = Util.getRandomObject(setattributes$modifier.slots, random);
+         stack.addAttributeModifier(setattributes$modifier.attributeName, new AttributeModifier(uuid, setattributes$modifier.modifierName, (double)setattributes$modifier.amount.generateFloat(random), setattributes$modifier.operation), equipmentslottype);
       }
 
-      return p_215859_1_;
+      return stack;
    }
 
    static class Modifier {
-      private final String name;
-      private final Attribute attribute;
+      private final String modifierName;
+      private final Attribute attributeName;
       private final AttributeModifier.Operation operation;
       private final RandomValueRange amount;
       @Nullable
-      private final UUID id;
+      private final UUID uuid;
       private final EquipmentSlotType[] slots;
 
       private Modifier(String p_i232172_1_, Attribute p_i232172_2_, AttributeModifier.Operation p_i232172_3_, RandomValueRange p_i232172_4_, EquipmentSlotType[] p_i232172_5_, @Nullable UUID p_i232172_6_) {
-         this.name = p_i232172_1_;
-         this.attribute = p_i232172_2_;
+         this.modifierName = p_i232172_1_;
+         this.attributeName = p_i232172_2_;
          this.operation = p_i232172_3_;
          this.amount = p_i232172_4_;
-         this.id = p_i232172_6_;
+         this.uuid = p_i232172_6_;
          this.slots = p_i232172_5_;
       }
 
-      public JsonObject serialize(JsonSerializationContext p_186592_1_) {
+      public JsonObject serialize(JsonSerializationContext context) {
          JsonObject jsonobject = new JsonObject();
-         jsonobject.addProperty("name", this.name);
-         jsonobject.addProperty("attribute", Registry.ATTRIBUTE.getKey(this.attribute).toString());
-         jsonobject.addProperty("operation", operationToString(this.operation));
-         jsonobject.add("amount", p_186592_1_.serialize(this.amount));
-         if (this.id != null) {
-            jsonobject.addProperty("id", this.id.toString());
+         jsonobject.addProperty("name", this.modifierName);
+         jsonobject.addProperty("attribute", Registry.ATTRIBUTE.getKey(this.attributeName).toString());
+         jsonobject.addProperty("operation", func_216244_a(this.operation));
+         jsonobject.add("amount", context.serialize(this.amount));
+         if (this.uuid != null) {
+            jsonobject.addProperty("id", this.uuid.toString());
          }
 
          if (this.slots.length == 1) {
@@ -98,30 +98,30 @@ public class SetAttributes extends LootFunction {
          return jsonobject;
       }
 
-      public static SetAttributes.Modifier deserialize(JsonObject p_186586_0_, JsonDeserializationContext p_186586_1_) {
-         String s = JSONUtils.getAsString(p_186586_0_, "name");
-         ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getAsString(p_186586_0_, "attribute"));
-         Attribute attribute = Registry.ATTRIBUTE.get(resourcelocation);
+      public static SetAttributes.Modifier deserialize(JsonObject jsonObj, JsonDeserializationContext context) {
+         String s = JSONUtils.getString(jsonObj, "name");
+         ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getString(jsonObj, "attribute"));
+         Attribute attribute = Registry.ATTRIBUTE.getOrDefault(resourcelocation);
          if (attribute == null) {
             throw new JsonSyntaxException("Unknown attribute: " + resourcelocation);
          } else {
-            AttributeModifier.Operation attributemodifier$operation = operationFromString(JSONUtils.getAsString(p_186586_0_, "operation"));
-            RandomValueRange randomvaluerange = JSONUtils.getAsObject(p_186586_0_, "amount", p_186586_1_, RandomValueRange.class);
+            AttributeModifier.Operation attributemodifier$operation = func_216246_a(JSONUtils.getString(jsonObj, "operation"));
+            RandomValueRange randomvaluerange = JSONUtils.deserializeClass(jsonObj, "amount", context, RandomValueRange.class);
             UUID uuid = null;
             EquipmentSlotType[] aequipmentslottype;
-            if (JSONUtils.isStringValue(p_186586_0_, "slot")) {
-               aequipmentslottype = new EquipmentSlotType[]{EquipmentSlotType.byName(JSONUtils.getAsString(p_186586_0_, "slot"))};
+            if (JSONUtils.isString(jsonObj, "slot")) {
+               aequipmentslottype = new EquipmentSlotType[]{EquipmentSlotType.fromString(JSONUtils.getString(jsonObj, "slot"))};
             } else {
-               if (!JSONUtils.isArrayNode(p_186586_0_, "slot")) {
+               if (!JSONUtils.isJsonArray(jsonObj, "slot")) {
                   throw new JsonSyntaxException("Invalid or missing attribute modifier slot; must be either string or array of strings.");
                }
 
-               JsonArray jsonarray = JSONUtils.getAsJsonArray(p_186586_0_, "slot");
+               JsonArray jsonarray = JSONUtils.getJsonArray(jsonObj, "slot");
                aequipmentslottype = new EquipmentSlotType[jsonarray.size()];
                int i = 0;
 
                for(JsonElement jsonelement : jsonarray) {
-                  aequipmentslottype[i++] = EquipmentSlotType.byName(JSONUtils.convertToString(jsonelement, "slot"));
+                  aequipmentslottype[i++] = EquipmentSlotType.fromString(JSONUtils.getString(jsonelement, "slot"));
                }
 
                if (aequipmentslottype.length == 0) {
@@ -129,8 +129,8 @@ public class SetAttributes extends LootFunction {
                }
             }
 
-            if (p_186586_0_.has("id")) {
-               String s1 = JSONUtils.getAsString(p_186586_0_, "id");
+            if (jsonObj.has("id")) {
+               String s1 = JSONUtils.getString(jsonObj, "id");
 
                try {
                   uuid = UUID.fromString(s1);
@@ -143,7 +143,7 @@ public class SetAttributes extends LootFunction {
          }
       }
 
-      private static String operationToString(AttributeModifier.Operation p_216244_0_) {
+      private static String func_216244_a(AttributeModifier.Operation p_216244_0_) {
          switch(p_216244_0_) {
          case ADDITION:
             return "addition";
@@ -156,7 +156,7 @@ public class SetAttributes extends LootFunction {
          }
       }
 
-      private static AttributeModifier.Operation operationFromString(String p_216246_0_) {
+      private static AttributeModifier.Operation func_216246_a(String p_216246_0_) {
          switch(p_216246_0_) {
          case "addition":
             return AttributeModifier.Operation.ADDITION;
@@ -182,18 +182,18 @@ public class SetAttributes extends LootFunction {
          p_230424_1_.add("modifiers", jsonarray);
       }
 
-      public SetAttributes deserialize(JsonObject p_186530_1_, JsonDeserializationContext p_186530_2_, ILootCondition[] p_186530_3_) {
-         JsonArray jsonarray = JSONUtils.getAsJsonArray(p_186530_1_, "modifiers");
+      public SetAttributes deserialize(JsonObject object, JsonDeserializationContext deserializationContext, ILootCondition[] conditionsIn) {
+         JsonArray jsonarray = JSONUtils.getJsonArray(object, "modifiers");
          List<SetAttributes.Modifier> list = Lists.newArrayListWithExpectedSize(jsonarray.size());
 
          for(JsonElement jsonelement : jsonarray) {
-            list.add(SetAttributes.Modifier.deserialize(JSONUtils.convertToJsonObject(jsonelement, "modifier"), p_186530_2_));
+            list.add(SetAttributes.Modifier.deserialize(JSONUtils.getJsonObject(jsonelement, "modifier"), deserializationContext));
          }
 
          if (list.isEmpty()) {
             throw new JsonSyntaxException("Invalid attribute modifiers array; cannot be empty");
          } else {
-            return new SetAttributes(p_186530_3_, list);
+            return new SetAttributes(conditionsIn, list);
          }
       }
    }

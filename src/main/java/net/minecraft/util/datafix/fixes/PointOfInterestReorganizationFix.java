@@ -26,13 +26,13 @@ public class PointOfInterestReorganizationFix extends DataFix {
       } else {
          return this.fixTypeEverywhere("POI reorganization", type, (p_219871_0_) -> {
             return (p_219872_0_) -> {
-               return p_219872_0_.mapSecond(PointOfInterestReorganizationFix::cap);
+               return p_219872_0_.mapSecond(PointOfInterestReorganizationFix::func_219870_a);
             };
          });
       }
    }
 
-   private static <T> Dynamic<T> cap(Dynamic<T> p_219870_0_) {
+   private static <T> Dynamic<T> func_219870_a(Dynamic<T> p_219870_0_) {
       Map<Dynamic<T>, Dynamic<T>> map = Maps.newHashMap();
 
       for(int i = 0; i < 16; ++i) {

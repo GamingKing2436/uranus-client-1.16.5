@@ -18,16 +18,16 @@ public class STagsListPacket implements IPacket<IClientPlayNetHandler> {
       this.tags = p_i242087_1_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.tags = ITagCollectionSupplier.deserializeFromNetwork(p_148837_1_);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.tags = ITagCollectionSupplier.readTagCollectionSupplierFromBuffer(buf);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      this.tags.serializeToNetwork(p_148840_1_);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      this.tags.writeTagCollectionSupplierToBuffer(buf);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleUpdateTags(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleTags(this);
    }
 
    @OnlyIn(Dist.CLIENT)

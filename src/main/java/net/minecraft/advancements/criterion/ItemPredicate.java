@@ -34,7 +34,7 @@ public class ItemPredicate {
    private final MinMaxBounds.IntBound count;
    private final MinMaxBounds.IntBound durability;
    private final EnchantmentPredicate[] enchantments;
-   private final EnchantmentPredicate[] storedEnchantments;
+   private final EnchantmentPredicate[] bookEnchantments;
    @Nullable
    private final Potion potion;
    private final NBTPredicate nbt;
@@ -43,77 +43,77 @@ public class ItemPredicate {
       this.tag = null;
       this.item = null;
       this.potion = null;
-      this.count = MinMaxBounds.IntBound.ANY;
-      this.durability = MinMaxBounds.IntBound.ANY;
-      this.enchantments = EnchantmentPredicate.NONE;
-      this.storedEnchantments = EnchantmentPredicate.NONE;
+      this.count = MinMaxBounds.IntBound.UNBOUNDED;
+      this.durability = MinMaxBounds.IntBound.UNBOUNDED;
+      this.enchantments = EnchantmentPredicate.enchantments;
+      this.bookEnchantments = EnchantmentPredicate.enchantments;
       this.nbt = NBTPredicate.ANY;
    }
 
-   public ItemPredicate(@Nullable ITag<Item> p_i225740_1_, @Nullable Item p_i225740_2_, MinMaxBounds.IntBound p_i225740_3_, MinMaxBounds.IntBound p_i225740_4_, EnchantmentPredicate[] p_i225740_5_, EnchantmentPredicate[] p_i225740_6_, @Nullable Potion p_i225740_7_, NBTPredicate p_i225740_8_) {
-      this.tag = p_i225740_1_;
-      this.item = p_i225740_2_;
-      this.count = p_i225740_3_;
-      this.durability = p_i225740_4_;
-      this.enchantments = p_i225740_5_;
-      this.storedEnchantments = p_i225740_6_;
-      this.potion = p_i225740_7_;
-      this.nbt = p_i225740_8_;
+   public ItemPredicate(@Nullable ITag<Item> tag, @Nullable Item item, MinMaxBounds.IntBound count, MinMaxBounds.IntBound durability, EnchantmentPredicate[] enchantments, EnchantmentPredicate[] bookEnchantments, @Nullable Potion potion, NBTPredicate nbt) {
+      this.tag = tag;
+      this.item = item;
+      this.count = count;
+      this.durability = durability;
+      this.enchantments = enchantments;
+      this.bookEnchantments = bookEnchantments;
+      this.potion = potion;
+      this.nbt = nbt;
    }
 
-   public boolean matches(ItemStack p_192493_1_) {
+   public boolean test(ItemStack item) {
       if (this == ANY) {
          return true;
-      } else if (this.tag != null && !this.tag.contains(p_192493_1_.getItem())) {
+      } else if (this.tag != null && !this.tag.contains(item.getItem())) {
          return false;
-      } else if (this.item != null && p_192493_1_.getItem() != this.item) {
+      } else if (this.item != null && item.getItem() != this.item) {
          return false;
-      } else if (!this.count.matches(p_192493_1_.getCount())) {
+      } else if (!this.count.test(item.getCount())) {
          return false;
-      } else if (!this.durability.isAny() && !p_192493_1_.isDamageableItem()) {
+      } else if (!this.durability.isUnbounded() && !item.isDamageable()) {
          return false;
-      } else if (!this.durability.matches(p_192493_1_.getMaxDamage() - p_192493_1_.getDamageValue())) {
+      } else if (!this.durability.test(item.getMaxDamage() - item.getDamage())) {
          return false;
-      } else if (!this.nbt.matches(p_192493_1_)) {
+      } else if (!this.nbt.test(item)) {
          return false;
       } else {
          if (this.enchantments.length > 0) {
-            Map<Enchantment, Integer> map = EnchantmentHelper.deserializeEnchantments(p_192493_1_.getEnchantmentTags());
+            Map<Enchantment, Integer> map = EnchantmentHelper.deserializeEnchantments(item.getEnchantmentTagList());
 
             for(EnchantmentPredicate enchantmentpredicate : this.enchantments) {
-               if (!enchantmentpredicate.containedIn(map)) {
+               if (!enchantmentpredicate.test(map)) {
                   return false;
                }
             }
          }
 
-         if (this.storedEnchantments.length > 0) {
-            Map<Enchantment, Integer> map1 = EnchantmentHelper.deserializeEnchantments(EnchantedBookItem.getEnchantments(p_192493_1_));
+         if (this.bookEnchantments.length > 0) {
+            Map<Enchantment, Integer> map1 = EnchantmentHelper.deserializeEnchantments(EnchantedBookItem.getEnchantments(item));
 
-            for(EnchantmentPredicate enchantmentpredicate1 : this.storedEnchantments) {
-               if (!enchantmentpredicate1.containedIn(map1)) {
+            for(EnchantmentPredicate enchantmentpredicate1 : this.bookEnchantments) {
+               if (!enchantmentpredicate1.test(map1)) {
                   return false;
                }
             }
          }
 
-         Potion potion = PotionUtils.getPotion(p_192493_1_);
+         Potion potion = PotionUtils.getPotionFromItem(item);
          return this.potion == null || this.potion == potion;
       }
    }
 
-   public static ItemPredicate fromJson(@Nullable JsonElement p_192492_0_) {
-      if (p_192492_0_ != null && !p_192492_0_.isJsonNull()) {
-         JsonObject jsonobject = JSONUtils.convertToJsonObject(p_192492_0_, "item");
+   public static ItemPredicate deserialize(@Nullable JsonElement element) {
+      if (element != null && !element.isJsonNull()) {
+         JsonObject jsonobject = JSONUtils.getJsonObject(element, "item");
          MinMaxBounds.IntBound minmaxbounds$intbound = MinMaxBounds.IntBound.fromJson(jsonobject.get("count"));
          MinMaxBounds.IntBound minmaxbounds$intbound1 = MinMaxBounds.IntBound.fromJson(jsonobject.get("durability"));
          if (jsonobject.has("data")) {
             throw new JsonParseException("Disallowed data tag found");
          } else {
-            NBTPredicate nbtpredicate = NBTPredicate.fromJson(jsonobject.get("nbt"));
+            NBTPredicate nbtpredicate = NBTPredicate.deserialize(jsonobject.get("nbt"));
             Item item = null;
             if (jsonobject.has("item")) {
-               ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getAsString(jsonobject, "item"));
+               ResourceLocation resourcelocation = new ResourceLocation(JSONUtils.getString(jsonobject, "item"));
                item = Registry.ITEM.getOptional(resourcelocation).orElseThrow(() -> {
                   return new JsonSyntaxException("Unknown item id '" + resourcelocation + "'");
                });
@@ -121,8 +121,8 @@ public class ItemPredicate {
 
             ITag<Item> itag = null;
             if (jsonobject.has("tag")) {
-               ResourceLocation resourcelocation1 = new ResourceLocation(JSONUtils.getAsString(jsonobject, "tag"));
-               itag = TagCollectionManager.getInstance().getItems().getTag(resourcelocation1);
+               ResourceLocation resourcelocation1 = new ResourceLocation(JSONUtils.getString(jsonobject, "tag"));
+               itag = TagCollectionManager.getManager().getItemTags().get(resourcelocation1);
                if (itag == null) {
                   throw new JsonSyntaxException("Unknown item tag '" + resourcelocation1 + "'");
                }
@@ -130,14 +130,14 @@ public class ItemPredicate {
 
             Potion potion = null;
             if (jsonobject.has("potion")) {
-               ResourceLocation resourcelocation2 = new ResourceLocation(JSONUtils.getAsString(jsonobject, "potion"));
+               ResourceLocation resourcelocation2 = new ResourceLocation(JSONUtils.getString(jsonobject, "potion"));
                potion = Registry.POTION.getOptional(resourcelocation2).orElseThrow(() -> {
                   return new JsonSyntaxException("Unknown potion '" + resourcelocation2 + "'");
                });
             }
 
-            EnchantmentPredicate[] aenchantmentpredicate1 = EnchantmentPredicate.fromJsonArray(jsonobject.get("enchantments"));
-            EnchantmentPredicate[] aenchantmentpredicate = EnchantmentPredicate.fromJsonArray(jsonobject.get("stored_enchantments"));
+            EnchantmentPredicate[] aenchantmentpredicate1 = EnchantmentPredicate.deserializeArray(jsonobject.get("enchantments"));
+            EnchantmentPredicate[] aenchantmentpredicate = EnchantmentPredicate.deserializeArray(jsonobject.get("stored_enchantments"));
             return new ItemPredicate(itag, item, minmaxbounds$intbound, minmaxbounds$intbound1, aenchantmentpredicate1, aenchantmentpredicate, potion, nbtpredicate);
          }
       } else {
@@ -145,7 +145,7 @@ public class ItemPredicate {
       }
    }
 
-   public JsonElement serializeToJson() {
+   public JsonElement serialize() {
       if (this == ANY) {
          return JsonNull.INSTANCE;
       } else {
@@ -155,27 +155,27 @@ public class ItemPredicate {
          }
 
          if (this.tag != null) {
-            jsonobject.addProperty("tag", TagCollectionManager.getInstance().getItems().getIdOrThrow(this.tag).toString());
+            jsonobject.addProperty("tag", TagCollectionManager.getManager().getItemTags().getValidatedIdFromTag(this.tag).toString());
          }
 
-         jsonobject.add("count", this.count.serializeToJson());
-         jsonobject.add("durability", this.durability.serializeToJson());
-         jsonobject.add("nbt", this.nbt.serializeToJson());
+         jsonobject.add("count", this.count.serialize());
+         jsonobject.add("durability", this.durability.serialize());
+         jsonobject.add("nbt", this.nbt.serialize());
          if (this.enchantments.length > 0) {
             JsonArray jsonarray = new JsonArray();
 
             for(EnchantmentPredicate enchantmentpredicate : this.enchantments) {
-               jsonarray.add(enchantmentpredicate.serializeToJson());
+               jsonarray.add(enchantmentpredicate.serialize());
             }
 
             jsonobject.add("enchantments", jsonarray);
          }
 
-         if (this.storedEnchantments.length > 0) {
+         if (this.bookEnchantments.length > 0) {
             JsonArray jsonarray1 = new JsonArray();
 
-            for(EnchantmentPredicate enchantmentpredicate1 : this.storedEnchantments) {
-               jsonarray1.add(enchantmentpredicate1.serializeToJson());
+            for(EnchantmentPredicate enchantmentpredicate1 : this.bookEnchantments) {
+               jsonarray1.add(enchantmentpredicate1.serialize());
             }
 
             jsonobject.add("stored_enchantments", jsonarray1);
@@ -189,13 +189,13 @@ public class ItemPredicate {
       }
    }
 
-   public static ItemPredicate[] fromJsonArray(@Nullable JsonElement p_192494_0_) {
-      if (p_192494_0_ != null && !p_192494_0_.isJsonNull()) {
-         JsonArray jsonarray = JSONUtils.convertToJsonArray(p_192494_0_, "items");
+   public static ItemPredicate[] deserializeArray(@Nullable JsonElement element) {
+      if (element != null && !element.isJsonNull()) {
+         JsonArray jsonarray = JSONUtils.getJsonArray(element, "items");
          ItemPredicate[] aitempredicate = new ItemPredicate[jsonarray.size()];
 
          for(int i = 0; i < aitempredicate.length; ++i) {
-            aitempredicate[i] = fromJson(jsonarray.get(i));
+            aitempredicate[i] = deserialize(jsonarray.get(i));
          }
 
          return aitempredicate;
@@ -206,13 +206,13 @@ public class ItemPredicate {
 
    public static class Builder {
       private final List<EnchantmentPredicate> enchantments = Lists.newArrayList();
-      private final List<EnchantmentPredicate> storedEnchantments = Lists.newArrayList();
+      private final List<EnchantmentPredicate> bookEnchantments = Lists.newArrayList();
       @Nullable
       private Item item;
       @Nullable
       private ITag<Item> tag;
-      private MinMaxBounds.IntBound count = MinMaxBounds.IntBound.ANY;
-      private MinMaxBounds.IntBound durability = MinMaxBounds.IntBound.ANY;
+      private MinMaxBounds.IntBound count = MinMaxBounds.IntBound.UNBOUNDED;
+      private MinMaxBounds.IntBound durability = MinMaxBounds.IntBound.UNBOUNDED;
       @Nullable
       private Potion potion;
       private NBTPredicate nbt = NBTPredicate.ANY;
@@ -220,32 +220,32 @@ public class ItemPredicate {
       private Builder() {
       }
 
-      public static ItemPredicate.Builder item() {
+      public static ItemPredicate.Builder create() {
          return new ItemPredicate.Builder();
       }
 
-      public ItemPredicate.Builder of(IItemProvider p_200308_1_) {
-         this.item = p_200308_1_.asItem();
+      public ItemPredicate.Builder item(IItemProvider provider) {
+         this.item = provider.asItem();
          return this;
       }
 
-      public ItemPredicate.Builder of(ITag<Item> p_200307_1_) {
-         this.tag = p_200307_1_;
+      public ItemPredicate.Builder tag(ITag<Item> tag) {
+         this.tag = tag;
          return this;
       }
 
-      public ItemPredicate.Builder hasNbt(CompoundNBT p_218002_1_) {
-         this.nbt = new NBTPredicate(p_218002_1_);
+      public ItemPredicate.Builder nbt(CompoundNBT nbt) {
+         this.nbt = new NBTPredicate(nbt);
          return this;
       }
 
-      public ItemPredicate.Builder hasEnchantment(EnchantmentPredicate p_218003_1_) {
-         this.enchantments.add(p_218003_1_);
+      public ItemPredicate.Builder enchantment(EnchantmentPredicate enchantmentCondition) {
+         this.enchantments.add(enchantmentCondition);
          return this;
       }
 
       public ItemPredicate build() {
-         return new ItemPredicate(this.tag, this.item, this.count, this.durability, this.enchantments.toArray(EnchantmentPredicate.NONE), this.storedEnchantments.toArray(EnchantmentPredicate.NONE), this.potion, this.nbt);
+         return new ItemPredicate(this.tag, this.item, this.count, this.durability, this.enchantments.toArray(EnchantmentPredicate.enchantments), this.bookEnchantments.toArray(EnchantmentPredicate.enchantments), this.potion, this.nbt);
       }
    }
 }

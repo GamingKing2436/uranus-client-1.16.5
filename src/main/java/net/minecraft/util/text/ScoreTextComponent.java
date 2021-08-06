@@ -21,7 +21,7 @@ public class ScoreTextComponent extends TextComponent implements ITargetedTextCo
    private final String objective;
 
    @Nullable
-   private static EntitySelector parseSelector(String p_240707_0_) {
+   private static EntitySelector func_240707_c_(String p_240707_0_) {
       try {
          return (new EntitySelectorParser(new StringReader(p_240707_0_))).parse();
       } catch (CommandSyntaxException commandsyntaxexception) {
@@ -29,8 +29,8 @@ public class ScoreTextComponent extends TextComponent implements ITargetedTextCo
       }
    }
 
-   public ScoreTextComponent(String p_i45997_1_, String p_i45997_2_) {
-      this(p_i45997_1_, parseSelector(p_i45997_1_), p_i45997_2_);
+   public ScoreTextComponent(String nameIn, String objectiveIn) {
+      this(nameIn, func_240707_c_(nameIn), objectiveIn);
    }
 
    private ScoreTextComponent(String p_i232569_1_, @Nullable EntitySelector p_i232569_2_, String p_i232569_3_) {
@@ -47,12 +47,12 @@ public class ScoreTextComponent extends TextComponent implements ITargetedTextCo
       return this.objective;
    }
 
-   private String findTargetName(CommandSource p_240705_1_) throws CommandSyntaxException {
+   private String func_240705_a_(CommandSource p_240705_1_) throws CommandSyntaxException {
       if (this.selector != null) {
-         List<? extends Entity> list = this.selector.findEntities(p_240705_1_);
+         List<? extends Entity> list = this.selector.select(p_240705_1_);
          if (!list.isEmpty()) {
             if (list.size() != 1) {
-               throw EntityArgument.ERROR_NOT_SINGLE_ENTITY.create();
+               throw EntityArgument.TOO_MANY_ENTITIES.create();
             }
 
             return list.get(0).getScoreboardName();
@@ -62,31 +62,31 @@ public class ScoreTextComponent extends TextComponent implements ITargetedTextCo
       return this.name;
    }
 
-   private String getScore(String p_240706_1_, CommandSource p_240706_2_) {
+   private String func_240706_a_(String p_240706_1_, CommandSource p_240706_2_) {
       MinecraftServer minecraftserver = p_240706_2_.getServer();
       if (minecraftserver != null) {
          Scoreboard scoreboard = minecraftserver.getScoreboard();
          ScoreObjective scoreobjective = scoreboard.getObjective(this.objective);
-         if (scoreboard.hasPlayerScore(p_240706_1_, scoreobjective)) {
-            Score score = scoreboard.getOrCreatePlayerScore(p_240706_1_, scoreobjective);
-            return Integer.toString(score.getScore());
+         if (scoreboard.entityHasObjective(p_240706_1_, scoreobjective)) {
+            Score score = scoreboard.getOrCreateScore(p_240706_1_, scoreobjective);
+            return Integer.toString(score.getScorePoints());
          }
       }
 
       return "";
    }
 
-   public ScoreTextComponent plainCopy() {
+   public ScoreTextComponent copyRaw() {
       return new ScoreTextComponent(this.name, this.selector, this.objective);
    }
 
-   public IFormattableTextComponent resolve(@Nullable CommandSource p_230535_1_, @Nullable Entity p_230535_2_, int p_230535_3_) throws CommandSyntaxException {
+   public IFormattableTextComponent func_230535_a_(@Nullable CommandSource p_230535_1_, @Nullable Entity p_230535_2_, int p_230535_3_) throws CommandSyntaxException {
       if (p_230535_1_ == null) {
          return new StringTextComponent("");
       } else {
-         String s = this.findTargetName(p_230535_1_);
+         String s = this.func_240705_a_(p_230535_1_);
          String s1 = p_230535_2_ != null && s.equals("*") ? p_230535_2_.getScoreboardName() : s;
-         return new StringTextComponent(this.getScore(s1, p_230535_1_));
+         return new StringTextComponent(this.func_240706_a_(s1, p_230535_1_));
       }
    }
 

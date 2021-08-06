@@ -8,15 +8,15 @@ public enum BedPart implements IStringSerializable {
 
    private final String name;
 
-   private BedPart(String p_i49342_3_) {
-      this.name = p_i49342_3_;
+   private BedPart(String name) {
+      this.name = name;
    }
 
    public String toString() {
       return this.name;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 }

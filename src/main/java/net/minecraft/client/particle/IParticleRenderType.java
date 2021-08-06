@@ -13,16 +13,16 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public interface IParticleRenderType {
    IParticleRenderType TERRAIN_SHEET = new IParticleRenderType() {
-      public void begin(BufferBuilder p_217600_1_, TextureManager p_217600_2_) {
+      public void beginRender(BufferBuilder bufferBuilder, TextureManager textureManager) {
          RenderSystem.enableBlend();
          RenderSystem.defaultBlendFunc();
          RenderSystem.depthMask(true);
-         p_217600_2_.bind(AtlasTexture.LOCATION_BLOCKS);
-         p_217600_1_.begin(7, DefaultVertexFormats.PARTICLE);
+         textureManager.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+         bufferBuilder.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
       }
 
-      public void end(Tessellator p_217599_1_) {
-         p_217599_1_.end();
+      public void finishRender(Tessellator tesselator) {
+         tesselator.draw();
       }
 
       public String toString() {
@@ -30,15 +30,15 @@ public interface IParticleRenderType {
       }
    };
    IParticleRenderType PARTICLE_SHEET_OPAQUE = new IParticleRenderType() {
-      public void begin(BufferBuilder p_217600_1_, TextureManager p_217600_2_) {
+      public void beginRender(BufferBuilder bufferBuilder, TextureManager textureManager) {
          RenderSystem.disableBlend();
          RenderSystem.depthMask(true);
-         p_217600_2_.bind(AtlasTexture.LOCATION_PARTICLES);
-         p_217600_1_.begin(7, DefaultVertexFormats.PARTICLE);
+         textureManager.bindTexture(AtlasTexture.LOCATION_PARTICLES_TEXTURE);
+         bufferBuilder.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
       }
 
-      public void end(Tessellator p_217599_1_) {
-         p_217599_1_.end();
+      public void finishRender(Tessellator tesselator) {
+         tesselator.draw();
       }
 
       public String toString() {
@@ -46,17 +46,17 @@ public interface IParticleRenderType {
       }
    };
    IParticleRenderType PARTICLE_SHEET_TRANSLUCENT = new IParticleRenderType() {
-      public void begin(BufferBuilder p_217600_1_, TextureManager p_217600_2_) {
+      public void beginRender(BufferBuilder bufferBuilder, TextureManager textureManager) {
          RenderSystem.depthMask(true);
-         p_217600_2_.bind(AtlasTexture.LOCATION_PARTICLES);
+         textureManager.bindTexture(AtlasTexture.LOCATION_PARTICLES_TEXTURE);
          RenderSystem.enableBlend();
          RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
          RenderSystem.alphaFunc(516, 0.003921569F);
-         p_217600_1_.begin(7, DefaultVertexFormats.PARTICLE);
+         bufferBuilder.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
       }
 
-      public void end(Tessellator p_217599_1_) {
-         p_217599_1_.end();
+      public void finishRender(Tessellator tesselator) {
+         tesselator.draw();
       }
 
       public String toString() {
@@ -64,15 +64,15 @@ public interface IParticleRenderType {
       }
    };
    IParticleRenderType PARTICLE_SHEET_LIT = new IParticleRenderType() {
-      public void begin(BufferBuilder p_217600_1_, TextureManager p_217600_2_) {
+      public void beginRender(BufferBuilder bufferBuilder, TextureManager textureManager) {
          RenderSystem.disableBlend();
          RenderSystem.depthMask(true);
-         p_217600_2_.bind(AtlasTexture.LOCATION_PARTICLES);
-         p_217600_1_.begin(7, DefaultVertexFormats.PARTICLE);
+         textureManager.bindTexture(AtlasTexture.LOCATION_PARTICLES_TEXTURE);
+         bufferBuilder.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
       }
 
-      public void end(Tessellator p_217599_1_) {
-         p_217599_1_.end();
+      public void finishRender(Tessellator tesselator) {
+         tesselator.draw();
       }
 
       public String toString() {
@@ -80,12 +80,12 @@ public interface IParticleRenderType {
       }
    };
    IParticleRenderType CUSTOM = new IParticleRenderType() {
-      public void begin(BufferBuilder p_217600_1_, TextureManager p_217600_2_) {
+      public void beginRender(BufferBuilder bufferBuilder, TextureManager textureManager) {
          RenderSystem.depthMask(true);
          RenderSystem.disableBlend();
       }
 
-      public void end(Tessellator p_217599_1_) {
+      public void finishRender(Tessellator tesselator) {
       }
 
       public String toString() {
@@ -93,10 +93,10 @@ public interface IParticleRenderType {
       }
    };
    IParticleRenderType NO_RENDER = new IParticleRenderType() {
-      public void begin(BufferBuilder p_217600_1_, TextureManager p_217600_2_) {
+      public void beginRender(BufferBuilder bufferBuilder, TextureManager textureManager) {
       }
 
-      public void end(Tessellator p_217599_1_) {
+      public void finishRender(Tessellator tesselator) {
       }
 
       public String toString() {
@@ -104,7 +104,7 @@ public interface IParticleRenderType {
       }
    };
 
-   void begin(BufferBuilder p_217600_1_, TextureManager p_217600_2_);
+   void beginRender(BufferBuilder bufferBuilder, TextureManager textureManager);
 
-   void end(Tessellator p_217599_1_);
+   void finishRender(Tessellator tesselator);
 }

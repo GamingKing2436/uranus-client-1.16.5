@@ -9,32 +9,32 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SUpdateHealthPacket implements IPacket<IClientPlayNetHandler> {
    private float health;
-   private int food;
-   private float saturation;
+   private int foodLevel;
+   private float saturationLevel;
 
    public SUpdateHealthPacket() {
    }
 
-   public SUpdateHealthPacket(float p_i46911_1_, int p_i46911_2_, float p_i46911_3_) {
-      this.health = p_i46911_1_;
-      this.food = p_i46911_2_;
-      this.saturation = p_i46911_3_;
+   public SUpdateHealthPacket(float healthIn, int foodLevelIn, float saturationLevelIn) {
+      this.health = healthIn;
+      this.foodLevel = foodLevelIn;
+      this.saturationLevel = saturationLevelIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.health = p_148837_1_.readFloat();
-      this.food = p_148837_1_.readVarInt();
-      this.saturation = p_148837_1_.readFloat();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.health = buf.readFloat();
+      this.foodLevel = buf.readVarInt();
+      this.saturationLevel = buf.readFloat();
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeFloat(this.health);
-      p_148840_1_.writeVarInt(this.food);
-      p_148840_1_.writeFloat(this.saturation);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeFloat(this.health);
+      buf.writeVarInt(this.foodLevel);
+      buf.writeFloat(this.saturationLevel);
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleSetHealth(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleUpdateHealth(this);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -43,12 +43,12 @@ public class SUpdateHealthPacket implements IPacket<IClientPlayNetHandler> {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getFood() {
-      return this.food;
+   public int getFoodLevel() {
+      return this.foodLevel;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getSaturation() {
-      return this.saturation;
+   public float getSaturationLevel() {
+      return this.saturationLevel;
    }
 }

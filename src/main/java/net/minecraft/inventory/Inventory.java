@@ -12,58 +12,58 @@ import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.NonNullList;
 
 public class Inventory implements IInventory, IRecipeHelperPopulator {
-   private final int size;
-   private final NonNullList<ItemStack> items;
+   private final int slotsCount;
+   private final NonNullList<ItemStack> inventoryContents;
    private List<IInventoryChangedListener> listeners;
 
-   public Inventory(int p_i50397_1_) {
-      this.size = p_i50397_1_;
-      this.items = NonNullList.withSize(p_i50397_1_, ItemStack.EMPTY);
+   public Inventory(int numSlots) {
+      this.slotsCount = numSlots;
+      this.inventoryContents = NonNullList.withSize(numSlots, ItemStack.EMPTY);
    }
 
-   public Inventory(ItemStack... p_i50398_1_) {
-      this.size = p_i50398_1_.length;
-      this.items = NonNullList.of(ItemStack.EMPTY, p_i50398_1_);
+   public Inventory(ItemStack... stacksIn) {
+      this.slotsCount = stacksIn.length;
+      this.inventoryContents = NonNullList.from(ItemStack.EMPTY, stacksIn);
    }
 
-   public void addListener(IInventoryChangedListener p_110134_1_) {
+   public void addListener(IInventoryChangedListener listener) {
       if (this.listeners == null) {
          this.listeners = Lists.newArrayList();
       }
 
-      this.listeners.add(p_110134_1_);
+      this.listeners.add(listener);
    }
 
-   public void removeListener(IInventoryChangedListener p_110132_1_) {
-      this.listeners.remove(p_110132_1_);
+   public void removeListener(IInventoryChangedListener listener) {
+      this.listeners.remove(listener);
    }
 
-   public ItemStack getItem(int p_70301_1_) {
-      return p_70301_1_ >= 0 && p_70301_1_ < this.items.size() ? this.items.get(p_70301_1_) : ItemStack.EMPTY;
+   public ItemStack getStackInSlot(int index) {
+      return index >= 0 && index < this.inventoryContents.size() ? this.inventoryContents.get(index) : ItemStack.EMPTY;
    }
 
-   public List<ItemStack> removeAllItems() {
-      List<ItemStack> list = this.items.stream().filter((p_233544_0_) -> {
+   public List<ItemStack> func_233543_f_() {
+      List<ItemStack> list = this.inventoryContents.stream().filter((p_233544_0_) -> {
          return !p_233544_0_.isEmpty();
       }).collect(Collectors.toList());
-      this.clearContent();
+      this.clear();
       return list;
    }
 
-   public ItemStack removeItem(int p_70298_1_, int p_70298_2_) {
-      ItemStack itemstack = ItemStackHelper.removeItem(this.items, p_70298_1_, p_70298_2_);
+   public ItemStack decrStackSize(int index, int count) {
+      ItemStack itemstack = ItemStackHelper.getAndSplit(this.inventoryContents, index, count);
       if (!itemstack.isEmpty()) {
-         this.setChanged();
+         this.markDirty();
       }
 
       return itemstack;
    }
 
-   public ItemStack removeItemType(Item p_223374_1_, int p_223374_2_) {
+   public ItemStack func_223374_a(Item p_223374_1_, int p_223374_2_) {
       ItemStack itemstack = new ItemStack(p_223374_1_, 0);
 
-      for(int i = this.size - 1; i >= 0; --i) {
-         ItemStack itemstack1 = this.getItem(i);
+      for(int i = this.slotsCount - 1; i >= 0; --i) {
+         ItemStack itemstack1 = this.getStackInSlot(i);
          if (itemstack1.getItem().equals(p_223374_1_)) {
             int j = p_223374_2_ - itemstack.getCount();
             ItemStack itemstack2 = itemstack1.split(j);
@@ -75,28 +75,28 @@ public class Inventory implements IInventory, IRecipeHelperPopulator {
       }
 
       if (!itemstack.isEmpty()) {
-         this.setChanged();
+         this.markDirty();
       }
 
       return itemstack;
    }
 
-   public ItemStack addItem(ItemStack p_174894_1_) {
-      ItemStack itemstack = p_174894_1_.copy();
-      this.moveItemToOccupiedSlotsWithSameType(itemstack);
+   public ItemStack addItem(ItemStack stack) {
+      ItemStack itemstack = stack.copy();
+      this.func_223372_c(itemstack);
       if (itemstack.isEmpty()) {
          return ItemStack.EMPTY;
       } else {
-         this.moveItemToEmptySlots(itemstack);
+         this.func_223375_b(itemstack);
          return itemstack.isEmpty() ? ItemStack.EMPTY : itemstack;
       }
    }
 
-   public boolean canAddItem(ItemStack p_233541_1_) {
+   public boolean func_233541_b_(ItemStack p_233541_1_) {
       boolean flag = false;
 
-      for(ItemStack itemstack : this.items) {
-         if (itemstack.isEmpty() || this.isSameItem(itemstack, p_233541_1_) && itemstack.getCount() < itemstack.getMaxStackSize()) {
+      for(ItemStack itemstack : this.inventoryContents) {
+         if (itemstack.isEmpty() || this.func_233540_a_(itemstack, p_233541_1_) && itemstack.getCount() < itemstack.getMaxStackSize()) {
             flag = true;
             break;
          }
@@ -105,31 +105,31 @@ public class Inventory implements IInventory, IRecipeHelperPopulator {
       return flag;
    }
 
-   public ItemStack removeItemNoUpdate(int p_70304_1_) {
-      ItemStack itemstack = this.items.get(p_70304_1_);
+   public ItemStack removeStackFromSlot(int index) {
+      ItemStack itemstack = this.inventoryContents.get(index);
       if (itemstack.isEmpty()) {
          return ItemStack.EMPTY;
       } else {
-         this.items.set(p_70304_1_, ItemStack.EMPTY);
+         this.inventoryContents.set(index, ItemStack.EMPTY);
          return itemstack;
       }
    }
 
-   public void setItem(int p_70299_1_, ItemStack p_70299_2_) {
-      this.items.set(p_70299_1_, p_70299_2_);
-      if (!p_70299_2_.isEmpty() && p_70299_2_.getCount() > this.getMaxStackSize()) {
-         p_70299_2_.setCount(this.getMaxStackSize());
+   public void setInventorySlotContents(int index, ItemStack stack) {
+      this.inventoryContents.set(index, stack);
+      if (!stack.isEmpty() && stack.getCount() > this.getInventoryStackLimit()) {
+         stack.setCount(this.getInventoryStackLimit());
       }
 
-      this.setChanged();
+      this.markDirty();
    }
 
-   public int getContainerSize() {
-      return this.size;
+   public int getSizeInventory() {
+      return this.slotsCount;
    }
 
    public boolean isEmpty() {
-      for(ItemStack itemstack : this.items) {
+      for(ItemStack itemstack : this.inventoryContents) {
          if (!itemstack.isEmpty()) {
             return false;
          }
@@ -138,42 +138,42 @@ public class Inventory implements IInventory, IRecipeHelperPopulator {
       return true;
    }
 
-   public void setChanged() {
+   public void markDirty() {
       if (this.listeners != null) {
          for(IInventoryChangedListener iinventorychangedlistener : this.listeners) {
-            iinventorychangedlistener.containerChanged(this);
+            iinventorychangedlistener.onInventoryChanged(this);
          }
       }
 
    }
 
-   public boolean stillValid(PlayerEntity p_70300_1_) {
+   public boolean isUsableByPlayer(PlayerEntity player) {
       return true;
    }
 
-   public void clearContent() {
-      this.items.clear();
-      this.setChanged();
+   public void clear() {
+      this.inventoryContents.clear();
+      this.markDirty();
    }
 
-   public void fillStackedContents(RecipeItemHelper p_194018_1_) {
-      for(ItemStack itemstack : this.items) {
-         p_194018_1_.accountStack(itemstack);
+   public void fillStackedContents(RecipeItemHelper helper) {
+      for(ItemStack itemstack : this.inventoryContents) {
+         helper.accountStack(itemstack);
       }
 
    }
 
    public String toString() {
-      return this.items.stream().filter((p_223371_0_) -> {
+      return this.inventoryContents.stream().filter((p_223371_0_) -> {
          return !p_223371_0_.isEmpty();
       }).collect(Collectors.toList()).toString();
    }
 
-   private void moveItemToEmptySlots(ItemStack p_223375_1_) {
-      for(int i = 0; i < this.size; ++i) {
-         ItemStack itemstack = this.getItem(i);
+   private void func_223375_b(ItemStack p_223375_1_) {
+      for(int i = 0; i < this.slotsCount; ++i) {
+         ItemStack itemstack = this.getStackInSlot(i);
          if (itemstack.isEmpty()) {
-            this.setItem(i, p_223375_1_.copy());
+            this.setInventorySlotContents(i, p_223375_1_.copy());
             p_223375_1_.setCount(0);
             return;
          }
@@ -181,11 +181,11 @@ public class Inventory implements IInventory, IRecipeHelperPopulator {
 
    }
 
-   private void moveItemToOccupiedSlotsWithSameType(ItemStack p_223372_1_) {
-      for(int i = 0; i < this.size; ++i) {
-         ItemStack itemstack = this.getItem(i);
-         if (this.isSameItem(itemstack, p_223372_1_)) {
-            this.moveItemsBetweenStacks(p_223372_1_, itemstack);
+   private void func_223372_c(ItemStack p_223372_1_) {
+      for(int i = 0; i < this.slotsCount; ++i) {
+         ItemStack itemstack = this.getStackInSlot(i);
+         if (this.func_233540_a_(itemstack, p_223372_1_)) {
+            this.func_223373_a(p_223372_1_, itemstack);
             if (p_223372_1_.isEmpty()) {
                return;
             }
@@ -194,24 +194,24 @@ public class Inventory implements IInventory, IRecipeHelperPopulator {
 
    }
 
-   private boolean isSameItem(ItemStack p_233540_1_, ItemStack p_233540_2_) {
-      return p_233540_1_.getItem() == p_233540_2_.getItem() && ItemStack.tagMatches(p_233540_1_, p_233540_2_);
+   private boolean func_233540_a_(ItemStack p_233540_1_, ItemStack p_233540_2_) {
+      return p_233540_1_.getItem() == p_233540_2_.getItem() && ItemStack.areItemStackTagsEqual(p_233540_1_, p_233540_2_);
    }
 
-   private void moveItemsBetweenStacks(ItemStack p_223373_1_, ItemStack p_223373_2_) {
-      int i = Math.min(this.getMaxStackSize(), p_223373_2_.getMaxStackSize());
+   private void func_223373_a(ItemStack p_223373_1_, ItemStack p_223373_2_) {
+      int i = Math.min(this.getInventoryStackLimit(), p_223373_2_.getMaxStackSize());
       int j = Math.min(p_223373_1_.getCount(), i - p_223373_2_.getCount());
       if (j > 0) {
          p_223373_2_.grow(j);
          p_223373_1_.shrink(j);
-         this.setChanged();
+         this.markDirty();
       }
 
    }
 
-   public void fromTag(ListNBT p_70486_1_) {
+   public void read(ListNBT p_70486_1_) {
       for(int i = 0; i < p_70486_1_.size(); ++i) {
-         ItemStack itemstack = ItemStack.of(p_70486_1_.getCompound(i));
+         ItemStack itemstack = ItemStack.read(p_70486_1_.getCompound(i));
          if (!itemstack.isEmpty()) {
             this.addItem(itemstack);
          }
@@ -219,13 +219,13 @@ public class Inventory implements IInventory, IRecipeHelperPopulator {
 
    }
 
-   public ListNBT createTag() {
+   public ListNBT write() {
       ListNBT listnbt = new ListNBT();
 
-      for(int i = 0; i < this.getContainerSize(); ++i) {
-         ItemStack itemstack = this.getItem(i);
+      for(int i = 0; i < this.getSizeInventory(); ++i) {
+         ItemStack itemstack = this.getStackInSlot(i);
          if (!itemstack.isEmpty()) {
-            listnbt.add(itemstack.save(new CompoundNBT()));
+            listnbt.add(itemstack.write(new CompoundNBT()));
          }
       }
 

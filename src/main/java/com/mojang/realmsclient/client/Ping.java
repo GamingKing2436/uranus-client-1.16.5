@@ -13,22 +13,22 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class Ping {
-   public static List<RegionPingResult> ping(Ping.Region... p_224867_0_) {
+   public static List<RegionPingResult> func_224867_a(Ping.Region... p_224867_0_) {
       for(Ping.Region ping$region : p_224867_0_) {
-         ping(ping$region.endpoint);
+         func_224868_a(ping$region.field_224863_j);
       }
 
       List<RegionPingResult> list = Lists.newArrayList();
 
       for(Ping.Region ping$region1 : p_224867_0_) {
-         list.add(new RegionPingResult(ping$region1.name, ping(ping$region1.endpoint)));
+         list.add(new RegionPingResult(ping$region1.field_224862_i, func_224868_a(ping$region1.field_224863_j)));
       }
 
-      list.sort(Comparator.comparingInt(RegionPingResult::ping));
+      list.sort(Comparator.comparingInt(RegionPingResult::func_230792_a_));
       return list;
    }
 
-   private static int ping(String p_224868_0_) {
+   private static int func_224868_a(String p_224868_0_) {
       int i = 700;
       long j = 0L;
       Socket socket = null;
@@ -37,20 +37,20 @@ public class Ping {
          try {
             SocketAddress socketaddress = new InetSocketAddress(p_224868_0_, 80);
             socket = new Socket();
-            long l = now();
+            long l = func_224865_b();
             socket.connect(socketaddress, 700);
-            j += now() - l;
+            j += func_224865_b() - l;
          } catch (Exception exception) {
             j += 700L;
          } finally {
-            close(socket);
+            func_224866_a(socket);
          }
       }
 
       return (int)((double)j / 5.0D);
    }
 
-   private static void close(Socket p_224866_0_) {
+   private static void func_224866_a(Socket p_224866_0_) {
       try {
          if (p_224866_0_ != null) {
             p_224866_0_.close();
@@ -60,12 +60,12 @@ public class Ping {
 
    }
 
-   private static long now() {
-      return Util.getMillis();
+   private static long func_224865_b() {
+      return Util.milliTime();
    }
 
-   public static List<RegionPingResult> pingAllRegions() {
-      return ping(Ping.Region.values());
+   public static List<RegionPingResult> func_224864_a() {
+      return func_224867_a(Ping.Region.values());
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -79,12 +79,12 @@ public class Ping {
       AP_NORTHEAST_1("ap-northeast-1", "ec2.ap-northeast-1.amazonaws.com"),
       SA_EAST_1("sa-east-1", "ec2.sa-east-1.amazonaws.com");
 
-      private final String name;
-      private final String endpoint;
+      private final String field_224862_i;
+      private final String field_224863_j;
 
       private Region(String p_i51602_3_, String p_i51602_4_) {
-         this.name = p_i51602_3_;
-         this.endpoint = p_i51602_4_;
+         this.field_224862_i = p_i51602_3_;
+         this.field_224863_j = p_i51602_4_;
       }
    }
 }

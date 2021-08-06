@@ -6,11 +6,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class OverlayTexture implements AutoCloseable {
-   public static final int NO_OVERLAY = pack(0, 10);
+   public static final int NO_OVERLAY = getPackedUV(0, 10);
    private final DynamicTexture texture = new DynamicTexture(16, 16, false);
 
    public OverlayTexture() {
-      NativeImage nativeimage = this.texture.getPixels();
+      NativeImage nativeimage = this.texture.getTextureData();
 
       for(int i = 0; i < 16; ++i) {
          for(int j = 0; j < 16; ++j) {
@@ -24,14 +24,14 @@ public class OverlayTexture implements AutoCloseable {
       }
 
       RenderSystem.activeTexture(33985);
-      this.texture.bind();
+      this.texture.bindTexture();
       RenderSystem.matrixMode(5890);
       RenderSystem.loadIdentity();
       float f = 0.06666667F;
       RenderSystem.scalef(0.06666667F, 0.06666667F, 0.06666667F);
       RenderSystem.matrixMode(5888);
-      this.texture.bind();
-      nativeimage.upload(0, 0, 0, 0, 0, nativeimage.getWidth(), nativeimage.getHeight(), false, true, false, false);
+      this.texture.bindTexture();
+      nativeimage.uploadTextureSub(0, 0, 0, 0, 0, nativeimage.getWidth(), nativeimage.getHeight(), false, true, false, false);
       RenderSystem.activeTexture(33984);
    }
 
@@ -40,23 +40,23 @@ public class OverlayTexture implements AutoCloseable {
    }
 
    public void setupOverlayColor() {
-      RenderSystem.setupOverlayColor(this.texture::getId, 16);
+      RenderSystem.setupOverlayColor(this.texture::getGlTextureId, 16);
    }
 
-   public static int u(float p_229199_0_) {
-      return (int)(p_229199_0_ * 15.0F);
+   public static int getU(float uIn) {
+      return (int)(uIn * 15.0F);
    }
 
-   public static int v(boolean p_229202_0_) {
-      return p_229202_0_ ? 3 : 10;
+   public static int getV(boolean hurtIn) {
+      return hurtIn ? 3 : 10;
    }
 
-   public static int pack(int p_229201_0_, int p_229201_1_) {
-      return p_229201_0_ | p_229201_1_ << 16;
+   public static int getPackedUV(int uIn, int vIn) {
+      return uIn | vIn << 16;
    }
 
-   public static int pack(float p_229200_0_, boolean p_229200_1_) {
-      return pack(u(p_229200_0_), v(p_229200_1_));
+   public static int getPackedUV(float uIn, boolean hurtIn) {
+      return getPackedUV(getU(uIn), getV(hurtIn));
    }
 
    public void teardownOverlayColor() {

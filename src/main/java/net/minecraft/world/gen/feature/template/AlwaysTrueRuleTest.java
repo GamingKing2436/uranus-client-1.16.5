@@ -5,7 +5,7 @@ import java.util.Random;
 import net.minecraft.block.BlockState;
 
 public class AlwaysTrueRuleTest extends RuleTest {
-   public static final Codec<AlwaysTrueRuleTest> CODEC;
+   public static final Codec<AlwaysTrueRuleTest> field_237043_a_;
    public static final AlwaysTrueRuleTest INSTANCE = new AlwaysTrueRuleTest();
 
    private AlwaysTrueRuleTest() {
@@ -16,11 +16,11 @@ public class AlwaysTrueRuleTest extends RuleTest {
    }
 
    protected IRuleTestType<?> getType() {
-      return IRuleTestType.ALWAYS_TRUE_TEST;
+      return IRuleTestType.ALWAYS_TRUE;
    }
 
    static {
-      CODEC = Codec.unit(() -> {
+      field_237043_a_ = Codec.unit(() -> {
          return INSTANCE;
       });
    }

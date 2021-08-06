@@ -15,27 +15,27 @@ import net.minecraft.util.text.TranslationTextComponent;
 
 public class EntitySummonArgument implements ArgumentType<ResourceLocation> {
    private static final Collection<String> EXAMPLES = Arrays.asList("minecraft:pig", "cow");
-   public static final DynamicCommandExceptionType ERROR_UNKNOWN_ENTITY = new DynamicCommandExceptionType((p_211367_0_) -> {
+   public static final DynamicCommandExceptionType ENTITY_UNKNOWN_TYPE = new DynamicCommandExceptionType((p_211367_0_) -> {
       return new TranslationTextComponent("entity.notFound", p_211367_0_);
    });
 
-   public static EntitySummonArgument id() {
+   public static EntitySummonArgument entitySummon() {
       return new EntitySummonArgument();
    }
 
-   public static ResourceLocation getSummonableEntity(CommandContext<CommandSource> p_211368_0_, String p_211368_1_) throws CommandSyntaxException {
-      return verifyCanSummon(p_211368_0_.getArgument(p_211368_1_, ResourceLocation.class));
+   public static ResourceLocation getEntityId(CommandContext<CommandSource> context, String name) throws CommandSyntaxException {
+      return checkIfEntityExists(context.getArgument(name, ResourceLocation.class));
    }
 
-   private static ResourceLocation verifyCanSummon(ResourceLocation p_211365_0_) throws CommandSyntaxException {
-      Registry.ENTITY_TYPE.getOptional(p_211365_0_).filter(EntityType::canSummon).orElseThrow(() -> {
-         return ERROR_UNKNOWN_ENTITY.create(p_211365_0_);
+   private static ResourceLocation checkIfEntityExists(ResourceLocation id) throws CommandSyntaxException {
+      Registry.ENTITY_TYPE.getOptional(id).filter(EntityType::isSummonable).orElseThrow(() -> {
+         return ENTITY_UNKNOWN_TYPE.create(id);
       });
-      return p_211365_0_;
+      return id;
    }
 
    public ResourceLocation parse(StringReader p_parse_1_) throws CommandSyntaxException {
-      return verifyCanSummon(ResourceLocation.read(p_parse_1_));
+      return checkIfEntityExists(ResourceLocation.read(p_parse_1_));
    }
 
    public Collection<String> getExamples() {

@@ -7,34 +7,34 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.play.IServerPlayNetHandler;
 
 public class CPlayerAbilitiesPacket implements IPacket<IServerPlayNetHandler> {
-   private boolean isFlying;
+   private boolean flying;
 
    public CPlayerAbilitiesPacket() {
    }
 
-   public CPlayerAbilitiesPacket(PlayerAbilities p_i46872_1_) {
-      this.isFlying = p_i46872_1_.flying;
+   public CPlayerAbilitiesPacket(PlayerAbilities capabilities) {
+      this.flying = capabilities.isFlying;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      byte b0 = p_148837_1_.readByte();
-      this.isFlying = (b0 & 2) != 0;
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      byte b0 = buf.readByte();
+      this.flying = (b0 & 2) != 0;
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
+   public void writePacketData(PacketBuffer buf) throws IOException {
       byte b0 = 0;
-      if (this.isFlying) {
+      if (this.flying) {
          b0 = (byte)(b0 | 2);
       }
 
-      p_148840_1_.writeByte(b0);
+      buf.writeByte(b0);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handlePlayerAbilities(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processPlayerAbilities(this);
    }
 
    public boolean isFlying() {
-      return this.isFlying;
+      return this.flying;
    }
 }

@@ -8,35 +8,35 @@ import net.minecraft.util.text.StringTextComponent;
 
 public class LongNBT extends NumberNBT {
    public static final INBTType<LongNBT> TYPE = new INBTType<LongNBT>() {
-      public LongNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(128L);
-         return LongNBT.valueOf(p_225649_1_.readLong());
+      public LongNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(128L);
+         return LongNBT.valueOf(input.readLong());
       }
 
       public String getName() {
          return "LONG";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_Long";
       }
 
-      public boolean isValue() {
+      public boolean isPrimitive() {
          return true;
       }
    };
    private final long data;
 
-   private LongNBT(long p_i45134_1_) {
-      this.data = p_i45134_1_;
+   private LongNBT(long data) {
+      this.data = data;
    }
 
-   public static LongNBT valueOf(long p_229698_0_) {
-      return p_229698_0_ >= -128L && p_229698_0_ <= 1024L ? LongNBT.Cache.cache[(int)p_229698_0_ + 128] : new LongNBT(p_229698_0_);
+   public static LongNBT valueOf(long value) {
+      return value >= -128L && value <= 1024L ? LongNBT.Cache.CACHE[(int)value + 128] : new LongNBT(value);
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      p_74734_1_.writeLong(this.data);
+   public void write(DataOutput output) throws IOException {
+      output.writeLong(this.data);
    }
 
    public byte getId() {
@@ -67,32 +67,32 @@ public class LongNBT extends NumberNBT {
       return (int)(this.data ^ this.data >>> 32);
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
-      ITextComponent itextcomponent = (new StringTextComponent("L")).withStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
-      return (new StringTextComponent(String.valueOf(this.data))).append(itextcomponent).withStyle(SYNTAX_HIGHLIGHTING_NUMBER);
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
+      ITextComponent itextcomponent = (new StringTextComponent("L")).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER_TYPE);
+      return (new StringTextComponent(String.valueOf(this.data))).append(itextcomponent).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER);
    }
 
-   public long getAsLong() {
+   public long getLong() {
       return this.data;
    }
 
-   public int getAsInt() {
+   public int getInt() {
       return (int)(this.data & -1L);
    }
 
-   public short getAsShort() {
+   public short getShort() {
       return (short)((int)(this.data & 65535L));
    }
 
-   public byte getAsByte() {
+   public byte getByte() {
       return (byte)((int)(this.data & 255L));
    }
 
-   public double getAsDouble() {
+   public double getDouble() {
       return (double)this.data;
    }
 
-   public float getAsFloat() {
+   public float getFloat() {
       return (float)this.data;
    }
 
@@ -101,11 +101,11 @@ public class LongNBT extends NumberNBT {
    }
 
    static class Cache {
-      static final LongNBT[] cache = new LongNBT[1153];
+      static final LongNBT[] CACHE = new LongNBT[1153];
 
       static {
-         for(int i = 0; i < cache.length; ++i) {
-            cache[i] = new LongNBT((long)(-128 + i));
+         for(int i = 0; i < CACHE.length; ++i) {
+            CACHE[i] = new LongNBT((long)(-128 + i));
          }
 
       }

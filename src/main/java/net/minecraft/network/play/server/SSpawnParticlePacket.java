@@ -12,15 +12,15 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SSpawnParticlePacket implements IPacket<IClientPlayNetHandler> {
-   private double x;
-   private double y;
-   private double z;
-   private float xDist;
-   private float yDist;
-   private float zDist;
-   private float maxSpeed;
-   private int count;
-   private boolean overrideLimiter;
+   private double xCoord;
+   private double yCoord;
+   private double zCoord;
+   private float xOffset;
+   private float yOffset;
+   private float zOffset;
+   private float particleSpeed;
+   private int particleCount;
+   private boolean longDistance;
    private IParticleData particle;
 
    public SSpawnParticlePacket() {
@@ -28,96 +28,96 @@ public class SSpawnParticlePacket implements IPacket<IClientPlayNetHandler> {
 
    public <T extends IParticleData> SSpawnParticlePacket(T p_i229960_1_, boolean p_i229960_2_, double p_i229960_3_, double p_i229960_5_, double p_i229960_7_, float p_i229960_9_, float p_i229960_10_, float p_i229960_11_, float p_i229960_12_, int p_i229960_13_) {
       this.particle = p_i229960_1_;
-      this.overrideLimiter = p_i229960_2_;
-      this.x = p_i229960_3_;
-      this.y = p_i229960_5_;
-      this.z = p_i229960_7_;
-      this.xDist = p_i229960_9_;
-      this.yDist = p_i229960_10_;
-      this.zDist = p_i229960_11_;
-      this.maxSpeed = p_i229960_12_;
-      this.count = p_i229960_13_;
+      this.longDistance = p_i229960_2_;
+      this.xCoord = p_i229960_3_;
+      this.yCoord = p_i229960_5_;
+      this.zCoord = p_i229960_7_;
+      this.xOffset = p_i229960_9_;
+      this.yOffset = p_i229960_10_;
+      this.zOffset = p_i229960_11_;
+      this.particleSpeed = p_i229960_12_;
+      this.particleCount = p_i229960_13_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      ParticleType<?> particletype = Registry.PARTICLE_TYPE.byId(p_148837_1_.readInt());
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      ParticleType<?> particletype = Registry.PARTICLE_TYPE.getByValue(buf.readInt());
       if (particletype == null) {
          particletype = ParticleTypes.BARRIER;
       }
 
-      this.overrideLimiter = p_148837_1_.readBoolean();
-      this.x = p_148837_1_.readDouble();
-      this.y = p_148837_1_.readDouble();
-      this.z = p_148837_1_.readDouble();
-      this.xDist = p_148837_1_.readFloat();
-      this.yDist = p_148837_1_.readFloat();
-      this.zDist = p_148837_1_.readFloat();
-      this.maxSpeed = p_148837_1_.readFloat();
-      this.count = p_148837_1_.readInt();
-      this.particle = this.readParticle(p_148837_1_, particletype);
+      this.longDistance = buf.readBoolean();
+      this.xCoord = buf.readDouble();
+      this.yCoord = buf.readDouble();
+      this.zCoord = buf.readDouble();
+      this.xOffset = buf.readFloat();
+      this.yOffset = buf.readFloat();
+      this.zOffset = buf.readFloat();
+      this.particleSpeed = buf.readFloat();
+      this.particleCount = buf.readInt();
+      this.particle = this.readParticle(buf, particletype);
    }
 
    private <T extends IParticleData> T readParticle(PacketBuffer p_199855_1_, ParticleType<T> p_199855_2_) {
-      return p_199855_2_.getDeserializer().fromNetwork(p_199855_2_, p_199855_1_);
+      return p_199855_2_.getDeserializer().read(p_199855_2_, p_199855_1_);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeInt(Registry.PARTICLE_TYPE.getId(this.particle.getType()));
-      p_148840_1_.writeBoolean(this.overrideLimiter);
-      p_148840_1_.writeDouble(this.x);
-      p_148840_1_.writeDouble(this.y);
-      p_148840_1_.writeDouble(this.z);
-      p_148840_1_.writeFloat(this.xDist);
-      p_148840_1_.writeFloat(this.yDist);
-      p_148840_1_.writeFloat(this.zDist);
-      p_148840_1_.writeFloat(this.maxSpeed);
-      p_148840_1_.writeInt(this.count);
-      this.particle.writeToNetwork(p_148840_1_);
-   }
-
-   @OnlyIn(Dist.CLIENT)
-   public boolean isOverrideLimiter() {
-      return this.overrideLimiter;
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeInt(Registry.PARTICLE_TYPE.getId(this.particle.getType()));
+      buf.writeBoolean(this.longDistance);
+      buf.writeDouble(this.xCoord);
+      buf.writeDouble(this.yCoord);
+      buf.writeDouble(this.zCoord);
+      buf.writeFloat(this.xOffset);
+      buf.writeFloat(this.yOffset);
+      buf.writeFloat(this.zOffset);
+      buf.writeFloat(this.particleSpeed);
+      buf.writeInt(this.particleCount);
+      this.particle.write(buf);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public double getX() {
-      return this.x;
+   public boolean isLongDistance() {
+      return this.longDistance;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public double getY() {
-      return this.y;
+   public double getXCoordinate() {
+      return this.xCoord;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public double getZ() {
-      return this.z;
+   public double getYCoordinate() {
+      return this.yCoord;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getXDist() {
-      return this.xDist;
+   public double getZCoordinate() {
+      return this.zCoord;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getYDist() {
-      return this.yDist;
+   public float getXOffset() {
+      return this.xOffset;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getZDist() {
-      return this.zDist;
+   public float getYOffset() {
+      return this.yOffset;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float getMaxSpeed() {
-      return this.maxSpeed;
+   public float getZOffset() {
+      return this.zOffset;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public int getCount() {
-      return this.count;
+   public float getParticleSpeed() {
+      return this.particleSpeed;
+   }
+
+   @OnlyIn(Dist.CLIENT)
+   public int getParticleCount() {
+      return this.particleCount;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -125,7 +125,7 @@ public class SSpawnParticlePacket implements IPacket<IClientPlayNetHandler> {
       return this.particle;
    }
 
-   public void handle(IClientPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleParticleEvent(this);
+   public void processPacket(IClientPlayNetHandler handler) {
+      handler.handleParticles(this);
    }
 }

@@ -16,14 +16,14 @@ import net.minecraft.util.datafix.TypeReferences;
 import org.apache.commons.lang3.math.NumberUtils;
 
 public class BlockStateFlattenGenOptions extends DataFix {
-   private static final Splitter SPLITTER = Splitter.on(';').limit(5);
-   private static final Splitter LAYER_SPLITTER = Splitter.on(',');
-   private static final Splitter OLD_AMOUNT_SPLITTER = Splitter.on('x').limit(2);
-   private static final Splitter AMOUNT_SPLITTER = Splitter.on('*').limit(2);
-   private static final Splitter BLOCK_SPLITTER = Splitter.on(':').limit(3);
+   private static final Splitter field_199181_a = Splitter.on(';').limit(5);
+   private static final Splitter field_199182_b = Splitter.on(',');
+   private static final Splitter field_199183_c = Splitter.on('x').limit(2);
+   private static final Splitter field_199184_d = Splitter.on('*').limit(2);
+   private static final Splitter field_199185_e = Splitter.on(':').limit(3);
 
-   public BlockStateFlattenGenOptions(Schema p_i49627_1_, boolean p_i49627_2_) {
-      super(p_i49627_1_, p_i49627_2_);
+   public BlockStateFlattenGenOptions(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
@@ -43,7 +43,7 @@ public class BlockStateFlattenGenOptions extends DataFix {
       if (p_199180_1_.isEmpty()) {
          return "minecraft:bedrock,2*minecraft:dirt,minecraft:grass_block;1;village";
       } else {
-         Iterator<String> iterator = SPLITTER.split(p_199180_1_).iterator();
+         Iterator<String> iterator = field_199181_a.split(p_199180_1_).iterator();
          String s = iterator.next();
          int i;
          String s1;
@@ -57,8 +57,8 @@ public class BlockStateFlattenGenOptions extends DataFix {
 
          if (i >= 0 && i <= 3) {
             StringBuilder stringbuilder = new StringBuilder();
-            Splitter splitter = i < 3 ? OLD_AMOUNT_SPLITTER : AMOUNT_SPLITTER;
-            stringbuilder.append(StreamSupport.stream(LAYER_SPLITTER.split(s1).spliterator(), false).map((p_206368_2_) -> {
+            Splitter splitter = i < 3 ? field_199183_c : field_199184_d;
+            stringbuilder.append(StreamSupport.stream(field_199182_b.split(s1).spliterator(), false).map((p_206368_2_) -> {
                List<String> list = splitter.splitToList(p_206368_2_);
                int j;
                String s2;
@@ -70,13 +70,13 @@ public class BlockStateFlattenGenOptions extends DataFix {
                   s2 = list.get(0);
                }
 
-               List<String> list1 = BLOCK_SPLITTER.splitToList(s2);
+               List<String> list1 = field_199185_e.splitToList(s2);
                int k = list1.get(0).equals("minecraft") ? 1 : 0;
                String s3 = list1.get(k);
                int l = i == 3 ? BlockStateFlatternEntities.getBlockId("minecraft:" + s3) : NumberUtils.toInt(s3, 0);
                int i1 = k + 1;
                int j1 = list1.size() > i1 ? NumberUtils.toInt(list1.get(i1), 0) : 0;
-               return (j == 1 ? "" : j + "*") + BlockStateFlatteningMap.getTag(l << 4 | j1).get("Name").asString("");
+               return (j == 1 ? "" : j + "*") + BlockStateFlatteningMap.getFixedNBTForID(l << 4 | j1).get("Name").asString("");
             }).collect(Collectors.joining(",")));
 
             while(iterator.hasNext()) {

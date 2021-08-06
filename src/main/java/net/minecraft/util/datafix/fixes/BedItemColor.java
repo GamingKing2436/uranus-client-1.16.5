@@ -13,12 +13,12 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class BedItemColor extends DataFix {
-   public BedItemColor(Schema p_i49689_1_, boolean p_i49689_2_) {
-      super(p_i49689_1_, p_i49689_2_);
+   public BedItemColor(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
-      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
+      OpticFinder<Pair<String, String>> opticfinder = DSL.fieldFinder("id", DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
       return this.fixTypeEverywhereTyped("BedItemColorFix", this.getInputSchema().getType(TypeReferences.ITEM_STACK), (p_207435_1_) -> {
          Optional<Pair<String, String>> optional = p_207435_1_.getOptional(opticfinder);
          if (optional.isPresent() && Objects.equals(optional.get().getSecond(), "minecraft:bed")) {

@@ -8,8 +8,8 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class IglooMetadataRemoval extends DataFix {
-   public IglooMetadataRemoval(Schema p_i49783_1_, boolean p_i49783_2_) {
-      super(p_i49783_1_, p_i49783_2_);
+   public IglooMetadataRemoval(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    protected TypeRewriteRule makeRule() {

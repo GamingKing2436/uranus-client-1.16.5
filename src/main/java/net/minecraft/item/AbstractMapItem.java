@@ -6,8 +6,8 @@ import net.minecraft.network.IPacket;
 import net.minecraft.world.World;
 
 public class AbstractMapItem extends Item {
-   public AbstractMapItem(Item.Properties p_i48514_1_) {
-      super(p_i48514_1_);
+   public AbstractMapItem(Item.Properties builder) {
+      super(builder);
    }
 
    public boolean isComplex() {
@@ -15,7 +15,7 @@ public class AbstractMapItem extends Item {
    }
 
    @Nullable
-   public IPacket<?> getUpdatePacket(ItemStack p_150911_1_, World p_150911_2_, PlayerEntity p_150911_3_) {
+   public IPacket<?> getUpdatePacket(ItemStack stack, World worldIn, PlayerEntity player) {
       return null;
    }
 }

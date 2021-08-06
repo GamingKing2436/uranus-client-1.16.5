@@ -14,24 +14,24 @@ public enum TutorialSteps {
    NONE("none", CompletedTutorialStep::new);
 
    private final String name;
-   private final Function<Tutorial, ? extends ITutorialStep> constructor;
+   private final Function<Tutorial, ? extends ITutorialStep> tutorial;
 
-   private <T extends ITutorialStep> TutorialSteps(String p_i47577_3_, Function<Tutorial, T> p_i47577_4_) {
-      this.name = p_i47577_3_;
-      this.constructor = p_i47577_4_;
+   private <T extends ITutorialStep> TutorialSteps(String nameIn, Function<Tutorial, T> constructor) {
+      this.name = nameIn;
+      this.tutorial = constructor;
    }
 
-   public ITutorialStep create(Tutorial p_193309_1_) {
-      return this.constructor.apply(p_193309_1_);
+   public ITutorialStep create(Tutorial tutorial) {
+      return this.tutorial.apply(tutorial);
    }
 
    public String getName() {
       return this.name;
    }
 
-   public static TutorialSteps getByName(String p_193307_0_) {
+   public static TutorialSteps byName(String name) {
       for(TutorialSteps tutorialsteps : values()) {
-         if (tutorialsteps.name.equals(p_193307_0_)) {
+         if (tutorialsteps.name.equals(name)) {
             return tutorialsteps;
          }
       }

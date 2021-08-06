@@ -5,25 +5,25 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ChatLine<T> {
-   private final int addedTime;
-   private final T message;
-   private final int id;
+   private final int updateCounterCreated;
+   private final T lineString;
+   private final int chatLineID;
 
-   public ChatLine(int p_i242050_1_, T p_i242050_2_, int p_i242050_3_) {
-      this.message = p_i242050_2_;
-      this.addedTime = p_i242050_1_;
-      this.id = p_i242050_3_;
+   public ChatLine(int updatedCounterCreated, T lineString, int chatLineID) {
+      this.lineString = lineString;
+      this.updateCounterCreated = updatedCounterCreated;
+      this.chatLineID = chatLineID;
    }
 
-   public T getMessage() {
-      return this.message;
+   public T getLineString() {
+      return this.lineString;
    }
 
-   public int getAddedTime() {
-      return this.addedTime;
+   public int getUpdatedCounter() {
+      return this.updateCounterCreated;
    }
 
-   public int getId() {
-      return this.id;
+   public int getChatLineID() {
+      return this.chatLineID;
    }
 }

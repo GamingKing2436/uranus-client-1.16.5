@@ -25,26 +25,26 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class FishBucketItem extends BucketItem {
-   private final EntityType<?> type;
+   private final EntityType<?> fishType;
 
-   public FishBucketItem(EntityType<?> p_i49022_1_, Fluid p_i49022_2_, Item.Properties p_i49022_3_) {
-      super(p_i49022_2_, p_i49022_3_);
-      this.type = p_i49022_1_;
+   public FishBucketItem(EntityType<?> fishTypeIn, Fluid fluid, Item.Properties builder) {
+      super(fluid, builder);
+      this.fishType = fishTypeIn;
    }
 
-   public void checkExtraContent(World p_203792_1_, ItemStack p_203792_2_, BlockPos p_203792_3_) {
-      if (p_203792_1_ instanceof ServerWorld) {
-         this.spawn((ServerWorld)p_203792_1_, p_203792_2_, p_203792_3_);
+   public void onLiquidPlaced(World worldIn, ItemStack p_203792_2_, BlockPos pos) {
+      if (worldIn instanceof ServerWorld) {
+         this.placeFish((ServerWorld)worldIn, p_203792_2_, pos);
       }
 
    }
 
-   protected void playEmptySound(@Nullable PlayerEntity p_203791_1_, IWorld p_203791_2_, BlockPos p_203791_3_) {
-      p_203791_2_.playSound(p_203791_1_, p_203791_3_, SoundEvents.BUCKET_EMPTY_FISH, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+   protected void playEmptySound(@Nullable PlayerEntity player, IWorld worldIn, BlockPos pos) {
+      worldIn.playSound(player, pos, SoundEvents.ITEM_BUCKET_EMPTY_FISH, SoundCategory.NEUTRAL, 1.0F, 1.0F);
    }
 
-   private void spawn(ServerWorld p_205357_1_, ItemStack p_205357_2_, BlockPos p_205357_3_) {
-      Entity entity = this.type.spawn(p_205357_1_, p_205357_2_, (PlayerEntity)null, p_205357_3_, SpawnReason.BUCKET, true, false);
+   private void placeFish(ServerWorld worldIn, ItemStack stack, BlockPos pos) {
+      Entity entity = this.fishType.spawn(worldIn, stack, (PlayerEntity)null, pos, SpawnReason.BUCKET, true, false);
       if (entity != null) {
          ((AbstractFishEntity)entity).setFromBucket(true);
       }
@@ -52,30 +52,30 @@ public class FishBucketItem extends BucketItem {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void appendHoverText(ItemStack p_77624_1_, @Nullable World p_77624_2_, List<ITextComponent> p_77624_3_, ITooltipFlag p_77624_4_) {
-      if (this.type == EntityType.TROPICAL_FISH) {
-         CompoundNBT compoundnbt = p_77624_1_.getTag();
+   public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+      if (this.fishType == EntityType.TROPICAL_FISH) {
+         CompoundNBT compoundnbt = stack.getTag();
          if (compoundnbt != null && compoundnbt.contains("BucketVariantTag", 3)) {
             int i = compoundnbt.getInt("BucketVariantTag");
             TextFormatting[] atextformatting = new TextFormatting[]{TextFormatting.ITALIC, TextFormatting.GRAY};
-            String s = "color.minecraft." + TropicalFishEntity.getBaseColor(i);
-            String s1 = "color.minecraft." + TropicalFishEntity.getPatternColor(i);
+            String s = "color.minecraft." + TropicalFishEntity.func_212326_d(i);
+            String s1 = "color.minecraft." + TropicalFishEntity.func_212323_p(i);
 
-            for(int j = 0; j < TropicalFishEntity.COMMON_VARIANTS.length; ++j) {
-               if (i == TropicalFishEntity.COMMON_VARIANTS[j]) {
-                  p_77624_3_.add((new TranslationTextComponent(TropicalFishEntity.getPredefinedName(j))).withStyle(atextformatting));
+            for(int j = 0; j < TropicalFishEntity.SPECIAL_VARIANTS.length; ++j) {
+               if (i == TropicalFishEntity.SPECIAL_VARIANTS[j]) {
+                  tooltip.add((new TranslationTextComponent(TropicalFishEntity.func_212324_b(j))).mergeStyle(atextformatting));
                   return;
                }
             }
 
-            p_77624_3_.add((new TranslationTextComponent(TropicalFishEntity.getFishTypeName(i))).withStyle(atextformatting));
+            tooltip.add((new TranslationTextComponent(TropicalFishEntity.func_212327_q(i))).mergeStyle(atextformatting));
             IFormattableTextComponent iformattabletextcomponent = new TranslationTextComponent(s);
             if (!s.equals(s1)) {
-               iformattabletextcomponent.append(", ").append(new TranslationTextComponent(s1));
+               iformattabletextcomponent.appendString(", ").append(new TranslationTextComponent(s1));
             }
 
-            iformattabletextcomponent.withStyle(atextformatting);
-            p_77624_3_.add(iformattabletextcomponent);
+            iformattabletextcomponent.mergeStyle(atextformatting);
+            tooltip.add(iformattabletextcomponent);
          }
       }
 

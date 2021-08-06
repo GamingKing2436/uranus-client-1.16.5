@@ -4,40 +4,40 @@ import java.util.List;
 import net.minecraft.nbt.CompoundNBT;
 
 public interface IDyeableArmorItem {
-   default boolean hasCustomColor(ItemStack p_200883_1_) {
-      CompoundNBT compoundnbt = p_200883_1_.getTagElement("display");
+   default boolean hasColor(ItemStack stack) {
+      CompoundNBT compoundnbt = stack.getChildTag("display");
       return compoundnbt != null && compoundnbt.contains("color", 99);
    }
 
-   default int getColor(ItemStack p_200886_1_) {
-      CompoundNBT compoundnbt = p_200886_1_.getTagElement("display");
+   default int getColor(ItemStack stack) {
+      CompoundNBT compoundnbt = stack.getChildTag("display");
       return compoundnbt != null && compoundnbt.contains("color", 99) ? compoundnbt.getInt("color") : 10511680;
    }
 
-   default void clearColor(ItemStack p_200884_1_) {
-      CompoundNBT compoundnbt = p_200884_1_.getTagElement("display");
+   default void removeColor(ItemStack stack) {
+      CompoundNBT compoundnbt = stack.getChildTag("display");
       if (compoundnbt != null && compoundnbt.contains("color")) {
          compoundnbt.remove("color");
       }
 
    }
 
-   default void setColor(ItemStack p_200885_1_, int p_200885_2_) {
-      p_200885_1_.getOrCreateTagElement("display").putInt("color", p_200885_2_);
+   default void setColor(ItemStack stack, int color) {
+      stack.getOrCreateChildTag("display").putInt("color", color);
    }
 
-   static ItemStack dyeArmor(ItemStack p_219975_0_, List<DyeItem> p_219975_1_) {
+   static ItemStack dyeItem(ItemStack stack, List<DyeItem> dyes) {
       ItemStack itemstack = ItemStack.EMPTY;
       int[] aint = new int[3];
       int i = 0;
       int j = 0;
       IDyeableArmorItem idyeablearmoritem = null;
-      Item item = p_219975_0_.getItem();
+      Item item = stack.getItem();
       if (item instanceof IDyeableArmorItem) {
          idyeablearmoritem = (IDyeableArmorItem)item;
-         itemstack = p_219975_0_.copy();
+         itemstack = stack.copy();
          itemstack.setCount(1);
-         if (idyeablearmoritem.hasCustomColor(p_219975_0_)) {
+         if (idyeablearmoritem.hasColor(stack)) {
             int k = idyeablearmoritem.getColor(itemstack);
             float f = (float)(k >> 16 & 255) / 255.0F;
             float f1 = (float)(k >> 8 & 255) / 255.0F;
@@ -49,8 +49,8 @@ public interface IDyeableArmorItem {
             ++j;
          }
 
-         for(DyeItem dyeitem : p_219975_1_) {
-            float[] afloat = dyeitem.getDyeColor().getTextureDiffuseColors();
+         for(DyeItem dyeitem : dyes) {
+            float[] afloat = dyeitem.getDyeColor().getColorComponentValues();
             int i2 = (int)(afloat[0] * 255.0F);
             int l = (int)(afloat[1] * 255.0F);
             int i1 = (int)(afloat[2] * 255.0F);

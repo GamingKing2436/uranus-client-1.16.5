@@ -25,25 +25,25 @@ public class DisplayInfo {
    private final ResourceLocation background;
    private final FrameType frame;
    private final boolean showToast;
-   private final boolean announceChat;
+   private final boolean announceToChat;
    private final boolean hidden;
    private float x;
    private float y;
 
-   public DisplayInfo(ItemStack p_i47586_1_, ITextComponent p_i47586_2_, ITextComponent p_i47586_3_, @Nullable ResourceLocation p_i47586_4_, FrameType p_i47586_5_, boolean p_i47586_6_, boolean p_i47586_7_, boolean p_i47586_8_) {
-      this.title = p_i47586_2_;
-      this.description = p_i47586_3_;
-      this.icon = p_i47586_1_;
-      this.background = p_i47586_4_;
-      this.frame = p_i47586_5_;
-      this.showToast = p_i47586_6_;
-      this.announceChat = p_i47586_7_;
-      this.hidden = p_i47586_8_;
+   public DisplayInfo(ItemStack icon, ITextComponent title, ITextComponent description, @Nullable ResourceLocation background, FrameType frame, boolean showToast, boolean announceToChat, boolean hidden) {
+      this.title = title;
+      this.description = description;
+      this.icon = icon;
+      this.background = background;
+      this.frame = frame;
+      this.showToast = showToast;
+      this.announceToChat = announceToChat;
+      this.hidden = hidden;
    }
 
-   public void setLocation(float p_192292_1_, float p_192292_2_) {
-      this.x = p_192292_1_;
-      this.y = p_192292_2_;
+   public void setPosition(float x, float y) {
+      this.x = x;
+      this.y = y;
    }
 
    public ITextComponent getTitle() {
@@ -84,42 +84,42 @@ public class DisplayInfo {
       return this.showToast;
    }
 
-   public boolean shouldAnnounceChat() {
-      return this.announceChat;
+   public boolean shouldAnnounceToChat() {
+      return this.announceToChat;
    }
 
    public boolean isHidden() {
       return this.hidden;
    }
 
-   public static DisplayInfo fromJson(JsonObject p_192294_0_) {
-      ITextComponent itextcomponent = ITextComponent.Serializer.fromJson(p_192294_0_.get("title"));
-      ITextComponent itextcomponent1 = ITextComponent.Serializer.fromJson(p_192294_0_.get("description"));
+   public static DisplayInfo deserialize(JsonObject object) {
+      ITextComponent itextcomponent = ITextComponent.Serializer.getComponentFromJson(object.get("title"));
+      ITextComponent itextcomponent1 = ITextComponent.Serializer.getComponentFromJson(object.get("description"));
       if (itextcomponent != null && itextcomponent1 != null) {
-         ItemStack itemstack = getIcon(JSONUtils.getAsJsonObject(p_192294_0_, "icon"));
-         ResourceLocation resourcelocation = p_192294_0_.has("background") ? new ResourceLocation(JSONUtils.getAsString(p_192294_0_, "background")) : null;
-         FrameType frametype = p_192294_0_.has("frame") ? FrameType.byName(JSONUtils.getAsString(p_192294_0_, "frame")) : FrameType.TASK;
-         boolean flag = JSONUtils.getAsBoolean(p_192294_0_, "show_toast", true);
-         boolean flag1 = JSONUtils.getAsBoolean(p_192294_0_, "announce_to_chat", true);
-         boolean flag2 = JSONUtils.getAsBoolean(p_192294_0_, "hidden", false);
+         ItemStack itemstack = deserializeIcon(JSONUtils.getJsonObject(object, "icon"));
+         ResourceLocation resourcelocation = object.has("background") ? new ResourceLocation(JSONUtils.getString(object, "background")) : null;
+         FrameType frametype = object.has("frame") ? FrameType.byName(JSONUtils.getString(object, "frame")) : FrameType.TASK;
+         boolean flag = JSONUtils.getBoolean(object, "show_toast", true);
+         boolean flag1 = JSONUtils.getBoolean(object, "announce_to_chat", true);
+         boolean flag2 = JSONUtils.getBoolean(object, "hidden", false);
          return new DisplayInfo(itemstack, itextcomponent, itextcomponent1, resourcelocation, frametype, flag, flag1, flag2);
       } else {
          throw new JsonSyntaxException("Both title and description must be set");
       }
    }
 
-   private static ItemStack getIcon(JsonObject p_193221_0_) {
-      if (!p_193221_0_.has("item")) {
+   private static ItemStack deserializeIcon(JsonObject object) {
+      if (!object.has("item")) {
          throw new JsonSyntaxException("Unsupported icon type, currently only items are supported (add 'item' key)");
       } else {
-         Item item = JSONUtils.getAsItem(p_193221_0_, "item");
-         if (p_193221_0_.has("data")) {
+         Item item = JSONUtils.getItem(object, "item");
+         if (object.has("data")) {
             throw new JsonParseException("Disallowed data tag found");
          } else {
             ItemStack itemstack = new ItemStack(item);
-            if (p_193221_0_.has("nbt")) {
+            if (object.has("nbt")) {
                try {
-                  CompoundNBT compoundnbt = JsonToNBT.parseTag(JSONUtils.convertToString(p_193221_0_.get("nbt"), "nbt"));
+                  CompoundNBT compoundnbt = JsonToNBT.getTagFromJson(JSONUtils.getString(object.get("nbt"), "nbt"));
                   itemstack.setTag(compoundnbt);
                } catch (CommandSyntaxException commandsyntaxexception) {
                   throw new JsonSyntaxException("Invalid nbt tag: " + commandsyntaxexception.getMessage());
@@ -131,11 +131,11 @@ public class DisplayInfo {
       }
    }
 
-   public void serializeToNetwork(PacketBuffer p_192290_1_) {
-      p_192290_1_.writeComponent(this.title);
-      p_192290_1_.writeComponent(this.description);
-      p_192290_1_.writeItem(this.icon);
-      p_192290_1_.writeEnum(this.frame);
+   public void write(PacketBuffer buf) {
+      buf.writeTextComponent(this.title);
+      buf.writeTextComponent(this.description);
+      buf.writeItemStack(this.icon);
+      buf.writeEnumValue(this.frame);
       int i = 0;
       if (this.background != null) {
          i |= 1;
@@ -149,37 +149,37 @@ public class DisplayInfo {
          i |= 4;
       }
 
-      p_192290_1_.writeInt(i);
+      buf.writeInt(i);
       if (this.background != null) {
-         p_192290_1_.writeResourceLocation(this.background);
+         buf.writeResourceLocation(this.background);
       }
 
-      p_192290_1_.writeFloat(this.x);
-      p_192290_1_.writeFloat(this.y);
+      buf.writeFloat(this.x);
+      buf.writeFloat(this.y);
    }
 
-   public static DisplayInfo fromNetwork(PacketBuffer p_192295_0_) {
-      ITextComponent itextcomponent = p_192295_0_.readComponent();
-      ITextComponent itextcomponent1 = p_192295_0_.readComponent();
-      ItemStack itemstack = p_192295_0_.readItem();
-      FrameType frametype = p_192295_0_.readEnum(FrameType.class);
-      int i = p_192295_0_.readInt();
-      ResourceLocation resourcelocation = (i & 1) != 0 ? p_192295_0_.readResourceLocation() : null;
+   public static DisplayInfo read(PacketBuffer buf) {
+      ITextComponent itextcomponent = buf.readTextComponent();
+      ITextComponent itextcomponent1 = buf.readTextComponent();
+      ItemStack itemstack = buf.readItemStack();
+      FrameType frametype = buf.readEnumValue(FrameType.class);
+      int i = buf.readInt();
+      ResourceLocation resourcelocation = (i & 1) != 0 ? buf.readResourceLocation() : null;
       boolean flag = (i & 2) != 0;
       boolean flag1 = (i & 4) != 0;
       DisplayInfo displayinfo = new DisplayInfo(itemstack, itextcomponent, itextcomponent1, resourcelocation, frametype, flag, false, flag1);
-      displayinfo.setLocation(p_192295_0_.readFloat(), p_192295_0_.readFloat());
+      displayinfo.setPosition(buf.readFloat(), buf.readFloat());
       return displayinfo;
    }
 
-   public JsonElement serializeToJson() {
+   public JsonElement serialize() {
       JsonObject jsonobject = new JsonObject();
       jsonobject.add("icon", this.serializeIcon());
       jsonobject.add("title", ITextComponent.Serializer.toJsonTree(this.title));
       jsonobject.add("description", ITextComponent.Serializer.toJsonTree(this.description));
       jsonobject.addProperty("frame", this.frame.getName());
       jsonobject.addProperty("show_toast", this.showToast);
-      jsonobject.addProperty("announce_to_chat", this.announceChat);
+      jsonobject.addProperty("announce_to_chat", this.announceToChat);
       jsonobject.addProperty("hidden", this.hidden);
       if (this.background != null) {
          jsonobject.addProperty("background", this.background.toString());

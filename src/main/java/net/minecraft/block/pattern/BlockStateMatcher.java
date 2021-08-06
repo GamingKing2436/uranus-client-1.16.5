@@ -14,24 +14,24 @@ public class BlockStateMatcher implements Predicate<BlockState> {
    public static final Predicate<BlockState> ANY = (p_201026_0_) -> {
       return true;
    };
-   private final StateContainer<Block, BlockState> definition;
-   private final Map<Property<?>, Predicate<Object>> properties = Maps.newHashMap();
+   private final StateContainer<Block, BlockState> blockstate;
+   private final Map<Property<?>, Predicate<Object>> propertyPredicates = Maps.newHashMap();
 
-   private BlockStateMatcher(StateContainer<Block, BlockState> p_i45653_1_) {
-      this.definition = p_i45653_1_;
+   private BlockStateMatcher(StateContainer<Block, BlockState> blockStateIn) {
+      this.blockstate = blockStateIn;
    }
 
-   public static BlockStateMatcher forBlock(Block p_177638_0_) {
-      return new BlockStateMatcher(p_177638_0_.getStateDefinition());
+   public static BlockStateMatcher forBlock(Block blockIn) {
+      return new BlockStateMatcher(blockIn.getStateContainer());
    }
 
    public boolean test(@Nullable BlockState p_test_1_) {
-      if (p_test_1_ != null && p_test_1_.getBlock().equals(this.definition.getOwner())) {
-         if (this.properties.isEmpty()) {
+      if (p_test_1_ != null && p_test_1_.getBlock().equals(this.blockstate.getOwner())) {
+         if (this.propertyPredicates.isEmpty()) {
             return true;
          } else {
-            for(Entry<Property<?>, Predicate<Object>> entry : this.properties.entrySet()) {
-               if (!this.applies(p_test_1_, entry.getKey(), entry.getValue())) {
+            for(Entry<Property<?>, Predicate<Object>> entry : this.propertyPredicates.entrySet()) {
+               if (!this.matches(p_test_1_, entry.getKey(), entry.getValue())) {
                   return false;
                }
             }
@@ -43,16 +43,16 @@ public class BlockStateMatcher implements Predicate<BlockState> {
       }
    }
 
-   protected <T extends Comparable<T>> boolean applies(BlockState p_185927_1_, Property<T> p_185927_2_, Predicate<Object> p_185927_3_) {
-      T t = p_185927_1_.getValue(p_185927_2_);
-      return p_185927_3_.test(t);
+   protected <T extends Comparable<T>> boolean matches(BlockState blockState, Property<T> property, Predicate<Object> predicate) {
+      T t = blockState.get(property);
+      return predicate.test(t);
    }
 
-   public <V extends Comparable<V>> BlockStateMatcher where(Property<V> p_201028_1_, Predicate<Object> p_201028_2_) {
-      if (!this.definition.getProperties().contains(p_201028_1_)) {
-         throw new IllegalArgumentException(this.definition + " cannot support property " + p_201028_1_);
+   public <V extends Comparable<V>> BlockStateMatcher where(Property<V> property, Predicate<Object> is) {
+      if (!this.blockstate.getProperties().contains(property)) {
+         throw new IllegalArgumentException(this.blockstate + " cannot support property " + property);
       } else {
-         this.properties.put(p_201028_1_, p_201028_2_);
+         this.propertyPredicates.put(property, is);
          return this;
       }
    }

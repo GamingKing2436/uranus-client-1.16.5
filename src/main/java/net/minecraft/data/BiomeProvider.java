@@ -23,24 +23,24 @@ public class BiomeProvider implements IDataProvider {
    private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().create();
    private final DataGenerator generator;
 
-   public BiomeProvider(DataGenerator p_i242077_1_) {
-      this.generator = p_i242077_1_;
+   public BiomeProvider(DataGenerator generator) {
+      this.generator = generator;
    }
 
-   public void run(DirectoryCache p_200398_1_) {
+   public void act(DirectoryCache cache) {
       Path path = this.generator.getOutputFolder();
 
-      for(Entry<RegistryKey<Biome>, Biome> entry : WorldGenRegistries.BIOME.entrySet()) {
-         Path path1 = createPath(path, entry.getKey().location());
+      for(Entry<RegistryKey<Biome>, Biome> entry : WorldGenRegistries.BIOME.getEntries()) {
+         Path path1 = getPath(path, entry.getKey().getLocation());
          Biome biome = entry.getValue();
-         Function<Supplier<Biome>, DataResult<JsonElement>> function = JsonOps.INSTANCE.withEncoder(Biome.CODEC);
+         Function<Supplier<Biome>, DataResult<JsonElement>> function = JsonOps.INSTANCE.withEncoder(Biome.BIOME_CODEC);
 
          try {
             Optional<JsonElement> optional = function.apply(() -> {
                return biome;
             }).result();
             if (optional.isPresent()) {
-               IDataProvider.save(GSON, p_200398_1_, optional.get(), path1);
+               IDataProvider.save(GSON, cache, optional.get(), path1);
             } else {
                LOGGER.error("Couldn't serialize biome {}", (Object)path1);
             }
@@ -51,8 +51,8 @@ public class BiomeProvider implements IDataProvider {
 
    }
 
-   private static Path createPath(Path p_244199_0_, ResourceLocation p_244199_1_) {
-      return p_244199_0_.resolve("reports/biomes/" + p_244199_1_.getPath() + ".json");
+   private static Path getPath(Path path, ResourceLocation biomeLocation) {
+      return path.resolve("reports/biomes/" + biomeLocation.getPath() + ".json");
    }
 
    public String getName() {

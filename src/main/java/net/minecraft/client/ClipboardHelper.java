@@ -14,12 +14,12 @@ import org.lwjgl.system.MemoryUtil;
 
 @OnlyIn(Dist.CLIENT)
 public class ClipboardHelper {
-   private final ByteBuffer clipboardScratchBuffer = BufferUtils.createByteBuffer(8192);
+   private final ByteBuffer buffer = BufferUtils.createByteBuffer(8192);
 
-   public String getClipboard(long p_216487_1_, GLFWErrorCallbackI p_216487_3_) {
-      GLFWErrorCallback glfwerrorcallback = GLFW.glfwSetErrorCallback(p_216487_3_);
-      String s = GLFW.glfwGetClipboardString(p_216487_1_);
-      s = s != null ? TextProcessing.filterBrokenSurrogates(s) : "";
+   public String getClipboardString(long window, GLFWErrorCallbackI errorCallback) {
+      GLFWErrorCallback glfwerrorcallback = GLFW.glfwSetErrorCallback(errorCallback);
+      String s = GLFW.glfwGetClipboardString(window);
+      s = s != null ? TextProcessing.func_238338_a_(s) : "";
       GLFWErrorCallback glfwerrorcallback1 = GLFW.glfwSetErrorCallback(glfwerrorcallback);
       if (glfwerrorcallback1 != null) {
          glfwerrorcallback1.free();
@@ -28,24 +28,24 @@ public class ClipboardHelper {
       return s;
    }
 
-   private static void pushClipboard(long p_230147_0_, ByteBuffer p_230147_2_, byte[] p_230147_3_) {
-      ((Buffer)p_230147_2_).clear();
-      p_230147_2_.put(p_230147_3_);
-      p_230147_2_.put((byte)0);
-      ((Buffer)p_230147_2_).flip();
-      GLFW.glfwSetClipboardString(p_230147_0_, p_230147_2_);
+   private static void copyToClipboard(long window, ByteBuffer clipboardBuffer, byte[] clipboardContent) {
+      ((Buffer)clipboardBuffer).clear();
+      clipboardBuffer.put(clipboardContent);
+      clipboardBuffer.put((byte)0);
+      ((Buffer)clipboardBuffer).flip();
+      GLFW.glfwSetClipboardString(window, clipboardBuffer);
    }
 
-   public void setClipboard(long p_216489_1_, String p_216489_3_) {
-      byte[] abyte = p_216489_3_.getBytes(Charsets.UTF_8);
+   public void setClipboardString(long window, String string) {
+      byte[] abyte = string.getBytes(Charsets.UTF_8);
       int i = abyte.length + 1;
-      if (i < this.clipboardScratchBuffer.capacity()) {
-         pushClipboard(p_216489_1_, this.clipboardScratchBuffer, abyte);
+      if (i < this.buffer.capacity()) {
+         copyToClipboard(window, this.buffer, abyte);
       } else {
          ByteBuffer bytebuffer = MemoryUtil.memAlloc(i);
 
          try {
-            pushClipboard(p_216489_1_, bytebuffer, abyte);
+            copyToClipboard(window, bytebuffer, abyte);
          } finally {
             MemoryUtil.memFree(bytebuffer);
          }

@@ -6,12 +6,12 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import java.util.zip.Deflater;
 
 public class NettyCompressionEncoder extends MessageToByteEncoder<ByteBuf> {
-   private final byte[] encodeBuf = new byte[8192];
+   private final byte[] buffer = new byte[8192];
    private final Deflater deflater;
    private int threshold;
 
-   public NettyCompressionEncoder(int p_i46005_1_) {
-      this.threshold = p_i46005_1_;
+   public NettyCompressionEncoder(int thresholdIn) {
+      this.threshold = thresholdIn;
       this.deflater = new Deflater();
    }
 
@@ -29,8 +29,8 @@ public class NettyCompressionEncoder extends MessageToByteEncoder<ByteBuf> {
          this.deflater.finish();
 
          while(!this.deflater.finished()) {
-            int j = this.deflater.deflate(this.encodeBuf);
-            packetbuffer.writeBytes(this.encodeBuf, 0, j);
+            int j = this.deflater.deflate(this.buffer);
+            packetbuffer.writeBytes(this.buffer, 0, j);
          }
 
          this.deflater.reset();
@@ -38,7 +38,7 @@ public class NettyCompressionEncoder extends MessageToByteEncoder<ByteBuf> {
 
    }
 
-   public void setThreshold(int p_179299_1_) {
-      this.threshold = p_179299_1_;
+   public void setCompressionThreshold(int thresholdIn) {
+      this.threshold = thresholdIn;
    }
 }

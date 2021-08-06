@@ -32,13 +32,13 @@ public class PaintingType {
    private final int width;
    private final int height;
 
-   private static PaintingType register(String p_221119_0_, int p_221119_1_, int p_221119_2_) {
-      return Registry.register(Registry.MOTIVE, p_221119_0_, new PaintingType(p_221119_1_, p_221119_2_));
+   private static PaintingType register(String key, int width, int height) {
+      return Registry.register(Registry.MOTIVE, key, new PaintingType(width, height));
    }
 
-   public PaintingType(int p_i50222_1_, int p_i50222_2_) {
-      this.width = p_i50222_1_;
-      this.height = p_i50222_2_;
+   public PaintingType(int width, int height) {
+      this.width = width;
+      this.height = height;
    }
 
    public int getWidth() {

@@ -11,11 +11,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class DefaultGlyphProvider implements IGlyphProvider {
    @Nullable
-   public IGlyphInfo getGlyph(int p_212248_1_) {
+   public IGlyphInfo getGlyphInfo(int character) {
       return DefaultGlyph.INSTANCE;
    }
 
-   public IntSet getSupportedGlyphs() {
+   public IntSet func_230428_a_() {
       return IntSets.EMPTY_SET;
    }
 }

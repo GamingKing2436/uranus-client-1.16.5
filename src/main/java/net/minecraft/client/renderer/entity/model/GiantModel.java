@@ -10,11 +10,11 @@ public class GiantModel extends AbstractZombieModel<GiantEntity> {
       this(0.0F, false);
    }
 
-   public GiantModel(float p_i51066_1_, boolean p_i51066_2_) {
-      super(p_i51066_1_, 0.0F, 64, p_i51066_2_ ? 32 : 64);
+   public GiantModel(float modelSize, boolean p_i51066_2_) {
+      super(modelSize, 0.0F, 64, p_i51066_2_ ? 32 : 64);
    }
 
-   public boolean isAggressive(GiantEntity p_212850_1_) {
+   public boolean isAggressive(GiantEntity entityIn) {
       return false;
    }
 }

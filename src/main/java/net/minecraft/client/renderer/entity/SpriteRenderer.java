@@ -17,36 +17,36 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class SpriteRenderer<T extends Entity & IRendersAsItem> extends EntityRenderer<T> {
    private final net.minecraft.client.renderer.ItemRenderer itemRenderer;
    private final float scale;
-   private final boolean fullBright;
+   private final boolean field_229126_f_;
 
    public SpriteRenderer(EntityRendererManager p_i226035_1_, net.minecraft.client.renderer.ItemRenderer p_i226035_2_, float p_i226035_3_, boolean p_i226035_4_) {
       super(p_i226035_1_);
       this.itemRenderer = p_i226035_2_;
       this.scale = p_i226035_3_;
-      this.fullBright = p_i226035_4_;
+      this.field_229126_f_ = p_i226035_4_;
    }
 
-   public SpriteRenderer(EntityRendererManager p_i50957_1_, net.minecraft.client.renderer.ItemRenderer p_i50957_2_) {
-      this(p_i50957_1_, p_i50957_2_, 1.0F, false);
+   public SpriteRenderer(EntityRendererManager renderManagerIn, net.minecraft.client.renderer.ItemRenderer itemRendererIn) {
+      this(renderManagerIn, itemRendererIn, 1.0F, false);
    }
 
-   protected int getBlockLightLevel(T p_225624_1_, BlockPos p_225624_2_) {
-      return this.fullBright ? 15 : super.getBlockLightLevel(p_225624_1_, p_225624_2_);
+   protected int getBlockLight(T entityIn, BlockPos partialTicks) {
+      return this.field_229126_f_ ? 15 : super.getBlockLight(entityIn, partialTicks);
    }
 
-   public void render(T p_225623_1_, float p_225623_2_, float p_225623_3_, MatrixStack p_225623_4_, IRenderTypeBuffer p_225623_5_, int p_225623_6_) {
-      if (p_225623_1_.tickCount >= 2 || !(this.entityRenderDispatcher.camera.getEntity().distanceToSqr(p_225623_1_) < 12.25D)) {
-         p_225623_4_.pushPose();
-         p_225623_4_.scale(this.scale, this.scale, this.scale);
-         p_225623_4_.mulPose(this.entityRenderDispatcher.cameraOrientation());
-         p_225623_4_.mulPose(Vector3f.YP.rotationDegrees(180.0F));
-         this.itemRenderer.renderStatic(p_225623_1_.getItem(), ItemCameraTransforms.TransformType.GROUND, p_225623_6_, OverlayTexture.NO_OVERLAY, p_225623_4_, p_225623_5_);
-         p_225623_4_.popPose();
-         super.render(p_225623_1_, p_225623_2_, p_225623_3_, p_225623_4_, p_225623_5_, p_225623_6_);
+   public void render(T entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn) {
+      if (entityIn.ticksExisted >= 2 || !(this.renderManager.info.getRenderViewEntity().getDistanceSq(entityIn) < 12.25D)) {
+         matrixStackIn.push();
+         matrixStackIn.scale(this.scale, this.scale, this.scale);
+         matrixStackIn.rotate(this.renderManager.getCameraOrientation());
+         matrixStackIn.rotate(Vector3f.YP.rotationDegrees(180.0F));
+         this.itemRenderer.renderItem(entityIn.getItem(), ItemCameraTransforms.TransformType.GROUND, packedLightIn, OverlayTexture.NO_OVERLAY, matrixStackIn, bufferIn);
+         matrixStackIn.pop();
+         super.render(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
       }
    }
 
-   public ResourceLocation getTextureLocation(Entity p_110775_1_) {
-      return AtlasTexture.LOCATION_BLOCKS;
+   public ResourceLocation getEntityTexture(Entity entity) {
+      return AtlasTexture.LOCATION_BLOCKS_TEXTURE;
    }
 }

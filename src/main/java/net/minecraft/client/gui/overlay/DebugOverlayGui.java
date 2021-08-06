@@ -72,104 +72,104 @@ public class DebugOverlayGui extends AbstractGui {
       p_212918_0_.put(Heightmap.Type.MOTION_BLOCKING, "M");
       p_212918_0_.put(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, "ML");
    });
-   private final Minecraft minecraft;
-   private final FontRenderer font;
-   private RayTraceResult block;
-   private RayTraceResult liquid;
+   private final Minecraft mc;
+   private final FontRenderer fontRenderer;
+   private RayTraceResult rayTraceBlock;
+   private RayTraceResult rayTraceFluid;
    @Nullable
-   private ChunkPos lastPos;
+   private ChunkPos chunkPos;
    @Nullable
-   private Chunk clientChunk;
+   private Chunk chunk;
    @Nullable
-   private CompletableFuture<Chunk> serverChunk;
+   private CompletableFuture<Chunk> futureChunk;
 
-   public DebugOverlayGui(Minecraft p_i45543_1_) {
-      this.minecraft = p_i45543_1_;
-      this.font = p_i45543_1_.font;
+   public DebugOverlayGui(Minecraft mc) {
+      this.mc = mc;
+      this.fontRenderer = mc.fontRenderer;
    }
 
-   public void clearChunkCache() {
-      this.serverChunk = null;
-      this.clientChunk = null;
+   public void resetChunk() {
+      this.futureChunk = null;
+      this.chunk = null;
    }
 
    public void render(MatrixStack p_194818_1_) {
-      this.minecraft.getProfiler().push("debug");
+      this.mc.getProfiler().startSection("debug");
       RenderSystem.pushMatrix();
-      Entity entity = this.minecraft.getCameraEntity();
-      this.block = entity.pick(20.0D, 0.0F, false);
-      this.liquid = entity.pick(20.0D, 0.0F, true);
-      this.drawGameInformation(p_194818_1_);
-      this.drawSystemInformation(p_194818_1_);
+      Entity entity = this.mc.getRenderViewEntity();
+      this.rayTraceBlock = entity.pick(20.0D, 0.0F, false);
+      this.rayTraceFluid = entity.pick(20.0D, 0.0F, true);
+      this.renderDebugInfoLeft(p_194818_1_);
+      this.renderDebugInfoRight(p_194818_1_);
       RenderSystem.popMatrix();
-      if (this.minecraft.options.renderFpsChart) {
-         int i = this.minecraft.getWindow().getGuiScaledWidth();
-         this.drawChart(p_194818_1_, this.minecraft.getFrameTimer(), 0, i / 2, true);
-         IntegratedServer integratedserver = this.minecraft.getSingleplayerServer();
+      if (this.mc.gameSettings.showLagometer) {
+         int i = this.mc.getMainWindow().getScaledWidth();
+         this.func_238509_a_(p_194818_1_, this.mc.getFrameTimer(), 0, i / 2, true);
+         IntegratedServer integratedserver = this.mc.getIntegratedServer();
          if (integratedserver != null) {
-            this.drawChart(p_194818_1_, integratedserver.getFrameTimer(), i - Math.min(i / 2, 240), i / 2, false);
+            this.func_238509_a_(p_194818_1_, integratedserver.getFrameTimer(), i - Math.min(i / 2, 240), i / 2, false);
          }
       }
 
-      this.minecraft.getProfiler().pop();
+      this.mc.getProfiler().endSection();
    }
 
-   protected void drawGameInformation(MatrixStack p_230024_1_) {
-      List<String> list = this.getGameInformation();
+   protected void renderDebugInfoLeft(MatrixStack p_230024_1_) {
+      List<String> list = this.getDebugInfoLeft();
       list.add("");
-      boolean flag = this.minecraft.getSingleplayerServer() != null;
-      list.add("Debug: Pie [shift]: " + (this.minecraft.options.renderDebugCharts ? "visible" : "hidden") + (flag ? " FPS + TPS" : " FPS") + " [alt]: " + (this.minecraft.options.renderFpsChart ? "visible" : "hidden"));
+      boolean flag = this.mc.getIntegratedServer() != null;
+      list.add("Debug: Pie [shift]: " + (this.mc.gameSettings.showDebugProfilerChart ? "visible" : "hidden") + (flag ? " FPS + TPS" : " FPS") + " [alt]: " + (this.mc.gameSettings.showLagometer ? "visible" : "hidden"));
       list.add("For help: press F3 + Q");
 
       for(int i = 0; i < list.size(); ++i) {
          String s = list.get(i);
          if (!Strings.isNullOrEmpty(s)) {
             int j = 9;
-            int k = this.font.width(s);
+            int k = this.fontRenderer.getStringWidth(s);
             int l = 2;
             int i1 = 2 + j * i;
             fill(p_230024_1_, 1, i1 - 1, 2 + k + 1, i1 + j - 1, -1873784752);
-            this.font.draw(p_230024_1_, s, 2.0F, (float)i1, 14737632);
+            this.fontRenderer.drawString(p_230024_1_, s, 2.0F, (float)i1, 14737632);
          }
       }
 
    }
 
-   protected void drawSystemInformation(MatrixStack p_230025_1_) {
-      List<String> list = this.getSystemInformation();
+   protected void renderDebugInfoRight(MatrixStack p_230025_1_) {
+      List<String> list = this.getDebugInfoRight();
 
       for(int i = 0; i < list.size(); ++i) {
          String s = list.get(i);
          if (!Strings.isNullOrEmpty(s)) {
             int j = 9;
-            int k = this.font.width(s);
-            int l = this.minecraft.getWindow().getGuiScaledWidth() - 2 - k;
+            int k = this.fontRenderer.getStringWidth(s);
+            int l = this.mc.getMainWindow().getScaledWidth() - 2 - k;
             int i1 = 2 + j * i;
             fill(p_230025_1_, l - 1, i1 - 1, l + k + 1, i1 + j - 1, -1873784752);
-            this.font.draw(p_230025_1_, s, (float)l, (float)i1, 14737632);
+            this.fontRenderer.drawString(p_230025_1_, s, (float)l, (float)i1, 14737632);
          }
       }
 
    }
 
-   protected List<String> getGameInformation() {
-      IntegratedServer integratedserver = this.minecraft.getSingleplayerServer();
-      NetworkManager networkmanager = this.minecraft.getConnection().getConnection();
-      float f = networkmanager.getAverageSentPackets();
-      float f1 = networkmanager.getAverageReceivedPackets();
+   protected List<String> getDebugInfoLeft() {
+      IntegratedServer integratedserver = this.mc.getIntegratedServer();
+      NetworkManager networkmanager = this.mc.getConnection().getNetworkManager();
+      float f = networkmanager.getPacketsSent();
+      float f1 = networkmanager.getPacketsReceived();
       String s;
       if (integratedserver != null) {
-         s = String.format("Integrated server @ %.0f ms ticks, %.0f tx, %.0f rx", integratedserver.getAverageTickTime(), f, f1);
+         s = String.format("Integrated server @ %.0f ms ticks, %.0f tx, %.0f rx", integratedserver.getTickTime(), f, f1);
       } else {
-         s = String.format("\"%s\" server, %.0f tx, %.0f rx", this.minecraft.player.getServerBrand(), f, f1);
+         s = String.format("\"%s\" server, %.0f tx, %.0f rx", this.mc.player.getServerBrand(), f, f1);
       }
 
-      BlockPos blockpos = this.minecraft.getCameraEntity().blockPosition();
-      if (this.minecraft.showOnlyReducedInfo()) {
-         return Lists.newArrayList("Minecraft " + SharedConstants.getCurrentVersion().getName() + " (" + this.minecraft.getLaunchedVersion() + "/" + ClientBrandRetriever.getClientModName() + ")", this.minecraft.fpsString, s, this.minecraft.levelRenderer.getChunkStatistics(), this.minecraft.levelRenderer.getEntityStatistics(), "P: " + this.minecraft.particleEngine.countParticles() + ". T: " + this.minecraft.level.getEntityCount(), this.minecraft.level.gatherChunkSourceStats(), "", String.format("Chunk-relative: %d %d %d", blockpos.getX() & 15, blockpos.getY() & 15, blockpos.getZ() & 15));
+      BlockPos blockpos = this.mc.getRenderViewEntity().getPosition();
+      if (this.mc.isReducedDebug()) {
+         return Lists.newArrayList("Minecraft " + SharedConstants.getVersion().getName() + " (" + this.mc.getVersion() + "/" + ClientBrandRetriever.getClientModName() + ")", this.mc.debug, s, this.mc.worldRenderer.getDebugInfoRenders(), this.mc.worldRenderer.getDebugInfoEntities(), "P: " + this.mc.particles.getStatistics() + ". T: " + this.mc.world.getCountLoadedEntities(), this.mc.world.getProviderName(), "", String.format("Chunk-relative: %d %d %d", blockpos.getX() & 15, blockpos.getY() & 15, blockpos.getZ() & 15));
       } else {
-         Entity entity = this.minecraft.getCameraEntity();
-         Direction direction = entity.getDirection();
+         Entity entity = this.mc.getRenderViewEntity();
+         Direction direction = entity.getHorizontalFacing();
          String s1;
          switch(direction) {
          case NORTH:
@@ -189,39 +189,39 @@ public class DebugOverlayGui extends AbstractGui {
          }
 
          ChunkPos chunkpos = new ChunkPos(blockpos);
-         if (!Objects.equals(this.lastPos, chunkpos)) {
-            this.lastPos = chunkpos;
-            this.clearChunkCache();
+         if (!Objects.equals(this.chunkPos, chunkpos)) {
+            this.chunkPos = chunkpos;
+            this.resetChunk();
          }
 
-         World world = this.getLevel();
+         World world = this.getWorld();
          LongSet longset = (LongSet)(world instanceof ServerWorld ? ((ServerWorld)world).getForcedChunks() : LongSets.EMPTY_SET);
-         List<String> list = Lists.newArrayList("Minecraft " + SharedConstants.getCurrentVersion().getName() + " (" + this.minecraft.getLaunchedVersion() + "/" + ClientBrandRetriever.getClientModName() + ("release".equalsIgnoreCase(this.minecraft.getVersionType()) ? "" : "/" + this.minecraft.getVersionType()) + ")", this.minecraft.fpsString, s, this.minecraft.levelRenderer.getChunkStatistics(), this.minecraft.levelRenderer.getEntityStatistics(), "P: " + this.minecraft.particleEngine.countParticles() + ". T: " + this.minecraft.level.getEntityCount(), this.minecraft.level.gatherChunkSourceStats());
+         List<String> list = Lists.newArrayList("Minecraft " + SharedConstants.getVersion().getName() + " (" + this.mc.getVersion() + "/" + ClientBrandRetriever.getClientModName() + ("release".equalsIgnoreCase(this.mc.getVersionType()) ? "" : "/" + this.mc.getVersionType()) + ")", this.mc.debug, s, this.mc.worldRenderer.getDebugInfoRenders(), this.mc.worldRenderer.getDebugInfoEntities(), "P: " + this.mc.particles.getStatistics() + ". T: " + this.mc.world.getCountLoadedEntities(), this.mc.world.getProviderName());
          String s2 = this.getServerChunkStats();
          if (s2 != null) {
             list.add(s2);
          }
 
-         list.add(this.minecraft.level.dimension().location() + " FC: " + longset.size());
+         list.add(this.mc.world.getDimensionKey().getLocation() + " FC: " + longset.size());
          list.add("");
-         list.add(String.format(Locale.ROOT, "XYZ: %.3f / %.5f / %.3f", this.minecraft.getCameraEntity().getX(), this.minecraft.getCameraEntity().getY(), this.minecraft.getCameraEntity().getZ()));
+         list.add(String.format(Locale.ROOT, "XYZ: %.3f / %.5f / %.3f", this.mc.getRenderViewEntity().getPosX(), this.mc.getRenderViewEntity().getPosY(), this.mc.getRenderViewEntity().getPosZ()));
          list.add(String.format("Block: %d %d %d", blockpos.getX(), blockpos.getY(), blockpos.getZ()));
          list.add(String.format("Chunk: %d %d %d in %d %d %d", blockpos.getX() & 15, blockpos.getY() & 15, blockpos.getZ() & 15, blockpos.getX() >> 4, blockpos.getY() >> 4, blockpos.getZ() >> 4));
-         list.add(String.format(Locale.ROOT, "Facing: %s (%s) (%.1f / %.1f)", direction, s1, MathHelper.wrapDegrees(entity.yRot), MathHelper.wrapDegrees(entity.xRot)));
-         if (this.minecraft.level != null) {
-            if (this.minecraft.level.hasChunkAt(blockpos)) {
-               Chunk chunk = this.getClientChunk();
+         list.add(String.format(Locale.ROOT, "Facing: %s (%s) (%.1f / %.1f)", direction, s1, MathHelper.wrapDegrees(entity.rotationYaw), MathHelper.wrapDegrees(entity.rotationPitch)));
+         if (this.mc.world != null) {
+            if (this.mc.world.isBlockLoaded(blockpos)) {
+               Chunk chunk = this.getChunk();
                if (chunk.isEmpty()) {
                   list.add("Waiting for chunk...");
                } else {
-                  int i = this.minecraft.level.getChunkSource().getLightEngine().getRawBrightness(blockpos, 0);
-                  int j = this.minecraft.level.getBrightness(LightType.SKY, blockpos);
-                  int k = this.minecraft.level.getBrightness(LightType.BLOCK, blockpos);
+                  int i = this.mc.world.getChunkProvider().getLightManager().getLightSubtracted(blockpos, 0);
+                  int j = this.mc.world.getLightFor(LightType.SKY, blockpos);
+                  int k = this.mc.world.getLightFor(LightType.BLOCK, blockpos);
                   list.add("Client Light: " + i + " (" + j + " sky, " + k + " block)");
                   Chunk chunk1 = this.getServerChunk();
                   if (chunk1 != null) {
-                     WorldLightManager worldlightmanager = world.getChunkSource().getLightEngine();
-                     list.add("Server Light: (" + worldlightmanager.getLayerListener(LightType.SKY).getLightValue(blockpos) + " sky, " + worldlightmanager.getLayerListener(LightType.BLOCK).getLightValue(blockpos) + " block)");
+                     WorldLightManager worldlightmanager = world.getChunkProvider().getLightManager();
+                     list.add("Server Light: (" + worldlightmanager.getLightEngine(LightType.SKY).getLightFor(blockpos) + " sky, " + worldlightmanager.getLightEngine(LightType.BLOCK).getLightFor(blockpos) + " block)");
                   } else {
                      list.add("Server Light: (?? sky, ?? block)");
                   }
@@ -229,8 +229,8 @@ public class DebugOverlayGui extends AbstractGui {
                   StringBuilder stringbuilder = new StringBuilder("CH");
 
                   for(Heightmap.Type heightmap$type : Heightmap.Type.values()) {
-                     if (heightmap$type.sendToClient()) {
-                        stringbuilder.append(" ").append(HEIGHTMAP_NAMES.get(heightmap$type)).append(": ").append(chunk.getHeight(heightmap$type, blockpos.getX(), blockpos.getZ()));
+                     if (heightmap$type.isUsageClient()) {
+                        stringbuilder.append(" ").append(HEIGHTMAP_NAMES.get(heightmap$type)).append(": ").append(chunk.getTopBlockY(heightmap$type, blockpos.getX(), blockpos.getZ()));
                      }
                   }
 
@@ -239,10 +239,10 @@ public class DebugOverlayGui extends AbstractGui {
                   stringbuilder.append("SH");
 
                   for(Heightmap.Type heightmap$type1 : Heightmap.Type.values()) {
-                     if (heightmap$type1.keepAfterWorldgen()) {
+                     if (heightmap$type1.isUsageNotWorldgen()) {
                         stringbuilder.append(" ").append(HEIGHTMAP_NAMES.get(heightmap$type1)).append(": ");
                         if (chunk1 != null) {
-                           stringbuilder.append(chunk1.getHeight(heightmap$type1, blockpos.getX(), blockpos.getZ()));
+                           stringbuilder.append(chunk1.getTopBlockY(heightmap$type1, blockpos.getX(), blockpos.getZ()));
                         } else {
                            stringbuilder.append("??");
                         }
@@ -251,16 +251,16 @@ public class DebugOverlayGui extends AbstractGui {
 
                   list.add(stringbuilder.toString());
                   if (blockpos.getY() >= 0 && blockpos.getY() < 256) {
-                     list.add("Biome: " + this.minecraft.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getKey(this.minecraft.level.getBiome(blockpos)));
+                     list.add("Biome: " + this.mc.world.func_241828_r().getRegistry(Registry.BIOME_KEY).getKey(this.mc.world.getBiome(blockpos)));
                      long i1 = 0L;
                      float f2 = 0.0F;
                      if (chunk1 != null) {
-                        f2 = world.getMoonBrightness();
+                        f2 = world.getMoonFactor();
                         i1 = chunk1.getInhabitedTime();
                      }
 
                      DifficultyInstance difficultyinstance = new DifficultyInstance(world.getDifficulty(), world.getDayTime(), i1, f2);
-                     list.add(String.format(Locale.ROOT, "Local Difficulty: %.2f // %.2f (Day %d)", difficultyinstance.getEffectiveDifficulty(), difficultyinstance.getSpecialMultiplier(), this.minecraft.level.getDayTime() / 24000L));
+                     list.add(String.format(Locale.ROOT, "Local Difficulty: %.2f // %.2f (Day %d)", difficultyinstance.getAdditionalDifficulty(), difficultyinstance.getClampedAdditionalDifficulty(), this.mc.world.getDayTime() / 24000L));
                   }
                }
             } else {
@@ -270,12 +270,12 @@ public class DebugOverlayGui extends AbstractGui {
             list.add("Outside of world...");
          }
 
-         ServerWorld serverworld = this.getServerLevel();
+         ServerWorld serverworld = this.func_238515_d_();
          if (serverworld != null) {
-            WorldEntitySpawner.EntityDensityManager worldentityspawner$entitydensitymanager = serverworld.getChunkSource().getLastSpawnState();
+            WorldEntitySpawner.EntityDensityManager worldentityspawner$entitydensitymanager = serverworld.getChunkProvider().func_241101_k_();
             if (worldentityspawner$entitydensitymanager != null) {
-               Object2IntMap<EntityClassification> object2intmap = worldentityspawner$entitydensitymanager.getMobCategoryCounts();
-               int l = worldentityspawner$entitydensitymanager.getSpawnableChunkCount();
+               Object2IntMap<EntityClassification> object2intmap = worldentityspawner$entitydensitymanager.func_234995_b_();
+               int l = worldentityspawner$entitydensitymanager.func_234988_a_();
                list.add("SC: " + l + ", " + (String)Stream.of(EntityClassification.values()).map((p_238511_1_) -> {
                   return Character.toUpperCase(p_238511_1_.getName().charAt(0)) + ": " + object2intmap.getInt(p_238511_1_);
                }).collect(Collectors.joining(", ")));
@@ -284,40 +284,40 @@ public class DebugOverlayGui extends AbstractGui {
             }
          }
 
-         ShaderGroup shadergroup = this.minecraft.gameRenderer.currentEffect();
+         ShaderGroup shadergroup = this.mc.gameRenderer.getShaderGroup();
          if (shadergroup != null) {
-            list.add("Shader: " + shadergroup.getName());
+            list.add("Shader: " + shadergroup.getShaderGroupName());
          }
 
-         list.add(this.minecraft.getSoundManager().getDebugString() + String.format(" (Mood %d%%)", Math.round(this.minecraft.player.getCurrentMood() * 100.0F)));
+         list.add(this.mc.getSoundHandler().getDebugString() + String.format(" (Mood %d%%)", Math.round(this.mc.player.getDarknessAmbience() * 100.0F)));
          return list;
       }
    }
 
    @Nullable
-   private ServerWorld getServerLevel() {
-      IntegratedServer integratedserver = this.minecraft.getSingleplayerServer();
-      return integratedserver != null ? integratedserver.getLevel(this.minecraft.level.dimension()) : null;
+   private ServerWorld func_238515_d_() {
+      IntegratedServer integratedserver = this.mc.getIntegratedServer();
+      return integratedserver != null ? integratedserver.getWorld(this.mc.world.getDimensionKey()) : null;
    }
 
    @Nullable
    private String getServerChunkStats() {
-      ServerWorld serverworld = this.getServerLevel();
-      return serverworld != null ? serverworld.gatherChunkSourceStats() : null;
+      ServerWorld serverworld = this.func_238515_d_();
+      return serverworld != null ? serverworld.getProviderName() : null;
    }
 
-   private World getLevel() {
-      return DataFixUtils.orElse(Optional.ofNullable(this.minecraft.getSingleplayerServer()).flatMap((p_212917_1_) -> {
-         return Optional.ofNullable(p_212917_1_.getLevel(this.minecraft.level.dimension()));
-      }), this.minecraft.level);
+   private World getWorld() {
+      return DataFixUtils.orElse(Optional.ofNullable(this.mc.getIntegratedServer()).flatMap((p_212917_1_) -> {
+         return Optional.ofNullable(p_212917_1_.getWorld(this.mc.world.getDimensionKey()));
+      }), this.mc.world);
    }
 
    @Nullable
    private Chunk getServerChunk() {
-      if (this.serverChunk == null) {
-         ServerWorld serverworld = this.getServerLevel();
+      if (this.futureChunk == null) {
+         ServerWorld serverworld = this.func_238515_d_();
          if (serverworld != null) {
-            this.serverChunk = serverworld.getChunkSource().getChunkFuture(this.lastPos.x, this.lastPos.z, ChunkStatus.FULL, false).thenApply((p_222802_0_) -> {
+            this.futureChunk = serverworld.getChunkProvider().func_217232_b(this.chunkPos.x, this.chunkPos.z, ChunkStatus.FULL, false).thenApply((p_222802_0_) -> {
                return p_222802_0_.map((p_222803_0_) -> {
                   return (Chunk)p_222803_0_;
                }, (p_222801_0_) -> {
@@ -326,64 +326,64 @@ public class DebugOverlayGui extends AbstractGui {
             });
          }
 
-         if (this.serverChunk == null) {
-            this.serverChunk = CompletableFuture.completedFuture(this.getClientChunk());
+         if (this.futureChunk == null) {
+            this.futureChunk = CompletableFuture.completedFuture(this.getChunk());
          }
       }
 
-      return this.serverChunk.getNow((Chunk)null);
+      return this.futureChunk.getNow((Chunk)null);
    }
 
-   private Chunk getClientChunk() {
-      if (this.clientChunk == null) {
-         this.clientChunk = this.minecraft.level.getChunk(this.lastPos.x, this.lastPos.z);
+   private Chunk getChunk() {
+      if (this.chunk == null) {
+         this.chunk = this.mc.world.getChunk(this.chunkPos.x, this.chunkPos.z);
       }
 
-      return this.clientChunk;
+      return this.chunk;
    }
 
-   protected List<String> getSystemInformation() {
+   protected List<String> getDebugInfoRight() {
       long i = Runtime.getRuntime().maxMemory();
       long j = Runtime.getRuntime().totalMemory();
       long k = Runtime.getRuntime().freeMemory();
       long l = j - k;
-      List<String> list = Lists.newArrayList(String.format("Java: %s %dbit", System.getProperty("java.version"), this.minecraft.is64Bit() ? 64 : 32), String.format("Mem: % 2d%% %03d/%03dMB", l * 100L / i, bytesToMegabytes(l), bytesToMegabytes(i)), String.format("Allocated: % 2d%% %03dMB", j * 100L / i, bytesToMegabytes(j)), "", String.format("CPU: %s", PlatformDescriptors.getCpuInfo()), "", String.format("Display: %dx%d (%s)", Minecraft.getInstance().getWindow().getWidth(), Minecraft.getInstance().getWindow().getHeight(), PlatformDescriptors.getVendor()), PlatformDescriptors.getRenderer(), PlatformDescriptors.getOpenGLVersion());
-      if (this.minecraft.showOnlyReducedInfo()) {
+      List<String> list = Lists.newArrayList(String.format("Java: %s %dbit", System.getProperty("java.version"), this.mc.isJava64bit() ? 64 : 32), String.format("Mem: % 2d%% %03d/%03dMB", l * 100L / i, bytesToMb(l), bytesToMb(i)), String.format("Allocated: % 2d%% %03dMB", j * 100L / i, bytesToMb(j)), "", String.format("CPU: %s", PlatformDescriptors.getCpuInfo()), "", String.format("Display: %dx%d (%s)", Minecraft.getInstance().getMainWindow().getFramebufferWidth(), Minecraft.getInstance().getMainWindow().getFramebufferHeight(), PlatformDescriptors.getGlVendor()), PlatformDescriptors.getGlRenderer(), PlatformDescriptors.getGlVersion());
+      if (this.mc.isReducedDebug()) {
          return list;
       } else {
-         if (this.block.getType() == RayTraceResult.Type.BLOCK) {
-            BlockPos blockpos = ((BlockRayTraceResult)this.block).getBlockPos();
-            BlockState blockstate = this.minecraft.level.getBlockState(blockpos);
+         if (this.rayTraceBlock.getType() == RayTraceResult.Type.BLOCK) {
+            BlockPos blockpos = ((BlockRayTraceResult)this.rayTraceBlock).getPos();
+            BlockState blockstate = this.mc.world.getBlockState(blockpos);
             list.add("");
             list.add(TextFormatting.UNDERLINE + "Targeted Block: " + blockpos.getX() + ", " + blockpos.getY() + ", " + blockpos.getZ());
             list.add(String.valueOf((Object)Registry.BLOCK.getKey(blockstate.getBlock())));
 
             for(Entry<Property<?>, Comparable<?>> entry : blockstate.getValues().entrySet()) {
-               list.add(this.getPropertyValueString(entry));
+               list.add(this.getPropertyString(entry));
             }
 
-            for(ResourceLocation resourcelocation : this.minecraft.getConnection().getTags().getBlocks().getMatchingTags(blockstate.getBlock())) {
+            for(ResourceLocation resourcelocation : this.mc.getConnection().getTags().getBlockTags().getOwningTags(blockstate.getBlock())) {
                list.add("#" + resourcelocation);
             }
          }
 
-         if (this.liquid.getType() == RayTraceResult.Type.BLOCK) {
-            BlockPos blockpos1 = ((BlockRayTraceResult)this.liquid).getBlockPos();
-            FluidState fluidstate = this.minecraft.level.getFluidState(blockpos1);
+         if (this.rayTraceFluid.getType() == RayTraceResult.Type.BLOCK) {
+            BlockPos blockpos1 = ((BlockRayTraceResult)this.rayTraceFluid).getPos();
+            FluidState fluidstate = this.mc.world.getFluidState(blockpos1);
             list.add("");
             list.add(TextFormatting.UNDERLINE + "Targeted Fluid: " + blockpos1.getX() + ", " + blockpos1.getY() + ", " + blockpos1.getZ());
-            list.add(String.valueOf((Object)Registry.FLUID.getKey(fluidstate.getType())));
+            list.add(String.valueOf((Object)Registry.FLUID.getKey(fluidstate.getFluid())));
 
             for(Entry<Property<?>, Comparable<?>> entry1 : fluidstate.getValues().entrySet()) {
-               list.add(this.getPropertyValueString(entry1));
+               list.add(this.getPropertyString(entry1));
             }
 
-            for(ResourceLocation resourcelocation1 : this.minecraft.getConnection().getTags().getFluids().getMatchingTags(fluidstate.getType())) {
+            for(ResourceLocation resourcelocation1 : this.mc.getConnection().getTags().getFluidTags().getOwningTags(fluidstate.getFluid())) {
                list.add("#" + resourcelocation1);
             }
          }
 
-         Entity entity = this.minecraft.crosshairPickEntity;
+         Entity entity = this.mc.pointedEntity;
          if (entity != null) {
             list.add("");
             list.add(TextFormatting.UNDERLINE + "Targeted Entity");
@@ -394,10 +394,10 @@ public class DebugOverlayGui extends AbstractGui {
       }
    }
 
-   private String getPropertyValueString(Entry<Property<?>, Comparable<?>> p_211534_1_) {
-      Property<?> property = p_211534_1_.getKey();
-      Comparable<?> comparable = p_211534_1_.getValue();
-      String s = Util.getPropertyName(property, comparable);
+   private String getPropertyString(Entry<Property<?>, Comparable<?>> entryIn) {
+      Property<?> property = entryIn.getKey();
+      Comparable<?> comparable = entryIn.getValue();
+      String s = Util.getValueName(property, comparable);
       if (Boolean.TRUE.equals(comparable)) {
          s = TextFormatting.GREEN + s;
       } else if (Boolean.FALSE.equals(comparable)) {
@@ -407,103 +407,103 @@ public class DebugOverlayGui extends AbstractGui {
       return property.getName() + ": " + s;
    }
 
-   private void drawChart(MatrixStack p_238509_1_, FrameTimer p_238509_2_, int p_238509_3_, int p_238509_4_, boolean p_238509_5_) {
+   private void func_238509_a_(MatrixStack p_238509_1_, FrameTimer p_238509_2_, int p_238509_3_, int p_238509_4_, boolean p_238509_5_) {
       RenderSystem.disableDepthTest();
-      int i = p_238509_2_.getLogStart();
-      int j = p_238509_2_.getLogEnd();
-      long[] along = p_238509_2_.getLog();
+      int i = p_238509_2_.getLastIndex();
+      int j = p_238509_2_.getIndex();
+      long[] along = p_238509_2_.getFrames();
       int l = p_238509_3_;
       int i1 = Math.max(0, along.length - p_238509_4_);
       int j1 = along.length - i1;
-      int lvt_9_1_ = p_238509_2_.wrapIndex(i + i1);
+      int lvt_9_1_ = p_238509_2_.parseIndex(i + i1);
       long k1 = 0L;
       int l1 = Integer.MAX_VALUE;
       int i2 = Integer.MIN_VALUE;
 
       for(int j2 = 0; j2 < j1; ++j2) {
-         int k2 = (int)(along[p_238509_2_.wrapIndex(lvt_9_1_ + j2)] / 1000000L);
+         int k2 = (int)(along[p_238509_2_.parseIndex(lvt_9_1_ + j2)] / 1000000L);
          l1 = Math.min(l1, k2);
          i2 = Math.max(i2, k2);
          k1 += (long)k2;
       }
 
-      int k4 = this.minecraft.getWindow().getGuiScaledHeight();
+      int k4 = this.mc.getMainWindow().getScaledHeight();
       fill(p_238509_1_, p_238509_3_, k4 - 60, p_238509_3_ + j1, k4, -1873784752);
-      BufferBuilder bufferbuilder = Tessellator.getInstance().getBuilder();
+      BufferBuilder bufferbuilder = Tessellator.getInstance().getBuffer();
       RenderSystem.enableBlend();
       RenderSystem.disableTexture();
       RenderSystem.defaultBlendFunc();
       bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
 
-      for(Matrix4f matrix4f = TransformationMatrix.identity().getMatrix(); lvt_9_1_ != j; lvt_9_1_ = p_238509_2_.wrapIndex(lvt_9_1_ + 1)) {
-         int l2 = p_238509_2_.scaleSampleTo(along[lvt_9_1_], p_238509_5_ ? 30 : 60, p_238509_5_ ? 60 : 20);
+      for(Matrix4f matrix4f = TransformationMatrix.identity().getMatrix(); lvt_9_1_ != j; lvt_9_1_ = p_238509_2_.parseIndex(lvt_9_1_ + 1)) {
+         int l2 = p_238509_2_.getLineHeight(along[lvt_9_1_], p_238509_5_ ? 30 : 60, p_238509_5_ ? 60 : 20);
          int i3 = p_238509_5_ ? 100 : 60;
-         int j3 = this.getSampleColor(MathHelper.clamp(l2, 0, i3), 0, i3 / 2, i3);
+         int j3 = this.getFrameColor(MathHelper.clamp(l2, 0, i3), 0, i3 / 2, i3);
          int k3 = j3 >> 24 & 255;
          int l3 = j3 >> 16 & 255;
          int i4 = j3 >> 8 & 255;
          int j4 = j3 & 255;
-         bufferbuilder.vertex(matrix4f, (float)(l + 1), (float)k4, 0.0F).color(l3, i4, j4, k3).endVertex();
-         bufferbuilder.vertex(matrix4f, (float)(l + 1), (float)(k4 - l2 + 1), 0.0F).color(l3, i4, j4, k3).endVertex();
-         bufferbuilder.vertex(matrix4f, (float)l, (float)(k4 - l2 + 1), 0.0F).color(l3, i4, j4, k3).endVertex();
-         bufferbuilder.vertex(matrix4f, (float)l, (float)k4, 0.0F).color(l3, i4, j4, k3).endVertex();
+         bufferbuilder.pos(matrix4f, (float)(l + 1), (float)k4, 0.0F).color(l3, i4, j4, k3).endVertex();
+         bufferbuilder.pos(matrix4f, (float)(l + 1), (float)(k4 - l2 + 1), 0.0F).color(l3, i4, j4, k3).endVertex();
+         bufferbuilder.pos(matrix4f, (float)l, (float)(k4 - l2 + 1), 0.0F).color(l3, i4, j4, k3).endVertex();
+         bufferbuilder.pos(matrix4f, (float)l, (float)k4, 0.0F).color(l3, i4, j4, k3).endVertex();
          ++l;
       }
 
-      bufferbuilder.end();
-      WorldVertexBufferUploader.end(bufferbuilder);
+      bufferbuilder.finishDrawing();
+      WorldVertexBufferUploader.draw(bufferbuilder);
       RenderSystem.enableTexture();
       RenderSystem.disableBlend();
       if (p_238509_5_) {
          fill(p_238509_1_, p_238509_3_ + 1, k4 - 30 + 1, p_238509_3_ + 14, k4 - 30 + 10, -1873784752);
-         this.font.draw(p_238509_1_, "60 FPS", (float)(p_238509_3_ + 2), (float)(k4 - 30 + 2), 14737632);
+         this.fontRenderer.drawString(p_238509_1_, "60 FPS", (float)(p_238509_3_ + 2), (float)(k4 - 30 + 2), 14737632);
          this.hLine(p_238509_1_, p_238509_3_, p_238509_3_ + j1 - 1, k4 - 30, -1);
          fill(p_238509_1_, p_238509_3_ + 1, k4 - 60 + 1, p_238509_3_ + 14, k4 - 60 + 10, -1873784752);
-         this.font.draw(p_238509_1_, "30 FPS", (float)(p_238509_3_ + 2), (float)(k4 - 60 + 2), 14737632);
+         this.fontRenderer.drawString(p_238509_1_, "30 FPS", (float)(p_238509_3_ + 2), (float)(k4 - 60 + 2), 14737632);
          this.hLine(p_238509_1_, p_238509_3_, p_238509_3_ + j1 - 1, k4 - 60, -1);
       } else {
          fill(p_238509_1_, p_238509_3_ + 1, k4 - 60 + 1, p_238509_3_ + 14, k4 - 60 + 10, -1873784752);
-         this.font.draw(p_238509_1_, "20 TPS", (float)(p_238509_3_ + 2), (float)(k4 - 60 + 2), 14737632);
+         this.fontRenderer.drawString(p_238509_1_, "20 TPS", (float)(p_238509_3_ + 2), (float)(k4 - 60 + 2), 14737632);
          this.hLine(p_238509_1_, p_238509_3_, p_238509_3_ + j1 - 1, k4 - 60, -1);
       }
 
       this.hLine(p_238509_1_, p_238509_3_, p_238509_3_ + j1 - 1, k4 - 1, -1);
       this.vLine(p_238509_1_, p_238509_3_, k4 - 60, k4, -1);
       this.vLine(p_238509_1_, p_238509_3_ + j1 - 1, k4 - 60, k4, -1);
-      if (p_238509_5_ && this.minecraft.options.framerateLimit > 0 && this.minecraft.options.framerateLimit <= 250) {
-         this.hLine(p_238509_1_, p_238509_3_, p_238509_3_ + j1 - 1, k4 - 1 - (int)(1800.0D / (double)this.minecraft.options.framerateLimit), -16711681);
+      if (p_238509_5_ && this.mc.gameSettings.framerateLimit > 0 && this.mc.gameSettings.framerateLimit <= 250) {
+         this.hLine(p_238509_1_, p_238509_3_, p_238509_3_ + j1 - 1, k4 - 1 - (int)(1800.0D / (double)this.mc.gameSettings.framerateLimit), -16711681);
       }
 
       String s = l1 + " ms min";
       String s1 = k1 / (long)j1 + " ms avg";
       String s2 = i2 + " ms max";
-      this.font.drawShadow(p_238509_1_, s, (float)(p_238509_3_ + 2), (float)(k4 - 60 - 9), 14737632);
-      this.font.drawShadow(p_238509_1_, s1, (float)(p_238509_3_ + j1 / 2 - this.font.width(s1) / 2), (float)(k4 - 60 - 9), 14737632);
-      this.font.drawShadow(p_238509_1_, s2, (float)(p_238509_3_ + j1 - this.font.width(s2)), (float)(k4 - 60 - 9), 14737632);
+      this.fontRenderer.drawStringWithShadow(p_238509_1_, s, (float)(p_238509_3_ + 2), (float)(k4 - 60 - 9), 14737632);
+      this.fontRenderer.drawStringWithShadow(p_238509_1_, s1, (float)(p_238509_3_ + j1 / 2 - this.fontRenderer.getStringWidth(s1) / 2), (float)(k4 - 60 - 9), 14737632);
+      this.fontRenderer.drawStringWithShadow(p_238509_1_, s2, (float)(p_238509_3_ + j1 - this.fontRenderer.getStringWidth(s2)), (float)(k4 - 60 - 9), 14737632);
       RenderSystem.enableDepthTest();
    }
 
-   private int getSampleColor(int p_181552_1_, int p_181552_2_, int p_181552_3_, int p_181552_4_) {
-      return p_181552_1_ < p_181552_3_ ? this.colorLerp(-16711936, -256, (float)p_181552_1_ / (float)p_181552_3_) : this.colorLerp(-256, -65536, (float)(p_181552_1_ - p_181552_3_) / (float)(p_181552_4_ - p_181552_3_));
+   private int getFrameColor(int height, int heightMin, int heightMid, int heightMax) {
+      return height < heightMid ? this.blendColors(-16711936, -256, (float)height / (float)heightMid) : this.blendColors(-256, -65536, (float)(height - heightMid) / (float)(heightMax - heightMid));
    }
 
-   private int colorLerp(int p_181553_1_, int p_181553_2_, float p_181553_3_) {
-      int i = p_181553_1_ >> 24 & 255;
-      int j = p_181553_1_ >> 16 & 255;
-      int k = p_181553_1_ >> 8 & 255;
-      int l = p_181553_1_ & 255;
-      int i1 = p_181553_2_ >> 24 & 255;
-      int j1 = p_181553_2_ >> 16 & 255;
-      int k1 = p_181553_2_ >> 8 & 255;
-      int l1 = p_181553_2_ & 255;
-      int i2 = MathHelper.clamp((int)MathHelper.lerp(p_181553_3_, (float)i, (float)i1), 0, 255);
-      int j2 = MathHelper.clamp((int)MathHelper.lerp(p_181553_3_, (float)j, (float)j1), 0, 255);
-      int k2 = MathHelper.clamp((int)MathHelper.lerp(p_181553_3_, (float)k, (float)k1), 0, 255);
-      int l2 = MathHelper.clamp((int)MathHelper.lerp(p_181553_3_, (float)l, (float)l1), 0, 255);
+   private int blendColors(int col1, int col2, float factor) {
+      int i = col1 >> 24 & 255;
+      int j = col1 >> 16 & 255;
+      int k = col1 >> 8 & 255;
+      int l = col1 & 255;
+      int i1 = col2 >> 24 & 255;
+      int j1 = col2 >> 16 & 255;
+      int k1 = col2 >> 8 & 255;
+      int l1 = col2 & 255;
+      int i2 = MathHelper.clamp((int)MathHelper.lerp(factor, (float)i, (float)i1), 0, 255);
+      int j2 = MathHelper.clamp((int)MathHelper.lerp(factor, (float)j, (float)j1), 0, 255);
+      int k2 = MathHelper.clamp((int)MathHelper.lerp(factor, (float)k, (float)k1), 0, 255);
+      int l2 = MathHelper.clamp((int)MathHelper.lerp(factor, (float)l, (float)l1), 0, 255);
       return i2 << 24 | j2 << 16 | k2 << 8 | l2;
    }
 
-   private static long bytesToMegabytes(long p_175240_0_) {
-      return p_175240_0_ / 1024L / 1024L;
+   private static long bytesToMb(long bytes) {
+      return bytes / 1024L / 1024L;
    }
 }

@@ -4,9 +4,9 @@ public class DataParameter<T> {
    private final int id;
    private final IDataSerializer<T> serializer;
 
-   public DataParameter(int p_i46841_1_, IDataSerializer<T> p_i46841_2_) {
-      this.id = p_i46841_1_;
-      this.serializer = p_i46841_2_;
+   public DataParameter(int idIn, IDataSerializer<T> serializerIn) {
+      this.id = idIn;
+      this.serializer = serializerIn;
    }
 
    public int getId() {

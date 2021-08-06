@@ -21,57 +21,57 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class EnderPearlEntity extends ProjectileItemEntity {
-   public EnderPearlEntity(EntityType<? extends EnderPearlEntity> p_i50153_1_, World p_i50153_2_) {
-      super(p_i50153_1_, p_i50153_2_);
+   public EnderPearlEntity(EntityType<? extends EnderPearlEntity> p_i50153_1_, World world) {
+      super(p_i50153_1_, world);
    }
 
-   public EnderPearlEntity(World p_i1783_1_, LivingEntity p_i1783_2_) {
-      super(EntityType.ENDER_PEARL, p_i1783_2_, p_i1783_1_);
+   public EnderPearlEntity(World worldIn, LivingEntity throwerIn) {
+      super(EntityType.ENDER_PEARL, throwerIn, worldIn);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public EnderPearlEntity(World p_i1784_1_, double p_i1784_2_, double p_i1784_4_, double p_i1784_6_) {
-      super(EntityType.ENDER_PEARL, p_i1784_2_, p_i1784_4_, p_i1784_6_, p_i1784_1_);
+   public EnderPearlEntity(World worldIn, double x, double y, double z) {
+      super(EntityType.ENDER_PEARL, x, y, z, worldIn);
    }
 
    protected Item getDefaultItem() {
       return Items.ENDER_PEARL;
    }
 
-   protected void onHitEntity(EntityRayTraceResult p_213868_1_) {
-      super.onHitEntity(p_213868_1_);
-      p_213868_1_.getEntity().hurt(DamageSource.thrown(this, this.getOwner()), 0.0F);
+   protected void onEntityHit(EntityRayTraceResult p_213868_1_) {
+      super.onEntityHit(p_213868_1_);
+      p_213868_1_.getEntity().attackEntityFrom(DamageSource.causeThrownDamage(this, this.func_234616_v_()), 0.0F);
    }
 
-   protected void onHit(RayTraceResult p_70227_1_) {
-      super.onHit(p_70227_1_);
-      Entity entity = this.getOwner();
+   protected void onImpact(RayTraceResult result) {
+      super.onImpact(result);
+      Entity entity = this.func_234616_v_();
 
       for(int i = 0; i < 32; ++i) {
-         this.level.addParticle(ParticleTypes.PORTAL, this.getX(), this.getY() + this.random.nextDouble() * 2.0D, this.getZ(), this.random.nextGaussian(), 0.0D, this.random.nextGaussian());
+         this.world.addParticle(ParticleTypes.PORTAL, this.getPosX(), this.getPosY() + this.rand.nextDouble() * 2.0D, this.getPosZ(), this.rand.nextGaussian(), 0.0D, this.rand.nextGaussian());
       }
 
-      if (!this.level.isClientSide && !this.removed) {
+      if (!this.world.isRemote && !this.removed) {
          if (entity instanceof ServerPlayerEntity) {
             ServerPlayerEntity serverplayerentity = (ServerPlayerEntity)entity;
-            if (serverplayerentity.connection.getConnection().isConnected() && serverplayerentity.level == this.level && !serverplayerentity.isSleeping()) {
-               if (this.random.nextFloat() < 0.05F && this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
-                  EndermiteEntity endermiteentity = EntityType.ENDERMITE.create(this.level);
-                  endermiteentity.setPlayerSpawned(true);
-                  endermiteentity.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.yRot, entity.xRot);
-                  this.level.addFreshEntity(endermiteentity);
+            if (serverplayerentity.connection.getNetworkManager().isChannelOpen() && serverplayerentity.world == this.world && !serverplayerentity.isSleeping()) {
+               if (this.rand.nextFloat() < 0.05F && this.world.getGameRules().getBoolean(GameRules.DO_MOB_SPAWNING)) {
+                  EndermiteEntity endermiteentity = EntityType.ENDERMITE.create(this.world);
+                  endermiteentity.setSpawnedByPlayer(true);
+                  endermiteentity.setLocationAndAngles(entity.getPosX(), entity.getPosY(), entity.getPosZ(), entity.rotationYaw, entity.rotationPitch);
+                  this.world.addEntity(endermiteentity);
                }
 
                if (entity.isPassenger()) {
                   entity.stopRiding();
                }
 
-               entity.teleportTo(this.getX(), this.getY(), this.getZ());
+               entity.setPositionAndUpdate(this.getPosX(), this.getPosY(), this.getPosZ());
                entity.fallDistance = 0.0F;
-               entity.hurt(DamageSource.FALL, 5.0F);
+               entity.attackEntityFrom(DamageSource.FALL, 5.0F);
             }
          } else if (entity != null) {
-            entity.teleportTo(this.getX(), this.getY(), this.getZ());
+            entity.setPositionAndUpdate(this.getPosX(), this.getPosY(), this.getPosZ());
             entity.fallDistance = 0.0F;
          }
 
@@ -81,7 +81,7 @@ public class EnderPearlEntity extends ProjectileItemEntity {
    }
 
    public void tick() {
-      Entity entity = this.getOwner();
+      Entity entity = this.func_234616_v_();
       if (entity instanceof PlayerEntity && !entity.isAlive()) {
          this.remove();
       } else {
@@ -91,12 +91,12 @@ public class EnderPearlEntity extends ProjectileItemEntity {
    }
 
    @Nullable
-   public Entity changeDimension(ServerWorld p_241206_1_) {
-      Entity entity = this.getOwner();
-      if (entity != null && entity.level.dimension() != p_241206_1_.dimension()) {
-         this.setOwner((Entity)null);
+   public Entity changeDimension(ServerWorld server) {
+      Entity entity = this.func_234616_v_();
+      if (entity != null && entity.world.getDimensionKey() != server.getDimensionKey()) {
+         this.setShooter((Entity)null);
       }
 
-      return super.changeDimension(p_241206_1_);
+      return super.changeDimension(server);
    }
 }

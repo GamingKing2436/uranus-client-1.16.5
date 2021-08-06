@@ -15,9 +15,9 @@ public class V1906 extends NamespacedSchema {
 
    public Map<String, Supplier<TypeTemplate>> registerBlockEntities(Schema p_registerBlockEntities_1_) {
       Map<String, Supplier<TypeTemplate>> map = super.registerBlockEntities(p_registerBlockEntities_1_);
-      registerInventory(p_registerBlockEntities_1_, map, "minecraft:barrel");
-      registerInventory(p_registerBlockEntities_1_, map, "minecraft:smoker");
-      registerInventory(p_registerBlockEntities_1_, map, "minecraft:blast_furnace");
+      func_219880_a(p_registerBlockEntities_1_, map, "minecraft:barrel");
+      func_219880_a(p_registerBlockEntities_1_, map, "minecraft:smoker");
+      func_219880_a(p_registerBlockEntities_1_, map, "minecraft:blast_furnace");
       p_registerBlockEntities_1_.register(map, "minecraft:lectern", (p_219882_1_) -> {
          return DSL.optionalFields("Book", TypeReferences.ITEM_STACK.in(p_registerBlockEntities_1_));
       });
@@ -25,7 +25,7 @@ public class V1906 extends NamespacedSchema {
       return map;
    }
 
-   protected static void registerInventory(Schema p_219880_0_, Map<String, Supplier<TypeTemplate>> p_219880_1_, String p_219880_2_) {
+   protected static void func_219880_a(Schema p_219880_0_, Map<String, Supplier<TypeTemplate>> p_219880_1_, String p_219880_2_) {
       p_219880_0_.register(p_219880_1_, p_219880_2_, () -> {
          return DSL.optionalFields("Items", DSL.list(TypeReferences.ITEM_STACK.in(p_219880_0_)));
       });

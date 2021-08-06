@@ -13,18 +13,18 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ShulkerBoxColoringRecipe extends SpecialRecipe {
-   public ShulkerBoxColoringRecipe(ResourceLocation p_i48159_1_) {
-      super(p_i48159_1_);
+   public ShulkerBoxColoringRecipe(ResourceLocation idIn) {
+      super(idIn);
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
       int i = 0;
       int j = 0;
 
-      for(int k = 0; k < p_77569_1_.getContainerSize(); ++k) {
-         ItemStack itemstack = p_77569_1_.getItem(k);
+      for(int k = 0; k < inv.getSizeInventory(); ++k) {
+         ItemStack itemstack = inv.getStackInSlot(k);
          if (!itemstack.isEmpty()) {
-            if (Block.byItem(itemstack.getItem()) instanceof ShulkerBoxBlock) {
+            if (Block.getBlockFromItem(itemstack.getItem()) instanceof ShulkerBoxBlock) {
                ++i;
             } else {
                if (!(itemstack.getItem() instanceof DyeItem)) {
@@ -43,15 +43,15 @@ public class ShulkerBoxColoringRecipe extends SpecialRecipe {
       return i == 1 && j == 1;
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
+   public ItemStack getCraftingResult(CraftingInventory inv) {
       ItemStack itemstack = ItemStack.EMPTY;
       DyeItem dyeitem = (DyeItem)Items.WHITE_DYE;
 
-      for(int i = 0; i < p_77572_1_.getContainerSize(); ++i) {
-         ItemStack itemstack1 = p_77572_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack1 = inv.getStackInSlot(i);
          if (!itemstack1.isEmpty()) {
             Item item = itemstack1.getItem();
-            if (Block.byItem(item) instanceof ShulkerBoxBlock) {
+            if (Block.getBlockFromItem(item) instanceof ShulkerBoxBlock) {
                itemstack = itemstack1;
             } else if (item instanceof DyeItem) {
                dyeitem = (DyeItem)item;
@@ -68,11 +68,11 @@ public class ShulkerBoxColoringRecipe extends SpecialRecipe {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ * p_194133_2_ >= 2;
+   public boolean canFit(int width, int height) {
+      return width * height >= 2;
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.SHULKER_BOX_COLORING;
+      return IRecipeSerializer.CRAFTING_SPECIAL_SHULKERBOXCOLORING;
    }
 }

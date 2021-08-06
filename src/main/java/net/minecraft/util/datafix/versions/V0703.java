@@ -8,8 +8,8 @@ import java.util.function.Supplier;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class V0703 extends Schema {
-   public V0703(int p_i49584_1_, Schema p_i49584_2_) {
-      super(p_i49584_1_, p_i49584_2_);
+   public V0703(int versionKey, Schema parent) {
+      super(versionKey, parent);
    }
 
    public Map<String, Supplier<TypeTemplate>> registerEntities(Schema p_registerEntities_1_) {

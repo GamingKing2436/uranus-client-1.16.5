@@ -5,15 +5,15 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 
 public class RedstoneBlock extends Block {
-   public RedstoneBlock(AbstractBlock.Properties p_i48350_1_) {
-      super(p_i48350_1_);
+   public RedstoneBlock(AbstractBlock.Properties properties) {
+      super(properties);
    }
 
-   public boolean isSignalSource(BlockState p_149744_1_) {
+   public boolean canProvidePower(BlockState state) {
       return true;
    }
 
-   public int getSignal(BlockState p_180656_1_, IBlockReader p_180656_2_, BlockPos p_180656_3_, Direction p_180656_4_) {
+   public int getWeakPower(BlockState blockState, IBlockReader blockAccess, BlockPos pos, Direction side) {
       return 15;
    }
 }

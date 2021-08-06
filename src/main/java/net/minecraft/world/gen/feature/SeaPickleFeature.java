@@ -15,18 +15,18 @@ public class SeaPickleFeature extends Feature<FeatureSpreadConfig> {
       super(p_i231987_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, FeatureSpreadConfig p_241855_5_) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, FeatureSpreadConfig config) {
       int i = 0;
-      int j = p_241855_5_.count().sample(p_241855_3_);
+      int j = config.func_242799_a().func_242259_a(rand);
 
       for(int k = 0; k < j; ++k) {
-         int l = p_241855_3_.nextInt(8) - p_241855_3_.nextInt(8);
-         int i1 = p_241855_3_.nextInt(8) - p_241855_3_.nextInt(8);
-         int j1 = p_241855_1_.getHeight(Heightmap.Type.OCEAN_FLOOR, p_241855_4_.getX() + l, p_241855_4_.getZ() + i1);
-         BlockPos blockpos = new BlockPos(p_241855_4_.getX() + l, j1, p_241855_4_.getZ() + i1);
-         BlockState blockstate = Blocks.SEA_PICKLE.defaultBlockState().setValue(SeaPickleBlock.PICKLES, Integer.valueOf(p_241855_3_.nextInt(4) + 1));
-         if (p_241855_1_.getBlockState(blockpos).is(Blocks.WATER) && blockstate.canSurvive(p_241855_1_, blockpos)) {
-            p_241855_1_.setBlock(blockpos, blockstate, 2);
+         int l = rand.nextInt(8) - rand.nextInt(8);
+         int i1 = rand.nextInt(8) - rand.nextInt(8);
+         int j1 = reader.getHeight(Heightmap.Type.OCEAN_FLOOR, pos.getX() + l, pos.getZ() + i1);
+         BlockPos blockpos = new BlockPos(pos.getX() + l, j1, pos.getZ() + i1);
+         BlockState blockstate = Blocks.SEA_PICKLE.getDefaultState().with(SeaPickleBlock.PICKLES, Integer.valueOf(rand.nextInt(4) + 1));
+         if (reader.getBlockState(blockpos).isIn(Blocks.WATER) && blockstate.isValidPosition(reader, blockpos)) {
+            reader.setBlockState(blockpos, blockstate, 2);
             ++i;
          }
       }

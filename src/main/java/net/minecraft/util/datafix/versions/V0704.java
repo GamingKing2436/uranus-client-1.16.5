@@ -17,7 +17,7 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class V0704 extends Schema {
-   protected static final Map<String, String> ITEM_TO_BLOCKENTITY = DataFixUtils.make(Maps.newHashMap(), (p_209318_0_) -> {
+   protected static final Map<String, String> field_206647_b = DataFixUtils.make(Maps.newHashMap(), (p_209318_0_) -> {
       p_209318_0_.put("minecraft:furnace", "minecraft:furnace");
       p_209318_0_.put("minecraft:lit_furnace", "minecraft:furnace");
       p_209318_0_.put("minecraft:chest", "minecraft:chest");
@@ -90,19 +90,19 @@ public class V0704 extends Schema {
       p_209318_0_.put("minecraft:sign", "minecraft:sign");
       p_209318_0_.put("minecraft:shield", "minecraft:banner");
    });
-   protected static final HookFunction ADD_NAMES = new HookFunction() {
+   protected static final HookFunction field_206648_c = new HookFunction() {
       public <T> T apply(DynamicOps<T> p_apply_1_, T p_apply_2_) {
-         return V0099.addNames(new Dynamic<>(p_apply_1_, p_apply_2_), V0704.ITEM_TO_BLOCKENTITY, "ArmorStand");
+         return V0099.func_209869_a(new Dynamic<>(p_apply_1_, p_apply_2_), V0704.field_206647_b, "ArmorStand");
       }
    };
 
-   public V0704(int p_i49583_1_, Schema p_i49583_2_) {
-      super(p_i49583_1_, p_i49583_2_);
+   public V0704(int versionKey, Schema parent) {
+      super(versionKey, parent);
    }
 
-   protected static void registerInventory(Schema p_206645_0_, Map<String, Supplier<TypeTemplate>> p_206645_1_, String p_206645_2_) {
-      p_206645_0_.register(p_206645_1_, p_206645_2_, () -> {
-         return DSL.optionalFields("Items", DSL.list(TypeReferences.ITEM_STACK.in(p_206645_0_)));
+   protected static void registerInventory(Schema schema, Map<String, Supplier<TypeTemplate>> map, String name) {
+      schema.register(map, name, () -> {
+         return DSL.optionalFields("Items", DSL.list(TypeReferences.ITEM_STACK.in(schema)));
       });
    }
 
@@ -147,10 +147,10 @@ public class V0704 extends Schema {
    public void registerTypes(Schema p_registerTypes_1_, Map<String, Supplier<TypeTemplate>> p_registerTypes_2_, Map<String, Supplier<TypeTemplate>> p_registerTypes_3_) {
       super.registerTypes(p_registerTypes_1_, p_registerTypes_2_, p_registerTypes_3_);
       p_registerTypes_1_.registerType(false, TypeReferences.BLOCK_ENTITY, () -> {
-         return DSL.taggedChoiceLazy("id", NamespacedSchema.namespacedString(), p_registerTypes_3_);
+         return DSL.taggedChoiceLazy("id", NamespacedSchema.func_233457_a_(), p_registerTypes_3_);
       });
       p_registerTypes_1_.registerType(true, TypeReferences.ITEM_STACK, () -> {
-         return DSL.hook(DSL.optionalFields("id", TypeReferences.ITEM_NAME.in(p_registerTypes_1_), "tag", DSL.optionalFields("EntityTag", TypeReferences.ENTITY_TREE.in(p_registerTypes_1_), "BlockEntityTag", TypeReferences.BLOCK_ENTITY.in(p_registerTypes_1_), "CanDestroy", DSL.list(TypeReferences.BLOCK_NAME.in(p_registerTypes_1_)), "CanPlaceOn", DSL.list(TypeReferences.BLOCK_NAME.in(p_registerTypes_1_)))), ADD_NAMES, HookFunction.IDENTITY);
+         return DSL.hook(DSL.optionalFields("id", TypeReferences.ITEM_NAME.in(p_registerTypes_1_), "tag", DSL.optionalFields("EntityTag", TypeReferences.ENTITY_TYPE.in(p_registerTypes_1_), "BlockEntityTag", TypeReferences.BLOCK_ENTITY.in(p_registerTypes_1_), "CanDestroy", DSL.list(TypeReferences.BLOCK_NAME.in(p_registerTypes_1_)), "CanPlaceOn", DSL.list(TypeReferences.BLOCK_NAME.in(p_registerTypes_1_)))), field_206648_c, HookFunction.IDENTITY);
       });
    }
 }

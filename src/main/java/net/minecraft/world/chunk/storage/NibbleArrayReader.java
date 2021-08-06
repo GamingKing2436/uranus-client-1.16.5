@@ -5,14 +5,14 @@ public class NibbleArrayReader {
    private final int depthBits;
    private final int depthBitsPlusFour;
 
-   public NibbleArrayReader(byte[] p_i1998_1_, int p_i1998_2_) {
-      this.data = p_i1998_1_;
-      this.depthBits = p_i1998_2_;
-      this.depthBitsPlusFour = p_i1998_2_ + 4;
+   public NibbleArrayReader(byte[] dataIn, int depthBitsIn) {
+      this.data = dataIn;
+      this.depthBits = depthBitsIn;
+      this.depthBitsPlusFour = depthBitsIn + 4;
    }
 
-   public int get(int p_76686_1_, int p_76686_2_, int p_76686_3_) {
-      int i = p_76686_1_ << this.depthBitsPlusFour | p_76686_3_ << this.depthBits | p_76686_2_;
+   public int get(int x, int y, int z) {
+      int i = x << this.depthBitsPlusFour | z << this.depthBits | y;
       int j = i >> 1;
       int k = i & 1;
       return k == 0 ? this.data[j] & 15 : this.data[j] >> 4 & 15;

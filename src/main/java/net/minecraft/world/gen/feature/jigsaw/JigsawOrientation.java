@@ -19,41 +19,41 @@ public enum JigsawOrientation implements IStringSerializable {
    NORTH_UP("north_up", Direction.NORTH, Direction.UP),
    SOUTH_UP("south_up", Direction.SOUTH, Direction.UP);
 
-   private static final Int2ObjectMap<JigsawOrientation> LOOKUP_TOP_FRONT = new Int2ObjectOpenHashMap<>(values().length);
-   private final String name;
-   private final Direction top;
-   private final Direction front;
+   private static final Int2ObjectMap<JigsawOrientation> field_239637_m_ = new Int2ObjectOpenHashMap<>(values().length);
+   private final String field_239638_n_;
+   private final Direction field_239639_o_;
+   private final Direction field_239640_p_;
 
-   private static int lookupKey(Direction p_239643_0_, Direction p_239643_1_) {
+   private static int func_239643_b_(Direction p_239643_0_, Direction p_239643_1_) {
       return p_239643_0_.ordinal() << 3 | p_239643_1_.ordinal();
    }
 
    private JigsawOrientation(String p_i232507_3_, Direction p_i232507_4_, Direction p_i232507_5_) {
-      this.name = p_i232507_3_;
-      this.front = p_i232507_4_;
-      this.top = p_i232507_5_;
+      this.field_239638_n_ = p_i232507_3_;
+      this.field_239640_p_ = p_i232507_4_;
+      this.field_239639_o_ = p_i232507_5_;
    }
 
-   public String getSerializedName() {
-      return this.name;
+   public String getString() {
+      return this.field_239638_n_;
    }
 
-   public static JigsawOrientation fromFrontAndTop(Direction p_239641_0_, Direction p_239641_1_) {
-      int i = lookupKey(p_239641_1_, p_239641_0_);
-      return LOOKUP_TOP_FRONT.get(i);
+   public static JigsawOrientation func_239641_a_(Direction p_239641_0_, Direction p_239641_1_) {
+      int i = func_239643_b_(p_239641_1_, p_239641_0_);
+      return field_239637_m_.get(i);
    }
 
-   public Direction front() {
-      return this.front;
+   public Direction func_239642_b_() {
+      return this.field_239640_p_;
    }
 
-   public Direction top() {
-      return this.top;
+   public Direction func_239644_c_() {
+      return this.field_239639_o_;
    }
 
    static {
       for(JigsawOrientation jigsaworientation : values()) {
-         LOOKUP_TOP_FRONT.put(lookupKey(jigsaworientation.top, jigsaworientation.front), jigsaworientation);
+         field_239637_m_.put(func_239643_b_(jigsaworientation.field_239639_o_, jigsaworientation.field_239640_p_), jigsaworientation);
       }
 
    }

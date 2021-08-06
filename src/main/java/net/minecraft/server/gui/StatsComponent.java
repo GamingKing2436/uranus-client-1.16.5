@@ -12,43 +12,43 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Util;
 
 public class StatsComponent extends JComponent {
-   private static final DecimalFormat DECIMAL_FORMAT = Util.make(new DecimalFormat("########0.000"), (p_212730_0_) -> {
+   private static final DecimalFormat FORMATTER = Util.make(new DecimalFormat("########0.000"), (p_212730_0_) -> {
       p_212730_0_.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ROOT));
    });
    private final int[] values = new int[256];
    private int vp;
    private final String[] msgs = new String[11];
    private final MinecraftServer server;
-   private final Timer timer;
+   private final Timer field_219054_f;
 
-   public StatsComponent(MinecraftServer p_i2367_1_) {
-      this.server = p_i2367_1_;
+   public StatsComponent(MinecraftServer serverIn) {
+      this.server = serverIn;
       this.setPreferredSize(new Dimension(456, 246));
       this.setMinimumSize(new Dimension(456, 246));
       this.setMaximumSize(new Dimension(456, 246));
-      this.timer = new Timer(500, (p_210466_1_) -> {
+      this.field_219054_f = new Timer(500, (p_210466_1_) -> {
          this.tick();
       });
-      this.timer.start();
+      this.field_219054_f.start();
       this.setBackground(Color.BLACK);
    }
 
    private void tick() {
       long i = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
       this.msgs[0] = "Memory use: " + i / 1024L / 1024L + " mb (" + Runtime.getRuntime().freeMemory() * 100L / Runtime.getRuntime().maxMemory() + "% free)";
-      this.msgs[1] = "Avg tick: " + DECIMAL_FORMAT.format(this.getAverage(this.server.tickTimes) * 1.0E-6D) + " ms";
+      this.msgs[1] = "Avg tick: " + FORMATTER.format(this.mean(this.server.tickTimeArray) * 1.0E-6D) + " ms";
       this.values[this.vp++ & 255] = (int)(i * 100L / Runtime.getRuntime().maxMemory());
       this.repaint();
    }
 
-   private double getAverage(long[] p_120035_1_) {
+   private double mean(long[] values) {
       long i = 0L;
 
-      for(long j : p_120035_1_) {
+      for(long j : values) {
          i += j;
       }
 
-      return (double)i / (double)p_120035_1_.length;
+      return (double)i / (double)values.length;
    }
 
    public void paint(Graphics p_paint_1_) {
@@ -72,7 +72,7 @@ public class StatsComponent extends JComponent {
 
    }
 
-   public void close() {
-      this.timer.stop();
+   public void func_219053_a() {
+      this.field_219054_f.stop();
    }
 }

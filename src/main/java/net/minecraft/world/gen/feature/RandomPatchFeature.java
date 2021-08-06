@@ -14,24 +14,24 @@ public class RandomPatchFeature extends Feature<BlockClusterFeatureConfig> {
       super(p_i231979_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, BlockClusterFeatureConfig p_241855_5_) {
-      BlockState blockstate = p_241855_5_.stateProvider.getState(p_241855_3_, p_241855_4_);
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, BlockClusterFeatureConfig config) {
+      BlockState blockstate = config.stateProvider.getBlockState(rand, pos);
       BlockPos blockpos;
-      if (p_241855_5_.project) {
-         blockpos = p_241855_1_.getHeightmapPos(Heightmap.Type.WORLD_SURFACE_WG, p_241855_4_);
+      if (config.field_227298_k_) {
+         blockpos = reader.getHeight(Heightmap.Type.WORLD_SURFACE_WG, pos);
       } else {
-         blockpos = p_241855_4_;
+         blockpos = pos;
       }
 
       int i = 0;
       BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
 
-      for(int j = 0; j < p_241855_5_.tries; ++j) {
-         blockpos$mutable.setWithOffset(blockpos, p_241855_3_.nextInt(p_241855_5_.xspread + 1) - p_241855_3_.nextInt(p_241855_5_.xspread + 1), p_241855_3_.nextInt(p_241855_5_.yspread + 1) - p_241855_3_.nextInt(p_241855_5_.yspread + 1), p_241855_3_.nextInt(p_241855_5_.zspread + 1) - p_241855_3_.nextInt(p_241855_5_.zspread + 1));
-         BlockPos blockpos1 = blockpos$mutable.below();
-         BlockState blockstate1 = p_241855_1_.getBlockState(blockpos1);
-         if ((p_241855_1_.isEmptyBlock(blockpos$mutable) || p_241855_5_.canReplace && p_241855_1_.getBlockState(blockpos$mutable).getMaterial().isReplaceable()) && blockstate.canSurvive(p_241855_1_, blockpos$mutable) && (p_241855_5_.whitelist.isEmpty() || p_241855_5_.whitelist.contains(blockstate1.getBlock())) && !p_241855_5_.blacklist.contains(blockstate1) && (!p_241855_5_.needWater || p_241855_1_.getFluidState(blockpos1.west()).is(FluidTags.WATER) || p_241855_1_.getFluidState(blockpos1.east()).is(FluidTags.WATER) || p_241855_1_.getFluidState(blockpos1.north()).is(FluidTags.WATER) || p_241855_1_.getFluidState(blockpos1.south()).is(FluidTags.WATER))) {
-            p_241855_5_.blockPlacer.place(p_241855_1_, blockpos$mutable, blockstate, p_241855_3_);
+      for(int j = 0; j < config.tryCount; ++j) {
+         blockpos$mutable.setAndOffset(blockpos, rand.nextInt(config.xSpread + 1) - rand.nextInt(config.xSpread + 1), rand.nextInt(config.ySpread + 1) - rand.nextInt(config.ySpread + 1), rand.nextInt(config.zSpread + 1) - rand.nextInt(config.zSpread + 1));
+         BlockPos blockpos1 = blockpos$mutable.down();
+         BlockState blockstate1 = reader.getBlockState(blockpos1);
+         if ((reader.isAirBlock(blockpos$mutable) || config.isReplaceable && reader.getBlockState(blockpos$mutable).getMaterial().isReplaceable()) && blockstate.isValidPosition(reader, blockpos$mutable) && (config.whitelist.isEmpty() || config.whitelist.contains(blockstate1.getBlock())) && !config.blacklist.contains(blockstate1) && (!config.requiresWater || reader.getFluidState(blockpos1.west()).isTagged(FluidTags.WATER) || reader.getFluidState(blockpos1.east()).isTagged(FluidTags.WATER) || reader.getFluidState(blockpos1.north()).isTagged(FluidTags.WATER) || reader.getFluidState(blockpos1.south()).isTagged(FluidTags.WATER))) {
+            config.blockPlacer.place(reader, blockpos$mutable, blockstate, rand);
             ++i;
          }
       }

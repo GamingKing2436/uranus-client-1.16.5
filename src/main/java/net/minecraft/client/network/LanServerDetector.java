@@ -19,24 +19,24 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class LanServerDetector {
-   private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
+   private static final AtomicInteger ATOMIC_COUNTER = new AtomicInteger(0);
    private static final Logger LOGGER = LogManager.getLogger();
 
    @OnlyIn(Dist.CLIENT)
    public static class LanServerFindThread extends Thread {
-      private final LanServerDetector.LanServerList serverList;
-      private final InetAddress pingGroup;
+      private final LanServerDetector.LanServerList localServerList;
+      private final InetAddress broadcastAddress;
       private final MulticastSocket socket;
 
-      public LanServerFindThread(LanServerDetector.LanServerList p_i1320_1_) throws IOException {
-         super("LanServerDetector #" + LanServerDetector.UNIQUE_THREAD_ID.incrementAndGet());
-         this.serverList = p_i1320_1_;
+      public LanServerFindThread(LanServerDetector.LanServerList list) throws IOException {
+         super("LanServerDetector #" + LanServerDetector.ATOMIC_COUNTER.incrementAndGet());
+         this.localServerList = list;
          this.setDaemon(true);
          this.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LanServerDetector.LOGGER));
          this.socket = new MulticastSocket(4445);
-         this.pingGroup = InetAddress.getByName("224.0.2.60");
+         this.broadcastAddress = InetAddress.getByName("224.0.2.60");
          this.socket.setSoTimeout(5000);
-         this.socket.joinGroup(this.pingGroup);
+         this.socket.joinGroup(this.broadcastAddress);
       }
 
       public void run() {
@@ -56,11 +56,11 @@ public class LanServerDetector {
 
             String s = new String(datagrampacket.getData(), datagrampacket.getOffset(), datagrampacket.getLength(), StandardCharsets.UTF_8);
             LanServerDetector.LOGGER.debug("{}: {}", datagrampacket.getAddress(), s);
-            this.serverList.addServer(s, datagrampacket.getAddress());
+            this.localServerList.addServer(s, datagrampacket.getAddress());
          }
 
          try {
-            this.socket.leaveGroup(this.pingGroup);
+            this.socket.leaveGroup(this.broadcastAddress);
          } catch (IOException ioexception) {
          }
 
@@ -70,39 +70,39 @@ public class LanServerDetector {
 
    @OnlyIn(Dist.CLIENT)
    public static class LanServerList {
-      private final List<LanServerInfo> servers = Lists.newArrayList();
-      private boolean isDirty;
+      private final List<LanServerInfo> listOfLanServers = Lists.newArrayList();
+      private boolean wasUpdated;
 
-      public synchronized boolean isDirty() {
-         return this.isDirty;
+      public synchronized boolean getWasUpdated() {
+         return this.wasUpdated;
       }
 
-      public synchronized void markClean() {
-         this.isDirty = false;
+      public synchronized void setWasNotUpdated() {
+         this.wasUpdated = false;
       }
 
-      public synchronized List<LanServerInfo> getServers() {
-         return Collections.unmodifiableList(this.servers);
+      public synchronized List<LanServerInfo> getLanServers() {
+         return Collections.unmodifiableList(this.listOfLanServers);
       }
 
-      public synchronized void addServer(String p_77551_1_, InetAddress p_77551_2_) {
-         String s = LanServerPingThread.parseMotd(p_77551_1_);
-         String s1 = LanServerPingThread.parseAddress(p_77551_1_);
+      public synchronized void addServer(String pingResponse, InetAddress ipAddress) {
+         String s = LanServerPingThread.getMotdFromPingResponse(pingResponse);
+         String s1 = LanServerPingThread.getAdFromPingResponse(pingResponse);
          if (s1 != null) {
-            s1 = p_77551_2_.getHostAddress() + ":" + s1;
+            s1 = ipAddress.getHostAddress() + ":" + s1;
             boolean flag = false;
 
-            for(LanServerInfo lanserverinfo : this.servers) {
-               if (lanserverinfo.getAddress().equals(s1)) {
-                  lanserverinfo.updatePingTime();
+            for(LanServerInfo lanserverinfo : this.listOfLanServers) {
+               if (lanserverinfo.getServerIpPort().equals(s1)) {
+                  lanserverinfo.updateLastSeen();
                   flag = true;
                   break;
                }
             }
 
             if (!flag) {
-               this.servers.add(new LanServerInfo(s, s1));
-               this.isDirty = true;
+               this.listOfLanServers.add(new LanServerInfo(s, s1));
+               this.wasUpdated = true;
             }
 
          }

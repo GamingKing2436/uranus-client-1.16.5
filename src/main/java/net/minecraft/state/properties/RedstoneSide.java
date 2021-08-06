@@ -9,19 +9,19 @@ public enum RedstoneSide implements IStringSerializable {
 
    private final String name;
 
-   private RedstoneSide(String p_i49333_3_) {
-      this.name = p_i49333_3_;
+   private RedstoneSide(String name) {
+      this.name = name;
    }
 
    public String toString() {
-      return this.getSerializedName();
+      return this.getString();
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 
-   public boolean isConnected() {
+   public boolean func_235921_b_() {
       return this != NONE;
    }
 }

@@ -32,21 +32,21 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class SkinManager {
    private final TextureManager textureManager;
-   private final File skinsDirectory;
+   private final File skinCacheDir;
    private final MinecraftSessionService sessionService;
-   private final LoadingCache<String, Map<Type, MinecraftProfileTexture>> insecureSkinCache;
+   private final LoadingCache<String, Map<Type, MinecraftProfileTexture>> skinCacheLoader;
 
-   public SkinManager(TextureManager p_i1044_1_, File p_i1044_2_, final MinecraftSessionService p_i1044_3_) {
-      this.textureManager = p_i1044_1_;
-      this.skinsDirectory = p_i1044_2_;
-      this.sessionService = p_i1044_3_;
-      this.insecureSkinCache = CacheBuilder.newBuilder().expireAfterAccess(15L, TimeUnit.SECONDS).build(new CacheLoader<String, Map<Type, MinecraftProfileTexture>>() {
+   public SkinManager(TextureManager textureManagerInstance, File skinCacheDirectory, final MinecraftSessionService sessionService) {
+      this.textureManager = textureManagerInstance;
+      this.skinCacheDir = skinCacheDirectory;
+      this.sessionService = sessionService;
+      this.skinCacheLoader = CacheBuilder.newBuilder().expireAfterAccess(15L, TimeUnit.SECONDS).build(new CacheLoader<String, Map<Type, MinecraftProfileTexture>>() {
          public Map<Type, MinecraftProfileTexture> load(String p_load_1_) {
             GameProfile gameprofile = new GameProfile((UUID)null, "dummy_mcdummyface");
             gameprofile.getProperties().put("textures", new Property("textures", p_load_1_, ""));
 
             try {
-               return p_i1044_3_.getTextures(gameprofile, false);
+               return sessionService.getTextures(gameprofile, false);
             } catch (Throwable throwable) {
                return ImmutableMap.of();
             }
@@ -54,52 +54,52 @@ public class SkinManager {
       });
    }
 
-   public ResourceLocation registerTexture(MinecraftProfileTexture p_152792_1_, Type p_152792_2_) {
-      return this.registerTexture(p_152792_1_, p_152792_2_, (SkinManager.ISkinAvailableCallback)null);
+   public ResourceLocation loadSkin(MinecraftProfileTexture profileTexture, Type textureType) {
+      return this.loadSkin(profileTexture, textureType, (SkinManager.ISkinAvailableCallback)null);
    }
 
-   private ResourceLocation registerTexture(MinecraftProfileTexture p_152789_1_, Type p_152789_2_, @Nullable SkinManager.ISkinAvailableCallback p_152789_3_) {
-      String s = Hashing.sha1().hashUnencodedChars(p_152789_1_.getHash()).toString();
+   private ResourceLocation loadSkin(MinecraftProfileTexture profileTexture, Type textureType, @Nullable SkinManager.ISkinAvailableCallback skinAvailableCallback) {
+      String s = Hashing.sha1().hashUnencodedChars(profileTexture.getHash()).toString();
       ResourceLocation resourcelocation = new ResourceLocation("skins/" + s);
       Texture texture = this.textureManager.getTexture(resourcelocation);
       if (texture != null) {
-         if (p_152789_3_ != null) {
-            p_152789_3_.onSkinTextureAvailable(p_152789_2_, resourcelocation, p_152789_1_);
+         if (skinAvailableCallback != null) {
+            skinAvailableCallback.onSkinTextureAvailable(textureType, resourcelocation, profileTexture);
          }
       } else {
-         File file1 = new File(this.skinsDirectory, s.length() > 2 ? s.substring(0, 2) : "xx");
+         File file1 = new File(this.skinCacheDir, s.length() > 2 ? s.substring(0, 2) : "xx");
          File file2 = new File(file1, s);
-         DownloadingTexture downloadingtexture = new DownloadingTexture(file2, p_152789_1_.getUrl(), DefaultPlayerSkin.getDefaultSkin(), p_152789_2_ == Type.SKIN, () -> {
-            if (p_152789_3_ != null) {
-               p_152789_3_.onSkinTextureAvailable(p_152789_2_, resourcelocation, p_152789_1_);
+         DownloadingTexture downloadingtexture = new DownloadingTexture(file2, profileTexture.getUrl(), DefaultPlayerSkin.getDefaultSkinLegacy(), textureType == Type.SKIN, () -> {
+            if (skinAvailableCallback != null) {
+               skinAvailableCallback.onSkinTextureAvailable(textureType, resourcelocation, profileTexture);
             }
 
          });
-         this.textureManager.register(resourcelocation, downloadingtexture);
+         this.textureManager.loadTexture(resourcelocation, downloadingtexture);
       }
 
       return resourcelocation;
    }
 
-   public void registerSkins(GameProfile p_152790_1_, SkinManager.ISkinAvailableCallback p_152790_2_, boolean p_152790_3_) {
+   public void loadProfileTextures(GameProfile profile, SkinManager.ISkinAvailableCallback skinAvailableCallback, boolean requireSecure) {
       Runnable runnable = () -> {
          Map<Type, MinecraftProfileTexture> map = Maps.newHashMap();
 
          try {
-            map.putAll(this.sessionService.getTextures(p_152790_1_, p_152790_3_));
+            map.putAll(this.sessionService.getTextures(profile, requireSecure));
          } catch (InsecureTextureException insecuretextureexception1) {
          }
 
          if (map.isEmpty()) {
-            p_152790_1_.getProperties().clear();
-            if (p_152790_1_.getId().equals(Minecraft.getInstance().getUser().getGameProfile().getId())) {
-               p_152790_1_.getProperties().putAll(Minecraft.getInstance().getProfileProperties());
-               map.putAll(this.sessionService.getTextures(p_152790_1_, false));
+            profile.getProperties().clear();
+            if (profile.getId().equals(Minecraft.getInstance().getSession().getProfile().getId())) {
+               profile.getProperties().putAll(Minecraft.getInstance().getProfileProperties());
+               map.putAll(this.sessionService.getTextures(profile, false));
             } else {
-               this.sessionService.fillProfileProperties(p_152790_1_, p_152790_3_);
+               this.sessionService.fillProfileProperties(profile, requireSecure);
 
                try {
-                  map.putAll(this.sessionService.getTextures(p_152790_1_, p_152790_3_));
+                  map.putAll(this.sessionService.getTextures(profile, requireSecure));
                } catch (InsecureTextureException insecuretextureexception) {
                }
             }
@@ -109,19 +109,19 @@ public class SkinManager {
             RenderSystem.recordRenderCall(() -> {
                ImmutableList.of(Type.SKIN, Type.CAPE).forEach((p_229296_3_) -> {
                   if (map.containsKey(p_229296_3_)) {
-                     this.registerTexture(map.get(p_229296_3_), p_229296_3_, p_152790_2_);
+                     this.loadSkin(map.get(p_229296_3_), p_229296_3_, skinAvailableCallback);
                   }
 
                });
             });
          });
       };
-      Util.backgroundExecutor().execute(runnable);
+      Util.getServerExecutor().execute(runnable);
    }
 
-   public Map<Type, MinecraftProfileTexture> getInsecureSkinInformation(GameProfile p_152788_1_) {
-      Property property = Iterables.getFirst(p_152788_1_.getProperties().get("textures"), (Property)null);
-      return (Map<Type, MinecraftProfileTexture>)(property == null ? ImmutableMap.of() : this.insecureSkinCache.getUnchecked(property.getValue()));
+   public Map<Type, MinecraftProfileTexture> loadSkinFromCache(GameProfile profile) {
+      Property property = Iterables.getFirst(profile.getProperties().get("textures"), (Property)null);
+      return (Map<Type, MinecraftProfileTexture>)(property == null ? ImmutableMap.of() : this.skinCacheLoader.getUnchecked(property.getValue()));
    }
 
    @OnlyIn(Dist.CLIENT)

@@ -19,14 +19,14 @@ public final class Vector3f {
    public Vector3f() {
    }
 
-   public Vector3f(float p_i48098_1_, float p_i48098_2_, float p_i48098_3_) {
-      this.x = p_i48098_1_;
-      this.y = p_i48098_2_;
-      this.z = p_i48098_3_;
+   public Vector3f(float x, float y, float z) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
    }
 
-   public Vector3f(Vector3d p_i51412_1_) {
-      this((float)p_i51412_1_.x, (float)p_i51412_1_.y, (float)p_i51412_1_.z);
+   public Vector3f(Vector3d vecIn) {
+      this((float)vecIn.x, (float)vecIn.y, (float)vecIn.z);
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -52,69 +52,69 @@ public final class Vector3f {
       return 31 * i + Float.floatToIntBits(this.z);
    }
 
-   public float x() {
+   public float getX() {
       return this.x;
    }
 
-   public float y() {
+   public float getY() {
       return this.y;
    }
 
-   public float z() {
+   public float getZ() {
       return this.z;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void mul(float p_195898_1_) {
-      this.x *= p_195898_1_;
-      this.y *= p_195898_1_;
-      this.z *= p_195898_1_;
+   public void mul(float multiplier) {
+      this.x *= multiplier;
+      this.y *= multiplier;
+      this.z *= multiplier;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void mul(float p_229192_1_, float p_229192_2_, float p_229192_3_) {
-      this.x *= p_229192_1_;
-      this.y *= p_229192_2_;
-      this.z *= p_229192_3_;
+   public void mul(float mx, float my, float mz) {
+      this.x *= mx;
+      this.y *= my;
+      this.z *= mz;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void clamp(float p_195901_1_, float p_195901_2_) {
-      this.x = MathHelper.clamp(this.x, p_195901_1_, p_195901_2_);
-      this.y = MathHelper.clamp(this.y, p_195901_1_, p_195901_2_);
-      this.z = MathHelper.clamp(this.z, p_195901_1_, p_195901_2_);
+   public void clamp(float min, float max) {
+      this.x = MathHelper.clamp(this.x, min, max);
+      this.y = MathHelper.clamp(this.y, min, max);
+      this.z = MathHelper.clamp(this.z, min, max);
    }
 
-   public void set(float p_195905_1_, float p_195905_2_, float p_195905_3_) {
-      this.x = p_195905_1_;
-      this.y = p_195905_2_;
-      this.z = p_195905_3_;
-   }
-
-   @OnlyIn(Dist.CLIENT)
-   public void add(float p_195904_1_, float p_195904_2_, float p_195904_3_) {
-      this.x += p_195904_1_;
-      this.y += p_195904_2_;
-      this.z += p_195904_3_;
+   public void set(float x, float y, float z) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void add(Vector3f p_229189_1_) {
-      this.x += p_229189_1_.x;
-      this.y += p_229189_1_.y;
-      this.z += p_229189_1_.z;
+   public void add(float x, float y, float z) {
+      this.x += x;
+      this.y += y;
+      this.z += z;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void sub(Vector3f p_195897_1_) {
-      this.x -= p_195897_1_.x;
-      this.y -= p_195897_1_.y;
-      this.z -= p_195897_1_.z;
+   public void add(Vector3f vectorIn) {
+      this.x += vectorIn.x;
+      this.y += vectorIn.y;
+      this.z += vectorIn.z;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public float dot(Vector3f p_195903_1_) {
-      return this.x * p_195903_1_.x + this.y * p_195903_1_.y + this.z * p_195903_1_.z;
+   public void sub(Vector3f vec) {
+      this.x -= vec.x;
+      this.y -= vec.y;
+      this.z -= vec.z;
+   }
+
+   @OnlyIn(Dist.CLIENT)
+   public float dot(Vector3f vec) {
+      return this.x * vec.x + this.y * vec.y + this.z * vec.z;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -132,53 +132,53 @@ public final class Vector3f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void cross(Vector3f p_195896_1_) {
+   public void cross(Vector3f vec) {
       float f = this.x;
       float f1 = this.y;
       float f2 = this.z;
-      float f3 = p_195896_1_.x();
-      float f4 = p_195896_1_.y();
-      float f5 = p_195896_1_.z();
+      float f3 = vec.getX();
+      float f4 = vec.getY();
+      float f5 = vec.getZ();
       this.x = f1 * f5 - f2 * f4;
       this.y = f2 * f3 - f * f5;
       this.z = f * f4 - f1 * f3;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void transform(Matrix3f p_229188_1_) {
+   public void transform(Matrix3f matrixIn) {
       float f = this.x;
       float f1 = this.y;
       float f2 = this.z;
-      this.x = p_229188_1_.m00 * f + p_229188_1_.m01 * f1 + p_229188_1_.m02 * f2;
-      this.y = p_229188_1_.m10 * f + p_229188_1_.m11 * f1 + p_229188_1_.m12 * f2;
-      this.z = p_229188_1_.m20 * f + p_229188_1_.m21 * f1 + p_229188_1_.m22 * f2;
+      this.x = matrixIn.m00 * f + matrixIn.m01 * f1 + matrixIn.m02 * f2;
+      this.y = matrixIn.m10 * f + matrixIn.m11 * f1 + matrixIn.m12 * f2;
+      this.z = matrixIn.m20 * f + matrixIn.m21 * f1 + matrixIn.m22 * f2;
    }
 
-   public void transform(Quaternion p_214905_1_) {
-      Quaternion quaternion = new Quaternion(p_214905_1_);
-      quaternion.mul(new Quaternion(this.x(), this.y(), this.z(), 0.0F));
-      Quaternion quaternion1 = new Quaternion(p_214905_1_);
-      quaternion1.conj();
-      quaternion.mul(quaternion1);
-      this.set(quaternion.i(), quaternion.j(), quaternion.k());
-   }
-
-   @OnlyIn(Dist.CLIENT)
-   public void lerp(Vector3f p_229190_1_, float p_229190_2_) {
-      float f = 1.0F - p_229190_2_;
-      this.x = this.x * f + p_229190_1_.x * p_229190_2_;
-      this.y = this.y * f + p_229190_1_.y * p_229190_2_;
-      this.z = this.z * f + p_229190_1_.z * p_229190_2_;
+   public void transform(Quaternion quaternionIn) {
+      Quaternion quaternion = new Quaternion(quaternionIn);
+      quaternion.multiply(new Quaternion(this.getX(), this.getY(), this.getZ(), 0.0F));
+      Quaternion quaternion1 = new Quaternion(quaternionIn);
+      quaternion1.conjugate();
+      quaternion.multiply(quaternion1);
+      this.set(quaternion.getX(), quaternion.getY(), quaternion.getZ());
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Quaternion rotation(float p_229193_1_) {
-      return new Quaternion(this, p_229193_1_, false);
+   public void lerp(Vector3f vectorIn, float pctIn) {
+      float f = 1.0F - pctIn;
+      this.x = this.x * f + vectorIn.x * pctIn;
+      this.y = this.y * f + vectorIn.y * pctIn;
+      this.z = this.z * f + vectorIn.z * pctIn;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public Quaternion rotationDegrees(float p_229187_1_) {
-      return new Quaternion(this, p_229187_1_, true);
+   public Quaternion rotation(float valueIn) {
+      return new Quaternion(this, valueIn, false);
+   }
+
+   @OnlyIn(Dist.CLIENT)
+   public Quaternion rotationDegrees(float valueIn) {
+      return new Quaternion(this, valueIn, true);
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -187,10 +187,10 @@ public final class Vector3f {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void map(Float2FloatFunction p_229191_1_) {
-      this.x = p_229191_1_.get(this.x);
-      this.y = p_229191_1_.get(this.y);
-      this.z = p_229191_1_.get(this.z);
+   public void apply(Float2FloatFunction functionIn) {
+      this.x = functionIn.get(this.x);
+      this.y = functionIn.get(this.y);
+      this.z = functionIn.get(this.z);
    }
 
    public String toString() {

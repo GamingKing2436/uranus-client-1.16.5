@@ -7,9 +7,9 @@ public class PackMetadataSection {
    private final ITextComponent description;
    private final int packFormat;
 
-   public PackMetadataSection(ITextComponent p_i1034_1_, int p_i1034_2_) {
-      this.description = p_i1034_1_;
-      this.packFormat = p_i1034_2_;
+   public PackMetadataSection(ITextComponent packDescriptionIn, int packFormatIn) {
+      this.description = packDescriptionIn;
+      this.packFormat = packFormatIn;
    }
 
    public ITextComponent getDescription() {

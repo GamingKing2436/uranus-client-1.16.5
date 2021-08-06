@@ -10,30 +10,30 @@ import net.minecraft.world.biome.provider.BiomeProvider;
 import net.minecraft.world.chunk.NibbleArray;
 
 public class ChunkLoaderUtil {
-   public static ChunkLoaderUtil.AnvilConverterData load(CompoundNBT p_76691_0_) {
-      int i = p_76691_0_.getInt("xPos");
-      int j = p_76691_0_.getInt("zPos");
+   public static ChunkLoaderUtil.AnvilConverterData load(CompoundNBT nbt) {
+      int i = nbt.getInt("xPos");
+      int j = nbt.getInt("zPos");
       ChunkLoaderUtil.AnvilConverterData chunkloaderutil$anvilconverterdata = new ChunkLoaderUtil.AnvilConverterData(i, j);
-      chunkloaderutil$anvilconverterdata.blocks = p_76691_0_.getByteArray("Blocks");
-      chunkloaderutil$anvilconverterdata.data = new NibbleArrayReader(p_76691_0_.getByteArray("Data"), 7);
-      chunkloaderutil$anvilconverterdata.skyLight = new NibbleArrayReader(p_76691_0_.getByteArray("SkyLight"), 7);
-      chunkloaderutil$anvilconverterdata.blockLight = new NibbleArrayReader(p_76691_0_.getByteArray("BlockLight"), 7);
-      chunkloaderutil$anvilconverterdata.heightmap = p_76691_0_.getByteArray("HeightMap");
-      chunkloaderutil$anvilconverterdata.terrainPopulated = p_76691_0_.getBoolean("TerrainPopulated");
-      chunkloaderutil$anvilconverterdata.entities = p_76691_0_.getList("Entities", 10);
-      chunkloaderutil$anvilconverterdata.blockEntities = p_76691_0_.getList("TileEntities", 10);
-      chunkloaderutil$anvilconverterdata.blockTicks = p_76691_0_.getList("TileTicks", 10);
+      chunkloaderutil$anvilconverterdata.blocks = nbt.getByteArray("Blocks");
+      chunkloaderutil$anvilconverterdata.data = new NibbleArrayReader(nbt.getByteArray("Data"), 7);
+      chunkloaderutil$anvilconverterdata.skyLight = new NibbleArrayReader(nbt.getByteArray("SkyLight"), 7);
+      chunkloaderutil$anvilconverterdata.blockLight = new NibbleArrayReader(nbt.getByteArray("BlockLight"), 7);
+      chunkloaderutil$anvilconverterdata.heightmap = nbt.getByteArray("HeightMap");
+      chunkloaderutil$anvilconverterdata.terrainPopulated = nbt.getBoolean("TerrainPopulated");
+      chunkloaderutil$anvilconverterdata.entities = nbt.getList("Entities", 10);
+      chunkloaderutil$anvilconverterdata.tileEntities = nbt.getList("TileEntities", 10);
+      chunkloaderutil$anvilconverterdata.tileTicks = nbt.getList("TileTicks", 10);
 
       try {
-         chunkloaderutil$anvilconverterdata.lastUpdated = p_76691_0_.getLong("LastUpdate");
+         chunkloaderutil$anvilconverterdata.lastUpdated = nbt.getLong("LastUpdate");
       } catch (ClassCastException classcastexception) {
-         chunkloaderutil$anvilconverterdata.lastUpdated = (long)p_76691_0_.getInt("LastUpdate");
+         chunkloaderutil$anvilconverterdata.lastUpdated = (long)nbt.getInt("LastUpdate");
       }
 
       return chunkloaderutil$anvilconverterdata;
    }
 
-   public static void convertToAnvilFormat(DynamicRegistries.Impl p_242708_0_, ChunkLoaderUtil.AnvilConverterData p_242708_1_, CompoundNBT p_242708_2_, BiomeProvider p_242708_3_) {
+   public static void func_242708_a(DynamicRegistries.Impl p_242708_0_, ChunkLoaderUtil.AnvilConverterData p_242708_1_, CompoundNBT p_242708_2_, BiomeProvider p_242708_3_) {
       p_242708_2_.putInt("xPos", p_242708_1_.x);
       p_242708_2_.putInt("zPos", p_242708_1_.z);
       p_242708_2_.putLong("LastUpdate", p_242708_1_.lastUpdated);
@@ -93,11 +93,11 @@ public class ChunkLoaderUtil {
       }
 
       p_242708_2_.put("Sections", listnbt);
-      p_242708_2_.putIntArray("Biomes", (new BiomeContainer(p_242708_0_.registryOrThrow(Registry.BIOME_REGISTRY), new ChunkPos(p_242708_1_.x, p_242708_1_.z), p_242708_3_)).writeBiomes());
+      p_242708_2_.putIntArray("Biomes", (new BiomeContainer(p_242708_0_.getRegistry(Registry.BIOME_KEY), new ChunkPos(p_242708_1_.x, p_242708_1_.z), p_242708_3_)).getBiomeIds());
       p_242708_2_.put("Entities", p_242708_1_.entities);
-      p_242708_2_.put("TileEntities", p_242708_1_.blockEntities);
-      if (p_242708_1_.blockTicks != null) {
-         p_242708_2_.put("TileTicks", p_242708_1_.blockTicks);
+      p_242708_2_.put("TileEntities", p_242708_1_.tileEntities);
+      if (p_242708_1_.tileTicks != null) {
+         p_242708_2_.put("TileTicks", p_242708_1_.tileTicks);
       }
 
       p_242708_2_.putBoolean("convertedFromAlphaFormat", true);
@@ -112,14 +112,14 @@ public class ChunkLoaderUtil {
       public NibbleArrayReader data;
       public byte[] blocks;
       public ListNBT entities;
-      public ListNBT blockEntities;
-      public ListNBT blockTicks;
+      public ListNBT tileEntities;
+      public ListNBT tileTicks;
       public final int x;
       public final int z;
 
-      public AnvilConverterData(int p_i1999_1_, int p_i1999_2_) {
-         this.x = p_i1999_1_;
-         this.z = p_i1999_2_;
+      public AnvilConverterData(int xIn, int zIn) {
+         this.x = xIn;
+         this.z = zIn;
       }
    }
 }

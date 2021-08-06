@@ -10,41 +10,41 @@ import org.apache.logging.log4j.Logger;
 
 public abstract class WorldSavedData {
    private static final Logger LOGGER = LogManager.getLogger();
-   private final String id;
+   private final String name;
    private boolean dirty;
 
-   public WorldSavedData(String p_i2141_1_) {
-      this.id = p_i2141_1_;
+   public WorldSavedData(String name) {
+      this.name = name;
    }
 
-   public abstract void load(CompoundNBT p_76184_1_);
+   public abstract void read(CompoundNBT nbt);
 
-   public abstract CompoundNBT save(CompoundNBT p_189551_1_);
+   public abstract CompoundNBT write(CompoundNBT compound);
 
-   public void setDirty() {
+   public void markDirty() {
       this.setDirty(true);
    }
 
-   public void setDirty(boolean p_76186_1_) {
-      this.dirty = p_76186_1_;
+   public void setDirty(boolean isDirty) {
+      this.dirty = isDirty;
    }
 
    public boolean isDirty() {
       return this.dirty;
    }
 
-   public String getId() {
-      return this.id;
+   public String getName() {
+      return this.name;
    }
 
-   public void save(File p_215158_1_) {
+   public void save(File fileIn) {
       if (this.isDirty()) {
          CompoundNBT compoundnbt = new CompoundNBT();
-         compoundnbt.put("data", this.save(new CompoundNBT()));
-         compoundnbt.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+         compoundnbt.put("data", this.write(new CompoundNBT()));
+         compoundnbt.putInt("DataVersion", SharedConstants.getVersion().getWorldVersion());
 
          try {
-            CompressedStreamTools.writeCompressed(compoundnbt, p_215158_1_);
+            CompressedStreamTools.writeCompressed(compoundnbt, fileIn);
          } catch (IOException ioexception) {
             LOGGER.error("Could not save data {}", this, ioexception);
          }

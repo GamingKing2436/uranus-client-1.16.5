@@ -6,11 +6,11 @@ import net.minecraft.world.gen.layer.traits.IC1Transformer;
 public enum AddSnowLayer implements IC1Transformer {
    INSTANCE;
 
-   public int apply(INoiseRandom p_202716_1_, int p_202716_2_) {
-      if (LayerUtil.isShallowOcean(p_202716_2_)) {
-         return p_202716_2_;
+   public int apply(INoiseRandom context, int value) {
+      if (LayerUtil.isShallowOcean(value)) {
+         return value;
       } else {
-         int i = p_202716_1_.nextRandom(6);
+         int i = context.random(6);
          if (i == 0) {
             return 4;
          } else {

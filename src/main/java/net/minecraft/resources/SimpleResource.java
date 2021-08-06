@@ -16,20 +16,20 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.io.IOUtils;
 
 public class SimpleResource implements IResource {
-   private final String sourceName;
+   private final String packName;
    private final ResourceLocation location;
-   private final InputStream resourceStream;
-   private final InputStream metadataStream;
+   private final InputStream inputStream;
+   private final InputStream metadataInputStream;
    @OnlyIn(Dist.CLIENT)
-   private boolean triedMetadata;
+   private boolean wasMetadataRead;
    @OnlyIn(Dist.CLIENT)
-   private JsonObject metadata;
+   private JsonObject metadataJson;
 
-   public SimpleResource(String p_i47904_1_, ResourceLocation p_i47904_2_, InputStream p_i47904_3_, @Nullable InputStream p_i47904_4_) {
-      this.sourceName = p_i47904_1_;
-      this.location = p_i47904_2_;
-      this.resourceStream = p_i47904_3_;
-      this.metadataStream = p_i47904_4_;
+   public SimpleResource(String packNameIn, ResourceLocation locationIn, InputStream inputStreamIn, @Nullable InputStream metadataInputStreamIn) {
+      this.packName = packNameIn;
+      this.location = locationIn;
+      this.inputStream = inputStreamIn;
+      this.metadataInputStream = metadataInputStreamIn;
    }
 
    @OnlyIn(Dist.CLIENT)
@@ -38,43 +38,43 @@ public class SimpleResource implements IResource {
    }
 
    public InputStream getInputStream() {
-      return this.resourceStream;
+      return this.inputStream;
    }
 
    @OnlyIn(Dist.CLIENT)
    public boolean hasMetadata() {
-      return this.metadataStream != null;
+      return this.metadataInputStream != null;
    }
 
    @Nullable
    @OnlyIn(Dist.CLIENT)
-   public <T> T getMetadata(IMetadataSectionSerializer<T> p_199028_1_) {
+   public <T> T getMetadata(IMetadataSectionSerializer<T> serializer) {
       if (!this.hasMetadata()) {
          return (T)null;
       } else {
-         if (this.metadata == null && !this.triedMetadata) {
-            this.triedMetadata = true;
+         if (this.metadataJson == null && !this.wasMetadataRead) {
+            this.wasMetadataRead = true;
             BufferedReader bufferedreader = null;
 
             try {
-               bufferedreader = new BufferedReader(new InputStreamReader(this.metadataStream, StandardCharsets.UTF_8));
-               this.metadata = JSONUtils.parse(bufferedreader);
+               bufferedreader = new BufferedReader(new InputStreamReader(this.metadataInputStream, StandardCharsets.UTF_8));
+               this.metadataJson = JSONUtils.fromJson(bufferedreader);
             } finally {
                IOUtils.closeQuietly((Reader)bufferedreader);
             }
          }
 
-         if (this.metadata == null) {
+         if (this.metadataJson == null) {
             return (T)null;
          } else {
-            String s = p_199028_1_.getMetadataSectionName();
-            return (T)(this.metadata.has(s) ? p_199028_1_.fromJson(JSONUtils.getAsJsonObject(this.metadata, s)) : null);
+            String s = serializer.getSectionName();
+            return (T)(this.metadataJson.has(s) ? serializer.deserialize(JSONUtils.getJsonObject(this.metadataJson, s)) : null);
          }
       }
    }
 
-   public String getSourceName() {
-      return this.sourceName;
+   public String getPackName() {
+      return this.packName;
    }
 
    public boolean equals(Object p_equals_1_) {
@@ -92,11 +92,11 @@ public class SimpleResource implements IResource {
             return false;
          }
 
-         if (this.sourceName != null) {
-            if (!this.sourceName.equals(simpleresource.sourceName)) {
+         if (this.packName != null) {
+            if (!this.packName.equals(simpleresource.packName)) {
                return false;
             }
-         } else if (simpleresource.sourceName != null) {
+         } else if (simpleresource.packName != null) {
             return false;
          }
 
@@ -105,14 +105,14 @@ public class SimpleResource implements IResource {
    }
 
    public int hashCode() {
-      int i = this.sourceName != null ? this.sourceName.hashCode() : 0;
+      int i = this.packName != null ? this.packName.hashCode() : 0;
       return 31 * i + (this.location != null ? this.location.hashCode() : 0);
    }
 
    public void close() throws IOException {
-      this.resourceStream.close();
-      if (this.metadataStream != null) {
-         this.metadataStream.close();
+      this.inputStream.close();
+      if (this.metadataInputStream != null) {
+         this.metadataInputStream.close();
       }
 
    }

@@ -33,48 +33,48 @@ import org.apache.logging.log4j.Logger;
 public class AnvilSaveConverter {
    private static final Logger LOGGER = LogManager.getLogger();
 
-   static boolean convertLevel(SaveFormat.LevelSave p_237330_0_, IProgressUpdate p_237330_1_) {
-      p_237330_1_.progressStagePercentage(0);
+   static boolean convertRegions(SaveFormat.LevelSave levelSave, IProgressUpdate progress) {
+      progress.setLoadingProgress(0);
       List<File> list = Lists.newArrayList();
       List<File> list1 = Lists.newArrayList();
       List<File> list2 = Lists.newArrayList();
-      File file1 = p_237330_0_.getDimensionPath(World.OVERWORLD);
-      File file2 = p_237330_0_.getDimensionPath(World.NETHER);
-      File file3 = p_237330_0_.getDimensionPath(World.END);
+      File file1 = levelSave.getDimensionFolder(World.OVERWORLD);
+      File file2 = levelSave.getDimensionFolder(World.THE_NETHER);
+      File file3 = levelSave.getDimensionFolder(World.THE_END);
       LOGGER.info("Scanning folders...");
-      addRegionFiles(file1, list);
+      collectRegionFiles(file1, list);
       if (file2.exists()) {
-         addRegionFiles(file2, list1);
+         collectRegionFiles(file2, list1);
       }
 
       if (file3.exists()) {
-         addRegionFiles(file3, list2);
+         collectRegionFiles(file3, list2);
       }
 
       int i = list.size() + list1.size() + list2.size();
       LOGGER.info("Total conversion count is {}", (int)i);
-      DynamicRegistries.Impl dynamicregistries$impl = DynamicRegistries.builtin();
+      DynamicRegistries.Impl dynamicregistries$impl = DynamicRegistries.func_239770_b_();
       WorldSettingsImport<INBT> worldsettingsimport = WorldSettingsImport.create(NBTDynamicOps.INSTANCE, IResourceManager.Instance.INSTANCE, dynamicregistries$impl);
-      IServerConfiguration iserverconfiguration = p_237330_0_.getDataTag(worldsettingsimport, DatapackCodec.DEFAULT);
-      long j = iserverconfiguration != null ? iserverconfiguration.worldGenSettings().seed() : 0L;
-      Registry<Biome> registry = dynamicregistries$impl.registryOrThrow(Registry.BIOME_REGISTRY);
+      IServerConfiguration iserverconfiguration = levelSave.readServerConfiguration(worldsettingsimport, DatapackCodec.VANILLA_CODEC);
+      long j = iserverconfiguration != null ? iserverconfiguration.getDimensionGeneratorSettings().getSeed() : 0L;
+      Registry<Biome> registry = dynamicregistries$impl.getRegistry(Registry.BIOME_KEY);
       BiomeProvider biomeprovider;
-      if (iserverconfiguration != null && iserverconfiguration.worldGenSettings().isFlatWorld()) {
+      if (iserverconfiguration != null && iserverconfiguration.getDimensionGeneratorSettings().func_236228_i_()) {
          biomeprovider = new SingleBiomeProvider(registry.getOrThrow(Biomes.PLAINS));
       } else {
          biomeprovider = new OverworldBiomeProvider(j, false, false, registry);
       }
 
-      convertRegions(dynamicregistries$impl, new File(file1, "region"), list, biomeprovider, 0, i, p_237330_1_);
-      convertRegions(dynamicregistries$impl, new File(file2, "region"), list1, new SingleBiomeProvider(registry.getOrThrow(Biomes.NETHER_WASTES)), list.size(), i, p_237330_1_);
-      convertRegions(dynamicregistries$impl, new File(file3, "region"), list2, new SingleBiomeProvider(registry.getOrThrow(Biomes.THE_END)), list.size() + list1.size(), i, p_237330_1_);
-      makeMcrLevelDatBackup(p_237330_0_);
-      p_237330_0_.saveDataTag(dynamicregistries$impl, iserverconfiguration);
+      func_242983_a(dynamicregistries$impl, new File(file1, "region"), list, biomeprovider, 0, i, progress);
+      func_242983_a(dynamicregistries$impl, new File(file2, "region"), list1, new SingleBiomeProvider(registry.getOrThrow(Biomes.NETHER_WASTES)), list.size(), i, progress);
+      func_242983_a(dynamicregistries$impl, new File(file3, "region"), list2, new SingleBiomeProvider(registry.getOrThrow(Biomes.THE_END)), list.size() + list1.size(), i, progress);
+      backupLevelData(levelSave);
+      levelSave.saveLevel(dynamicregistries$impl, iserverconfiguration);
       return true;
    }
 
-   private static void makeMcrLevelDatBackup(SaveFormat.LevelSave p_237329_0_) {
-      File file1 = p_237329_0_.getLevelPath(FolderName.LEVEL_DATA_FILE).toFile();
+   private static void backupLevelData(SaveFormat.LevelSave levelSave) {
+      File file1 = levelSave.resolveFilePath(FolderName.LEVEL_DAT).toFile();
       if (!file1.exists()) {
          LOGGER.warn("Unable to create level.dat_mcr backup");
       } else {
@@ -86,17 +86,17 @@ public class AnvilSaveConverter {
       }
    }
 
-   private static void convertRegions(DynamicRegistries.Impl p_242983_0_, File p_242983_1_, Iterable<File> p_242983_2_, BiomeProvider p_242983_3_, int p_242983_4_, int p_242983_5_, IProgressUpdate p_242983_6_) {
+   private static void func_242983_a(DynamicRegistries.Impl p_242983_0_, File p_242983_1_, Iterable<File> p_242983_2_, BiomeProvider p_242983_3_, int p_242983_4_, int p_242983_5_, IProgressUpdate p_242983_6_) {
       for(File file1 : p_242983_2_) {
-         convertRegion(p_242983_0_, p_242983_1_, file1, p_242983_3_, p_242983_4_, p_242983_5_, p_242983_6_);
+         func_242982_a(p_242983_0_, p_242983_1_, file1, p_242983_3_, p_242983_4_, p_242983_5_, p_242983_6_);
          ++p_242983_4_;
          int i = (int)Math.round(100.0D * (double)p_242983_4_ / (double)p_242983_5_);
-         p_242983_6_.progressStagePercentage(i);
+         p_242983_6_.setLoadingProgress(i);
       }
 
    }
 
-   private static void convertRegion(DynamicRegistries.Impl p_242982_0_, File p_242982_1_, File p_242982_2_, BiomeProvider p_242982_3_, int p_242982_4_, int p_242982_5_, IProgressUpdate p_242982_6_) {
+   private static void func_242982_a(DynamicRegistries.Impl p_242982_0_, File p_242982_1_, File p_242982_2_, BiomeProvider p_242982_3_, int p_242982_4_, int p_242982_5_, IProgressUpdate p_242982_6_) {
       String s = p_242982_2_.getName();
 
       try (
@@ -106,9 +106,9 @@ public class AnvilSaveConverter {
          for(int i = 0; i < 32; ++i) {
             for(int j = 0; j < 32; ++j) {
                ChunkPos chunkpos = new ChunkPos(i, j);
-               if (regionfile.hasChunk(chunkpos) && !regionfile1.hasChunk(chunkpos)) {
+               if (regionfile.contains(chunkpos) && !regionfile1.contains(chunkpos)) {
                   CompoundNBT compoundnbt;
-                  try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkpos)) {
+                  try (DataInputStream datainputstream = regionfile.func_222666_a(chunkpos)) {
                      if (datainputstream == null) {
                         LOGGER.warn("Failed to fetch input stream for chunk {}", (Object)chunkpos);
                         continue;
@@ -125,9 +125,9 @@ public class AnvilSaveConverter {
                   CompoundNBT compoundnbt1 = new CompoundNBT();
                   CompoundNBT compoundnbt2 = new CompoundNBT();
                   compoundnbt1.put("Level", compoundnbt2);
-                  ChunkLoaderUtil.convertToAnvilFormat(p_242982_0_, chunkloaderutil$anvilconverterdata, compoundnbt2, p_242982_3_);
+                  ChunkLoaderUtil.func_242708_a(p_242982_0_, chunkloaderutil$anvilconverterdata, compoundnbt2, p_242982_3_);
 
-                  try (DataOutputStream dataoutputstream = regionfile1.getChunkDataOutputStream(chunkpos)) {
+                  try (DataOutputStream dataoutputstream = regionfile1.func_222661_c(chunkpos)) {
                      CompressedStreamTools.write(compoundnbt1, dataoutputstream);
                   }
                }
@@ -136,7 +136,7 @@ public class AnvilSaveConverter {
             int k = (int)Math.round(100.0D * (double)(p_242982_4_ * 1024) / (double)(p_242982_5_ * 1024));
             int l = (int)Math.round(100.0D * (double)((i + 1) * 32 + p_242982_4_ * 1024) / (double)(p_242982_5_ * 1024));
             if (l > k) {
-               p_242982_6_.progressStagePercentage(l);
+               p_242982_6_.setLoadingProgress(l);
             }
          }
       } catch (IOException ioexception1) {
@@ -145,13 +145,13 @@ public class AnvilSaveConverter {
 
    }
 
-   private static void addRegionFiles(File p_215789_0_, Collection<File> p_215789_1_) {
-      File file1 = new File(p_215789_0_, "region");
+   private static void collectRegionFiles(File saveFolder, Collection<File> files) {
+      File file1 = new File(saveFolder, "region");
       File[] afile = file1.listFiles((p_215791_0_, p_215791_1_) -> {
          return p_215791_1_.endsWith(".mcr");
       });
       if (afile != null) {
-         Collections.addAll(p_215789_1_, afile);
+         Collections.addAll(files, afile);
       }
 
    }

@@ -18,23 +18,23 @@ public class LanServerPingThread extends Thread {
    private static final Logger LOGGER = LogManager.getLogger();
    private final String motd;
    private final DatagramSocket socket;
-   private boolean isRunning = true;
-   private final String serverAddress;
+   private boolean isStopping = true;
+   private final String address;
 
    public LanServerPingThread(String p_i1321_1_, String p_i1321_2_) throws IOException {
       super("LanServerPinger #" + UNIQUE_THREAD_ID.incrementAndGet());
       this.motd = p_i1321_1_;
-      this.serverAddress = p_i1321_2_;
+      this.address = p_i1321_2_;
       this.setDaemon(true);
       this.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
       this.socket = new DatagramSocket();
    }
 
    public void run() {
-      String s = createPingString(this.motd, this.serverAddress);
+      String s = getPingResponse(this.motd, this.address);
       byte[] abyte = s.getBytes(StandardCharsets.UTF_8);
 
-      while(!this.isInterrupted() && this.isRunning) {
+      while(!this.isInterrupted() && this.isStopping) {
          try {
             InetAddress inetaddress = InetAddress.getByName("224.0.2.60");
             DatagramPacket datagrampacket = new DatagramPacket(abyte, abyte.length, inetaddress, 4445);
@@ -54,14 +54,14 @@ public class LanServerPingThread extends Thread {
 
    public void interrupt() {
       super.interrupt();
-      this.isRunning = false;
+      this.isStopping = false;
    }
 
-   public static String createPingString(String p_77525_0_, String p_77525_1_) {
+   public static String getPingResponse(String p_77525_0_, String p_77525_1_) {
       return "[MOTD]" + p_77525_0_ + "[/MOTD][AD]" + p_77525_1_ + "[/AD]";
    }
 
-   public static String parseMotd(String p_77524_0_) {
+   public static String getMotdFromPingResponse(String p_77524_0_) {
       int i = p_77524_0_.indexOf("[MOTD]");
       if (i < 0) {
          return "missing no";
@@ -71,7 +71,7 @@ public class LanServerPingThread extends Thread {
       }
    }
 
-   public static String parseAddress(String p_77523_0_) {
+   public static String getAdFromPingResponse(String p_77523_0_) {
       int i = p_77523_0_.indexOf("[/MOTD]");
       if (i < 0) {
          return null;

@@ -10,8 +10,8 @@ import net.minecraft.util.datafix.TypeReferences;
 public class ZombieProfToType extends NamedEntityFix {
    private static final Random RANDOM = new Random();
 
-   public ZombieProfToType(Schema p_i49647_1_, boolean p_i49647_2_) {
-      super(p_i49647_1_, p_i49647_2_, "EntityZombieVillagerTypeFix", TypeReferences.ENTITY, "Zombie");
+   public ZombieProfToType(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "EntityZombieVillagerTypeFix", TypeReferences.ENTITY, "Zombie");
    }
 
    public Dynamic<?> fixTag(Dynamic<?> p_209656_1_) {

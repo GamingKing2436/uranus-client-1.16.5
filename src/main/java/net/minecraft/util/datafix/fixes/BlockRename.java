@@ -15,14 +15,14 @@ import net.minecraft.util.datafix.TypeReferences;
 public abstract class BlockRename extends DataFix {
    private final String name;
 
-   public BlockRename(Schema p_i49678_1_, String p_i49678_2_) {
-      super(p_i49678_1_, false);
-      this.name = p_i49678_2_;
+   public BlockRename(Schema outputSchema, String name) {
+      super(outputSchema, false);
+      this.name = name;
    }
 
    public TypeRewriteRule makeRule() {
       Type<?> type = this.getInputSchema().getType(TypeReferences.BLOCK_NAME);
-      Type<Pair<String, String>> type1 = DSL.named(TypeReferences.BLOCK_NAME.typeName(), NamespacedSchema.namespacedString());
+      Type<Pair<String, String>> type1 = DSL.named(TypeReferences.BLOCK_NAME.typeName(), NamespacedSchema.func_233457_a_());
       if (!Objects.equals(type, type1)) {
          throw new IllegalStateException("block type is not what was expected.");
       } else {

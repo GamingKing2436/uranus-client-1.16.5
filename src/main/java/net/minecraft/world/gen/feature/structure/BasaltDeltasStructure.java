@@ -15,38 +15,38 @@ import net.minecraft.world.gen.feature.BasaltDeltasFeature;
 import net.minecraft.world.gen.feature.Feature;
 
 public class BasaltDeltasStructure extends Feature<BasaltDeltasFeature> {
-   private static final ImmutableList<Block> CANNOT_REPLACE = ImmutableList.of(Blocks.BEDROCK, Blocks.NETHER_BRICKS, Blocks.NETHER_BRICK_FENCE, Blocks.NETHER_BRICK_STAIRS, Blocks.NETHER_WART, Blocks.CHEST, Blocks.SPAWNER);
-   private static final Direction[] DIRECTIONS = Direction.values();
+   private static final ImmutableList<Block> field_236274_a_ = ImmutableList.of(Blocks.BEDROCK, Blocks.NETHER_BRICKS, Blocks.NETHER_BRICK_FENCE, Blocks.NETHER_BRICK_STAIRS, Blocks.NETHER_WART, Blocks.CHEST, Blocks.SPAWNER);
+   private static final Direction[] field_236275_ac_ = Direction.values();
 
    public BasaltDeltasStructure(Codec<BasaltDeltasFeature> p_i231946_1_) {
       super(p_i231946_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, BasaltDeltasFeature p_241855_5_) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, BasaltDeltasFeature config) {
       boolean flag = false;
-      boolean flag1 = p_241855_3_.nextDouble() < 0.9D;
-      int i = flag1 ? p_241855_5_.rimSize().sample(p_241855_3_) : 0;
-      int j = flag1 ? p_241855_5_.rimSize().sample(p_241855_3_) : 0;
+      boolean flag1 = rand.nextDouble() < 0.9D;
+      int i = flag1 ? config.func_242808_e().func_242259_a(rand) : 0;
+      int j = flag1 ? config.func_242808_e().func_242259_a(rand) : 0;
       boolean flag2 = flag1 && i != 0 && j != 0;
-      int k = p_241855_5_.size().sample(p_241855_3_);
-      int l = p_241855_5_.size().sample(p_241855_3_);
+      int k = config.func_242807_d().func_242259_a(rand);
+      int l = config.func_242807_d().func_242259_a(rand);
       int i1 = Math.max(k, l);
 
-      for(BlockPos blockpos : BlockPos.withinManhattan(p_241855_4_, k, 0, l)) {
-         if (blockpos.distManhattan(p_241855_4_) > i1) {
+      for(BlockPos blockpos : BlockPos.getProximitySortedBoxPositionsIterator(pos, k, 0, l)) {
+         if (blockpos.manhattanDistance(pos) > i1) {
             break;
          }
 
-         if (isClear(p_241855_1_, blockpos, p_241855_5_)) {
+         if (func_236277_a_(reader, blockpos, config)) {
             if (flag2) {
                flag = true;
-               this.setBlock(p_241855_1_, blockpos, p_241855_5_.rim());
+               this.setBlockState(reader, blockpos, config.func_242806_c());
             }
 
-            BlockPos blockpos1 = blockpos.offset(i, 0, j);
-            if (isClear(p_241855_1_, blockpos1, p_241855_5_)) {
+            BlockPos blockpos1 = blockpos.add(i, 0, j);
+            if (func_236277_a_(reader, blockpos1, config)) {
                flag = true;
-               this.setBlock(p_241855_1_, blockpos1, p_241855_5_.contents());
+               this.setBlockState(reader, blockpos1, config.func_242804_b());
             }
          }
       }
@@ -54,15 +54,15 @@ public class BasaltDeltasStructure extends Feature<BasaltDeltasFeature> {
       return flag;
    }
 
-   private static boolean isClear(IWorld p_236277_0_, BlockPos p_236277_1_, BasaltDeltasFeature p_236277_2_) {
+   private static boolean func_236277_a_(IWorld p_236277_0_, BlockPos p_236277_1_, BasaltDeltasFeature p_236277_2_) {
       BlockState blockstate = p_236277_0_.getBlockState(p_236277_1_);
-      if (blockstate.is(p_236277_2_.contents().getBlock())) {
+      if (blockstate.isIn(p_236277_2_.func_242804_b().getBlock())) {
          return false;
-      } else if (CANNOT_REPLACE.contains(blockstate.getBlock())) {
+      } else if (field_236274_a_.contains(blockstate.getBlock())) {
          return false;
       } else {
-         for(Direction direction : DIRECTIONS) {
-            boolean flag = p_236277_0_.getBlockState(p_236277_1_.relative(direction)).isAir();
+         for(Direction direction : field_236275_ac_) {
+            boolean flag = p_236277_0_.getBlockState(p_236277_1_.offset(direction)).isAir();
             if (flag && direction != Direction.UP || !flag && direction == Direction.UP) {
                return false;
             }

@@ -13,38 +13,38 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class SheepWoolLayer extends LayerRenderer<SheepEntity, SheepModel<SheepEntity>> {
-   private static final ResourceLocation SHEEP_FUR_LOCATION = new ResourceLocation("textures/entity/sheep/sheep_fur.png");
-   private final SheepWoolModel<SheepEntity> model = new SheepWoolModel<>();
+   private static final ResourceLocation TEXTURE = new ResourceLocation("textures/entity/sheep/sheep_fur.png");
+   private final SheepWoolModel<SheepEntity> sheepModel = new SheepWoolModel<>();
 
-   public SheepWoolLayer(IEntityRenderer<SheepEntity, SheepModel<SheepEntity>> p_i50925_1_) {
-      super(p_i50925_1_);
+   public SheepWoolLayer(IEntityRenderer<SheepEntity, SheepModel<SheepEntity>> rendererIn) {
+      super(rendererIn);
    }
 
-   public void render(MatrixStack p_225628_1_, IRenderTypeBuffer p_225628_2_, int p_225628_3_, SheepEntity p_225628_4_, float p_225628_5_, float p_225628_6_, float p_225628_7_, float p_225628_8_, float p_225628_9_, float p_225628_10_) {
-      if (!p_225628_4_.isSheared() && !p_225628_4_.isInvisible()) {
+   public void render(MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int packedLightIn, SheepEntity entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch) {
+      if (!entitylivingbaseIn.getSheared() && !entitylivingbaseIn.isInvisible()) {
          float f;
          float f1;
          float f2;
-         if (p_225628_4_.hasCustomName() && "jeb_".equals(p_225628_4_.getName().getContents())) {
+         if (entitylivingbaseIn.hasCustomName() && "jeb_".equals(entitylivingbaseIn.getName().getUnformattedComponentText())) {
             int i1 = 25;
-            int i = p_225628_4_.tickCount / 25 + p_225628_4_.getId();
+            int i = entitylivingbaseIn.ticksExisted / 25 + entitylivingbaseIn.getEntityId();
             int j = DyeColor.values().length;
             int k = i % j;
             int l = (i + 1) % j;
-            float f3 = ((float)(p_225628_4_.tickCount % 25) + p_225628_7_) / 25.0F;
-            float[] afloat1 = SheepEntity.getColorArray(DyeColor.byId(k));
-            float[] afloat2 = SheepEntity.getColorArray(DyeColor.byId(l));
+            float f3 = ((float)(entitylivingbaseIn.ticksExisted % 25) + partialTicks) / 25.0F;
+            float[] afloat1 = SheepEntity.getDyeRgb(DyeColor.byId(k));
+            float[] afloat2 = SheepEntity.getDyeRgb(DyeColor.byId(l));
             f = afloat1[0] * (1.0F - f3) + afloat2[0] * f3;
             f1 = afloat1[1] * (1.0F - f3) + afloat2[1] * f3;
             f2 = afloat1[2] * (1.0F - f3) + afloat2[2] * f3;
          } else {
-            float[] afloat = SheepEntity.getColorArray(p_225628_4_.getColor());
+            float[] afloat = SheepEntity.getDyeRgb(entitylivingbaseIn.getFleeceColor());
             f = afloat[0];
             f1 = afloat[1];
             f2 = afloat[2];
          }
 
-         coloredCutoutModelCopyLayerRender(this.getParentModel(), this.model, SHEEP_FUR_LOCATION, p_225628_1_, p_225628_2_, p_225628_3_, p_225628_4_, p_225628_5_, p_225628_6_, p_225628_8_, p_225628_9_, p_225628_10_, p_225628_7_, f, f1, f2);
+         renderCopyCutoutModel(this.getEntityModel(), this.sheepModel, TEXTURE, matrixStackIn, bufferIn, packedLightIn, entitylivingbaseIn, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, partialTicks, f, f1, f2);
       }
    }
 }

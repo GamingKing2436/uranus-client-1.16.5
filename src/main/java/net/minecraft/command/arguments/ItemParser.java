@@ -22,26 +22,26 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.text.TranslationTextComponent;
 
 public class ItemParser {
-   public static final SimpleCommandExceptionType ERROR_NO_TAGS_ALLOWED = new SimpleCommandExceptionType(new TranslationTextComponent("argument.item.tag.disallowed"));
-   public static final DynamicCommandExceptionType ERROR_UNKNOWN_ITEM = new DynamicCommandExceptionType((p_208696_0_) -> {
+   public static final SimpleCommandExceptionType ITEM_TAGS_NOT_ALLOWED = new SimpleCommandExceptionType(new TranslationTextComponent("argument.item.tag.disallowed"));
+   public static final DynamicCommandExceptionType ITEM_BAD_ID = new DynamicCommandExceptionType((p_208696_0_) -> {
       return new TranslationTextComponent("argument.item.id.invalid", p_208696_0_);
    });
-   private static final BiFunction<SuggestionsBuilder, ITagCollection<Item>, CompletableFuture<Suggestions>> SUGGEST_NOTHING = (p_239571_0_, p_239571_1_) -> {
+   private static final BiFunction<SuggestionsBuilder, ITagCollection<Item>, CompletableFuture<Suggestions>> DEFAULT_SUGGESTIONS_BUILDER = (p_239571_0_, p_239571_1_) -> {
       return p_239571_0_.buildFuture();
    };
    private final StringReader reader;
-   private final boolean forTesting;
-   private final Map<Property<?>, Comparable<?>> properties = Maps.newHashMap();
+   private final boolean allowTags;
+   private final Map<Property<?>, Comparable<?>> field_197336_d = Maps.newHashMap();
    private Item item;
    @Nullable
    private CompoundNBT nbt;
    private ResourceLocation tag = new ResourceLocation("");
-   private int tagCursor;
-   private BiFunction<SuggestionsBuilder, ITagCollection<Item>, CompletableFuture<Suggestions>> suggestions = SUGGEST_NOTHING;
+   private int readerCursor;
+   private BiFunction<SuggestionsBuilder, ITagCollection<Item>, CompletableFuture<Suggestions>> suggestionsBuilder = DEFAULT_SUGGESTIONS_BUILDER;
 
-   public ItemParser(StringReader p_i48213_1_, boolean p_i48213_2_) {
-      this.reader = p_i48213_1_;
-      this.forTesting = p_i48213_2_;
+   public ItemParser(StringReader readerIn, boolean allowTags) {
+      this.reader = readerIn;
+      this.allowTags = allowTags;
    }
 
    public Item getItem() {
@@ -62,63 +62,63 @@ public class ItemParser {
       ResourceLocation resourcelocation = ResourceLocation.read(this.reader);
       this.item = Registry.ITEM.getOptional(resourcelocation).orElseThrow(() -> {
          this.reader.setCursor(i);
-         return ERROR_UNKNOWN_ITEM.createWithContext(this.reader, resourcelocation.toString());
+         return ITEM_BAD_ID.createWithContext(this.reader, resourcelocation.toString());
       });
    }
 
    public void readTag() throws CommandSyntaxException {
-      if (!this.forTesting) {
-         throw ERROR_NO_TAGS_ALLOWED.create();
+      if (!this.allowTags) {
+         throw ITEM_TAGS_NOT_ALLOWED.create();
       } else {
-         this.suggestions = this::suggestTag;
+         this.suggestionsBuilder = this::suggestTag;
          this.reader.expect('#');
-         this.tagCursor = this.reader.getCursor();
+         this.readerCursor = this.reader.getCursor();
          this.tag = ResourceLocation.read(this.reader);
       }
    }
 
-   public void readNbt() throws CommandSyntaxException {
+   public void readNBT() throws CommandSyntaxException {
       this.nbt = (new JsonToNBT(this.reader)).readStruct();
    }
 
    public ItemParser parse() throws CommandSyntaxException {
-      this.suggestions = this::suggestItemIdOrTag;
+      this.suggestionsBuilder = this::suggestTagOrItem;
       if (this.reader.canRead() && this.reader.peek() == '#') {
          this.readTag();
       } else {
          this.readItem();
-         this.suggestions = this::suggestOpenNbt;
+         this.suggestionsBuilder = this::suggestItem;
       }
 
       if (this.reader.canRead() && this.reader.peek() == '{') {
-         this.suggestions = SUGGEST_NOTHING;
-         this.readNbt();
+         this.suggestionsBuilder = DEFAULT_SUGGESTIONS_BUILDER;
+         this.readNBT();
       }
 
       return this;
    }
 
-   private CompletableFuture<Suggestions> suggestOpenNbt(SuggestionsBuilder p_197328_1_, ITagCollection<Item> p_197328_2_) {
-      if (p_197328_1_.getRemaining().isEmpty()) {
-         p_197328_1_.suggest(String.valueOf('{'));
+   private CompletableFuture<Suggestions> suggestItem(SuggestionsBuilder builder, ITagCollection<Item> p_197328_2_) {
+      if (builder.getRemaining().isEmpty()) {
+         builder.suggest(String.valueOf('{'));
       }
 
-      return p_197328_1_.buildFuture();
+      return builder.buildFuture();
    }
 
-   private CompletableFuture<Suggestions> suggestTag(SuggestionsBuilder p_201955_1_, ITagCollection<Item> p_201955_2_) {
-      return ISuggestionProvider.suggestResource(p_201955_2_.getAvailableTags(), p_201955_1_.createOffset(this.tagCursor));
+   private CompletableFuture<Suggestions> suggestTag(SuggestionsBuilder builder, ITagCollection<Item> p_201955_2_) {
+      return ISuggestionProvider.suggestIterable(p_201955_2_.getRegisteredTags(), builder.createOffset(this.readerCursor));
    }
 
-   private CompletableFuture<Suggestions> suggestItemIdOrTag(SuggestionsBuilder p_197331_1_, ITagCollection<Item> p_197331_2_) {
-      if (this.forTesting) {
-         ISuggestionProvider.suggestResource(p_197331_2_.getAvailableTags(), p_197331_1_, String.valueOf('#'));
+   private CompletableFuture<Suggestions> suggestTagOrItem(SuggestionsBuilder builder, ITagCollection<Item> p_197331_2_) {
+      if (this.allowTags) {
+         ISuggestionProvider.suggestIterable(p_197331_2_.getRegisteredTags(), builder, String.valueOf('#'));
       }
 
-      return ISuggestionProvider.suggestResource(Registry.ITEM.keySet(), p_197331_1_);
+      return ISuggestionProvider.suggestIterable(Registry.ITEM.keySet(), builder);
    }
 
-   public CompletableFuture<Suggestions> fillSuggestions(SuggestionsBuilder p_197329_1_, ITagCollection<Item> p_197329_2_) {
-      return this.suggestions.apply(p_197329_1_.createOffset(this.reader.getCursor()), p_197329_2_);
+   public CompletableFuture<Suggestions> fillSuggestions(SuggestionsBuilder builder, ITagCollection<Item> p_197329_2_) {
+      return this.suggestionsBuilder.apply(builder.createOffset(this.reader.getCursor()), p_197329_2_);
    }
 }

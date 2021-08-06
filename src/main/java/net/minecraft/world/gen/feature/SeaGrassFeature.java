@@ -16,25 +16,25 @@ public class SeaGrassFeature extends Feature<ProbabilityConfig> {
       super(p_i231988_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, ProbabilityConfig p_241855_5_) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, ProbabilityConfig config) {
       boolean flag = false;
-      int i = p_241855_3_.nextInt(8) - p_241855_3_.nextInt(8);
-      int j = p_241855_3_.nextInt(8) - p_241855_3_.nextInt(8);
-      int k = p_241855_1_.getHeight(Heightmap.Type.OCEAN_FLOOR, p_241855_4_.getX() + i, p_241855_4_.getZ() + j);
-      BlockPos blockpos = new BlockPos(p_241855_4_.getX() + i, k, p_241855_4_.getZ() + j);
-      if (p_241855_1_.getBlockState(blockpos).is(Blocks.WATER)) {
-         boolean flag1 = p_241855_3_.nextDouble() < (double)p_241855_5_.probability;
-         BlockState blockstate = flag1 ? Blocks.TALL_SEAGRASS.defaultBlockState() : Blocks.SEAGRASS.defaultBlockState();
-         if (blockstate.canSurvive(p_241855_1_, blockpos)) {
+      int i = rand.nextInt(8) - rand.nextInt(8);
+      int j = rand.nextInt(8) - rand.nextInt(8);
+      int k = reader.getHeight(Heightmap.Type.OCEAN_FLOOR, pos.getX() + i, pos.getZ() + j);
+      BlockPos blockpos = new BlockPos(pos.getX() + i, k, pos.getZ() + j);
+      if (reader.getBlockState(blockpos).isIn(Blocks.WATER)) {
+         boolean flag1 = rand.nextDouble() < (double)config.probability;
+         BlockState blockstate = flag1 ? Blocks.TALL_SEAGRASS.getDefaultState() : Blocks.SEAGRASS.getDefaultState();
+         if (blockstate.isValidPosition(reader, blockpos)) {
             if (flag1) {
-               BlockState blockstate1 = blockstate.setValue(TallSeaGrassBlock.HALF, DoubleBlockHalf.UPPER);
-               BlockPos blockpos1 = blockpos.above();
-               if (p_241855_1_.getBlockState(blockpos1).is(Blocks.WATER)) {
-                  p_241855_1_.setBlock(blockpos, blockstate, 2);
-                  p_241855_1_.setBlock(blockpos1, blockstate1, 2);
+               BlockState blockstate1 = blockstate.with(TallSeaGrassBlock.HALF, DoubleBlockHalf.UPPER);
+               BlockPos blockpos1 = blockpos.up();
+               if (reader.getBlockState(blockpos1).isIn(Blocks.WATER)) {
+                  reader.setBlockState(blockpos, blockstate, 2);
+                  reader.setBlockState(blockpos1, blockstate1, 2);
                }
             } else {
-               p_241855_1_.setBlock(blockpos, blockstate, 2);
+               reader.setBlockState(blockpos, blockstate, 2);
             }
 
             flag = true;

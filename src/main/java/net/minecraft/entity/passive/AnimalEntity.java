@@ -31,119 +31,119 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class AnimalEntity extends AgeableEntity {
    private int inLove;
-   private UUID loveCause;
+   private UUID playerInLove;
 
-   protected AnimalEntity(EntityType<? extends AnimalEntity> p_i48568_1_, World p_i48568_2_) {
-      super(p_i48568_1_, p_i48568_2_);
-      this.setPathfindingMalus(PathNodeType.DANGER_FIRE, 16.0F);
-      this.setPathfindingMalus(PathNodeType.DAMAGE_FIRE, -1.0F);
+   protected AnimalEntity(EntityType<? extends AnimalEntity> type, World worldIn) {
+      super(type, worldIn);
+      this.setPathPriority(PathNodeType.DANGER_FIRE, 16.0F);
+      this.setPathPriority(PathNodeType.DAMAGE_FIRE, -1.0F);
    }
 
-   protected void customServerAiStep() {
-      if (this.getAge() != 0) {
+   protected void updateAITasks() {
+      if (this.getGrowingAge() != 0) {
          this.inLove = 0;
       }
 
-      super.customServerAiStep();
+      super.updateAITasks();
    }
 
-   public void aiStep() {
-      super.aiStep();
-      if (this.getAge() != 0) {
+   public void livingTick() {
+      super.livingTick();
+      if (this.getGrowingAge() != 0) {
          this.inLove = 0;
       }
 
       if (this.inLove > 0) {
          --this.inLove;
          if (this.inLove % 10 == 0) {
-            double d0 = this.random.nextGaussian() * 0.02D;
-            double d1 = this.random.nextGaussian() * 0.02D;
-            double d2 = this.random.nextGaussian() * 0.02D;
-            this.level.addParticle(ParticleTypes.HEART, this.getRandomX(1.0D), this.getRandomY() + 0.5D, this.getRandomZ(1.0D), d0, d1, d2);
+            double d0 = this.rand.nextGaussian() * 0.02D;
+            double d1 = this.rand.nextGaussian() * 0.02D;
+            double d2 = this.rand.nextGaussian() * 0.02D;
+            this.world.addParticle(ParticleTypes.HEART, this.getPosXRandom(1.0D), this.getPosYRandom() + 0.5D, this.getPosZRandom(1.0D), d0, d1, d2);
          }
       }
 
    }
 
-   public boolean hurt(DamageSource p_70097_1_, float p_70097_2_) {
-      if (this.isInvulnerableTo(p_70097_1_)) {
+   public boolean attackEntityFrom(DamageSource source, float amount) {
+      if (this.isInvulnerableTo(source)) {
          return false;
       } else {
          this.inLove = 0;
-         return super.hurt(p_70097_1_, p_70097_2_);
+         return super.attackEntityFrom(source, amount);
       }
    }
 
-   public float getWalkTargetValue(BlockPos p_205022_1_, IWorldReader p_205022_2_) {
-      return p_205022_2_.getBlockState(p_205022_1_.below()).is(Blocks.GRASS_BLOCK) ? 10.0F : p_205022_2_.getBrightness(p_205022_1_) - 0.5F;
+   public float getBlockPathWeight(BlockPos pos, IWorldReader worldIn) {
+      return worldIn.getBlockState(pos.down()).isIn(Blocks.GRASS_BLOCK) ? 10.0F : worldIn.getBrightness(pos) - 0.5F;
    }
 
-   public void addAdditionalSaveData(CompoundNBT p_213281_1_) {
-      super.addAdditionalSaveData(p_213281_1_);
-      p_213281_1_.putInt("InLove", this.inLove);
-      if (this.loveCause != null) {
-         p_213281_1_.putUUID("LoveCause", this.loveCause);
+   public void writeAdditional(CompoundNBT compound) {
+      super.writeAdditional(compound);
+      compound.putInt("InLove", this.inLove);
+      if (this.playerInLove != null) {
+         compound.putUniqueId("LoveCause", this.playerInLove);
       }
 
    }
 
-   public double getMyRidingOffset() {
+   public double getYOffset() {
       return 0.14D;
    }
 
-   public void readAdditionalSaveData(CompoundNBT p_70037_1_) {
-      super.readAdditionalSaveData(p_70037_1_);
-      this.inLove = p_70037_1_.getInt("InLove");
-      this.loveCause = p_70037_1_.hasUUID("LoveCause") ? p_70037_1_.getUUID("LoveCause") : null;
+   public void readAdditional(CompoundNBT compound) {
+      super.readAdditional(compound);
+      this.inLove = compound.getInt("InLove");
+      this.playerInLove = compound.hasUniqueId("LoveCause") ? compound.getUniqueId("LoveCause") : null;
    }
 
-   public static boolean checkAnimalSpawnRules(EntityType<? extends AnimalEntity> p_223316_0_, IWorld p_223316_1_, SpawnReason p_223316_2_, BlockPos p_223316_3_, Random p_223316_4_) {
-      return p_223316_1_.getBlockState(p_223316_3_.below()).is(Blocks.GRASS_BLOCK) && p_223316_1_.getRawBrightness(p_223316_3_, 0) > 8;
+   public static boolean canAnimalSpawn(EntityType<? extends AnimalEntity> animal, IWorld worldIn, SpawnReason reason, BlockPos pos, Random random) {
+      return worldIn.getBlockState(pos.down()).isIn(Blocks.GRASS_BLOCK) && worldIn.getLightSubtracted(pos, 0) > 8;
    }
 
-   public int getAmbientSoundInterval() {
+   public int getTalkInterval() {
       return 120;
    }
 
-   public boolean removeWhenFarAway(double p_213397_1_) {
+   public boolean canDespawn(double distanceToClosestPlayer) {
       return false;
    }
 
-   protected int getExperienceReward(PlayerEntity p_70693_1_) {
-      return 1 + this.level.random.nextInt(3);
+   protected int getExperiencePoints(PlayerEntity player) {
+      return 1 + this.world.rand.nextInt(3);
    }
 
-   public boolean isFood(ItemStack p_70877_1_) {
-      return p_70877_1_.getItem() == Items.WHEAT;
+   public boolean isBreedingItem(ItemStack stack) {
+      return stack.getItem() == Items.WHEAT;
    }
 
-   public ActionResultType mobInteract(PlayerEntity p_230254_1_, Hand p_230254_2_) {
-      ItemStack itemstack = p_230254_1_.getItemInHand(p_230254_2_);
-      if (this.isFood(itemstack)) {
-         int i = this.getAge();
-         if (!this.level.isClientSide && i == 0 && this.canFallInLove()) {
-            this.usePlayerItem(p_230254_1_, itemstack);
+   public ActionResultType func_230254_b_(PlayerEntity p_230254_1_, Hand p_230254_2_) {
+      ItemStack itemstack = p_230254_1_.getHeldItem(p_230254_2_);
+      if (this.isBreedingItem(itemstack)) {
+         int i = this.getGrowingAge();
+         if (!this.world.isRemote && i == 0 && this.canFallInLove()) {
+            this.consumeItemFromStack(p_230254_1_, itemstack);
             this.setInLove(p_230254_1_);
             return ActionResultType.SUCCESS;
          }
 
-         if (this.isBaby()) {
-            this.usePlayerItem(p_230254_1_, itemstack);
+         if (this.isChild()) {
+            this.consumeItemFromStack(p_230254_1_, itemstack);
             this.ageUp((int)((float)(-i / 20) * 0.1F), true);
-            return ActionResultType.sidedSuccess(this.level.isClientSide);
+            return ActionResultType.func_233537_a_(this.world.isRemote);
          }
 
-         if (this.level.isClientSide) {
+         if (this.world.isRemote) {
             return ActionResultType.CONSUME;
          }
       }
 
-      return super.mobInteract(p_230254_1_, p_230254_2_);
+      return super.func_230254_b_(p_230254_1_, p_230254_2_);
    }
 
-   protected void usePlayerItem(PlayerEntity p_175505_1_, ItemStack p_175505_2_) {
-      if (!p_175505_1_.abilities.instabuild) {
-         p_175505_2_.shrink(1);
+   protected void consumeItemFromStack(PlayerEntity player, ItemStack stack) {
+      if (!player.abilities.isCreativeMode) {
+         stack.shrink(1);
       }
 
    }
@@ -152,29 +152,29 @@ public abstract class AnimalEntity extends AgeableEntity {
       return this.inLove <= 0;
    }
 
-   public void setInLove(@Nullable PlayerEntity p_146082_1_) {
+   public void setInLove(@Nullable PlayerEntity player) {
       this.inLove = 600;
-      if (p_146082_1_ != null) {
-         this.loveCause = p_146082_1_.getUUID();
+      if (player != null) {
+         this.playerInLove = player.getUniqueID();
       }
 
-      this.level.broadcastEntityEvent(this, (byte)18);
+      this.world.setEntityState(this, (byte)18);
    }
 
-   public void setInLoveTime(int p_204700_1_) {
-      this.inLove = p_204700_1_;
+   public void setInLove(int ticks) {
+      this.inLove = ticks;
    }
 
-   public int getInLoveTime() {
+   public int func_234178_eO_() {
       return this.inLove;
    }
 
    @Nullable
    public ServerPlayerEntity getLoveCause() {
-      if (this.loveCause == null) {
+      if (this.playerInLove == null) {
          return null;
       } else {
-         PlayerEntity playerentity = this.level.getPlayerByUUID(this.loveCause);
+         PlayerEntity playerentity = this.world.getPlayerByUuid(this.playerInLove);
          return playerentity instanceof ServerPlayerEntity ? (ServerPlayerEntity)playerentity : null;
       }
    }
@@ -183,22 +183,22 @@ public abstract class AnimalEntity extends AgeableEntity {
       return this.inLove > 0;
    }
 
-   public void resetLove() {
+   public void resetInLove() {
       this.inLove = 0;
    }
 
-   public boolean canMate(AnimalEntity p_70878_1_) {
-      if (p_70878_1_ == this) {
+   public boolean canMateWith(AnimalEntity otherAnimal) {
+      if (otherAnimal == this) {
          return false;
-      } else if (p_70878_1_.getClass() != this.getClass()) {
+      } else if (otherAnimal.getClass() != this.getClass()) {
          return false;
       } else {
-         return this.isInLove() && p_70878_1_.isInLove();
+         return this.isInLove() && otherAnimal.isInLove();
       }
    }
 
-   public void spawnChildFromBreeding(ServerWorld p_234177_1_, AnimalEntity p_234177_2_) {
-      AgeableEntity ageableentity = this.getBreedOffspring(p_234177_1_, p_234177_2_);
+   public void func_234177_a_(ServerWorld p_234177_1_, AnimalEntity p_234177_2_) {
+      AgeableEntity ageableentity = this.func_241840_a(p_234177_1_, p_234177_2_);
       if (ageableentity != null) {
          ServerPlayerEntity serverplayerentity = this.getLoveCause();
          if (serverplayerentity == null && p_234177_2_.getLoveCause() != null) {
@@ -206,36 +206,36 @@ public abstract class AnimalEntity extends AgeableEntity {
          }
 
          if (serverplayerentity != null) {
-            serverplayerentity.awardStat(Stats.ANIMALS_BRED);
+            serverplayerentity.addStat(Stats.ANIMALS_BRED);
             CriteriaTriggers.BRED_ANIMALS.trigger(serverplayerentity, this, p_234177_2_, ageableentity);
          }
 
-         this.setAge(6000);
-         p_234177_2_.setAge(6000);
-         this.resetLove();
-         p_234177_2_.resetLove();
-         ageableentity.setBaby(true);
-         ageableentity.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
-         p_234177_1_.addFreshEntityWithPassengers(ageableentity);
-         p_234177_1_.broadcastEntityEvent(this, (byte)18);
-         if (p_234177_1_.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
-            p_234177_1_.addFreshEntity(new ExperienceOrbEntity(p_234177_1_, this.getX(), this.getY(), this.getZ(), this.getRandom().nextInt(7) + 1));
+         this.setGrowingAge(6000);
+         p_234177_2_.setGrowingAge(6000);
+         this.resetInLove();
+         p_234177_2_.resetInLove();
+         ageableentity.setChild(true);
+         ageableentity.setLocationAndAngles(this.getPosX(), this.getPosY(), this.getPosZ(), 0.0F, 0.0F);
+         p_234177_1_.func_242417_l(ageableentity);
+         p_234177_1_.setEntityState(this, (byte)18);
+         if (p_234177_1_.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
+            p_234177_1_.addEntity(new ExperienceOrbEntity(p_234177_1_, this.getPosX(), this.getPosY(), this.getPosZ(), this.getRNG().nextInt(7) + 1));
          }
 
       }
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void handleEntityEvent(byte p_70103_1_) {
-      if (p_70103_1_ == 18) {
+   public void handleStatusUpdate(byte id) {
+      if (id == 18) {
          for(int i = 0; i < 7; ++i) {
-            double d0 = this.random.nextGaussian() * 0.02D;
-            double d1 = this.random.nextGaussian() * 0.02D;
-            double d2 = this.random.nextGaussian() * 0.02D;
-            this.level.addParticle(ParticleTypes.HEART, this.getRandomX(1.0D), this.getRandomY() + 0.5D, this.getRandomZ(1.0D), d0, d1, d2);
+            double d0 = this.rand.nextGaussian() * 0.02D;
+            double d1 = this.rand.nextGaussian() * 0.02D;
+            double d2 = this.rand.nextGaussian() * 0.02D;
+            this.world.addParticle(ParticleTypes.HEART, this.getPosXRandom(1.0D), this.getPosYRandom() + 0.5D, this.getPosZRandom(1.0D), d0, d1, d2);
          }
       } else {
-         super.handleEntityEvent(p_70103_1_);
+         super.handleStatusUpdate(id);
       }
 
    }

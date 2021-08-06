@@ -14,39 +14,39 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ShieldItem extends Item {
-   public ShieldItem(Item.Properties p_i48470_1_) {
-      super(p_i48470_1_);
-      DispenserBlock.registerBehavior(this, ArmorItem.DISPENSE_ITEM_BEHAVIOR);
+   public ShieldItem(Item.Properties builder) {
+      super(builder);
+      DispenserBlock.registerDispenseBehavior(this, ArmorItem.DISPENSER_BEHAVIOR);
    }
 
-   public String getDescriptionId(ItemStack p_77667_1_) {
-      return p_77667_1_.getTagElement("BlockEntityTag") != null ? this.getDescriptionId() + '.' + getColor(p_77667_1_).getName() : super.getDescriptionId(p_77667_1_);
+   public String getTranslationKey(ItemStack stack) {
+      return stack.getChildTag("BlockEntityTag") != null ? this.getTranslationKey() + '.' + getColor(stack).getTranslationKey() : super.getTranslationKey(stack);
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void appendHoverText(ItemStack p_77624_1_, @Nullable World p_77624_2_, List<ITextComponent> p_77624_3_, ITooltipFlag p_77624_4_) {
-      BannerItem.appendHoverTextFromBannerBlockEntityTag(p_77624_1_, p_77624_3_);
+   public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+      BannerItem.appendHoverTextFromTileEntityTag(stack, tooltip);
    }
 
-   public UseAction getUseAnimation(ItemStack p_77661_1_) {
+   public UseAction getUseAction(ItemStack stack) {
       return UseAction.BLOCK;
    }
 
-   public int getUseDuration(ItemStack p_77626_1_) {
+   public int getUseDuration(ItemStack stack) {
       return 72000;
    }
 
-   public ActionResult<ItemStack> use(World p_77659_1_, PlayerEntity p_77659_2_, Hand p_77659_3_) {
-      ItemStack itemstack = p_77659_2_.getItemInHand(p_77659_3_);
-      p_77659_2_.startUsingItem(p_77659_3_);
-      return ActionResult.consume(itemstack);
+   public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
+      ItemStack itemstack = playerIn.getHeldItem(handIn);
+      playerIn.setActiveHand(handIn);
+      return ActionResult.resultConsume(itemstack);
    }
 
-   public boolean isValidRepairItem(ItemStack p_82789_1_, ItemStack p_82789_2_) {
-      return ItemTags.PLANKS.contains(p_82789_2_.getItem()) || super.isValidRepairItem(p_82789_1_, p_82789_2_);
+   public boolean getIsRepairable(ItemStack toRepair, ItemStack repair) {
+      return ItemTags.PLANKS.contains(repair.getItem()) || super.getIsRepairable(toRepair, repair);
    }
 
-   public static DyeColor getColor(ItemStack p_195979_0_) {
-      return DyeColor.byId(p_195979_0_.getOrCreateTagElement("BlockEntityTag").getInt("Base"));
+   public static DyeColor getColor(ItemStack stack) {
+      return DyeColor.byId(stack.getOrCreateChildTag("BlockEntityTag").getInt("Base"));
    }
 }

@@ -11,43 +11,43 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class StartMinigameRealmsAction extends LongRunningTask {
-   private final long worldId;
-   private final WorldTemplate worldTemplate;
-   private final RealmsConfigureWorldScreen lastScreen;
+   private final long field_238142_c_;
+   private final WorldTemplate field_238143_d_;
+   private final RealmsConfigureWorldScreen field_238144_e_;
 
    public StartMinigameRealmsAction(long p_i232235_1_, WorldTemplate p_i232235_3_, RealmsConfigureWorldScreen p_i232235_4_) {
-      this.worldId = p_i232235_1_;
-      this.worldTemplate = p_i232235_3_;
-      this.lastScreen = p_i232235_4_;
+      this.field_238142_c_ = p_i232235_1_;
+      this.field_238143_d_ = p_i232235_3_;
+      this.field_238144_e_ = p_i232235_4_;
    }
 
    public void run() {
-      RealmsClient realmsclient = RealmsClient.create();
-      this.setTitle(new TranslationTextComponent("mco.minigame.world.starting.screen.title"));
+      RealmsClient realmsclient = RealmsClient.func_224911_a();
+      this.func_224989_b(new TranslationTextComponent("mco.minigame.world.starting.screen.title"));
 
       for(int i = 0; i < 25; ++i) {
          try {
-            if (this.aborted()) {
+            if (this.func_224988_a()) {
                return;
             }
 
-            if (realmsclient.putIntoMinigameMode(this.worldId, this.worldTemplate.id)) {
-               setScreen(this.lastScreen);
+            if (realmsclient.func_224905_d(this.field_238142_c_, this.field_238143_d_.field_230647_a_)) {
+               func_238127_a_(this.field_238144_e_);
                break;
             }
          } catch (RetryCallException retrycallexception) {
-            if (this.aborted()) {
+            if (this.func_224988_a()) {
                return;
             }
 
-            pause(retrycallexception.delaySeconds);
+            func_238125_a_(retrycallexception.field_224985_e);
          } catch (Exception exception) {
-            if (this.aborted()) {
+            if (this.func_224988_a()) {
                return;
             }
 
-            LOGGER.error("Couldn't start mini game!");
-            this.error(exception.toString());
+            field_238124_a_.error("Couldn't start mini game!");
+            this.func_237703_a_(exception.toString());
          }
       }
 

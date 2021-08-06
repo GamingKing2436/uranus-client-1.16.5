@@ -14,23 +14,23 @@ public class GlowstoneBlobFeature extends Feature<NoFeatureConfig> {
       super(p_i231956_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, NoFeatureConfig p_241855_5_) {
-      if (!p_241855_1_.isEmptyBlock(p_241855_4_)) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, NoFeatureConfig config) {
+      if (!reader.isAirBlock(pos)) {
          return false;
       } else {
-         BlockState blockstate = p_241855_1_.getBlockState(p_241855_4_.above());
-         if (!blockstate.is(Blocks.NETHERRACK) && !blockstate.is(Blocks.BASALT) && !blockstate.is(Blocks.BLACKSTONE)) {
+         BlockState blockstate = reader.getBlockState(pos.up());
+         if (!blockstate.isIn(Blocks.NETHERRACK) && !blockstate.isIn(Blocks.BASALT) && !blockstate.isIn(Blocks.BLACKSTONE)) {
             return false;
          } else {
-            p_241855_1_.setBlock(p_241855_4_, Blocks.GLOWSTONE.defaultBlockState(), 2);
+            reader.setBlockState(pos, Blocks.GLOWSTONE.getDefaultState(), 2);
 
             for(int i = 0; i < 1500; ++i) {
-               BlockPos blockpos = p_241855_4_.offset(p_241855_3_.nextInt(8) - p_241855_3_.nextInt(8), -p_241855_3_.nextInt(12), p_241855_3_.nextInt(8) - p_241855_3_.nextInt(8));
-               if (p_241855_1_.getBlockState(blockpos).isAir()) {
+               BlockPos blockpos = pos.add(rand.nextInt(8) - rand.nextInt(8), -rand.nextInt(12), rand.nextInt(8) - rand.nextInt(8));
+               if (reader.getBlockState(blockpos).isAir()) {
                   int j = 0;
 
                   for(Direction direction : Direction.values()) {
-                     if (p_241855_1_.getBlockState(blockpos.relative(direction)).is(Blocks.GLOWSTONE)) {
+                     if (reader.getBlockState(blockpos.offset(direction)).isIn(Blocks.GLOWSTONE)) {
                         ++j;
                      }
 
@@ -40,7 +40,7 @@ public class GlowstoneBlobFeature extends Feature<NoFeatureConfig> {
                   }
 
                   if (j == 1) {
-                     p_241855_1_.setBlock(blockpos, Blocks.GLOWSTONE.defaultBlockState(), 2);
+                     reader.setBlockState(blockpos, Blocks.GLOWSTONE.getDefaultState(), 2);
                   }
                }
             }

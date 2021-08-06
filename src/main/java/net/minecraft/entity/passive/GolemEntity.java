@@ -8,11 +8,11 @@ import net.minecraft.util.SoundEvent;
 import net.minecraft.world.World;
 
 public abstract class GolemEntity extends CreatureEntity {
-   protected GolemEntity(EntityType<? extends GolemEntity> p_i48569_1_, World p_i48569_2_) {
-      super(p_i48569_1_, p_i48569_2_);
+   protected GolemEntity(EntityType<? extends GolemEntity> type, World worldIn) {
+      super(type, worldIn);
    }
 
-   public boolean causeFallDamage(float p_225503_1_, float p_225503_2_) {
+   public boolean onLivingFall(float distance, float damageMultiplier) {
       return false;
    }
 
@@ -22,7 +22,7 @@ public abstract class GolemEntity extends CreatureEntity {
    }
 
    @Nullable
-   protected SoundEvent getHurtSound(DamageSource p_184601_1_) {
+   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
       return null;
    }
 
@@ -31,11 +31,11 @@ public abstract class GolemEntity extends CreatureEntity {
       return null;
    }
 
-   public int getAmbientSoundInterval() {
+   public int getTalkInterval() {
       return 120;
    }
 
-   public boolean removeWhenFarAway(double p_213397_1_) {
+   public boolean canDespawn(double distanceToClosestPlayer) {
       return false;
    }
 }

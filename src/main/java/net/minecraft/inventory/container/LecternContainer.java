@@ -10,52 +10,52 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class LecternContainer extends Container {
-   private final IInventory lectern;
-   private final IIntArray lecternData;
+   private final IInventory lecternInventory;
+   private final IIntArray field_217019_d;
 
    public LecternContainer(int p_i50075_1_) {
       this(p_i50075_1_, new Inventory(1), new IntArray(1));
    }
 
-   public LecternContainer(int p_i50076_1_, IInventory p_i50076_2_, IIntArray p_i50076_3_) {
-      super(ContainerType.LECTERN, p_i50076_1_);
-      checkContainerSize(p_i50076_2_, 1);
-      checkContainerDataCount(p_i50076_3_, 1);
-      this.lectern = p_i50076_2_;
-      this.lecternData = p_i50076_3_;
+   public LecternContainer(int id, IInventory p_i50076_2_, IIntArray p_i50076_3_) {
+      super(ContainerType.LECTERN, id);
+      assertInventorySize(p_i50076_2_, 1);
+      assertIntArraySize(p_i50076_3_, 1);
+      this.lecternInventory = p_i50076_2_;
+      this.field_217019_d = p_i50076_3_;
       this.addSlot(new Slot(p_i50076_2_, 0, 0, 0) {
-         public void setChanged() {
-            super.setChanged();
-            LecternContainer.this.slotsChanged(this.container);
+         public void onSlotChanged() {
+            super.onSlotChanged();
+            LecternContainer.this.onCraftMatrixChanged(this.inventory);
          }
       });
-      this.addDataSlots(p_i50076_3_);
+      this.trackIntArray(p_i50076_3_);
    }
 
-   public boolean clickMenuButton(PlayerEntity p_75140_1_, int p_75140_2_) {
-      if (p_75140_2_ >= 100) {
-         int k = p_75140_2_ - 100;
-         this.setData(0, k);
+   public boolean enchantItem(PlayerEntity playerIn, int id) {
+      if (id >= 100) {
+         int k = id - 100;
+         this.updateProgressBar(0, k);
          return true;
       } else {
-         switch(p_75140_2_) {
+         switch(id) {
          case 1:
-            int j = this.lecternData.get(0);
-            this.setData(0, j - 1);
+            int j = this.field_217019_d.get(0);
+            this.updateProgressBar(0, j - 1);
             return true;
          case 2:
-            int i = this.lecternData.get(0);
-            this.setData(0, i + 1);
+            int i = this.field_217019_d.get(0);
+            this.updateProgressBar(0, i + 1);
             return true;
          case 3:
-            if (!p_75140_1_.mayBuild()) {
+            if (!playerIn.isAllowEdit()) {
                return false;
             }
 
-            ItemStack itemstack = this.lectern.removeItemNoUpdate(0);
-            this.lectern.setChanged();
-            if (!p_75140_1_.inventory.add(itemstack)) {
-               p_75140_1_.drop(itemstack, false);
+            ItemStack itemstack = this.lecternInventory.removeStackFromSlot(0);
+            this.lecternInventory.markDirty();
+            if (!playerIn.inventory.addItemStackToInventory(itemstack)) {
+               playerIn.dropItem(itemstack, false);
             }
 
             return true;
@@ -65,22 +65,22 @@ public class LecternContainer extends Container {
       }
    }
 
-   public void setData(int p_75137_1_, int p_75137_2_) {
-      super.setData(p_75137_1_, p_75137_2_);
-      this.broadcastChanges();
+   public void updateProgressBar(int id, int data) {
+      super.updateProgressBar(id, data);
+      this.detectAndSendChanges();
    }
 
-   public boolean stillValid(PlayerEntity p_75145_1_) {
-      return this.lectern.stillValid(p_75145_1_);
+   public boolean canInteractWith(PlayerEntity playerIn) {
+      return this.lecternInventory.isUsableByPlayer(playerIn);
    }
 
    @OnlyIn(Dist.CLIENT)
    public ItemStack getBook() {
-      return this.lectern.getItem(0);
+      return this.lecternInventory.getStackInSlot(0);
    }
 
    @OnlyIn(Dist.CLIENT)
    public int getPage() {
-      return this.lecternData.get(0);
+      return this.field_217019_d.get(0);
    }
 }

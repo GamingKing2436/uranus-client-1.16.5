@@ -33,14 +33,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class MinecraftServerGui extends JComponent {
-   private static final Font MONOSPACED = new Font("Monospaced", 0, 12);
+   private static final Font SERVER_GUI_FONT = new Font("Monospaced", 0, 12);
    private static final Logger LOGGER = LogManager.getLogger();
    private final DedicatedServer server;
-   private Thread logAppenderThread;
-   private final Collection<Runnable> finalizers = Lists.newArrayList();
-   private final AtomicBoolean isClosing = new AtomicBoolean();
+   private Thread field_206932_d;
+   private final Collection<Runnable> field_219051_e = Lists.newArrayList();
+   private final AtomicBoolean field_219052_f = new AtomicBoolean();
 
-   public static MinecraftServerGui showFrameFor(final DedicatedServer p_219048_0_) {
+   public static MinecraftServerGui func_219048_a(final DedicatedServer p_219048_0_) {
       try {
          UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
       } catch (Exception exception) {
@@ -55,65 +55,65 @@ public class MinecraftServerGui extends JComponent {
       jframe.setVisible(true);
       jframe.addWindowListener(new WindowAdapter() {
          public void windowClosing(WindowEvent p_windowClosing_1_) {
-            if (!minecraftservergui.isClosing.getAndSet(true)) {
+            if (!minecraftservergui.field_219052_f.getAndSet(true)) {
                jframe.setTitle("Minecraft server - shutting down!");
-               p_219048_0_.halt(true);
-               minecraftservergui.runFinalizers();
+               p_219048_0_.initiateShutdown(true);
+               minecraftservergui.func_219046_f();
             }
 
          }
       });
-      minecraftservergui.addFinalizer(jframe::dispose);
+      minecraftservergui.func_219045_a(jframe::dispose);
       minecraftservergui.start();
       return minecraftservergui;
    }
 
-   private MinecraftServerGui(DedicatedServer p_i2362_1_) {
-      this.server = p_i2362_1_;
+   private MinecraftServerGui(DedicatedServer serverIn) {
+      this.server = serverIn;
       this.setPreferredSize(new Dimension(854, 480));
       this.setLayout(new BorderLayout());
 
       try {
-         this.add(this.buildChatPanel(), "Center");
-         this.add(this.buildInfoPanel(), "West");
+         this.add(this.getLogComponent(), "Center");
+         this.add(this.getStatsComponent(), "West");
       } catch (Exception exception) {
          LOGGER.error("Couldn't build server GUI", (Throwable)exception);
       }
 
    }
 
-   public void addFinalizer(Runnable p_219045_1_) {
-      this.finalizers.add(p_219045_1_);
+   public void func_219045_a(Runnable p_219045_1_) {
+      this.field_219051_e.add(p_219045_1_);
    }
 
-   private JComponent buildInfoPanel() {
+   private JComponent getStatsComponent() {
       JPanel jpanel = new JPanel(new BorderLayout());
       StatsComponent statscomponent = new StatsComponent(this.server);
-      this.finalizers.add(statscomponent::close);
+      this.field_219051_e.add(statscomponent::func_219053_a);
       jpanel.add(statscomponent, "North");
-      jpanel.add(this.buildPlayerPanel(), "Center");
+      jpanel.add(this.getPlayerListComponent(), "Center");
       jpanel.setBorder(new TitledBorder(new EtchedBorder(), "Stats"));
       return jpanel;
    }
 
-   private JComponent buildPlayerPanel() {
+   private JComponent getPlayerListComponent() {
       JList<?> jlist = new PlayerListComponent(this.server);
       JScrollPane jscrollpane = new JScrollPane(jlist, 22, 30);
       jscrollpane.setBorder(new TitledBorder(new EtchedBorder(), "Players"));
       return jscrollpane;
    }
 
-   private JComponent buildChatPanel() {
+   private JComponent getLogComponent() {
       JPanel jpanel = new JPanel(new BorderLayout());
       JTextArea jtextarea = new JTextArea();
       JScrollPane jscrollpane = new JScrollPane(jtextarea, 22, 30);
       jtextarea.setEditable(false);
-      jtextarea.setFont(MONOSPACED);
+      jtextarea.setFont(SERVER_GUI_FONT);
       JTextField jtextfield = new JTextField();
       jtextfield.addActionListener((p_210465_2_) -> {
          String s = jtextfield.getText().trim();
          if (!s.isEmpty()) {
-            this.server.handleConsoleInput(s, this.server.createCommandSourceStack());
+            this.server.handleConsoleInput(s, this.server.getCommandSource());
          }
 
          jtextfield.setText("");
@@ -125,48 +125,48 @@ public class MinecraftServerGui extends JComponent {
       jpanel.add(jscrollpane, "Center");
       jpanel.add(jtextfield, "South");
       jpanel.setBorder(new TitledBorder(new EtchedBorder(), "Log and chat"));
-      this.logAppenderThread = new Thread(() -> {
+      this.field_206932_d = new Thread(() -> {
          String s;
          while((s = QueueLogAppender.getNextLogEvent("ServerGuiConsole")) != null) {
-            this.print(jtextarea, jscrollpane, s);
+            this.appendLine(jtextarea, jscrollpane, s);
          }
 
       });
-      this.logAppenderThread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
-      this.logAppenderThread.setDaemon(true);
+      this.field_206932_d.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
+      this.field_206932_d.setDaemon(true);
       return jpanel;
    }
 
    public void start() {
-      this.logAppenderThread.start();
+      this.field_206932_d.start();
    }
 
-   public void close() {
-      if (!this.isClosing.getAndSet(true)) {
-         this.runFinalizers();
+   public void func_219050_b() {
+      if (!this.field_219052_f.getAndSet(true)) {
+         this.func_219046_f();
       }
 
    }
 
-   private void runFinalizers() {
-      this.finalizers.forEach(Runnable::run);
+   private void func_219046_f() {
+      this.field_219051_e.forEach(Runnable::run);
    }
 
-   public void print(JTextArea p_164247_1_, JScrollPane p_164247_2_, String p_164247_3_) {
+   public void appendLine(JTextArea textArea, JScrollPane scrollPane, String line) {
       if (!SwingUtilities.isEventDispatchThread()) {
          SwingUtilities.invokeLater(() -> {
-            this.print(p_164247_1_, p_164247_2_, p_164247_3_);
+            this.appendLine(textArea, scrollPane, line);
          });
       } else {
-         Document document = p_164247_1_.getDocument();
-         JScrollBar jscrollbar = p_164247_2_.getVerticalScrollBar();
+         Document document = textArea.getDocument();
+         JScrollBar jscrollbar = scrollPane.getVerticalScrollBar();
          boolean flag = false;
-         if (p_164247_2_.getViewport().getView() == p_164247_1_) {
-            flag = (double)jscrollbar.getValue() + jscrollbar.getSize().getHeight() + (double)(MONOSPACED.getSize() * 4) > (double)jscrollbar.getMaximum();
+         if (scrollPane.getViewport().getView() == textArea) {
+            flag = (double)jscrollbar.getValue() + jscrollbar.getSize().getHeight() + (double)(SERVER_GUI_FONT.getSize() * 4) > (double)jscrollbar.getMaximum();
          }
 
          try {
-            document.insertString(document.getLength(), p_164247_3_, (AttributeSet)null);
+            document.insertString(document.getLength(), line, (AttributeSet)null);
          } catch (BadLocationException badlocationexception) {
          }
 

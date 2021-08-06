@@ -45,37 +45,37 @@ import org.apache.logging.log4j.Logger;
 @OnlyIn(Dist.CLIENT)
 public class DownloadingPackFinder implements IPackFinder {
    private static final Logger LOGGER = LogManager.getLogger();
-   private static final Pattern SHA1 = Pattern.compile("^[a-fA-F0-9]{40}$");
+   private static final Pattern PATTERN_SHA1 = Pattern.compile("^[a-fA-F0-9]{40}$");
    private final VanillaPack vanillaPack;
    private final File serverPackDir;
-   private final ReentrantLock downloadLock = new ReentrantLock();
-   private final ResourceIndex assetIndex;
+   private final ReentrantLock lockDownload = new ReentrantLock();
+   private final ResourceIndex resourceIndex;
    @Nullable
    private CompletableFuture<?> currentDownload;
    @Nullable
    private ResourcePackInfo serverPack;
 
-   public DownloadingPackFinder(File p_i48116_1_, ResourceIndex p_i48116_2_) {
-      this.serverPackDir = p_i48116_1_;
-      this.assetIndex = p_i48116_2_;
-      this.vanillaPack = new VirtualAssetsPack(p_i48116_2_);
+   public DownloadingPackFinder(File serverPackDirIn, ResourceIndex resourceIndexIn) {
+      this.serverPackDir = serverPackDirIn;
+      this.resourceIndex = resourceIndexIn;
+      this.vanillaPack = new VirtualAssetsPack(resourceIndexIn);
    }
 
-   public void loadPacks(Consumer<ResourcePackInfo> p_230230_1_, ResourcePackInfo.IFactory p_230230_2_) {
-      ResourcePackInfo resourcepackinfo = ResourcePackInfo.create("vanilla", true, () -> {
+   public void findPacks(Consumer<ResourcePackInfo> infoConsumer, ResourcePackInfo.IFactory infoFactory) {
+      ResourcePackInfo resourcepackinfo = ResourcePackInfo.createResourcePack("vanilla", true, () -> {
          return this.vanillaPack;
-      }, p_230230_2_, ResourcePackInfo.Priority.BOTTOM, IPackNameDecorator.BUILT_IN);
+      }, infoFactory, ResourcePackInfo.Priority.BOTTOM, IPackNameDecorator.BUILTIN);
       if (resourcepackinfo != null) {
-         p_230230_1_.accept(resourcepackinfo);
+         infoConsumer.accept(resourcepackinfo);
       }
 
       if (this.serverPack != null) {
-         p_230230_1_.accept(this.serverPack);
+         infoConsumer.accept(this.serverPack);
       }
 
-      ResourcePackInfo resourcepackinfo1 = this.createProgrammerArtPack(p_230230_2_);
+      ResourcePackInfo resourcepackinfo1 = this.func_239453_a_(infoFactory);
       if (resourcepackinfo1 != null) {
-         p_230230_1_.accept(resourcepackinfo1);
+         infoConsumer.accept(resourcepackinfo1);
       }
 
    }
@@ -84,68 +84,68 @@ public class DownloadingPackFinder implements IPackFinder {
       return this.vanillaPack;
    }
 
-   private static Map<String, String> getDownloadHeaders() {
+   private static Map<String, String> getPackDownloadRequestProperties() {
       Map<String, String> map = Maps.newHashMap();
-      map.put("X-Minecraft-Username", Minecraft.getInstance().getUser().getName());
-      map.put("X-Minecraft-UUID", Minecraft.getInstance().getUser().getUuid());
-      map.put("X-Minecraft-Version", SharedConstants.getCurrentVersion().getName());
-      map.put("X-Minecraft-Version-ID", SharedConstants.getCurrentVersion().getId());
-      map.put("X-Minecraft-Pack-Format", String.valueOf(SharedConstants.getCurrentVersion().getPackVersion()));
-      map.put("User-Agent", "Minecraft Java/" + SharedConstants.getCurrentVersion().getName());
+      map.put("X-Minecraft-Username", Minecraft.getInstance().getSession().getUsername());
+      map.put("X-Minecraft-UUID", Minecraft.getInstance().getSession().getPlayerID());
+      map.put("X-Minecraft-Version", SharedConstants.getVersion().getName());
+      map.put("X-Minecraft-Version-ID", SharedConstants.getVersion().getId());
+      map.put("X-Minecraft-Pack-Format", String.valueOf(SharedConstants.getVersion().getPackVersion()));
+      map.put("User-Agent", "Minecraft Java/" + SharedConstants.getVersion().getName());
       return map;
    }
 
-   public CompletableFuture<?> downloadAndSelectResourcePack(String p_217818_1_, String p_217818_2_) {
-      String s = DigestUtils.sha1Hex(p_217818_1_);
-      String s1 = SHA1.matcher(p_217818_2_).matches() ? p_217818_2_ : "";
-      this.downloadLock.lock();
+   public CompletableFuture<?> downloadResourcePack(String url, String hash) {
+      String s = DigestUtils.sha1Hex(url);
+      String s1 = PATTERN_SHA1.matcher(hash).matches() ? hash : "";
+      this.lockDownload.lock();
 
       CompletableFuture completablefuture1;
       try {
-         this.clearServerPack();
-         this.clearOldDownloads();
+         this.clearResourcePack();
+         this.clearDownloads();
          File file1 = new File(this.serverPackDir, s);
          CompletableFuture<?> completablefuture;
          if (file1.exists()) {
             completablefuture = CompletableFuture.completedFuture("");
          } else {
             WorkingScreen workingscreen = new WorkingScreen();
-            Map<String, String> map = getDownloadHeaders();
+            Map<String, String> map = getPackDownloadRequestProperties();
             Minecraft minecraft = Minecraft.getInstance();
-            minecraft.executeBlocking(() -> {
-               minecraft.setScreen(workingscreen);
+            minecraft.runImmediately(() -> {
+               minecraft.displayGuiScreen(workingscreen);
             });
-            completablefuture = HTTPUtil.downloadTo(file1, p_217818_1_, map, 104857600, workingscreen, minecraft.getProxy());
+            completablefuture = HTTPUtil.downloadResourcePack(file1, url, map, 104857600, workingscreen, minecraft.getProxy());
          }
 
          this.currentDownload = completablefuture.thenCompose((p_217812_3_) -> {
-            return !this.checkHash(s1, file1) ? Util.failedFuture(new RuntimeException("Hash check failure for file " + file1 + ", see log")) : this.setServerPack(file1, IPackNameDecorator.SERVER);
+            return !this.checkHash(s1, file1) ? Util.completedExceptionallyFuture(new RuntimeException("Hash check failure for file " + file1 + ", see log")) : this.setServerPack(file1, IPackNameDecorator.SERVER);
          }).whenComplete((p_217815_1_, p_217815_2_) -> {
             if (p_217815_2_ != null) {
                LOGGER.warn("Pack application failed: {}, deleting file {}", p_217815_2_.getMessage(), file1);
-               deleteQuietly(file1);
+               deleteQuiet(file1);
             }
 
          });
          completablefuture1 = this.currentDownload;
       } finally {
-         this.downloadLock.unlock();
+         this.lockDownload.unlock();
       }
 
       return completablefuture1;
    }
 
-   private static void deleteQuietly(File p_217811_0_) {
+   private static void deleteQuiet(File fileIn) {
       try {
-         Files.delete(p_217811_0_.toPath());
+         Files.delete(fileIn.toPath());
       } catch (IOException ioexception) {
-         LOGGER.warn("Failed to delete file {}: {}", p_217811_0_, ioexception.getMessage());
+         LOGGER.warn("Failed to delete file {}: {}", fileIn, ioexception.getMessage());
       }
 
    }
 
-   public void clearServerPack() {
-      this.downloadLock.lock();
+   public void clearResourcePack() {
+      this.lockDownload.lock();
 
       try {
          if (this.currentDownload != null) {
@@ -155,36 +155,36 @@ public class DownloadingPackFinder implements IPackFinder {
          this.currentDownload = null;
          if (this.serverPack != null) {
             this.serverPack = null;
-            Minecraft.getInstance().delayTextureReload();
+            Minecraft.getInstance().scheduleResourcesRefresh();
          }
       } finally {
-         this.downloadLock.unlock();
+         this.lockDownload.unlock();
       }
 
    }
 
-   private boolean checkHash(String p_195745_1_, File p_195745_2_) {
-      try (FileInputStream fileinputstream = new FileInputStream(p_195745_2_)) {
+   private boolean checkHash(String expectedHash, File fileIn) {
+      try (FileInputStream fileinputstream = new FileInputStream(fileIn)) {
          String s = DigestUtils.sha1Hex((InputStream)fileinputstream);
-         if (p_195745_1_.isEmpty()) {
-            LOGGER.info("Found file {} without verification hash", (Object)p_195745_2_);
+         if (expectedHash.isEmpty()) {
+            LOGGER.info("Found file {} without verification hash", (Object)fileIn);
             return true;
          }
 
-         if (s.toLowerCase(Locale.ROOT).equals(p_195745_1_.toLowerCase(Locale.ROOT))) {
-            LOGGER.info("Found file {} matching requested hash {}", p_195745_2_, p_195745_1_);
+         if (s.toLowerCase(Locale.ROOT).equals(expectedHash.toLowerCase(Locale.ROOT))) {
+            LOGGER.info("Found file {} matching requested hash {}", fileIn, expectedHash);
             return true;
          }
 
-         LOGGER.warn("File {} had wrong hash (expected {}, found {}).", p_195745_2_, p_195745_1_, s);
+         LOGGER.warn("File {} had wrong hash (expected {}, found {}).", fileIn, expectedHash, s);
       } catch (IOException ioexception) {
-         LOGGER.warn("File {} couldn't be hashed.", p_195745_2_, ioexception);
+         LOGGER.warn("File {} couldn't be hashed.", fileIn, ioexception);
       }
 
       return false;
    }
 
-   private void clearOldDownloads() {
+   private void clearDownloads() {
       try {
          List<File> list = Lists.newArrayList(FileUtils.listFiles(this.serverPackDir, TrueFileFilter.TRUE, (IOFileFilter)null));
          list.sort(LastModifiedFileComparator.LASTMODIFIED_REVERSE);
@@ -202,36 +202,36 @@ public class DownloadingPackFinder implements IPackFinder {
 
    }
 
-   public CompletableFuture<Void> setServerPack(File p_217816_1_, IPackNameDecorator p_217816_2_) {
+   public CompletableFuture<Void> setServerPack(File fileIn, IPackNameDecorator p_217816_2_) {
       PackMetadataSection packmetadatasection;
-      try (FilePack filepack = new FilePack(p_217816_1_)) {
-         packmetadatasection = filepack.getMetadataSection(PackMetadataSection.SERIALIZER);
+      try (FilePack filepack = new FilePack(fileIn)) {
+         packmetadatasection = filepack.getMetadata(PackMetadataSection.SERIALIZER);
       } catch (IOException ioexception) {
-         return Util.failedFuture(new IOException(String.format("Invalid resourcepack at %s", p_217816_1_), ioexception));
+         return Util.completedExceptionallyFuture(new IOException(String.format("Invalid resourcepack at %s", fileIn), ioexception));
       }
 
-      LOGGER.info("Applying server pack {}", (Object)p_217816_1_);
+      LOGGER.info("Applying server pack {}", (Object)fileIn);
       this.serverPack = new ResourcePackInfo("server", true, () -> {
-         return new FilePack(p_217816_1_);
-      }, new TranslationTextComponent("resourcePack.server.name"), packmetadatasection.getDescription(), PackCompatibility.forFormat(packmetadatasection.getPackFormat()), ResourcePackInfo.Priority.TOP, true, p_217816_2_);
-      return Minecraft.getInstance().delayTextureReload();
+         return new FilePack(fileIn);
+      }, new TranslationTextComponent("resourcePack.server.name"), packmetadatasection.getDescription(), PackCompatibility.getCompatibility(packmetadatasection.getPackFormat()), ResourcePackInfo.Priority.TOP, true, p_217816_2_);
+      return Minecraft.getInstance().scheduleResourcesRefresh();
    }
 
    @Nullable
-   private ResourcePackInfo createProgrammerArtPack(ResourcePackInfo.IFactory p_239453_1_) {
+   private ResourcePackInfo func_239453_a_(ResourcePackInfo.IFactory p_239453_1_) {
       ResourcePackInfo resourcepackinfo = null;
-      File file1 = this.assetIndex.getFile(new ResourceLocation("resourcepacks/programmer_art.zip"));
+      File file1 = this.resourceIndex.getFile(new ResourceLocation("resourcepacks/programmer_art.zip"));
       if (file1 != null && file1.isFile()) {
-         resourcepackinfo = createProgrammerArtPack(p_239453_1_, () -> {
-            return createProgrammerArtZipPack(file1);
+         resourcepackinfo = func_239454_a_(p_239453_1_, () -> {
+            return func_239460_c_(file1);
          });
       }
 
-      if (resourcepackinfo == null && SharedConstants.IS_RUNNING_IN_IDE) {
-         File file2 = this.assetIndex.getRootFile("../resourcepacks/programmer_art");
+      if (resourcepackinfo == null && SharedConstants.developmentMode) {
+         File file2 = this.resourceIndex.getFile("../resourcepacks/programmer_art");
          if (file2 != null && file2.isDirectory()) {
-            resourcepackinfo = createProgrammerArtPack(p_239453_1_, () -> {
-               return createProgrammerArtDirPack(file2);
+            resourcepackinfo = func_239454_a_(p_239453_1_, () -> {
+               return func_239459_b_(file2);
             });
          }
       }
@@ -240,11 +240,11 @@ public class DownloadingPackFinder implements IPackFinder {
    }
 
    @Nullable
-   private static ResourcePackInfo createProgrammerArtPack(ResourcePackInfo.IFactory p_239454_0_, Supplier<IResourcePack> p_239454_1_) {
-      return ResourcePackInfo.create("programer_art", false, p_239454_1_, p_239454_0_, ResourcePackInfo.Priority.TOP, IPackNameDecorator.BUILT_IN);
+   private static ResourcePackInfo func_239454_a_(ResourcePackInfo.IFactory p_239454_0_, Supplier<IResourcePack> p_239454_1_) {
+      return ResourcePackInfo.createResourcePack("programer_art", false, p_239454_1_, p_239454_0_, ResourcePackInfo.Priority.TOP, IPackNameDecorator.BUILTIN);
    }
 
-   private static FolderPack createProgrammerArtDirPack(File p_239459_0_) {
+   private static FolderPack func_239459_b_(File p_239459_0_) {
       return new FolderPack(p_239459_0_) {
          public String getName() {
             return "Programmer Art";
@@ -252,7 +252,7 @@ public class DownloadingPackFinder implements IPackFinder {
       };
    }
 
-   private static IResourcePack createProgrammerArtZipPack(File p_239460_0_) {
+   private static IResourcePack func_239460_c_(File p_239460_0_) {
       return new FilePack(p_239460_0_) {
          public String getName() {
             return "Programmer Art";

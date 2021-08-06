@@ -15,16 +15,16 @@ public class BlueIceFeature extends Feature<NoFeatureConfig> {
       super(p_i231933_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, NoFeatureConfig p_241855_5_) {
-      if (p_241855_4_.getY() > p_241855_1_.getSeaLevel() - 1) {
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, NoFeatureConfig config) {
+      if (pos.getY() > reader.getSeaLevel() - 1) {
          return false;
-      } else if (!p_241855_1_.getBlockState(p_241855_4_).is(Blocks.WATER) && !p_241855_1_.getBlockState(p_241855_4_.below()).is(Blocks.WATER)) {
+      } else if (!reader.getBlockState(pos).isIn(Blocks.WATER) && !reader.getBlockState(pos.down()).isIn(Blocks.WATER)) {
          return false;
       } else {
          boolean flag = false;
 
          for(Direction direction : Direction.values()) {
-            if (direction != Direction.DOWN && p_241855_1_.getBlockState(p_241855_4_.relative(direction)).is(Blocks.PACKED_ICE)) {
+            if (direction != Direction.DOWN && reader.getBlockState(pos.offset(direction)).isIn(Blocks.PACKED_ICE)) {
                flag = true;
                break;
             }
@@ -33,23 +33,23 @@ public class BlueIceFeature extends Feature<NoFeatureConfig> {
          if (!flag) {
             return false;
          } else {
-            p_241855_1_.setBlock(p_241855_4_, Blocks.BLUE_ICE.defaultBlockState(), 2);
+            reader.setBlockState(pos, Blocks.BLUE_ICE.getDefaultState(), 2);
 
             for(int i = 0; i < 200; ++i) {
-               int j = p_241855_3_.nextInt(5) - p_241855_3_.nextInt(6);
+               int j = rand.nextInt(5) - rand.nextInt(6);
                int k = 3;
                if (j < 2) {
                   k += j / 2;
                }
 
                if (k >= 1) {
-                  BlockPos blockpos = p_241855_4_.offset(p_241855_3_.nextInt(k) - p_241855_3_.nextInt(k), j, p_241855_3_.nextInt(k) - p_241855_3_.nextInt(k));
-                  BlockState blockstate = p_241855_1_.getBlockState(blockpos);
-                  if (blockstate.getMaterial() == Material.AIR || blockstate.is(Blocks.WATER) || blockstate.is(Blocks.PACKED_ICE) || blockstate.is(Blocks.ICE)) {
+                  BlockPos blockpos = pos.add(rand.nextInt(k) - rand.nextInt(k), j, rand.nextInt(k) - rand.nextInt(k));
+                  BlockState blockstate = reader.getBlockState(blockpos);
+                  if (blockstate.getMaterial() == Material.AIR || blockstate.isIn(Blocks.WATER) || blockstate.isIn(Blocks.PACKED_ICE) || blockstate.isIn(Blocks.ICE)) {
                      for(Direction direction1 : Direction.values()) {
-                        BlockState blockstate1 = p_241855_1_.getBlockState(blockpos.relative(direction1));
-                        if (blockstate1.is(Blocks.BLUE_ICE)) {
-                           p_241855_1_.setBlock(blockpos, Blocks.BLUE_ICE.defaultBlockState(), 2);
+                        BlockState blockstate1 = reader.getBlockState(blockpos.offset(direction1));
+                        if (blockstate1.isIn(Blocks.BLUE_ICE)) {
+                           reader.setBlockState(blockpos, Blocks.BLUE_ICE.getDefaultState(), 2);
                            break;
                         }
                      }

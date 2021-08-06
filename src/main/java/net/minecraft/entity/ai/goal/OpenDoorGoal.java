@@ -4,29 +4,29 @@ import net.minecraft.entity.MobEntity;
 
 public class OpenDoorGoal extends InteractDoorGoal {
    private final boolean closeDoor;
-   private int forgetTime;
+   private int closeDoorTemporisation;
 
-   public OpenDoorGoal(MobEntity p_i1644_1_, boolean p_i1644_2_) {
-      super(p_i1644_1_);
-      this.mob = p_i1644_1_;
-      this.closeDoor = p_i1644_2_;
+   public OpenDoorGoal(MobEntity entitylivingIn, boolean shouldClose) {
+      super(entitylivingIn);
+      this.entity = entitylivingIn;
+      this.closeDoor = shouldClose;
    }
 
-   public boolean canContinueToUse() {
-      return this.closeDoor && this.forgetTime > 0 && super.canContinueToUse();
+   public boolean shouldContinueExecuting() {
+      return this.closeDoor && this.closeDoorTemporisation > 0 && super.shouldContinueExecuting();
    }
 
-   public void start() {
-      this.forgetTime = 20;
-      this.setOpen(true);
+   public void startExecuting() {
+      this.closeDoorTemporisation = 20;
+      this.toggleDoor(true);
    }
 
-   public void stop() {
-      this.setOpen(false);
+   public void resetTask() {
+      this.toggleDoor(false);
    }
 
    public void tick() {
-      --this.forgetTime;
+      --this.closeDoorTemporisation;
       super.tick();
    }
 }

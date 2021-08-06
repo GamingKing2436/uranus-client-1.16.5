@@ -15,7 +15,7 @@ import net.minecraft.util.datafix.NamespacedSchema;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ItemIntIDToString extends DataFix {
-   private static final Int2ObjectMap<String> ITEM_NAMES = DataFixUtils.make(new Int2ObjectOpenHashMap<>(), (p_207470_0_) -> {
+   private static final Int2ObjectMap<String> ID_MAP = DataFixUtils.make(new Int2ObjectOpenHashMap<>(), (p_207470_0_) -> {
       p_207470_0_.put(1, "minecraft:stone");
       p_207470_0_.put(2, "minecraft:grass");
       p_207470_0_.put(3, "minecraft:dirt");
@@ -334,17 +334,17 @@ public class ItemIntIDToString extends DataFix {
       p_207470_0_.defaultReturnValue("minecraft:air");
    });
 
-   public ItemIntIDToString(Schema p_i49643_1_, boolean p_i49643_2_) {
-      super(p_i49643_1_, p_i49643_2_);
+   public ItemIntIDToString(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public static String getItem(int p_199173_0_) {
-      return ITEM_NAMES.get(p_199173_0_);
+      return ID_MAP.get(p_199173_0_);
    }
 
    public TypeRewriteRule makeRule() {
-      Type<Either<Integer, Pair<String, String>>> type = DSL.or(DSL.intType(), DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString()));
-      Type<Pair<String, String>> type1 = DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.namespacedString());
+      Type<Either<Integer, Pair<String, String>>> type = DSL.or(DSL.intType(), DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_()));
+      Type<Pair<String, String>> type1 = DSL.named(TypeReferences.ITEM_NAME.typeName(), NamespacedSchema.func_233457_a_());
       OpticFinder<Either<Integer, Pair<String, String>>> opticfinder = DSL.fieldFinder("id", type);
       return this.fixTypeEverywhereTyped("ItemIdFix", this.getInputSchema().getType(TypeReferences.ITEM_STACK), this.getOutputSchema().getType(TypeReferences.ITEM_STACK), (p_206349_2_) -> {
          return p_206349_2_.update(opticfinder, type1, (p_206350_0_) -> {

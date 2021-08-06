@@ -23,80 +23,80 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class PotionItem extends Item {
-   public PotionItem(Item.Properties p_i48476_1_) {
-      super(p_i48476_1_);
+   public PotionItem(Item.Properties builder) {
+      super(builder);
    }
 
    public ItemStack getDefaultInstance() {
-      return PotionUtils.setPotion(super.getDefaultInstance(), Potions.WATER);
+      return PotionUtils.addPotionToItemStack(super.getDefaultInstance(), Potions.WATER);
    }
 
-   public ItemStack finishUsingItem(ItemStack p_77654_1_, World p_77654_2_, LivingEntity p_77654_3_) {
-      PlayerEntity playerentity = p_77654_3_ instanceof PlayerEntity ? (PlayerEntity)p_77654_3_ : null;
+   public ItemStack onItemUseFinish(ItemStack stack, World worldIn, LivingEntity entityLiving) {
+      PlayerEntity playerentity = entityLiving instanceof PlayerEntity ? (PlayerEntity)entityLiving : null;
       if (playerentity instanceof ServerPlayerEntity) {
-         CriteriaTriggers.CONSUME_ITEM.trigger((ServerPlayerEntity)playerentity, p_77654_1_);
+         CriteriaTriggers.CONSUME_ITEM.trigger((ServerPlayerEntity)playerentity, stack);
       }
 
-      if (!p_77654_2_.isClientSide) {
-         for(EffectInstance effectinstance : PotionUtils.getMobEffects(p_77654_1_)) {
-            if (effectinstance.getEffect().isInstantenous()) {
-               effectinstance.getEffect().applyInstantenousEffect(playerentity, playerentity, p_77654_3_, effectinstance.getAmplifier(), 1.0D);
+      if (!worldIn.isRemote) {
+         for(EffectInstance effectinstance : PotionUtils.getEffectsFromStack(stack)) {
+            if (effectinstance.getPotion().isInstant()) {
+               effectinstance.getPotion().affectEntity(playerentity, playerentity, entityLiving, effectinstance.getAmplifier(), 1.0D);
             } else {
-               p_77654_3_.addEffect(new EffectInstance(effectinstance));
+               entityLiving.addPotionEffect(new EffectInstance(effectinstance));
             }
          }
       }
 
       if (playerentity != null) {
-         playerentity.awardStat(Stats.ITEM_USED.get(this));
-         if (!playerentity.abilities.instabuild) {
-            p_77654_1_.shrink(1);
+         playerentity.addStat(Stats.ITEM_USED.get(this));
+         if (!playerentity.abilities.isCreativeMode) {
+            stack.shrink(1);
          }
       }
 
-      if (playerentity == null || !playerentity.abilities.instabuild) {
-         if (p_77654_1_.isEmpty()) {
+      if (playerentity == null || !playerentity.abilities.isCreativeMode) {
+         if (stack.isEmpty()) {
             return new ItemStack(Items.GLASS_BOTTLE);
          }
 
          if (playerentity != null) {
-            playerentity.inventory.add(new ItemStack(Items.GLASS_BOTTLE));
+            playerentity.inventory.addItemStackToInventory(new ItemStack(Items.GLASS_BOTTLE));
          }
       }
 
-      return p_77654_1_;
+      return stack;
    }
 
-   public int getUseDuration(ItemStack p_77626_1_) {
+   public int getUseDuration(ItemStack stack) {
       return 32;
    }
 
-   public UseAction getUseAnimation(ItemStack p_77661_1_) {
+   public UseAction getUseAction(ItemStack stack) {
       return UseAction.DRINK;
    }
 
-   public ActionResult<ItemStack> use(World p_77659_1_, PlayerEntity p_77659_2_, Hand p_77659_3_) {
-      return DrinkHelper.useDrink(p_77659_1_, p_77659_2_, p_77659_3_);
+   public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
+      return DrinkHelper.startDrinking(worldIn, playerIn, handIn);
    }
 
-   public String getDescriptionId(ItemStack p_77667_1_) {
-      return PotionUtils.getPotion(p_77667_1_).getName(this.getDescriptionId() + ".effect.");
+   public String getTranslationKey(ItemStack stack) {
+      return PotionUtils.getPotionFromItem(stack).getNamePrefixed(this.getTranslationKey() + ".effect.");
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void appendHoverText(ItemStack p_77624_1_, @Nullable World p_77624_2_, List<ITextComponent> p_77624_3_, ITooltipFlag p_77624_4_) {
-      PotionUtils.addPotionTooltip(p_77624_1_, p_77624_3_, 1.0F);
+   public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn) {
+      PotionUtils.addPotionTooltip(stack, tooltip, 1.0F);
    }
 
-   public boolean isFoil(ItemStack p_77636_1_) {
-      return super.isFoil(p_77636_1_) || !PotionUtils.getMobEffects(p_77636_1_).isEmpty();
+   public boolean hasEffect(ItemStack stack) {
+      return super.hasEffect(stack) || !PotionUtils.getEffectsFromStack(stack).isEmpty();
    }
 
-   public void fillItemCategory(ItemGroup p_150895_1_, NonNullList<ItemStack> p_150895_2_) {
-      if (this.allowdedIn(p_150895_1_)) {
+   public void fillItemGroup(ItemGroup group, NonNullList<ItemStack> items) {
+      if (this.isInGroup(group)) {
          for(Potion potion : Registry.POTION) {
             if (potion != Potions.EMPTY) {
-               p_150895_2_.add(PotionUtils.setPotion(new ItemStack(this), potion));
+               items.add(PotionUtils.addPotionToItemStack(new ItemStack(this), potion));
             }
          }
       }

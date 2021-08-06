@@ -15,16 +15,16 @@ public class CResourcePackStatusPacket implements IPacket<IServerPlayNetHandler>
       this.action = p_i47156_1_;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.action = p_148837_1_.readEnum(CResourcePackStatusPacket.Action.class);
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.action = buf.readEnumValue(CResourcePackStatusPacket.Action.class);
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeEnum(this.action);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeEnumValue(this.action);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleResourcePackResponse(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.handleResourcePackStatus(this);
    }
 
    public static enum Action {

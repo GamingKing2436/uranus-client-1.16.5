@@ -50,192 +50,192 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ItemRenderer implements IResourceManagerReloadListener {
-   public static final ResourceLocation ENCHANT_GLINT_LOCATION = new ResourceLocation("textures/misc/enchanted_item_glint.png");
-   private static final Set<Item> IGNORED = Sets.newHashSet(Items.AIR);
-   public float blitOffset;
-   private final ItemModelMesher itemModelShaper;
+   public static final ResourceLocation RES_ITEM_GLINT = new ResourceLocation("textures/misc/enchanted_item_glint.png");
+   private static final Set<Item> ITEM_MODEL_BLACKLIST = Sets.newHashSet(Items.AIR);
+   public float zLevel;
+   private final ItemModelMesher itemModelMesher;
    private final TextureManager textureManager;
    private final ItemColors itemColors;
 
-   public ItemRenderer(TextureManager p_i46552_1_, ModelManager p_i46552_2_, ItemColors p_i46552_3_) {
-      this.textureManager = p_i46552_1_;
-      this.itemModelShaper = new ItemModelMesher(p_i46552_2_);
+   public ItemRenderer(TextureManager textureManagerIn, ModelManager modelManagerIn, ItemColors itemColorsIn) {
+      this.textureManager = textureManagerIn;
+      this.itemModelMesher = new ItemModelMesher(modelManagerIn);
 
       for(Item item : Registry.ITEM) {
-         if (!IGNORED.contains(item)) {
-            this.itemModelShaper.register(item, new ModelResourceLocation(Registry.ITEM.getKey(item), "inventory"));
+         if (!ITEM_MODEL_BLACKLIST.contains(item)) {
+            this.itemModelMesher.register(item, new ModelResourceLocation(Registry.ITEM.getKey(item), "inventory"));
          }
       }
 
-      this.itemColors = p_i46552_3_;
+      this.itemColors = itemColorsIn;
    }
 
-   public ItemModelMesher getItemModelShaper() {
-      return this.itemModelShaper;
+   public ItemModelMesher getItemModelMesher() {
+      return this.itemModelMesher;
    }
 
-   private void renderModelLists(IBakedModel p_229114_1_, ItemStack p_229114_2_, int p_229114_3_, int p_229114_4_, MatrixStack p_229114_5_, IVertexBuilder p_229114_6_) {
+   private void renderModel(IBakedModel modelIn, ItemStack stack, int combinedLightIn, int combinedOverlayIn, MatrixStack matrixStackIn, IVertexBuilder bufferIn) {
       Random random = new Random();
       long i = 42L;
 
       for(Direction direction : Direction.values()) {
          random.setSeed(42L);
-         this.renderQuadList(p_229114_5_, p_229114_6_, p_229114_1_.getQuads((BlockState)null, direction, random), p_229114_2_, p_229114_3_, p_229114_4_);
+         this.renderQuads(matrixStackIn, bufferIn, modelIn.getQuads((BlockState)null, direction, random), stack, combinedLightIn, combinedOverlayIn);
       }
 
       random.setSeed(42L);
-      this.renderQuadList(p_229114_5_, p_229114_6_, p_229114_1_.getQuads((BlockState)null, (Direction)null, random), p_229114_2_, p_229114_3_, p_229114_4_);
+      this.renderQuads(matrixStackIn, bufferIn, modelIn.getQuads((BlockState)null, (Direction)null, random), stack, combinedLightIn, combinedOverlayIn);
    }
 
-   public void render(ItemStack p_229111_1_, ItemCameraTransforms.TransformType p_229111_2_, boolean p_229111_3_, MatrixStack p_229111_4_, IRenderTypeBuffer p_229111_5_, int p_229111_6_, int p_229111_7_, IBakedModel p_229111_8_) {
-      if (!p_229111_1_.isEmpty()) {
-         p_229111_4_.pushPose();
-         boolean flag = p_229111_2_ == ItemCameraTransforms.TransformType.GUI || p_229111_2_ == ItemCameraTransforms.TransformType.GROUND || p_229111_2_ == ItemCameraTransforms.TransformType.FIXED;
-         if (p_229111_1_.getItem() == Items.TRIDENT && flag) {
-            p_229111_8_ = this.itemModelShaper.getModelManager().getModel(new ModelResourceLocation("minecraft:trident#inventory"));
+   public void renderItem(ItemStack itemStackIn, ItemCameraTransforms.TransformType transformTypeIn, boolean leftHand, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn, IBakedModel modelIn) {
+      if (!itemStackIn.isEmpty()) {
+         matrixStackIn.push();
+         boolean flag = transformTypeIn == ItemCameraTransforms.TransformType.GUI || transformTypeIn == ItemCameraTransforms.TransformType.GROUND || transformTypeIn == ItemCameraTransforms.TransformType.FIXED;
+         if (itemStackIn.getItem() == Items.TRIDENT && flag) {
+            modelIn = this.itemModelMesher.getModelManager().getModel(new ModelResourceLocation("minecraft:trident#inventory"));
          }
 
-         p_229111_8_.getTransforms().getTransform(p_229111_2_).apply(p_229111_3_, p_229111_4_);
-         p_229111_4_.translate(-0.5D, -0.5D, -0.5D);
-         if (!p_229111_8_.isCustomRenderer() && (p_229111_1_.getItem() != Items.TRIDENT || flag)) {
+         modelIn.getItemCameraTransforms().getTransform(transformTypeIn).apply(leftHand, matrixStackIn);
+         matrixStackIn.translate(-0.5D, -0.5D, -0.5D);
+         if (!modelIn.isBuiltInRenderer() && (itemStackIn.getItem() != Items.TRIDENT || flag)) {
             boolean flag1;
-            if (p_229111_2_ != ItemCameraTransforms.TransformType.GUI && !p_229111_2_.firstPerson() && p_229111_1_.getItem() instanceof BlockItem) {
-               Block block = ((BlockItem)p_229111_1_.getItem()).getBlock();
+            if (transformTypeIn != ItemCameraTransforms.TransformType.GUI && !transformTypeIn.isFirstPerson() && itemStackIn.getItem() instanceof BlockItem) {
+               Block block = ((BlockItem)itemStackIn.getItem()).getBlock();
                flag1 = !(block instanceof BreakableBlock) && !(block instanceof StainedGlassPaneBlock);
             } else {
                flag1 = true;
             }
 
-            RenderType rendertype = RenderTypeLookup.getRenderType(p_229111_1_, flag1);
+            RenderType rendertype = RenderTypeLookup.func_239219_a_(itemStackIn, flag1);
             IVertexBuilder ivertexbuilder;
-            if (p_229111_1_.getItem() == Items.COMPASS && p_229111_1_.hasFoil()) {
-               p_229111_4_.pushPose();
-               MatrixStack.Entry matrixstack$entry = p_229111_4_.last();
-               if (p_229111_2_ == ItemCameraTransforms.TransformType.GUI) {
-                  matrixstack$entry.pose().multiply(0.5F);
-               } else if (p_229111_2_.firstPerson()) {
-                  matrixstack$entry.pose().multiply(0.75F);
+            if (itemStackIn.getItem() == Items.COMPASS && itemStackIn.hasEffect()) {
+               matrixStackIn.push();
+               MatrixStack.Entry matrixstack$entry = matrixStackIn.getLast();
+               if (transformTypeIn == ItemCameraTransforms.TransformType.GUI) {
+                  matrixstack$entry.getMatrix().mul(0.5F);
+               } else if (transformTypeIn.isFirstPerson()) {
+                  matrixstack$entry.getMatrix().mul(0.75F);
                }
 
                if (flag1) {
-                  ivertexbuilder = getCompassFoilBufferDirect(p_229111_5_, rendertype, matrixstack$entry);
+                  ivertexbuilder = getDirectGlintVertexBuilder(bufferIn, rendertype, matrixstack$entry);
                } else {
-                  ivertexbuilder = getCompassFoilBuffer(p_229111_5_, rendertype, matrixstack$entry);
+                  ivertexbuilder = getGlintVertexBuilder(bufferIn, rendertype, matrixstack$entry);
                }
 
-               p_229111_4_.popPose();
+               matrixStackIn.pop();
             } else if (flag1) {
-               ivertexbuilder = getFoilBufferDirect(p_229111_5_, rendertype, true, p_229111_1_.hasFoil());
+               ivertexbuilder = getEntityGlintVertexBuilder(bufferIn, rendertype, true, itemStackIn.hasEffect());
             } else {
-               ivertexbuilder = getFoilBuffer(p_229111_5_, rendertype, true, p_229111_1_.hasFoil());
+               ivertexbuilder = getBuffer(bufferIn, rendertype, true, itemStackIn.hasEffect());
             }
 
-            this.renderModelLists(p_229111_8_, p_229111_1_, p_229111_6_, p_229111_7_, p_229111_4_, ivertexbuilder);
+            this.renderModel(modelIn, itemStackIn, combinedLightIn, combinedOverlayIn, matrixStackIn, ivertexbuilder);
          } else {
-            ItemStackTileEntityRenderer.instance.renderByItem(p_229111_1_, p_229111_2_, p_229111_4_, p_229111_5_, p_229111_6_, p_229111_7_);
+            ItemStackTileEntityRenderer.instance.func_239207_a_(itemStackIn, transformTypeIn, matrixStackIn, bufferIn, combinedLightIn, combinedOverlayIn);
          }
 
-         p_229111_4_.popPose();
+         matrixStackIn.pop();
       }
    }
 
-   public static IVertexBuilder getArmorFoilBuffer(IRenderTypeBuffer p_239386_0_, RenderType p_239386_1_, boolean p_239386_2_, boolean p_239386_3_) {
-      return p_239386_3_ ? VertexBuilderUtils.create(p_239386_0_.getBuffer(p_239386_2_ ? RenderType.armorGlint() : RenderType.armorEntityGlint()), p_239386_0_.getBuffer(p_239386_1_)) : p_239386_0_.getBuffer(p_239386_1_);
+   public static IVertexBuilder getArmorVertexBuilder(IRenderTypeBuffer buffer, RenderType renderType, boolean noEntity, boolean withGlint) {
+      return withGlint ? VertexBuilderUtils.newDelegate(buffer.getBuffer(noEntity ? RenderType.getArmorGlint() : RenderType.getArmorEntityGlint()), buffer.getBuffer(renderType)) : buffer.getBuffer(renderType);
    }
 
-   public static IVertexBuilder getCompassFoilBuffer(IRenderTypeBuffer p_241731_0_, RenderType p_241731_1_, MatrixStack.Entry p_241731_2_) {
-      return VertexBuilderUtils.create(new MatrixApplyingVertexBuilder(p_241731_0_.getBuffer(RenderType.glint()), p_241731_2_.pose(), p_241731_2_.normal()), p_241731_0_.getBuffer(p_241731_1_));
+   public static IVertexBuilder getGlintVertexBuilder(IRenderTypeBuffer buffer, RenderType renderType, MatrixStack.Entry matrixEntry) {
+      return VertexBuilderUtils.newDelegate(new MatrixApplyingVertexBuilder(buffer.getBuffer(RenderType.getGlint()), matrixEntry.getMatrix(), matrixEntry.getNormal()), buffer.getBuffer(renderType));
    }
 
-   public static IVertexBuilder getCompassFoilBufferDirect(IRenderTypeBuffer p_241732_0_, RenderType p_241732_1_, MatrixStack.Entry p_241732_2_) {
-      return VertexBuilderUtils.create(new MatrixApplyingVertexBuilder(p_241732_0_.getBuffer(RenderType.glintDirect()), p_241732_2_.pose(), p_241732_2_.normal()), p_241732_0_.getBuffer(p_241732_1_));
+   public static IVertexBuilder getDirectGlintVertexBuilder(IRenderTypeBuffer buffer, RenderType renderType, MatrixStack.Entry matrixEntry) {
+      return VertexBuilderUtils.newDelegate(new MatrixApplyingVertexBuilder(buffer.getBuffer(RenderType.getGlintDirect()), matrixEntry.getMatrix(), matrixEntry.getNormal()), buffer.getBuffer(renderType));
    }
 
-   public static IVertexBuilder getFoilBuffer(IRenderTypeBuffer p_229113_0_, RenderType p_229113_1_, boolean p_229113_2_, boolean p_229113_3_) {
-      if (p_229113_3_) {
-         return Minecraft.useShaderTransparency() && p_229113_1_ == Atlases.translucentItemSheet() ? VertexBuilderUtils.create(p_229113_0_.getBuffer(RenderType.glintTranslucent()), p_229113_0_.getBuffer(p_229113_1_)) : VertexBuilderUtils.create(p_229113_0_.getBuffer(p_229113_2_ ? RenderType.glint() : RenderType.entityGlint()), p_229113_0_.getBuffer(p_229113_1_));
+   public static IVertexBuilder getBuffer(IRenderTypeBuffer bufferIn, RenderType renderTypeIn, boolean isItemIn, boolean glintIn) {
+      if (glintIn) {
+         return Minecraft.isFabulousGraphicsEnabled() && renderTypeIn == Atlases.getItemEntityTranslucentCullType() ? VertexBuilderUtils.newDelegate(bufferIn.getBuffer(RenderType.getGlintTranslucent()), bufferIn.getBuffer(renderTypeIn)) : VertexBuilderUtils.newDelegate(bufferIn.getBuffer(isItemIn ? RenderType.getGlint() : RenderType.getEntityGlint()), bufferIn.getBuffer(renderTypeIn));
       } else {
-         return p_229113_0_.getBuffer(p_229113_1_);
+         return bufferIn.getBuffer(renderTypeIn);
       }
    }
 
-   public static IVertexBuilder getFoilBufferDirect(IRenderTypeBuffer p_239391_0_, RenderType p_239391_1_, boolean p_239391_2_, boolean p_239391_3_) {
-      return p_239391_3_ ? VertexBuilderUtils.create(p_239391_0_.getBuffer(p_239391_2_ ? RenderType.glintDirect() : RenderType.entityGlintDirect()), p_239391_0_.getBuffer(p_239391_1_)) : p_239391_0_.getBuffer(p_239391_1_);
+   public static IVertexBuilder getEntityGlintVertexBuilder(IRenderTypeBuffer buffer, RenderType renderType, boolean noEntity, boolean withGlint) {
+      return withGlint ? VertexBuilderUtils.newDelegate(buffer.getBuffer(noEntity ? RenderType.getGlintDirect() : RenderType.getEntityGlintDirect()), buffer.getBuffer(renderType)) : buffer.getBuffer(renderType);
    }
 
-   private void renderQuadList(MatrixStack p_229112_1_, IVertexBuilder p_229112_2_, List<BakedQuad> p_229112_3_, ItemStack p_229112_4_, int p_229112_5_, int p_229112_6_) {
-      boolean flag = !p_229112_4_.isEmpty();
-      MatrixStack.Entry matrixstack$entry = p_229112_1_.last();
+   private void renderQuads(MatrixStack matrixStackIn, IVertexBuilder bufferIn, List<BakedQuad> quadsIn, ItemStack itemStackIn, int combinedLightIn, int combinedOverlayIn) {
+      boolean flag = !itemStackIn.isEmpty();
+      MatrixStack.Entry matrixstack$entry = matrixStackIn.getLast();
 
-      for(BakedQuad bakedquad : p_229112_3_) {
+      for(BakedQuad bakedquad : quadsIn) {
          int i = -1;
-         if (flag && bakedquad.isTinted()) {
-            i = this.itemColors.getColor(p_229112_4_, bakedquad.getTintIndex());
+         if (flag && bakedquad.hasTintIndex()) {
+            i = this.itemColors.getColor(itemStackIn, bakedquad.getTintIndex());
          }
 
          float f = (float)(i >> 16 & 255) / 255.0F;
          float f1 = (float)(i >> 8 & 255) / 255.0F;
          float f2 = (float)(i & 255) / 255.0F;
-         p_229112_2_.putBulkData(matrixstack$entry, bakedquad, f, f1, f2, p_229112_5_, p_229112_6_);
+         bufferIn.addQuad(matrixstack$entry, bakedquad, f, f1, f2, combinedLightIn, combinedOverlayIn);
       }
 
    }
 
-   public IBakedModel getModel(ItemStack p_184393_1_, @Nullable World p_184393_2_, @Nullable LivingEntity p_184393_3_) {
-      Item item = p_184393_1_.getItem();
+   public IBakedModel getItemModelWithOverrides(ItemStack stack, @Nullable World worldIn, @Nullable LivingEntity entitylivingbaseIn) {
+      Item item = stack.getItem();
       IBakedModel ibakedmodel;
       if (item == Items.TRIDENT) {
-         ibakedmodel = this.itemModelShaper.getModelManager().getModel(new ModelResourceLocation("minecraft:trident_in_hand#inventory"));
+         ibakedmodel = this.itemModelMesher.getModelManager().getModel(new ModelResourceLocation("minecraft:trident_in_hand#inventory"));
       } else {
-         ibakedmodel = this.itemModelShaper.getItemModel(p_184393_1_);
+         ibakedmodel = this.itemModelMesher.getItemModel(stack);
       }
 
-      ClientWorld clientworld = p_184393_2_ instanceof ClientWorld ? (ClientWorld)p_184393_2_ : null;
-      IBakedModel ibakedmodel1 = ibakedmodel.getOverrides().resolve(ibakedmodel, p_184393_1_, clientworld, p_184393_3_);
-      return ibakedmodel1 == null ? this.itemModelShaper.getModelManager().getMissingModel() : ibakedmodel1;
+      ClientWorld clientworld = worldIn instanceof ClientWorld ? (ClientWorld)worldIn : null;
+      IBakedModel ibakedmodel1 = ibakedmodel.getOverrides().getOverrideModel(ibakedmodel, stack, clientworld, entitylivingbaseIn);
+      return ibakedmodel1 == null ? this.itemModelMesher.getModelManager().getMissingModel() : ibakedmodel1;
    }
 
-   public void renderStatic(ItemStack p_229110_1_, ItemCameraTransforms.TransformType p_229110_2_, int p_229110_3_, int p_229110_4_, MatrixStack p_229110_5_, IRenderTypeBuffer p_229110_6_) {
-      this.renderStatic((LivingEntity)null, p_229110_1_, p_229110_2_, false, p_229110_5_, p_229110_6_, (World)null, p_229110_3_, p_229110_4_);
+   public void renderItem(ItemStack itemStackIn, ItemCameraTransforms.TransformType transformTypeIn, int combinedLightIn, int combinedOverlayIn, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn) {
+      this.renderItem((LivingEntity)null, itemStackIn, transformTypeIn, false, matrixStackIn, bufferIn, (World)null, combinedLightIn, combinedOverlayIn);
    }
 
-   public void renderStatic(@Nullable LivingEntity p_229109_1_, ItemStack p_229109_2_, ItemCameraTransforms.TransformType p_229109_3_, boolean p_229109_4_, MatrixStack p_229109_5_, IRenderTypeBuffer p_229109_6_, @Nullable World p_229109_7_, int p_229109_8_, int p_229109_9_) {
-      if (!p_229109_2_.isEmpty()) {
-         IBakedModel ibakedmodel = this.getModel(p_229109_2_, p_229109_7_, p_229109_1_);
-         this.render(p_229109_2_, p_229109_3_, p_229109_4_, p_229109_5_, p_229109_6_, p_229109_8_, p_229109_9_, ibakedmodel);
+   public void renderItem(@Nullable LivingEntity livingEntityIn, ItemStack itemStackIn, ItemCameraTransforms.TransformType transformTypeIn, boolean leftHand, MatrixStack matrixStackIn, IRenderTypeBuffer bufferIn, @Nullable World worldIn, int combinedLightIn, int combinedOverlayIn) {
+      if (!itemStackIn.isEmpty()) {
+         IBakedModel ibakedmodel = this.getItemModelWithOverrides(itemStackIn, worldIn, livingEntityIn);
+         this.renderItem(itemStackIn, transformTypeIn, leftHand, matrixStackIn, bufferIn, combinedLightIn, combinedOverlayIn, ibakedmodel);
       }
    }
 
-   public void renderGuiItem(ItemStack p_175042_1_, int p_175042_2_, int p_175042_3_) {
-      this.renderGuiItem(p_175042_1_, p_175042_2_, p_175042_3_, this.getModel(p_175042_1_, (World)null, (LivingEntity)null));
+   public void renderItemIntoGUI(ItemStack stack, int x, int y) {
+      this.renderItemModelIntoGUI(stack, x, y, this.getItemModelWithOverrides(stack, (World)null, (LivingEntity)null));
    }
 
-   protected void renderGuiItem(ItemStack p_191962_1_, int p_191962_2_, int p_191962_3_, IBakedModel p_191962_4_) {
+   protected void renderItemModelIntoGUI(ItemStack stack, int x, int y, IBakedModel bakedmodel) {
       RenderSystem.pushMatrix();
-      this.textureManager.bind(AtlasTexture.LOCATION_BLOCKS);
-      this.textureManager.getTexture(AtlasTexture.LOCATION_BLOCKS).setFilter(false, false);
+      this.textureManager.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+      this.textureManager.getTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE).setBlurMipmapDirect(false, false);
       RenderSystem.enableRescaleNormal();
       RenderSystem.enableAlphaTest();
       RenderSystem.defaultAlphaFunc();
       RenderSystem.enableBlend();
       RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
       RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-      RenderSystem.translatef((float)p_191962_2_, (float)p_191962_3_, 100.0F + this.blitOffset);
+      RenderSystem.translatef((float)x, (float)y, 100.0F + this.zLevel);
       RenderSystem.translatef(8.0F, 8.0F, 0.0F);
       RenderSystem.scalef(1.0F, -1.0F, 1.0F);
       RenderSystem.scalef(16.0F, 16.0F, 16.0F);
       MatrixStack matrixstack = new MatrixStack();
-      IRenderTypeBuffer.Impl irendertypebuffer$impl = Minecraft.getInstance().renderBuffers().bufferSource();
-      boolean flag = !p_191962_4_.usesBlockLight();
+      IRenderTypeBuffer.Impl irendertypebuffer$impl = Minecraft.getInstance().getRenderTypeBuffers().getBufferSource();
+      boolean flag = !bakedmodel.isSideLit();
       if (flag) {
-         RenderHelper.setupForFlatItems();
+         RenderHelper.setupGuiFlatDiffuseLighting();
       }
 
-      this.render(p_191962_1_, ItemCameraTransforms.TransformType.GUI, false, matrixstack, irendertypebuffer$impl, 15728880, OverlayTexture.NO_OVERLAY, p_191962_4_);
-      irendertypebuffer$impl.endBatch();
+      this.renderItem(stack, ItemCameraTransforms.TransformType.GUI, false, matrixstack, irendertypebuffer$impl, 15728880, OverlayTexture.NO_OVERLAY, bakedmodel);
+      irendertypebuffer$impl.finish();
       RenderSystem.enableDepthTest();
       if (flag) {
-         RenderHelper.setupFor3DItems();
+         RenderHelper.setupGui3DDiffuseLighting();
       }
 
       RenderSystem.disableAlphaTest();
@@ -243,75 +243,75 @@ public class ItemRenderer implements IResourceManagerReloadListener {
       RenderSystem.popMatrix();
    }
 
-   public void renderAndDecorateItem(ItemStack p_180450_1_, int p_180450_2_, int p_180450_3_) {
-      this.tryRenderGuiItem(Minecraft.getInstance().player, p_180450_1_, p_180450_2_, p_180450_3_);
+   public void renderItemAndEffectIntoGUI(ItemStack stack, int xPosition, int yPosition) {
+      this.renderItemIntoGUI(Minecraft.getInstance().player, stack, xPosition, yPosition);
    }
 
-   public void renderAndDecorateFakeItem(ItemStack p_239390_1_, int p_239390_2_, int p_239390_3_) {
-      this.tryRenderGuiItem((LivingEntity)null, p_239390_1_, p_239390_2_, p_239390_3_);
+   public void renderItemAndEffectIntoGuiWithoutEntity(ItemStack stack, int x, int y) {
+      this.renderItemIntoGUI((LivingEntity)null, stack, x, y);
    }
 
-   public void renderAndDecorateItem(LivingEntity p_184391_1_, ItemStack p_184391_2_, int p_184391_3_, int p_184391_4_) {
-      this.tryRenderGuiItem(p_184391_1_, p_184391_2_, p_184391_3_, p_184391_4_);
+   public void renderItemAndEffectIntoGUI(LivingEntity entityIn, ItemStack itemIn, int x, int y) {
+      this.renderItemIntoGUI(entityIn, itemIn, x, y);
    }
 
-   private void tryRenderGuiItem(@Nullable LivingEntity p_239387_1_, ItemStack p_239387_2_, int p_239387_3_, int p_239387_4_) {
-      if (!p_239387_2_.isEmpty()) {
-         this.blitOffset += 50.0F;
+   private void renderItemIntoGUI(@Nullable LivingEntity livingEntity, ItemStack stack, int x, int y) {
+      if (!stack.isEmpty()) {
+         this.zLevel += 50.0F;
 
          try {
-            this.renderGuiItem(p_239387_2_, p_239387_3_, p_239387_4_, this.getModel(p_239387_2_, (World)null, p_239387_1_));
+            this.renderItemModelIntoGUI(stack, x, y, this.getItemModelWithOverrides(stack, (World)null, livingEntity));
          } catch (Throwable throwable) {
-            CrashReport crashreport = CrashReport.forThrowable(throwable, "Rendering item");
-            CrashReportCategory crashreportcategory = crashreport.addCategory("Item being rendered");
-            crashreportcategory.setDetail("Item Type", () -> {
-               return String.valueOf((Object)p_239387_2_.getItem());
+            CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Rendering item");
+            CrashReportCategory crashreportcategory = crashreport.makeCategory("Item being rendered");
+            crashreportcategory.addDetail("Item Type", () -> {
+               return String.valueOf((Object)stack.getItem());
             });
-            crashreportcategory.setDetail("Item Damage", () -> {
-               return String.valueOf(p_239387_2_.getDamageValue());
+            crashreportcategory.addDetail("Item Damage", () -> {
+               return String.valueOf(stack.getDamage());
             });
-            crashreportcategory.setDetail("Item NBT", () -> {
-               return String.valueOf((Object)p_239387_2_.getTag());
+            crashreportcategory.addDetail("Item NBT", () -> {
+               return String.valueOf((Object)stack.getTag());
             });
-            crashreportcategory.setDetail("Item Foil", () -> {
-               return String.valueOf(p_239387_2_.hasFoil());
+            crashreportcategory.addDetail("Item Foil", () -> {
+               return String.valueOf(stack.hasEffect());
             });
             throw new ReportedException(crashreport);
          }
 
-         this.blitOffset -= 50.0F;
+         this.zLevel -= 50.0F;
       }
    }
 
-   public void renderGuiItemDecorations(FontRenderer p_175030_1_, ItemStack p_175030_2_, int p_175030_3_, int p_175030_4_) {
-      this.renderGuiItemDecorations(p_175030_1_, p_175030_2_, p_175030_3_, p_175030_4_, (String)null);
+   public void renderItemOverlays(FontRenderer fr, ItemStack stack, int xPosition, int yPosition) {
+      this.renderItemOverlayIntoGUI(fr, stack, xPosition, yPosition, (String)null);
    }
 
-   public void renderGuiItemDecorations(FontRenderer p_180453_1_, ItemStack p_180453_2_, int p_180453_3_, int p_180453_4_, @Nullable String p_180453_5_) {
-      if (!p_180453_2_.isEmpty()) {
+   public void renderItemOverlayIntoGUI(FontRenderer fr, ItemStack stack, int xPosition, int yPosition, @Nullable String text) {
+      if (!stack.isEmpty()) {
          MatrixStack matrixstack = new MatrixStack();
-         if (p_180453_2_.getCount() != 1 || p_180453_5_ != null) {
-            String s = p_180453_5_ == null ? String.valueOf(p_180453_2_.getCount()) : p_180453_5_;
-            matrixstack.translate(0.0D, 0.0D, (double)(this.blitOffset + 200.0F));
-            IRenderTypeBuffer.Impl irendertypebuffer$impl = IRenderTypeBuffer.immediate(Tessellator.getInstance().getBuilder());
-            p_180453_1_.drawInBatch(s, (float)(p_180453_3_ + 19 - 2 - p_180453_1_.width(s)), (float)(p_180453_4_ + 6 + 3), 16777215, true, matrixstack.last().pose(), irendertypebuffer$impl, false, 0, 15728880);
-            irendertypebuffer$impl.endBatch();
+         if (stack.getCount() != 1 || text != null) {
+            String s = text == null ? String.valueOf(stack.getCount()) : text;
+            matrixstack.translate(0.0D, 0.0D, (double)(this.zLevel + 200.0F));
+            IRenderTypeBuffer.Impl irendertypebuffer$impl = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
+            fr.renderString(s, (float)(xPosition + 19 - 2 - fr.getStringWidth(s)), (float)(yPosition + 6 + 3), 16777215, true, matrixstack.getLast().getMatrix(), irendertypebuffer$impl, false, 0, 15728880);
+            irendertypebuffer$impl.finish();
          }
 
-         if (p_180453_2_.isDamaged()) {
+         if (stack.isDamaged()) {
             RenderSystem.disableDepthTest();
             RenderSystem.disableTexture();
             RenderSystem.disableAlphaTest();
             RenderSystem.disableBlend();
             Tessellator tessellator = Tessellator.getInstance();
-            BufferBuilder bufferbuilder = tessellator.getBuilder();
-            float f = (float)p_180453_2_.getDamageValue();
-            float f1 = (float)p_180453_2_.getMaxDamage();
+            BufferBuilder bufferbuilder = tessellator.getBuffer();
+            float f = (float)stack.getDamage();
+            float f1 = (float)stack.getMaxDamage();
             float f2 = Math.max(0.0F, (f1 - f) / f1);
             int i = Math.round(13.0F - f * 13.0F / f1);
-            int j = MathHelper.hsvToRgb(f2 / 3.0F, 1.0F, 1.0F);
-            this.fillRect(bufferbuilder, p_180453_3_ + 2, p_180453_4_ + 13, 13, 2, 0, 0, 0, 255);
-            this.fillRect(bufferbuilder, p_180453_3_ + 2, p_180453_4_ + 13, i, 1, j >> 16 & 255, j >> 8 & 255, j & 255, 255);
+            int j = MathHelper.hsvToRGB(f2 / 3.0F, 1.0F, 1.0F);
+            this.draw(bufferbuilder, xPosition + 2, yPosition + 13, 13, 2, 0, 0, 0, 255);
+            this.draw(bufferbuilder, xPosition + 2, yPosition + 13, i, 1, j >> 16 & 255, j >> 8 & 255, j & 255, 255);
             RenderSystem.enableBlend();
             RenderSystem.enableAlphaTest();
             RenderSystem.enableTexture();
@@ -319,15 +319,15 @@ public class ItemRenderer implements IResourceManagerReloadListener {
          }
 
          ClientPlayerEntity clientplayerentity = Minecraft.getInstance().player;
-         float f3 = clientplayerentity == null ? 0.0F : clientplayerentity.getCooldowns().getCooldownPercent(p_180453_2_.getItem(), Minecraft.getInstance().getFrameTime());
+         float f3 = clientplayerentity == null ? 0.0F : clientplayerentity.getCooldownTracker().getCooldown(stack.getItem(), Minecraft.getInstance().getRenderPartialTicks());
          if (f3 > 0.0F) {
             RenderSystem.disableDepthTest();
             RenderSystem.disableTexture();
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             Tessellator tessellator1 = Tessellator.getInstance();
-            BufferBuilder bufferbuilder1 = tessellator1.getBuilder();
-            this.fillRect(bufferbuilder1, p_180453_3_, p_180453_4_ + MathHelper.floor(16.0F * (1.0F - f3)), 16, MathHelper.ceil(16.0F * f3), 255, 255, 255, 127);
+            BufferBuilder bufferbuilder1 = tessellator1.getBuffer();
+            this.draw(bufferbuilder1, xPosition, yPosition + MathHelper.floor(16.0F * (1.0F - f3)), 16, MathHelper.ceil(16.0F * f3), 255, 255, 255, 127);
             RenderSystem.enableTexture();
             RenderSystem.enableDepthTest();
          }
@@ -335,16 +335,16 @@ public class ItemRenderer implements IResourceManagerReloadListener {
       }
    }
 
-   private void fillRect(BufferBuilder p_181565_1_, int p_181565_2_, int p_181565_3_, int p_181565_4_, int p_181565_5_, int p_181565_6_, int p_181565_7_, int p_181565_8_, int p_181565_9_) {
-      p_181565_1_.begin(7, DefaultVertexFormats.POSITION_COLOR);
-      p_181565_1_.vertex((double)(p_181565_2_ + 0), (double)(p_181565_3_ + 0), 0.0D).color(p_181565_6_, p_181565_7_, p_181565_8_, p_181565_9_).endVertex();
-      p_181565_1_.vertex((double)(p_181565_2_ + 0), (double)(p_181565_3_ + p_181565_5_), 0.0D).color(p_181565_6_, p_181565_7_, p_181565_8_, p_181565_9_).endVertex();
-      p_181565_1_.vertex((double)(p_181565_2_ + p_181565_4_), (double)(p_181565_3_ + p_181565_5_), 0.0D).color(p_181565_6_, p_181565_7_, p_181565_8_, p_181565_9_).endVertex();
-      p_181565_1_.vertex((double)(p_181565_2_ + p_181565_4_), (double)(p_181565_3_ + 0), 0.0D).color(p_181565_6_, p_181565_7_, p_181565_8_, p_181565_9_).endVertex();
-      Tessellator.getInstance().end();
+   private void draw(BufferBuilder renderer, int x, int y, int width, int height, int red, int green, int blue, int alpha) {
+      renderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+      renderer.pos((double)(x + 0), (double)(y + 0), 0.0D).color(red, green, blue, alpha).endVertex();
+      renderer.pos((double)(x + 0), (double)(y + height), 0.0D).color(red, green, blue, alpha).endVertex();
+      renderer.pos((double)(x + width), (double)(y + height), 0.0D).color(red, green, blue, alpha).endVertex();
+      renderer.pos((double)(x + width), (double)(y + 0), 0.0D).color(red, green, blue, alpha).endVertex();
+      Tessellator.getInstance().draw();
    }
 
-   public void onResourceManagerReload(IResourceManager p_195410_1_) {
-      this.itemModelShaper.rebuildCache();
+   public void onResourceManagerReload(IResourceManager resourceManager) {
+      this.itemModelMesher.rebuildCache();
    }
 }

@@ -3,25 +3,25 @@ package net.minecraft.loot;
 import net.minecraft.loot.conditions.ILootCondition;
 
 public class SequenceLootEntry extends ParentedLootEntry {
-   SequenceLootEntry(LootEntry[] p_i51250_1_, ILootCondition[] p_i51250_2_) {
-      super(p_i51250_1_, p_i51250_2_);
+   SequenceLootEntry(LootEntry[] children, ILootCondition[] conditions) {
+      super(children, conditions);
    }
 
-   public LootPoolEntryType getType() {
+   public LootPoolEntryType func_230420_a_() {
       return LootEntryManager.SEQUENCE;
    }
 
-   protected ILootEntry compose(ILootEntry[] p_216146_1_) {
-      switch(p_216146_1_.length) {
+   protected ILootEntry combineChildren(ILootEntry[] entries) {
+      switch(entries.length) {
       case 0:
-         return ALWAYS_TRUE;
+         return field_216140_b;
       case 1:
-         return p_216146_1_[0];
+         return entries[0];
       case 2:
-         return p_216146_1_[0].and(p_216146_1_[1]);
+         return entries[0].sequence(entries[1]);
       default:
          return (p_216153_1_, p_216153_2_) -> {
-            for(ILootEntry ilootentry : p_216146_1_) {
+            for(ILootEntry ilootentry : entries) {
                if (!ilootentry.expand(p_216153_1_, p_216153_2_)) {
                   return false;
                }

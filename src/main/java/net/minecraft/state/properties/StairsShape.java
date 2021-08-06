@@ -11,15 +11,15 @@ public enum StairsShape implements IStringSerializable {
 
    private final String name;
 
-   private StairsShape(String p_i49331_3_) {
-      this.name = p_i49331_3_;
+   private StairsShape(String name) {
+      this.name = name;
    }
 
    public String toString() {
       return this.name;
    }
 
-   public String getSerializedName() {
+   public String getString() {
       return this.name;
    }
 }

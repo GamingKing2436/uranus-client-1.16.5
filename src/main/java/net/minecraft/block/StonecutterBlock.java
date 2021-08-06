@@ -26,61 +26,61 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 
 public class StonecutterBlock extends Block {
-   private static final ITextComponent CONTAINER_TITLE = new TranslationTextComponent("container.stonecutter");
-   public static final DirectionProperty FACING = HorizontalBlock.FACING;
-   protected static final VoxelShape SHAPE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 9.0D, 16.0D);
+   private static final ITextComponent CONTAINER_NAME = new TranslationTextComponent("container.stonecutter");
+   public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
+   protected static final VoxelShape SHAPE = Block.makeCuboidShape(0.0D, 0.0D, 0.0D, 16.0D, 9.0D, 16.0D);
 
-   public StonecutterBlock(AbstractBlock.Properties p_i49972_1_) {
-      super(p_i49972_1_);
-      this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+   public StonecutterBlock(AbstractBlock.Properties propertiesIn) {
+      super(propertiesIn);
+      this.setDefaultState(this.stateContainer.getBaseState().with(FACING, Direction.NORTH));
    }
 
-   public BlockState getStateForPlacement(BlockItemUseContext p_196258_1_) {
-      return this.defaultBlockState().setValue(FACING, p_196258_1_.getHorizontalDirection().getOpposite());
+   public BlockState getStateForPlacement(BlockItemUseContext context) {
+      return this.getDefaultState().with(FACING, context.getPlacementHorizontalFacing().getOpposite());
    }
 
-   public ActionResultType use(BlockState p_225533_1_, World p_225533_2_, BlockPos p_225533_3_, PlayerEntity p_225533_4_, Hand p_225533_5_, BlockRayTraceResult p_225533_6_) {
-      if (p_225533_2_.isClientSide) {
+   public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+      if (worldIn.isRemote) {
          return ActionResultType.SUCCESS;
       } else {
-         p_225533_4_.openMenu(p_225533_1_.getMenuProvider(p_225533_2_, p_225533_3_));
-         p_225533_4_.awardStat(Stats.INTERACT_WITH_STONECUTTER);
+         player.openContainer(state.getContainer(worldIn, pos));
+         player.addStat(Stats.INTERACT_WITH_STONECUTTER);
          return ActionResultType.CONSUME;
       }
    }
 
    @Nullable
-   public INamedContainerProvider getMenuProvider(BlockState p_220052_1_, World p_220052_2_, BlockPos p_220052_3_) {
+   public INamedContainerProvider getContainer(BlockState state, World worldIn, BlockPos pos) {
       return new SimpleNamedContainerProvider((p_220283_2_, p_220283_3_, p_220283_4_) -> {
-         return new StonecutterContainer(p_220283_2_, p_220283_3_, IWorldPosCallable.create(p_220052_2_, p_220052_3_));
-      }, CONTAINER_TITLE);
+         return new StonecutterContainer(p_220283_2_, p_220283_3_, IWorldPosCallable.of(worldIn, pos));
+      }, CONTAINER_NAME);
    }
 
-   public VoxelShape getShape(BlockState p_220053_1_, IBlockReader p_220053_2_, BlockPos p_220053_3_, ISelectionContext p_220053_4_) {
+   public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
       return SHAPE;
    }
 
-   public boolean useShapeForLightOcclusion(BlockState p_220074_1_) {
+   public boolean isTransparent(BlockState state) {
       return true;
    }
 
-   public BlockRenderType getRenderShape(BlockState p_149645_1_) {
+   public BlockRenderType getRenderType(BlockState state) {
       return BlockRenderType.MODEL;
    }
 
-   public BlockState rotate(BlockState p_185499_1_, Rotation p_185499_2_) {
-      return p_185499_1_.setValue(FACING, p_185499_2_.rotate(p_185499_1_.getValue(FACING)));
+   public BlockState rotate(BlockState state, Rotation rot) {
+      return state.with(FACING, rot.rotate(state.get(FACING)));
    }
 
-   public BlockState mirror(BlockState p_185471_1_, Mirror p_185471_2_) {
-      return p_185471_1_.rotate(p_185471_2_.getRotation(p_185471_1_.getValue(FACING)));
+   public BlockState mirror(BlockState state, Mirror mirrorIn) {
+      return state.rotate(mirrorIn.toRotation(state.get(FACING)));
    }
 
-   protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> p_206840_1_) {
-      p_206840_1_.add(FACING);
+   protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+      builder.add(FACING);
    }
 
-   public boolean isPathfindable(BlockState p_196266_1_, IBlockReader p_196266_2_, BlockPos p_196266_3_, PathType p_196266_4_) {
+   public boolean allowsMovement(BlockState state, IBlockReader worldIn, BlockPos pos, PathType type) {
       return false;
    }
 }

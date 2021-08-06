@@ -16,29 +16,29 @@ public class EmptyProfiler implements IResultableProfiler {
    public void endTick() {
    }
 
-   public void push(String p_76320_1_) {
+   public void startSection(String name) {
    }
 
-   public void push(Supplier<String> p_194340_1_) {
+   public void startSection(Supplier<String> nameSupplier) {
    }
 
-   public void pop() {
+   public void endSection() {
    }
 
-   public void popPush(String p_219895_1_) {
+   public void endStartSection(String name) {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public void popPush(Supplier<String> p_194339_1_) {
+   public void endStartSection(Supplier<String> nameSupplier) {
    }
 
-   public void incrementCounter(String p_230035_1_) {
+   public void func_230035_c_(String p_230035_1_) {
    }
 
-   public void incrementCounter(Supplier<String> p_230036_1_) {
+   public void func_230036_c_(Supplier<String> p_230036_1_) {
    }
 
    public IProfileResult getResults() {
-      return EmptyProfileResult.EMPTY;
+      return EmptyProfileResult.INSTANCE;
    }
 }

@@ -11,35 +11,35 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class CCustomPayloadPacket implements IPacket<IServerPlayNetHandler> {
    public static final ResourceLocation BRAND = new ResourceLocation("brand");
-   private ResourceLocation identifier;
+   private ResourceLocation channel;
    private PacketBuffer data;
 
    public CCustomPayloadPacket() {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public CCustomPayloadPacket(ResourceLocation p_i49549_1_, PacketBuffer p_i49549_2_) {
-      this.identifier = p_i49549_1_;
-      this.data = p_i49549_2_;
+   public CCustomPayloadPacket(ResourceLocation channelIn, PacketBuffer dataIn) {
+      this.channel = channelIn;
+      this.data = dataIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.identifier = p_148837_1_.readResourceLocation();
-      int i = p_148837_1_.readableBytes();
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.channel = buf.readResourceLocation();
+      int i = buf.readableBytes();
       if (i >= 0 && i <= 32767) {
-         this.data = new PacketBuffer(p_148837_1_.readBytes(i));
+         this.data = new PacketBuffer(buf.readBytes(i));
       } else {
          throw new IOException("Payload may not be larger than 32767 bytes");
       }
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeResourceLocation(this.identifier);
-      p_148840_1_.writeBytes((ByteBuf)this.data);
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeResourceLocation(this.channel);
+      buf.writeBytes((ByteBuf)this.data);
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handleCustomPayload(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processCustomPayload(this);
       if (this.data != null) {
          this.data.release();
       }

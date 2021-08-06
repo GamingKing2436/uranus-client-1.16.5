@@ -5,22 +5,22 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class Timer {
-   public float partialTick;
-   public float tickDelta;
-   private long lastMs;
-   private final float msPerTick;
+   public float renderPartialTicks;
+   public float elapsedPartialTicks;
+   private long lastSyncSysClock;
+   private final float tickLength;
 
-   public Timer(float p_i49528_1_, long p_i49528_2_) {
-      this.msPerTick = 1000.0F / p_i49528_1_;
-      this.lastMs = p_i49528_2_;
+   public Timer(float ticks, long lastSyncSysClock) {
+      this.tickLength = 1000.0F / ticks;
+      this.lastSyncSysClock = lastSyncSysClock;
    }
 
-   public int advanceTime(long p_238400_1_) {
-      this.tickDelta = (float)(p_238400_1_ - this.lastMs) / this.msPerTick;
-      this.lastMs = p_238400_1_;
-      this.partialTick += this.tickDelta;
-      int i = (int)this.partialTick;
-      this.partialTick -= (float)i;
+   public int getPartialTicks(long gameTime) {
+      this.elapsedPartialTicks = (float)(gameTime - this.lastSyncSysClock) / this.tickLength;
+      this.lastSyncSysClock = gameTime;
+      this.renderPartialTicks += this.elapsedPartialTicks;
+      int i = (int)this.renderPartialTicks;
+      this.renderPartialTicks -= (float)i;
       return i;
    }
 }

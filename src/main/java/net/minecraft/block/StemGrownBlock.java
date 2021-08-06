@@ -1,8 +1,8 @@
 package net.minecraft.block;
 
 public abstract class StemGrownBlock extends Block {
-   public StemGrownBlock(AbstractBlock.Properties p_i48317_1_) {
-      super(p_i48317_1_);
+   public StemGrownBlock(AbstractBlock.Properties properties) {
+      super(properties);
    }
 
    public abstract StemBlock getStem();

@@ -18,7 +18,7 @@ public final class VillagerType {
    public static final VillagerType SNOW = register("snow");
    public static final VillagerType SWAMP = register("swamp");
    public static final VillagerType TAIGA = register("taiga");
-   private final String name;
+   private final String field_242370_h;
    private static final Map<RegistryKey<Biome>, VillagerType> BY_BIOME = Util.make(Maps.newHashMap(), (p_221172_0_) -> {
       p_221172_0_.put(Biomes.BADLANDS, DESERT);
       p_221172_0_.put(Biomes.BADLANDS_PLATEAU, DESERT);
@@ -67,18 +67,18 @@ public final class VillagerType {
    });
 
    private VillagerType(String p_i241919_1_) {
-      this.name = p_i241919_1_;
+      this.field_242370_h = p_i241919_1_;
    }
 
    public String toString() {
-      return this.name;
+      return this.field_242370_h;
    }
 
-   private static VillagerType register(String p_221171_0_) {
-      return Registry.register(Registry.VILLAGER_TYPE, new ResourceLocation(p_221171_0_), new VillagerType(p_221171_0_));
+   private static VillagerType register(String key) {
+      return Registry.register(Registry.VILLAGER_TYPE, new ResourceLocation(key), new VillagerType(key));
    }
 
-   public static VillagerType byBiome(Optional<RegistryKey<Biome>> p_242371_0_) {
+   public static VillagerType func_242371_a(Optional<RegistryKey<Biome>> p_242371_0_) {
       return p_242371_0_.flatMap((p_242372_0_) -> {
          return Optional.ofNullable(BY_BIOME.get(p_242372_0_));
       }).orElse(PLAINS);

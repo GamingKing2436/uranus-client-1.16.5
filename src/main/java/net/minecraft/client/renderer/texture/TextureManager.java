@@ -30,55 +30,55 @@ import org.apache.logging.log4j.Logger;
 @OnlyIn(Dist.CLIENT)
 public class TextureManager implements IFutureReloadListener, ITickable, AutoCloseable {
    private static final Logger LOGGER = LogManager.getLogger();
-   public static final ResourceLocation INTENTIONAL_MISSING_TEXTURE = new ResourceLocation("");
-   private final Map<ResourceLocation, Texture> byPath = Maps.newHashMap();
-   private final Set<ITickable> tickableTextures = Sets.newHashSet();
-   private final Map<String, Integer> prefixRegister = Maps.newHashMap();
+   public static final ResourceLocation RESOURCE_LOCATION_EMPTY = new ResourceLocation("");
+   private final Map<ResourceLocation, Texture> mapTextureObjects = Maps.newHashMap();
+   private final Set<ITickable> listTickables = Sets.newHashSet();
+   private final Map<String, Integer> mapTextureCounters = Maps.newHashMap();
    private final IResourceManager resourceManager;
 
-   public TextureManager(IResourceManager p_i1284_1_) {
-      this.resourceManager = p_i1284_1_;
+   public TextureManager(IResourceManager resourceManager) {
+      this.resourceManager = resourceManager;
    }
 
-   public void bind(ResourceLocation p_110577_1_) {
+   public void bindTexture(ResourceLocation resource) {
       if (!RenderSystem.isOnRenderThread()) {
          RenderSystem.recordRenderCall(() -> {
-            this._bind(p_110577_1_);
+            this.bindTextureRaw(resource);
          });
       } else {
-         this._bind(p_110577_1_);
+         this.bindTextureRaw(resource);
       }
 
    }
 
-   private void _bind(ResourceLocation p_229269_1_) {
-      Texture texture = this.byPath.get(p_229269_1_);
+   private void bindTextureRaw(ResourceLocation resource) {
+      Texture texture = this.mapTextureObjects.get(resource);
       if (texture == null) {
-         texture = new SimpleTexture(p_229269_1_);
-         this.register(p_229269_1_, texture);
+         texture = new SimpleTexture(resource);
+         this.loadTexture(resource, texture);
       }
 
-      texture.bind();
+      texture.bindTexture();
    }
 
-   public void register(ResourceLocation p_229263_1_, Texture p_229263_2_) {
-      p_229263_2_ = this.loadTexture(p_229263_1_, p_229263_2_);
-      Texture texture = this.byPath.put(p_229263_1_, p_229263_2_);
-      if (texture != p_229263_2_) {
-         if (texture != null && texture != MissingTextureSprite.getTexture()) {
-            this.tickableTextures.remove(texture);
-            this.safeClose(p_229263_1_, texture);
+   public void loadTexture(ResourceLocation textureLocation, Texture textureObj) {
+      textureObj = this.func_230183_b_(textureLocation, textureObj);
+      Texture texture = this.mapTextureObjects.put(textureLocation, textureObj);
+      if (texture != textureObj) {
+         if (texture != null && texture != MissingTextureSprite.getDynamicTexture()) {
+            this.listTickables.remove(texture);
+            this.func_243505_b(textureLocation, texture);
          }
 
-         if (p_229263_2_ instanceof ITickable) {
-            this.tickableTextures.add((ITickable)p_229263_2_);
+         if (textureObj instanceof ITickable) {
+            this.listTickables.add((ITickable)textureObj);
          }
       }
 
    }
 
-   private void safeClose(ResourceLocation p_243505_1_, Texture p_243505_2_) {
-      if (p_243505_2_ != MissingTextureSprite.getTexture()) {
+   private void func_243505_b(ResourceLocation p_243505_1_, Texture p_243505_2_) {
+      if (p_243505_2_ != MissingTextureSprite.getDynamicTexture()) {
          try {
             p_243505_2_.close();
          } catch (Exception exception) {
@@ -86,24 +86,24 @@ public class TextureManager implements IFutureReloadListener, ITickable, AutoClo
          }
       }
 
-      p_243505_2_.releaseId();
+      p_243505_2_.deleteGlTexture();
    }
 
-   private Texture loadTexture(ResourceLocation p_230183_1_, Texture p_230183_2_) {
+   private Texture func_230183_b_(ResourceLocation p_230183_1_, Texture p_230183_2_) {
       try {
-         p_230183_2_.load(this.resourceManager);
+         p_230183_2_.loadTexture(this.resourceManager);
          return p_230183_2_;
       } catch (IOException ioexception) {
-         if (p_230183_1_ != INTENTIONAL_MISSING_TEXTURE) {
+         if (p_230183_1_ != RESOURCE_LOCATION_EMPTY) {
             LOGGER.warn("Failed to load texture: {}", p_230183_1_, ioexception);
          }
 
-         return MissingTextureSprite.getTexture();
+         return MissingTextureSprite.getDynamicTexture();
       } catch (Throwable throwable) {
-         CrashReport crashreport = CrashReport.forThrowable(throwable, "Registering texture");
-         CrashReportCategory crashreportcategory = crashreport.addCategory("Resource location being registered");
-         crashreportcategory.setDetail("Resource location", p_230183_1_);
-         crashreportcategory.setDetail("Texture object class", () -> {
+         CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Registering texture");
+         CrashReportCategory crashreportcategory = crashreport.makeCategory("Resource location being registered");
+         crashreportcategory.addDetail("Resource location", p_230183_1_);
+         crashreportcategory.addDetail("Texture object class", () -> {
             return p_230183_2_.getClass().getName();
          });
          throw new ReportedException(crashreport);
@@ -111,78 +111,78 @@ public class TextureManager implements IFutureReloadListener, ITickable, AutoClo
    }
 
    @Nullable
-   public Texture getTexture(ResourceLocation p_229267_1_) {
-      return this.byPath.get(p_229267_1_);
+   public Texture getTexture(ResourceLocation textureLocation) {
+      return this.mapTextureObjects.get(textureLocation);
    }
 
-   public ResourceLocation register(String p_110578_1_, DynamicTexture p_110578_2_) {
-      Integer integer = this.prefixRegister.get(p_110578_1_);
+   public ResourceLocation getDynamicTextureLocation(String name, DynamicTexture texture) {
+      Integer integer = this.mapTextureCounters.get(name);
       if (integer == null) {
          integer = 1;
       } else {
          integer = integer + 1;
       }
 
-      this.prefixRegister.put(p_110578_1_, integer);
-      ResourceLocation resourcelocation = new ResourceLocation(String.format("dynamic/%s_%d", p_110578_1_, integer));
-      this.register(resourcelocation, p_110578_2_);
+      this.mapTextureCounters.put(name, integer);
+      ResourceLocation resourcelocation = new ResourceLocation(String.format("dynamic/%s_%d", name, integer));
+      this.loadTexture(resourcelocation, texture);
       return resourcelocation;
    }
 
-   public CompletableFuture<Void> preload(ResourceLocation p_215268_1_, Executor p_215268_2_) {
-      if (!this.byPath.containsKey(p_215268_1_)) {
-         PreloadedTexture preloadedtexture = new PreloadedTexture(this.resourceManager, p_215268_1_, p_215268_2_);
-         this.byPath.put(p_215268_1_, preloadedtexture);
-         return preloadedtexture.getFuture().thenRunAsync(() -> {
-            this.register(p_215268_1_, preloadedtexture);
+   public CompletableFuture<Void> loadAsync(ResourceLocation textureLocation, Executor executor) {
+      if (!this.mapTextureObjects.containsKey(textureLocation)) {
+         PreloadedTexture preloadedtexture = new PreloadedTexture(this.resourceManager, textureLocation, executor);
+         this.mapTextureObjects.put(textureLocation, preloadedtexture);
+         return preloadedtexture.getCompletableFuture().thenRunAsync(() -> {
+            this.loadTexture(textureLocation, preloadedtexture);
          }, TextureManager::execute);
       } else {
          return CompletableFuture.completedFuture((Void)null);
       }
    }
 
-   private static void execute(Runnable p_229262_0_) {
+   private static void execute(Runnable runnableIn) {
       Minecraft.getInstance().execute(() -> {
-         RenderSystem.recordRenderCall(p_229262_0_::run);
+         RenderSystem.recordRenderCall(runnableIn::run);
       });
    }
 
    public void tick() {
-      for(ITickable itickable : this.tickableTextures) {
+      for(ITickable itickable : this.listTickables) {
          itickable.tick();
       }
 
    }
 
-   public void release(ResourceLocation p_147645_1_) {
-      Texture texture = this.getTexture(p_147645_1_);
+   public void deleteTexture(ResourceLocation textureLocation) {
+      Texture texture = this.getTexture(textureLocation);
       if (texture != null) {
-         TextureUtil.releaseTextureId(texture.getId());
+         TextureUtil.releaseTextureId(texture.getGlTextureId());
       }
 
    }
 
    public void close() {
-      this.byPath.forEach(this::safeClose);
-      this.byPath.clear();
-      this.tickableTextures.clear();
-      this.prefixRegister.clear();
+      this.mapTextureObjects.forEach(this::func_243505_b);
+      this.mapTextureObjects.clear();
+      this.listTickables.clear();
+      this.mapTextureCounters.clear();
    }
 
-   public CompletableFuture<Void> reload(IFutureReloadListener.IStage p_215226_1_, IResourceManager p_215226_2_, IProfiler p_215226_3_, IProfiler p_215226_4_, Executor p_215226_5_, Executor p_215226_6_) {
-      return CompletableFuture.allOf(MainMenuScreen.preloadResources(this, p_215226_5_), this.preload(Widget.WIDGETS_LOCATION, p_215226_5_)).thenCompose(p_215226_1_::wait).thenAcceptAsync((p_229265_3_) -> {
-         MissingTextureSprite.getTexture();
-         RealmsMainScreen.updateTeaserImages(this.resourceManager);
-         Iterator<Entry<ResourceLocation, Texture>> iterator = this.byPath.entrySet().iterator();
+   public CompletableFuture<Void> reload(IFutureReloadListener.IStage stage, IResourceManager resourceManager, IProfiler preparationsProfiler, IProfiler reloadProfiler, Executor backgroundExecutor, Executor gameExecutor) {
+      return CompletableFuture.allOf(MainMenuScreen.loadAsync(this, backgroundExecutor), this.loadAsync(Widget.WIDGETS_LOCATION, backgroundExecutor)).thenCompose(stage::markCompleteAwaitingOthers).thenAcceptAsync((p_229265_3_) -> {
+         MissingTextureSprite.getDynamicTexture();
+         RealmsMainScreen.func_227932_a_(this.resourceManager);
+         Iterator<Entry<ResourceLocation, Texture>> iterator = this.mapTextureObjects.entrySet().iterator();
 
          while(iterator.hasNext()) {
             Entry<ResourceLocation, Texture> entry = iterator.next();
             ResourceLocation resourcelocation = entry.getKey();
             Texture texture = entry.getValue();
-            if (texture == MissingTextureSprite.getTexture() && !resourcelocation.equals(MissingTextureSprite.getLocation())) {
+            if (texture == MissingTextureSprite.getDynamicTexture() && !resourcelocation.equals(MissingTextureSprite.getLocation())) {
                iterator.remove();
             } else {
-               texture.reset(this, p_215226_2_, resourcelocation, p_215226_6_);
+               texture.loadTexture(this, resourceManager, resourcelocation, gameExecutor);
             }
          }
 

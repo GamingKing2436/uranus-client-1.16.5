@@ -11,9 +11,9 @@ public class BlockWithContextFeature extends Feature<BlockWithContextConfig> {
       super(p_i231991_1_);
    }
 
-   public boolean place(ISeedReader p_241855_1_, ChunkGenerator p_241855_2_, Random p_241855_3_, BlockPos p_241855_4_, BlockWithContextConfig p_241855_5_) {
-      if (p_241855_5_.placeOn.contains(p_241855_1_.getBlockState(p_241855_4_.below())) && p_241855_5_.placeIn.contains(p_241855_1_.getBlockState(p_241855_4_)) && p_241855_5_.placeUnder.contains(p_241855_1_.getBlockState(p_241855_4_.above()))) {
-         p_241855_1_.setBlock(p_241855_4_, p_241855_5_.toPlace, 2);
+   public boolean generate(ISeedReader reader, ChunkGenerator generator, Random rand, BlockPos pos, BlockWithContextConfig config) {
+      if (config.placeOn.contains(reader.getBlockState(pos.down())) && config.placeIn.contains(reader.getBlockState(pos)) && config.placeUnder.contains(reader.getBlockState(pos.up()))) {
+         reader.setBlockState(pos, config.toPlace, 2);
          return true;
       } else {
          return false;

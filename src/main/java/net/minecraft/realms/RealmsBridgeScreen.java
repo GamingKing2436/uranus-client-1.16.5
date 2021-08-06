@@ -10,20 +10,20 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class RealmsBridgeScreen extends RealmsScreen {
-   private Screen previousScreen;
+   private Screen field_230718_a_;
 
-   public void switchToRealms(Screen p_231394_1_) {
-      this.previousScreen = p_231394_1_;
-      Minecraft.getInstance().setScreen(new RealmsMainScreen(this));
+   public void func_231394_a_(Screen p_231394_1_) {
+      this.field_230718_a_ = p_231394_1_;
+      Minecraft.getInstance().displayGuiScreen(new RealmsMainScreen(this));
    }
 
    @Nullable
-   public RealmsScreen getNotificationScreen(Screen p_239555_1_) {
-      this.previousScreen = p_239555_1_;
+   public RealmsScreen func_239555_b_(Screen p_239555_1_) {
+      this.field_230718_a_ = p_239555_1_;
       return new RealmsNotificationsScreen();
    }
 
    public void init() {
-      Minecraft.getInstance().setScreen(this.previousScreen);
+      Minecraft.getInstance().displayGuiScreen(this.field_230718_a_);
    }
 }

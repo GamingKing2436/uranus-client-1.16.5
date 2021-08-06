@@ -14,39 +14,39 @@ import org.apache.logging.log4j.Logger;
 
 @OnlyIn(Dist.CLIENT)
 public class Backup extends ValueObject {
-   private static final Logger LOGGER = LogManager.getLogger();
-   public String backupId;
-   public Date lastModifiedDate;
-   public long size;
-   private boolean uploadedVersion;
-   public Map<String, String> metadata = Maps.newHashMap();
-   public Map<String, String> changeList = Maps.newHashMap();
+   private static final Logger field_230558_f_ = LogManager.getLogger();
+   public String field_230553_a_;
+   public Date field_230554_b_;
+   public long field_230555_c_;
+   private boolean field_230559_g_;
+   public Map<String, String> field_230556_d_ = Maps.newHashMap();
+   public Map<String, String> field_230557_e_ = Maps.newHashMap();
 
-   public static Backup parse(JsonElement p_230750_0_) {
+   public static Backup func_230750_a_(JsonElement p_230750_0_) {
       JsonObject jsonobject = p_230750_0_.getAsJsonObject();
       Backup backup = new Backup();
 
       try {
-         backup.backupId = JsonUtils.getStringOr("backupId", jsonobject, "");
-         backup.lastModifiedDate = JsonUtils.getDateOr("lastModifiedDate", jsonobject);
-         backup.size = JsonUtils.getLongOr("size", jsonobject, 0L);
+         backup.field_230553_a_ = JsonUtils.func_225171_a("backupId", jsonobject, "");
+         backup.field_230554_b_ = JsonUtils.func_225173_a("lastModifiedDate", jsonobject);
+         backup.field_230555_c_ = JsonUtils.func_225169_a("size", jsonobject, 0L);
          if (jsonobject.has("metadata")) {
             JsonObject jsonobject1 = jsonobject.getAsJsonObject("metadata");
 
             for(Entry<String, JsonElement> entry : jsonobject1.entrySet()) {
                if (!entry.getValue().isJsonNull()) {
-                  backup.metadata.put(format(entry.getKey()), entry.getValue().getAsString());
+                  backup.field_230556_d_.put(func_230751_a_(entry.getKey()), entry.getValue().getAsString());
                }
             }
          }
       } catch (Exception exception) {
-         LOGGER.error("Could not parse Backup: " + exception.getMessage());
+         field_230558_f_.error("Could not parse Backup: " + exception.getMessage());
       }
 
       return backup;
    }
 
-   private static String format(String p_230751_0_) {
+   private static String func_230751_a_(String p_230751_0_) {
       String[] astring = p_230751_0_.split("_");
       StringBuilder stringbuilder = new StringBuilder();
 
@@ -64,11 +64,11 @@ public class Backup extends ValueObject {
       return stringbuilder.toString();
    }
 
-   public boolean isUploadedVersion() {
-      return this.uploadedVersion;
+   public boolean func_230749_a_() {
+      return this.field_230559_g_;
    }
 
-   public void setUploadedVersion(boolean p_230752_1_) {
-      this.uploadedVersion = p_230752_1_;
+   public void func_230752_a_(boolean p_230752_1_) {
+      this.field_230559_g_ = p_230752_1_;
    }
 }

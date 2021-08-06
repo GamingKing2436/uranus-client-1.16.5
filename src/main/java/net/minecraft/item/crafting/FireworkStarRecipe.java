@@ -18,10 +18,10 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class FireworkStarRecipe extends SpecialRecipe {
-   private static final Ingredient SHAPE_INGREDIENT = Ingredient.of(Items.FIRE_CHARGE, Items.FEATHER, Items.GOLD_NUGGET, Items.SKELETON_SKULL, Items.WITHER_SKELETON_SKULL, Items.CREEPER_HEAD, Items.PLAYER_HEAD, Items.DRAGON_HEAD, Items.ZOMBIE_HEAD);
-   private static final Ingredient TRAIL_INGREDIENT = Ingredient.of(Items.DIAMOND);
-   private static final Ingredient FLICKER_INGREDIENT = Ingredient.of(Items.GLOWSTONE_DUST);
-   private static final Map<Item, FireworkRocketItem.Shape> SHAPE_BY_ITEM = Util.make(Maps.newHashMap(), (p_209352_0_) -> {
+   private static final Ingredient INGREDIENT_SHAPE = Ingredient.fromItems(Items.FIRE_CHARGE, Items.FEATHER, Items.GOLD_NUGGET, Items.SKELETON_SKULL, Items.WITHER_SKELETON_SKULL, Items.CREEPER_HEAD, Items.PLAYER_HEAD, Items.DRAGON_HEAD, Items.ZOMBIE_HEAD);
+   private static final Ingredient INGREDIENT_FLICKER = Ingredient.fromItems(Items.DIAMOND);
+   private static final Ingredient INGREDIENT_TRAIL = Ingredient.fromItems(Items.GLOWSTONE_DUST);
+   private static final Map<Item, FireworkRocketItem.Shape> ITEM_SHAPE_MAP = Util.make(Maps.newHashMap(), (p_209352_0_) -> {
       p_209352_0_.put(Items.FIRE_CHARGE, FireworkRocketItem.Shape.LARGE_BALL);
       p_209352_0_.put(Items.FEATHER, FireworkRocketItem.Shape.BURST);
       p_209352_0_.put(Items.GOLD_NUGGET, FireworkRocketItem.Shape.STAR);
@@ -32,41 +32,41 @@ public class FireworkStarRecipe extends SpecialRecipe {
       p_209352_0_.put(Items.DRAGON_HEAD, FireworkRocketItem.Shape.CREEPER);
       p_209352_0_.put(Items.ZOMBIE_HEAD, FireworkRocketItem.Shape.CREEPER);
    });
-   private static final Ingredient GUNPOWDER_INGREDIENT = Ingredient.of(Items.GUNPOWDER);
+   private static final Ingredient INGREDIENT_GUNPOWDER = Ingredient.fromItems(Items.GUNPOWDER);
 
-   public FireworkStarRecipe(ResourceLocation p_i48166_1_) {
-      super(p_i48166_1_);
+   public FireworkStarRecipe(ResourceLocation id) {
+      super(id);
    }
 
-   public boolean matches(CraftingInventory p_77569_1_, World p_77569_2_) {
+   public boolean matches(CraftingInventory inv, World worldIn) {
       boolean flag = false;
       boolean flag1 = false;
       boolean flag2 = false;
       boolean flag3 = false;
       boolean flag4 = false;
 
-      for(int i = 0; i < p_77569_1_.getContainerSize(); ++i) {
-         ItemStack itemstack = p_77569_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack = inv.getStackInSlot(i);
          if (!itemstack.isEmpty()) {
-            if (SHAPE_INGREDIENT.test(itemstack)) {
+            if (INGREDIENT_SHAPE.test(itemstack)) {
                if (flag2) {
                   return false;
                }
 
                flag2 = true;
-            } else if (FLICKER_INGREDIENT.test(itemstack)) {
+            } else if (INGREDIENT_TRAIL.test(itemstack)) {
                if (flag4) {
                   return false;
                }
 
                flag4 = true;
-            } else if (TRAIL_INGREDIENT.test(itemstack)) {
+            } else if (INGREDIENT_FLICKER.test(itemstack)) {
                if (flag3) {
                   return false;
                }
 
                flag3 = true;
-            } else if (GUNPOWDER_INGREDIENT.test(itemstack)) {
+            } else if (INGREDIENT_GUNPOWDER.test(itemstack)) {
                if (flag) {
                   return false;
                }
@@ -85,20 +85,20 @@ public class FireworkStarRecipe extends SpecialRecipe {
       return flag && flag1;
    }
 
-   public ItemStack assemble(CraftingInventory p_77572_1_) {
+   public ItemStack getCraftingResult(CraftingInventory inv) {
       ItemStack itemstack = new ItemStack(Items.FIREWORK_STAR);
-      CompoundNBT compoundnbt = itemstack.getOrCreateTagElement("Explosion");
+      CompoundNBT compoundnbt = itemstack.getOrCreateChildTag("Explosion");
       FireworkRocketItem.Shape fireworkrocketitem$shape = FireworkRocketItem.Shape.SMALL_BALL;
       List<Integer> list = Lists.newArrayList();
 
-      for(int i = 0; i < p_77572_1_.getContainerSize(); ++i) {
-         ItemStack itemstack1 = p_77572_1_.getItem(i);
+      for(int i = 0; i < inv.getSizeInventory(); ++i) {
+         ItemStack itemstack1 = inv.getStackInSlot(i);
          if (!itemstack1.isEmpty()) {
-            if (SHAPE_INGREDIENT.test(itemstack1)) {
-               fireworkrocketitem$shape = SHAPE_BY_ITEM.get(itemstack1.getItem());
-            } else if (FLICKER_INGREDIENT.test(itemstack1)) {
+            if (INGREDIENT_SHAPE.test(itemstack1)) {
+               fireworkrocketitem$shape = ITEM_SHAPE_MAP.get(itemstack1.getItem());
+            } else if (INGREDIENT_TRAIL.test(itemstack1)) {
                compoundnbt.putBoolean("Flicker", true);
-            } else if (TRAIL_INGREDIENT.test(itemstack1)) {
+            } else if (INGREDIENT_FLICKER.test(itemstack1)) {
                compoundnbt.putBoolean("Trail", true);
             } else if (itemstack1.getItem() instanceof DyeItem) {
                list.add(((DyeItem)itemstack1.getItem()).getDyeColor().getFireworkColor());
@@ -107,20 +107,20 @@ public class FireworkStarRecipe extends SpecialRecipe {
       }
 
       compoundnbt.putIntArray("Colors", list);
-      compoundnbt.putByte("Type", (byte)fireworkrocketitem$shape.getId());
+      compoundnbt.putByte("Type", (byte)fireworkrocketitem$shape.getIndex());
       return itemstack;
    }
 
    @OnlyIn(Dist.CLIENT)
-   public boolean canCraftInDimensions(int p_194133_1_, int p_194133_2_) {
-      return p_194133_1_ * p_194133_2_ >= 2;
+   public boolean canFit(int width, int height) {
+      return width * height >= 2;
    }
 
-   public ItemStack getResultItem() {
+   public ItemStack getRecipeOutput() {
       return new ItemStack(Items.FIREWORK_STAR);
    }
 
    public IRecipeSerializer<?> getSerializer() {
-      return IRecipeSerializer.FIREWORK_STAR;
+      return IRecipeSerializer.CRAFTING_SPECIAL_FIREWORK_STAR;
    }
 }

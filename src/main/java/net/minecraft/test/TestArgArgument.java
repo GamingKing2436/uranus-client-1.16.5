@@ -18,11 +18,11 @@ import net.minecraft.command.ISuggestionProvider;
 import net.minecraft.util.text.StringTextComponent;
 
 public class TestArgArgument implements ArgumentType<TestFunctionInfo> {
-   private static final Collection<String> EXAMPLES = Arrays.asList("techtests.piston", "techtests");
+   private static final Collection<String> field_229664_a_ = Arrays.asList("techtests.piston", "techtests");
 
    public TestFunctionInfo parse(StringReader p_parse_1_) throws CommandSyntaxException {
       String s = p_parse_1_.readUnquotedString();
-      Optional<TestFunctionInfo> optional = TestRegistry.findTestFunction(s);
+      Optional<TestFunctionInfo> optional = TestRegistry.func_229537_d_(s);
       if (optional.isPresent()) {
          return optional.get();
       } else {
@@ -31,20 +31,20 @@ public class TestArgArgument implements ArgumentType<TestFunctionInfo> {
       }
    }
 
-   public static TestArgArgument testFunctionArgument() {
+   public static TestArgArgument func_229665_a_() {
       return new TestArgArgument();
    }
 
-   public static TestFunctionInfo getTestFunction(CommandContext<CommandSource> p_229666_0_, String p_229666_1_) {
+   public static TestFunctionInfo func_229666_a_(CommandContext<CommandSource> p_229666_0_, String p_229666_1_) {
       return p_229666_0_.getArgument(p_229666_1_, TestFunctionInfo.class);
    }
 
    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> p_listSuggestions_1_, SuggestionsBuilder p_listSuggestions_2_) {
-      Stream<String> stream = TestRegistry.getAllTestFunctions().stream().map(TestFunctionInfo::getTestName);
+      Stream<String> stream = TestRegistry.func_229529_a_().stream().map(TestFunctionInfo::func_229657_a_);
       return ISuggestionProvider.suggest(stream, p_listSuggestions_2_);
    }
 
    public Collection<String> getExamples() {
-      return EXAMPLES;
+      return field_229664_a_;
    }
 }

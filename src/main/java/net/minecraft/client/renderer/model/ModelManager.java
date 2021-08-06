@@ -19,69 +19,69 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ModelManager extends ReloadListener<ModelBakery> implements AutoCloseable {
-   private Map<ResourceLocation, IBakedModel> bakedRegistry;
+   private Map<ResourceLocation, IBakedModel> modelRegistry;
    @Nullable
    private SpriteMap atlases;
-   private final BlockModelShapes blockModelShaper;
+   private final BlockModelShapes modelProvider;
    private final TextureManager textureManager;
    private final BlockColors blockColors;
-   private int maxMipmapLevels;
-   private IBakedModel missingModel;
-   private Object2IntMap<BlockState> modelGroups;
+   private int maxMipmapLevel;
+   private IBakedModel defaultModel;
+   private Object2IntMap<BlockState> stateModelIds;
 
-   public ModelManager(TextureManager p_i226057_1_, BlockColors p_i226057_2_, int p_i226057_3_) {
-      this.textureManager = p_i226057_1_;
-      this.blockColors = p_i226057_2_;
-      this.maxMipmapLevels = p_i226057_3_;
-      this.blockModelShaper = new BlockModelShapes(this);
+   public ModelManager(TextureManager textureManagerIn, BlockColors blockColorsIn, int maxMipmapLevelIn) {
+      this.textureManager = textureManagerIn;
+      this.blockColors = blockColorsIn;
+      this.maxMipmapLevel = maxMipmapLevelIn;
+      this.modelProvider = new BlockModelShapes(this);
    }
 
-   public IBakedModel getModel(ModelResourceLocation p_174953_1_) {
-      return this.bakedRegistry.getOrDefault(p_174953_1_, this.missingModel);
+   public IBakedModel getModel(ModelResourceLocation modelLocation) {
+      return this.modelRegistry.getOrDefault(modelLocation, this.defaultModel);
    }
 
    public IBakedModel getMissingModel() {
-      return this.missingModel;
+      return this.defaultModel;
    }
 
-   public BlockModelShapes getBlockModelShaper() {
-      return this.blockModelShaper;
+   public BlockModelShapes getBlockModelShapes() {
+      return this.modelProvider;
    }
 
-   protected ModelBakery prepare(IResourceManager p_212854_1_, IProfiler p_212854_2_) {
-      p_212854_2_.startTick();
-      ModelBakery modelbakery = new ModelBakery(p_212854_1_, this.blockColors, p_212854_2_, this.maxMipmapLevels);
-      p_212854_2_.endTick();
+   protected ModelBakery prepare(IResourceManager resourceManagerIn, IProfiler profilerIn) {
+      profilerIn.startTick();
+      ModelBakery modelbakery = new ModelBakery(resourceManagerIn, this.blockColors, profilerIn, this.maxMipmapLevel);
+      profilerIn.endTick();
       return modelbakery;
    }
 
-   protected void apply(ModelBakery p_212853_1_, IResourceManager p_212853_2_, IProfiler p_212853_3_) {
-      p_212853_3_.startTick();
-      p_212853_3_.push("upload");
+   protected void apply(ModelBakery objectIn, IResourceManager resourceManagerIn, IProfiler profilerIn) {
+      profilerIn.startTick();
+      profilerIn.startSection("upload");
       if (this.atlases != null) {
          this.atlases.close();
       }
 
-      this.atlases = p_212853_1_.uploadTextures(this.textureManager, p_212853_3_);
-      this.bakedRegistry = p_212853_1_.getBakedTopLevelModels();
-      this.modelGroups = p_212853_1_.getModelGroups();
-      this.missingModel = this.bakedRegistry.get(ModelBakery.MISSING_MODEL_LOCATION);
-      p_212853_3_.popPush("cache");
-      this.blockModelShaper.rebuildCache();
-      p_212853_3_.pop();
-      p_212853_3_.endTick();
+      this.atlases = objectIn.uploadTextures(this.textureManager, profilerIn);
+      this.modelRegistry = objectIn.getTopBakedModels();
+      this.stateModelIds = objectIn.getStateModelIds();
+      this.defaultModel = this.modelRegistry.get(ModelBakery.MODEL_MISSING);
+      profilerIn.endStartSection("cache");
+      this.modelProvider.reloadModels();
+      profilerIn.endSection();
+      profilerIn.endTick();
    }
 
-   public boolean requiresRender(BlockState p_224742_1_, BlockState p_224742_2_) {
-      if (p_224742_1_ == p_224742_2_) {
+   public boolean needsRenderUpdate(BlockState oldState, BlockState newState) {
+      if (oldState == newState) {
          return false;
       } else {
-         int i = this.modelGroups.getInt(p_224742_1_);
+         int i = this.stateModelIds.getInt(oldState);
          if (i != -1) {
-            int j = this.modelGroups.getInt(p_224742_2_);
+            int j = this.stateModelIds.getInt(newState);
             if (i == j) {
-               FluidState fluidstate = p_224742_1_.getFluidState();
-               FluidState fluidstate1 = p_224742_2_.getFluidState();
+               FluidState fluidstate = oldState.getFluidState();
+               FluidState fluidstate1 = newState.getFluidState();
                return fluidstate != fluidstate1;
             }
          }
@@ -90,8 +90,8 @@ public class ModelManager extends ReloadListener<ModelBakery> implements AutoClo
       }
    }
 
-   public AtlasTexture getAtlas(ResourceLocation p_229356_1_) {
-      return this.atlases.getAtlas(p_229356_1_);
+   public AtlasTexture getAtlasTexture(ResourceLocation locationIn) {
+      return this.atlases.getAtlasTexture(locationIn);
    }
 
    public void close() {
@@ -101,7 +101,7 @@ public class ModelManager extends ReloadListener<ModelBakery> implements AutoClo
 
    }
 
-   public void updateMaxMipLevel(int p_229355_1_) {
-      this.maxMipmapLevels = p_229355_1_;
+   public void setMaxMipmapLevel(int levelIn) {
+      this.maxMipmapLevel = levelIn;
    }
 }

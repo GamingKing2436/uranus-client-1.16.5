@@ -8,48 +8,48 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorldReader;
 
 public class CachedBlockInfo {
-   private final IWorldReader level;
+   private final IWorldReader world;
    private final BlockPos pos;
-   private final boolean loadChunks;
+   private final boolean forceLoad;
    private BlockState state;
-   private TileEntity entity;
-   private boolean cachedEntity;
+   private TileEntity tileEntity;
+   private boolean tileEntityInitialized;
 
-   public CachedBlockInfo(IWorldReader p_i48968_1_, BlockPos p_i48968_2_, boolean p_i48968_3_) {
-      this.level = p_i48968_1_;
-      this.pos = p_i48968_2_.immutable();
-      this.loadChunks = p_i48968_3_;
+   public CachedBlockInfo(IWorldReader worldIn, BlockPos posIn, boolean forceLoadIn) {
+      this.world = worldIn;
+      this.pos = posIn.toImmutable();
+      this.forceLoad = forceLoadIn;
    }
 
-   public BlockState getState() {
-      if (this.state == null && (this.loadChunks || this.level.hasChunkAt(this.pos))) {
-         this.state = this.level.getBlockState(this.pos);
+   public BlockState getBlockState() {
+      if (this.state == null && (this.forceLoad || this.world.isBlockLoaded(this.pos))) {
+         this.state = this.world.getBlockState(this.pos);
       }
 
       return this.state;
    }
 
    @Nullable
-   public TileEntity getEntity() {
-      if (this.entity == null && !this.cachedEntity) {
-         this.entity = this.level.getBlockEntity(this.pos);
-         this.cachedEntity = true;
+   public TileEntity getTileEntity() {
+      if (this.tileEntity == null && !this.tileEntityInitialized) {
+         this.tileEntity = this.world.getTileEntity(this.pos);
+         this.tileEntityInitialized = true;
       }
 
-      return this.entity;
+      return this.tileEntity;
    }
 
-   public IWorldReader getLevel() {
-      return this.level;
+   public IWorldReader getWorld() {
+      return this.world;
    }
 
    public BlockPos getPos() {
       return this.pos;
    }
 
-   public static Predicate<CachedBlockInfo> hasState(Predicate<BlockState> p_177510_0_) {
+   public static Predicate<CachedBlockInfo> hasState(Predicate<BlockState> predicatesIn) {
       return (p_201002_1_) -> {
-         return p_201002_1_ != null && p_177510_0_.test(p_201002_1_.getState());
+         return p_201002_1_ != null && predicatesIn.test(p_201002_1_.getBlockState());
       };
    }
 }

@@ -10,42 +10,42 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class CPlayerDiggingPacket implements IPacket<IServerPlayNetHandler> {
-   private BlockPos pos;
-   private Direction direction;
+   private BlockPos position;
+   private Direction facing;
    private CPlayerDiggingPacket.Action action;
 
    public CPlayerDiggingPacket() {
    }
 
    @OnlyIn(Dist.CLIENT)
-   public CPlayerDiggingPacket(CPlayerDiggingPacket.Action p_i46871_1_, BlockPos p_i46871_2_, Direction p_i46871_3_) {
-      this.action = p_i46871_1_;
-      this.pos = p_i46871_2_.immutable();
-      this.direction = p_i46871_3_;
+   public CPlayerDiggingPacket(CPlayerDiggingPacket.Action actionIn, BlockPos posIn, Direction facingIn) {
+      this.action = actionIn;
+      this.position = posIn.toImmutable();
+      this.facing = facingIn;
    }
 
-   public void read(PacketBuffer p_148837_1_) throws IOException {
-      this.action = p_148837_1_.readEnum(CPlayerDiggingPacket.Action.class);
-      this.pos = p_148837_1_.readBlockPos();
-      this.direction = Direction.from3DDataValue(p_148837_1_.readUnsignedByte());
+   public void readPacketData(PacketBuffer buf) throws IOException {
+      this.action = buf.readEnumValue(CPlayerDiggingPacket.Action.class);
+      this.position = buf.readBlockPos();
+      this.facing = Direction.byIndex(buf.readUnsignedByte());
    }
 
-   public void write(PacketBuffer p_148840_1_) throws IOException {
-      p_148840_1_.writeEnum(this.action);
-      p_148840_1_.writeBlockPos(this.pos);
-      p_148840_1_.writeByte(this.direction.get3DDataValue());
+   public void writePacketData(PacketBuffer buf) throws IOException {
+      buf.writeEnumValue(this.action);
+      buf.writeBlockPos(this.position);
+      buf.writeByte(this.facing.getIndex());
    }
 
-   public void handle(IServerPlayNetHandler p_148833_1_) {
-      p_148833_1_.handlePlayerAction(this);
+   public void processPacket(IServerPlayNetHandler handler) {
+      handler.processPlayerDigging(this);
    }
 
-   public BlockPos getPos() {
-      return this.pos;
+   public BlockPos getPosition() {
+      return this.position;
    }
 
-   public Direction getDirection() {
-      return this.direction;
+   public Direction getFacing() {
+      return this.facing;
    }
 
    public CPlayerDiggingPacket.Action getAction() {

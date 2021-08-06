@@ -8,7 +8,7 @@ public class ChanceConfig implements IPlacementConfig {
    }).codec();
    public final int chance;
 
-   public ChanceConfig(int p_i48665_1_) {
-      this.chance = p_i48665_1_;
+   public ChanceConfig(int chance) {
+      this.chance = chance;
    }
 }

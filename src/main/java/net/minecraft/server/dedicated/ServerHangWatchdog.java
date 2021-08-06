@@ -24,15 +24,15 @@ public class ServerHangWatchdog implements Runnable {
    private final DedicatedServer server;
    private final long maxTickTime;
 
-   public ServerHangWatchdog(DedicatedServer p_i46310_1_) {
-      this.server = p_i46310_1_;
-      this.maxTickTime = p_i46310_1_.getMaxTickLength();
+   public ServerHangWatchdog(DedicatedServer server) {
+      this.server = server;
+      this.maxTickTime = server.getMaxTickTime();
    }
 
    public void run() {
-      while(this.server.isRunning()) {
-         long i = this.server.getNextTickTime();
-         long j = Util.getMillis();
+      while(this.server.isServerRunning()) {
+         long i = this.server.getServerTime();
+         long j = Util.milliTime();
          long k = j - i;
          if (k > this.maxTickTime) {
             LOGGER.fatal("A single server tick took {} seconds (should be max {})", String.format(Locale.ROOT, "%.2f", (float)k / 1000.0F), String.format(Locale.ROOT, "%.2f", 0.05F));
@@ -43,7 +43,7 @@ public class ServerHangWatchdog implements Runnable {
             Error error = new Error("Watchdog");
 
             for(ThreadInfo threadinfo : athreadinfo) {
-               if (threadinfo.getThreadId() == this.server.getRunningThread().getId()) {
+               if (threadinfo.getThreadId() == this.server.getExecutionThread().getId()) {
                   error.setStackTrace(threadinfo.getStackTrace());
                }
 
@@ -52,27 +52,27 @@ public class ServerHangWatchdog implements Runnable {
             }
 
             CrashReport crashreport = new CrashReport("Watching Server", error);
-            this.server.fillReport(crashreport);
-            CrashReportCategory crashreportcategory = crashreport.addCategory("Thread Dump");
-            crashreportcategory.setDetail("Threads", stringbuilder);
-            CrashReportCategory crashreportcategory1 = crashreport.addCategory("Performance stats");
-            crashreportcategory1.setDetail("Random tick rate", () -> {
-               return this.server.getWorldData().getGameRules().getRule(GameRules.RULE_RANDOMTICKING).toString();
+            this.server.addServerInfoToCrashReport(crashreport);
+            CrashReportCategory crashreportcategory = crashreport.makeCategory("Thread Dump");
+            crashreportcategory.addDetail("Threads", stringbuilder);
+            CrashReportCategory crashreportcategory1 = crashreport.makeCategory("Performance stats");
+            crashreportcategory1.addDetail("Random tick rate", () -> {
+               return this.server.getServerConfiguration().getGameRulesInstance().get(GameRules.RANDOM_TICK_SPEED).toString();
             });
-            crashreportcategory1.setDetail("Level stats", () -> {
-               return Streams.stream(this.server.getAllLevels()).map((p_244716_0_) -> {
-                  return p_244716_0_.dimension() + ": " + p_244716_0_.getWatchdogStats();
+            crashreportcategory1.addDetail("Level stats", () -> {
+               return Streams.stream(this.server.getWorlds()).map((p_244716_0_) -> {
+                  return p_244716_0_.getDimensionKey() + ": " + p_244716_0_.func_244521_F();
                }).collect(Collectors.joining(",\n"));
             });
-            Bootstrap.realStdoutPrintln("Crash report:\n" + crashreport.getFriendlyReport());
-            File file1 = new File(new File(this.server.getServerDirectory(), "crash-reports"), "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")).format(new Date()) + "-server.txt");
+            Bootstrap.printToSYSOUT("Crash report:\n" + crashreport.getCompleteReport());
+            File file1 = new File(new File(this.server.getDataDirectory(), "crash-reports"), "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")).format(new Date()) + "-server.txt");
             if (crashreport.saveToFile(file1)) {
                LOGGER.error("This crash report has been saved to: {}", (Object)file1.getAbsolutePath());
             } else {
                LOGGER.error("We were unable to save this crash report to disk.");
             }
 
-            this.exit();
+            this.scheduleHalt();
          }
 
          try {
@@ -83,7 +83,7 @@ public class ServerHangWatchdog implements Runnable {
 
    }
 
-   private void exit() {
+   private void scheduleHalt() {
       try {
          Timer timer = new Timer();
          timer.schedule(new TimerTask() {

@@ -17,9 +17,9 @@ public class TopSolidWithNoiseConfig implements IPlacementConfig {
    public final double noiseFactor;
    public final double noiseOffset;
 
-   public TopSolidWithNoiseConfig(int p_i242029_1_, double p_i242029_2_, double p_i242029_4_) {
-      this.noiseToCountRatio = p_i242029_1_;
-      this.noiseFactor = p_i242029_2_;
-      this.noiseOffset = p_i242029_4_;
+   public TopSolidWithNoiseConfig(int noiseToCountRatio, double noiseFactor, double noiseOffset) {
+      this.noiseToCountRatio = noiseToCountRatio;
+      this.noiseFactor = noiseFactor;
+      this.noiseOffset = noiseOffset;
    }
 }

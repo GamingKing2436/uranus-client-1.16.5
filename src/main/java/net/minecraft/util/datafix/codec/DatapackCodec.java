@@ -6,7 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
 
 public class DatapackCodec {
-   public static final DatapackCodec DEFAULT = new DatapackCodec(ImmutableList.of("vanilla"), ImmutableList.of());
+   public static final DatapackCodec VANILLA_CODEC = new DatapackCodec(ImmutableList.of("vanilla"), ImmutableList.of());
    public static final Codec<DatapackCodec> CODEC = RecordCodecBuilder.create((p_234886_0_) -> {
       return p_234886_0_.group(Codec.STRING.listOf().fieldOf("Enabled").forGetter((p_234888_0_) -> {
          return p_234888_0_.enabled;
@@ -17,9 +17,9 @@ public class DatapackCodec {
    private final List<String> enabled;
    private final List<String> disabled;
 
-   public DatapackCodec(List<String> p_i231607_1_, List<String> p_i231607_2_) {
-      this.enabled = ImmutableList.copyOf(p_i231607_1_);
-      this.disabled = ImmutableList.copyOf(p_i231607_2_);
+   public DatapackCodec(List<String> enabled, List<String> disabled) {
+      this.enabled = ImmutableList.copyOf(enabled);
+      this.disabled = ImmutableList.copyOf(disabled);
    }
 
    public List<String> getEnabled() {

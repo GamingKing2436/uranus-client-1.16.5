@@ -8,35 +8,35 @@ import net.minecraft.util.text.StringTextComponent;
 
 public class IntNBT extends NumberNBT {
    public static final INBTType<IntNBT> TYPE = new INBTType<IntNBT>() {
-      public IntNBT load(DataInput p_225649_1_, int p_225649_2_, NBTSizeTracker p_225649_3_) throws IOException {
-         p_225649_3_.accountBits(96L);
-         return IntNBT.valueOf(p_225649_1_.readInt());
+      public IntNBT readNBT(DataInput input, int depth, NBTSizeTracker accounter) throws IOException {
+         accounter.read(96L);
+         return IntNBT.valueOf(input.readInt());
       }
 
       public String getName() {
          return "INT";
       }
 
-      public String getPrettyName() {
+      public String getTagName() {
          return "TAG_Int";
       }
 
-      public boolean isValue() {
+      public boolean isPrimitive() {
          return true;
       }
    };
    private final int data;
 
-   private IntNBT(int p_i45133_1_) {
-      this.data = p_i45133_1_;
+   private IntNBT(int data) {
+      this.data = data;
    }
 
-   public static IntNBT valueOf(int p_229692_0_) {
-      return p_229692_0_ >= -128 && p_229692_0_ <= 1024 ? IntNBT.Cache.cache[p_229692_0_ + 128] : new IntNBT(p_229692_0_);
+   public static IntNBT valueOf(int dataIn) {
+      return dataIn >= -128 && dataIn <= 1024 ? IntNBT.Cache.CACHE[dataIn + 128] : new IntNBT(dataIn);
    }
 
-   public void write(DataOutput p_74734_1_) throws IOException {
-      p_74734_1_.writeInt(this.data);
+   public void write(DataOutput output) throws IOException {
+      output.writeInt(this.data);
    }
 
    public byte getId() {
@@ -67,31 +67,31 @@ public class IntNBT extends NumberNBT {
       return this.data;
    }
 
-   public ITextComponent getPrettyDisplay(String p_199850_1_, int p_199850_2_) {
-      return (new StringTextComponent(String.valueOf(this.data))).withStyle(SYNTAX_HIGHLIGHTING_NUMBER);
+   public ITextComponent toFormattedComponent(String indentation, int indentDepth) {
+      return (new StringTextComponent(String.valueOf(this.data))).mergeStyle(SYNTAX_HIGHLIGHTING_NUMBER);
    }
 
-   public long getAsLong() {
+   public long getLong() {
       return (long)this.data;
    }
 
-   public int getAsInt() {
+   public int getInt() {
       return this.data;
    }
 
-   public short getAsShort() {
+   public short getShort() {
       return (short)(this.data & '\uffff');
    }
 
-   public byte getAsByte() {
+   public byte getByte() {
       return (byte)(this.data & 255);
    }
 
-   public double getAsDouble() {
+   public double getDouble() {
       return (double)this.data;
    }
 
-   public float getAsFloat() {
+   public float getFloat() {
       return (float)this.data;
    }
 
@@ -100,11 +100,11 @@ public class IntNBT extends NumberNBT {
    }
 
    static class Cache {
-      static final IntNBT[] cache = new IntNBT[1153];
+      static final IntNBT[] CACHE = new IntNBT[1153];
 
       static {
-         for(int i = 0; i < cache.length; ++i) {
-            cache[i] = new IntNBT(-128 + i);
+         for(int i = 0; i < CACHE.length; ++i) {
+            CACHE[i] = new IntNBT(-128 + i);
          }
 
       }

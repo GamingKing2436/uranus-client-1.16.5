@@ -14,11 +14,11 @@ public class HideFromRaidOnBellRingTask extends Task<LivingEntity> {
       super(ImmutableMap.of(MemoryModuleType.HEARD_BELL_TIME, MemoryModuleStatus.VALUE_PRESENT));
    }
 
-   protected void start(ServerWorld p_212831_1_, LivingEntity p_212831_2_, long p_212831_3_) {
-      Brain<?> brain = p_212831_2_.getBrain();
-      Raid raid = p_212831_1_.getRaidAt(p_212831_2_.blockPosition());
+   protected void startExecuting(ServerWorld worldIn, LivingEntity entityIn, long gameTimeIn) {
+      Brain<?> brain = entityIn.getBrain();
+      Raid raid = worldIn.findRaid(entityIn.getPosition());
       if (raid == null) {
-         brain.setActiveActivityIfPossible(Activity.HIDE);
+         brain.switchTo(Activity.HIDE);
       }
 
    }

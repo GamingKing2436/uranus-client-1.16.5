@@ -30,42 +30,42 @@ public enum ModelRotation implements IModelTransform {
    X270_Y180(270, 180),
    X270_Y270(270, 270);
 
-   private static final Map<Integer, ModelRotation> BY_INDEX = Arrays.stream(values()).collect(Collectors.toMap((p_229306_0_) -> {
-      return p_229306_0_.index;
+   private static final Map<Integer, ModelRotation> MAP_ROTATIONS = Arrays.stream(values()).collect(Collectors.toMap((p_229306_0_) -> {
+      return p_229306_0_.combinedXY;
    }, (p_229305_0_) -> {
       return p_229305_0_;
    }));
    private final TransformationMatrix transformation;
-   private final Orientation actualRotation;
-   private final int index;
+   private final Orientation orientation;
+   private final int combinedXY;
 
-   private static int getIndex(int p_177521_0_, int p_177521_1_) {
-      return p_177521_0_ * 360 + p_177521_1_;
+   private static int combineXY(int x, int y) {
+      return x * 360 + y;
    }
 
-   private ModelRotation(int p_i46087_3_, int p_i46087_4_) {
-      this.index = getIndex(p_i46087_3_, p_i46087_4_);
-      Quaternion quaternion = new Quaternion(new Vector3f(0.0F, 1.0F, 0.0F), (float)(-p_i46087_4_), true);
-      quaternion.mul(new Quaternion(new Vector3f(1.0F, 0.0F, 0.0F), (float)(-p_i46087_3_), true));
+   private ModelRotation(int x, int y) {
+      this.combinedXY = combineXY(x, y);
+      Quaternion quaternion = new Quaternion(new Vector3f(0.0F, 1.0F, 0.0F), (float)(-y), true);
+      quaternion.multiply(new Quaternion(new Vector3f(1.0F, 0.0F, 0.0F), (float)(-x), true));
       Orientation orientation = Orientation.IDENTITY;
 
-      for(int i = 0; i < p_i46087_4_; i += 90) {
-         orientation = orientation.compose(Orientation.ROT_90_Y_NEG);
+      for(int i = 0; i < y; i += 90) {
+         orientation = orientation.func_235527_a_(Orientation.ROT_90_Y_NEG);
       }
 
-      for(int j = 0; j < p_i46087_3_; j += 90) {
-         orientation = orientation.compose(Orientation.ROT_90_X_NEG);
+      for(int j = 0; j < x; j += 90) {
+         orientation = orientation.func_235527_a_(Orientation.ROT_90_X_NEG);
       }
 
       this.transformation = new TransformationMatrix((Vector3f)null, quaternion, (Vector3f)null, (Quaternion)null);
-      this.actualRotation = orientation;
+      this.orientation = orientation;
    }
 
    public TransformationMatrix getRotation() {
       return this.transformation;
    }
 
-   public static ModelRotation by(int p_177524_0_, int p_177524_1_) {
-      return BY_INDEX.get(getIndex(MathHelper.positiveModulo(p_177524_0_, 360), MathHelper.positiveModulo(p_177524_1_, 360)));
+   public static ModelRotation getModelRotation(int x, int y) {
+      return MAP_ROTATIONS.get(combineXY(MathHelper.normalizeAngle(x, 360), MathHelper.normalizeAngle(y, 360)));
    }
 }

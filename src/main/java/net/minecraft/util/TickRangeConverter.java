@@ -1,7 +1,7 @@
 package net.minecraft.util;
 
 public class TickRangeConverter {
-   public static RangedInteger rangeOfSeconds(int p_233037_0_, int p_233037_1_) {
-      return new RangedInteger(p_233037_0_ * 20, p_233037_1_ * 20);
+   public static RangedInteger convertRange(int min, int max) {
+      return new RangedInteger(min * 20, max * 20);
    }
 }

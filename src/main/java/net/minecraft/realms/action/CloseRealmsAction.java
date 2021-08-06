@@ -11,44 +11,44 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class CloseRealmsAction extends LongRunningTask {
-   private final RealmsServer serverData;
-   private final RealmsConfigureWorldScreen configureScreen;
+   private final RealmsServer field_238107_c_;
+   private final RealmsConfigureWorldScreen field_238108_d_;
 
    public CloseRealmsAction(RealmsServer p_i232228_1_, RealmsConfigureWorldScreen p_i232228_2_) {
-      this.serverData = p_i232228_1_;
-      this.configureScreen = p_i232228_2_;
+      this.field_238107_c_ = p_i232228_1_;
+      this.field_238108_d_ = p_i232228_2_;
    }
 
    public void run() {
-      this.setTitle(new TranslationTextComponent("mco.configure.world.closing"));
-      RealmsClient realmsclient = RealmsClient.create();
+      this.func_224989_b(new TranslationTextComponent("mco.configure.world.closing"));
+      RealmsClient realmsclient = RealmsClient.func_224911_a();
 
       for(int i = 0; i < 25; ++i) {
-         if (this.aborted()) {
+         if (this.func_224988_a()) {
             return;
          }
 
          try {
-            boolean flag = realmsclient.close(this.serverData.id);
+            boolean flag = realmsclient.func_224932_f(this.field_238107_c_.field_230582_a_);
             if (flag) {
-               this.configureScreen.stateChanged();
-               this.serverData.state = RealmsServer.Status.CLOSED;
-               setScreen(this.configureScreen);
+               this.field_238108_d_.func_224398_a();
+               this.field_238107_c_.field_230586_e_ = RealmsServer.Status.CLOSED;
+               func_238127_a_(this.field_238108_d_);
                break;
             }
          } catch (RetryCallException retrycallexception) {
-            if (this.aborted()) {
+            if (this.func_224988_a()) {
                return;
             }
 
-            pause(retrycallexception.delaySeconds);
+            func_238125_a_(retrycallexception.field_224985_e);
          } catch (Exception exception) {
-            if (this.aborted()) {
+            if (this.func_224988_a()) {
                return;
             }
 
-            LOGGER.error("Failed to close server", (Throwable)exception);
-            this.error("Failed to close the server");
+            field_238124_a_.error("Failed to close server", (Throwable)exception);
+            this.func_237703_a_("Failed to close the server");
          }
       }
 

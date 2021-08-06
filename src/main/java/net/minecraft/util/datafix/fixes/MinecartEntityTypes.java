@@ -14,10 +14,10 @@ import java.util.Objects;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class MinecartEntityTypes extends DataFix {
-   private static final List<String> MINECART_BY_ID = Lists.newArrayList("MinecartRideable", "MinecartChest", "MinecartFurnace");
+   private static final List<String> MINECART_TYPE_LIST = Lists.newArrayList("MinecartRideable", "MinecartChest", "MinecartFurnace");
 
-   public MinecartEntityTypes(Schema p_i49661_1_, boolean p_i49661_2_) {
-      super(p_i49661_1_, p_i49661_2_);
+   public MinecartEntityTypes(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    public TypeRewriteRule makeRule() {
@@ -32,8 +32,8 @@ public class MinecartEntityTypes extends DataFix {
                Dynamic<?> dynamic = typed.getOrCreate(DSL.remainderFinder());
                int i = dynamic.get("Type").asInt(0);
                String s;
-               if (i > 0 && i < MINECART_BY_ID.size()) {
-                  s = MINECART_BY_ID.get(i);
+               if (i > 0 && i < MINECART_TYPE_LIST.size()) {
+                  s = MINECART_TYPE_LIST.get(i);
                } else {
                   s = "MinecartRideable";
                }

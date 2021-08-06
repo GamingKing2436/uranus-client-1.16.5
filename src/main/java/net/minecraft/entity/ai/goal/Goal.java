@@ -5,35 +5,35 @@ import java.util.EnumSet;
 public abstract class Goal {
    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class);
 
-   public abstract boolean canUse();
+   public abstract boolean shouldExecute();
 
-   public boolean canContinueToUse() {
-      return this.canUse();
+   public boolean shouldContinueExecuting() {
+      return this.shouldExecute();
    }
 
-   public boolean isInterruptable() {
+   public boolean isPreemptible() {
       return true;
    }
 
-   public void start() {
+   public void startExecuting() {
    }
 
-   public void stop() {
+   public void resetTask() {
    }
 
    public void tick() {
    }
 
-   public void setFlags(EnumSet<Goal.Flag> p_220684_1_) {
+   public void setMutexFlags(EnumSet<Goal.Flag> flagSet) {
       this.flags.clear();
-      this.flags.addAll(p_220684_1_);
+      this.flags.addAll(flagSet);
    }
 
    public String toString() {
       return this.getClass().getSimpleName();
    }
 
-   public EnumSet<Goal.Flag> getFlags() {
+   public EnumSet<Goal.Flag> getMutexFlags() {
       return this.flags;
    }
 

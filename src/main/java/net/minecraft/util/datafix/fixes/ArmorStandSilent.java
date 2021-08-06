@@ -7,8 +7,8 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.TypeReferences;
 
 public class ArmorStandSilent extends NamedEntityFix {
-   public ArmorStandSilent(Schema p_i49672_1_, boolean p_i49672_2_) {
-      super(p_i49672_1_, p_i49672_2_, "EntityArmorStandSilentFix", TypeReferences.ENTITY, "ArmorStand");
+   public ArmorStandSilent(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType, "EntityArmorStandSilentFix", TypeReferences.ENTITY, "ArmorStand");
    }
 
    public Dynamic<?> fixTag(Dynamic<?> p_209650_1_) {

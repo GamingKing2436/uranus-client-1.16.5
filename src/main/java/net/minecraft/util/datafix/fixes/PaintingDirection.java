@@ -12,8 +12,8 @@ import net.minecraft.util.datafix.TypeReferences;
 public class PaintingDirection extends DataFix {
    private static final int[][] DIRECTIONS = new int[][]{{0, 0, 1}, {-1, 0, 0}, {0, 0, -1}, {1, 0, 0}};
 
-   public PaintingDirection(Schema p_i49660_1_, boolean p_i49660_2_) {
-      super(p_i49660_1_, p_i49660_2_);
+   public PaintingDirection(Schema outputSchema, boolean changesType) {
+      super(outputSchema, changesType);
    }
 
    private Dynamic<?> doFix(Dynamic<?> p_209748_1_, boolean p_209748_2_, boolean p_209748_3_) {

@@ -6,5 +6,5 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public interface IHasContainer<T extends Container> {
-   T getMenu();
+   T getContainer();
 }

@@ -21,27 +21,27 @@ import org.apache.logging.log4j.Logger;
 
 public abstract class JsonReloadListener extends ReloadListener<Map<ResourceLocation, JsonElement>> {
    private static final Logger LOGGER = LogManager.getLogger();
-   private static final int PATH_SUFFIX_LENGTH = ".json".length();
+   private static final int JSON_EXTENSION_LENGTH = ".json".length();
    private final Gson gson;
-   private final String directory;
+   private final String folder;
 
    public JsonReloadListener(Gson p_i51536_1_, String p_i51536_2_) {
       this.gson = p_i51536_1_;
-      this.directory = p_i51536_2_;
+      this.folder = p_i51536_2_;
    }
 
-   protected Map<ResourceLocation, JsonElement> prepare(IResourceManager p_212854_1_, IProfiler p_212854_2_) {
+   protected Map<ResourceLocation, JsonElement> prepare(IResourceManager resourceManagerIn, IProfiler profilerIn) {
       Map<ResourceLocation, JsonElement> map = Maps.newHashMap();
-      int i = this.directory.length() + 1;
+      int i = this.folder.length() + 1;
 
-      for(ResourceLocation resourcelocation : p_212854_1_.listResources(this.directory, (p_223379_0_) -> {
+      for(ResourceLocation resourcelocation : resourceManagerIn.getAllResourceLocations(this.folder, (p_223379_0_) -> {
          return p_223379_0_.endsWith(".json");
       })) {
          String s = resourcelocation.getPath();
-         ResourceLocation resourcelocation1 = new ResourceLocation(resourcelocation.getNamespace(), s.substring(i, s.length() - PATH_SUFFIX_LENGTH));
+         ResourceLocation resourcelocation1 = new ResourceLocation(resourcelocation.getNamespace(), s.substring(i, s.length() - JSON_EXTENSION_LENGTH));
 
          try (
-            IResource iresource = p_212854_1_.getResource(resourcelocation);
+            IResource iresource = resourceManagerIn.getResource(resourcelocation);
             InputStream inputstream = iresource.getInputStream();
             Reader reader = new BufferedReader(new InputStreamReader(inputstream, StandardCharsets.UTF_8));
          ) {
